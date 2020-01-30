@@ -9,18 +9,19 @@ import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.URL;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class DoiTransformServiceTest {
+public class DoiProxyServiceTest {
 
     private ObjectMapper objectMapper = MainHandler.createObjectMapper();
 
     @Test
-    public void test() throws IOException, URISyntaxException {
+    public void test() throws IOException {
 
         Client client = mock(Client.class);
         WebTarget webTarget = mock(WebTarget.class);
@@ -31,9 +32,9 @@ public class DoiTransformServiceTest {
         when(builder.header(anyString(),anyString())).thenReturn(builder);
         when(builder.post(any(), (Class<Object>) any())).thenReturn(null);
 
-        DoiTransformService doiTransformService = new DoiTransformService(client);
+        DoiProxyService doiProxyService = new DoiProxyService(client);
 
-        doiTransformService.transform(objectMapper.createObjectNode(), "http://example.org", "some api key");
+        doiProxyService.lookup(new URL("http://example.org"), "http://example.org", "some api key");
     }
 
 }

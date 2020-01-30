@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.doi.fetch.MainHandler;
 import no.unit.nva.doi.fetch.model.Summary;
-import no.unit.nva.doi.fetch.service.PublicationConverter;
 import org.junit.Test;
 
 import java.io.File;
@@ -25,8 +24,6 @@ public class PublicationConverterTest {
         String summaryJson = objectMapper.writeValueAsString(summary);
 
         System.out.println(summaryJson);
-
-
     }
 
 }
