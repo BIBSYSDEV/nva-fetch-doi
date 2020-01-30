@@ -42,6 +42,8 @@ public class MainHandler implements RequestStreamHandler {
     public static final String ALLOWED_ORIGIN_ENV = "ALLOWED_ORIGIN";
     public static final String API_HOST_ENV = "API_HOST";
     public static final String API_SCHEME_ENV = "API_SCHEME";
+    public static final String HEADERS_AUTHORIZATION = "/headers/Authorization";
+    public static final String BODY = "body";
 
     private final transient ObjectMapper objectMapper;
     private final transient PublicationConverter publicationConverter;
@@ -81,12 +83,12 @@ public class MainHandler implements RequestStreamHandler {
         String authorization;
         try {
             JsonNode event = objectMapper.readTree(input);
-            authorization = Optional.ofNullable(event.at("/headers/Authorization").textValue())
+            authorization = Optional.ofNullable(event.at(HEADERS_AUTHORIZATION).textValue())
                     .orElseThrow(IllegalArgumentException::new);
-            String body = event.get("body").textValue();
+            String body = event.get(BODY).textValue();
             requestBody = objectMapper.readValue(body, RequestBody.class);
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            log(e.getMessage());
             objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
                     Problem.valueOf(BAD_REQUEST, e.getMessage())), headers(), SC_BAD_REQUEST));
             return;
@@ -101,11 +103,11 @@ public class MainHandler implements RequestStreamHandler {
             objectMapper.writeValue(output, new GatewayResponse<>(
                     objectMapper.writeValueAsString(summary), headers(), SC_OK));
         } catch (ProcessingException | WebApplicationException e) {
-            System.out.println(e.getMessage());
+            log(e.getMessage());
             objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
                     Problem.valueOf(BAD_GATEWAY, e.getMessage())), headers(), SC_BAD_GATEWAY));
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            log(e.getMessage());
             objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
                     Problem.valueOf(INTERNAL_SERVER_ERROR, e.getMessage())), headers(), SC_INTERNAL_SERVER_ERROR));
         }
@@ -131,6 +133,10 @@ public class MainHandler implements RequestStreamHandler {
                 .configure(SerializationFeature.INDENT_OUTPUT, true)
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL)
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    }
+
+    public static void log(String message) {
+        System.out.println(message);
     }
 
 

@@ -9,6 +9,12 @@ import java.util.UUID;
 
 public class PublicationConverter {
 
+    public static final String ENTITY_DESCRIPTION_CONTRIBUTORS_0_NAME = "/entityDescription/contributors/0/name";
+    public static final String ENTITY_DESCRIPTION_TITLES = "/entityDescription/titles/";
+    public static final String ENTITY_DESCRIPTION_DATE_YEAR = "/entityDescription/date/year";
+    public static final String ENTITY_DESCRIPTION_DATE_MONTH = "/entityDescription/date/month";
+    public static final String ENTITY_DESCRIPTION_DATE_DAY = "/entityDescription/date/day";
+
     /**
      * Convert Publication JSON to Summary.
      *
@@ -19,15 +25,15 @@ public class PublicationConverter {
     public Summary toSummary(JsonNode json, UUID identifier) {
         return new Summary.Builder()
                 .withIdentifier(identifier)
-                .withCreatorName(Optional.ofNullable(json.at("/entityDescription/contributors/0/name").textValue())
+                .withCreatorName(Optional.ofNullable(json.at(ENTITY_DESCRIPTION_CONTRIBUTORS_0_NAME).textValue())
                         .orElse(null))
-                .withTitle(Optional.ofNullable(json.at("/entityDescription/titles/").textValue()).orElse(null))
+                .withTitle(Optional.ofNullable(json.at(ENTITY_DESCRIPTION_TITLES).textValue()).orElse(null))
                 .withDate(new PublicationDate.Builder()
-                        .withYear(Optional.ofNullable(json.at("/entityDescription/date/year").textValue())
+                        .withYear(Optional.ofNullable(json.at(ENTITY_DESCRIPTION_DATE_YEAR).textValue())
                                 .orElse(null))
-                        .withMonth(Optional.ofNullable(json.at("/entityDescription/date/month").textValue())
+                        .withMonth(Optional.ofNullable(json.at(ENTITY_DESCRIPTION_DATE_MONTH).textValue())
                                 .orElse(null))
-                        .withDay(Optional.ofNullable(json.at("/entityDescription/date/day").textValue())
+                        .withDay(Optional.ofNullable(json.at(ENTITY_DESCRIPTION_DATE_DAY).textValue())
                                 .orElse(null))
                         .build())
                 .build();

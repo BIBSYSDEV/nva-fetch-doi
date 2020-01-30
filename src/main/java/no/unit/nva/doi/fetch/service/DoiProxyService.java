@@ -15,6 +15,7 @@ public class DoiProxyService {
 
     public static final String DATACITE_JSON = "application/vnd.datacite.datacite+json";
     public static final String PATH = "/doi";
+    public static final String DOI_URL = "doiUrl";
     private final Client client;
 
     protected DoiProxyService(Client client) {
@@ -38,9 +39,7 @@ public class DoiProxyService {
         JsonNode response = client.target(host).path(PATH)
                 .request(DATACITE_JSON)
                 .header(AUTHORIZATION, authorization)
-                .post(Entity.entity(singletonMap("doiUrl", doiUrl), APPLICATION_JSON), JsonNode.class);
-
-        System.out.println(response);
+                .post(Entity.entity(singletonMap(DOI_URL, doiUrl), APPLICATION_JSON), JsonNode.class);
 
         return response;
     }

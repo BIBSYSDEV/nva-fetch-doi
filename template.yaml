@@ -120,7 +120,6 @@ Resources:
             Path: /
             Method: post
             RestApiId: !Ref NvaFetchDoiFunctionApi
-
   NvaFetchDoiFunctionBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
     Properties:

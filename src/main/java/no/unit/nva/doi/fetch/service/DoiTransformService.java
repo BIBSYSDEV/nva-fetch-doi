@@ -37,8 +37,6 @@ public class DoiTransformService {
                 .header(AUTHORIZATION, authorization)
                 .post(Entity.entity(dataciteData, APPLICATION_JSON), JsonNode.class);
 
-        System.out.println(response);
-
         return response;
     }
 }

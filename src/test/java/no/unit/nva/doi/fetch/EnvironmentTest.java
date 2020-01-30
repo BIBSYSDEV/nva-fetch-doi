@@ -11,22 +11,24 @@ import static org.junit.Assert.assertFalse;
 
 public class EnvironmentTest {
 
+    public static final String TEST_ENV = "TEST";
+    public static final String TEST_VAL = "test";
     @Rule
     public final EnvironmentVariables environmentVariables
             = new EnvironmentVariables();
 
     @Test
     public void testEnv() {
-        environmentVariables.set("TEST", "test");
+        environmentVariables.set(TEST_ENV, TEST_VAL);
         Environment environment = new Environment();
-        Optional<String> test = environment.get("TEST");
-        assertEquals("test", test.get());
+        Optional<String> test = environment.get(TEST_ENV);
+        assertEquals(TEST_VAL, test.get());
     }
 
     @Test
     public void testNoEnv() {
         Environment environment = new Environment();
-        Optional<String> test = environment.get("TEST");
+        Optional<String> test = environment.get(TEST_ENV);
         assertFalse(test.isPresent());
     }
 
