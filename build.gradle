@@ -19,6 +19,7 @@ dependencies {
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.10.2'
     implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.10.2'
     implementation group: 'org.glassfish.jersey.core', name: 'jersey-client', version: '2.30'
+    implementation group: 'org.glassfish.jersey.inject', name: 'jersey-hk2', version: '2.30'
     implementation group: 'org.glassfish.jersey.media', name: 'jersey-media-json-jackson', version: '2.30'
     implementation group: 'org.zalando', name: 'problem', version: '0.23.0'
     implementation group: 'org.zalando', name: 'jackson-datatype-problem', version: '0.23.0'
