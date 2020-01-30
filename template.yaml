@@ -1,0 +1,100 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  AWS
+
+  Sample SAM Template for AWS
+
+Globals:
+  Function:
+    Timeout: 20
+  Api:
+    Cors:
+      AllowMethods: "'POST,OPTIONS'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      AllowOrigin: "'*'"
+
+Parameters:
+  CognitoAuthorizerArn:
+    Type: String
+    Description: Reference to Cognito UserPool for the stage
+  CustomDomain:
+    Type: String
+    Description: Custom API to connect this lambda to
+  CustomDomainBasePath:
+    Type: String
+    Description: Base path mapping in CustomDomain
+
+Resources:
+  NvaFetchDoiFunctionApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      EndpointConfiguration: REGIONAL
+      DefinitionBody:
+        openapi: 3.0.0
+        info:
+          title: NVA Fetch DOI
+          version: '1.0'
+        paths:
+          /:
+            post:
+              summary: Fetch data from DOI and return summary
+              security:
+                - CognitoUserPool: []
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      type: object
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchDoiFunction.Arn}/invocations
+                responses: {}
+                httpMethod: POST
+                type: AWS_PROXY
+                passthroughBehavior: WHEN_NO_MATCH
+              responses:
+                '200':
+                  content:
+                    application/json:
+                      schema:
+                        type: object
+        components:
+          securitySchemes:
+            CognitoUserPool:
+              type: apiKey
+              name: Authorization
+              in: header
+              x-amazon-apigateway-authtype: cognito_user_pools
+              x-amazon-apigateway-authorizer:
+                type: cognito_user_pools
+                providerARNs:
+                  - !Ref CognitoAuthorizerArn
+  NvaFetchDoiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: no.unit.nva.doi.fetch.MainHandler::handleRequest
+      Runtime: java8
+      MemorySize: 512
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          API_HOST: !Ref CustomDomain
+      Events:
+        NvaDoi:
+          Type: Api
+          Properties:
+            Path: /
+            Method: post
+            RestApiId: !Ref NvaFetchDoiFunctionApi
+
+  NvaFetchDoiFunctionBasePathMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    Properties:
+      BasePath: !Ref CustomDomainBasePath
+      DomainName: !Ref CustomDomain
+      RestApiId: !Ref NvaFetchDoiFunctionApi
+      Stage: !Ref NvaFetchDoiFunctionApi.Stage
