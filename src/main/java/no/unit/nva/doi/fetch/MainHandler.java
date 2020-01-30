@@ -32,6 +32,7 @@ import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.apache.http.entity.ContentType.APPLICATION_JSON;
+import static org.zalando.problem.Status.BAD_GATEWAY;
 import static org.zalando.problem.Status.BAD_REQUEST;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 
@@ -102,7 +103,7 @@ public class MainHandler implements RequestStreamHandler {
         } catch (ProcessingException | WebApplicationException e) {
             System.out.println(e.getMessage());
             objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
-                    Problem.valueOf(INTERNAL_SERVER_ERROR, e.getMessage())), headers(), SC_BAD_GATEWAY));
+                    Problem.valueOf(BAD_GATEWAY, e.getMessage())), headers(), SC_BAD_GATEWAY));
         } catch (Exception e) {
             System.out.println(e.getMessage());
             objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
