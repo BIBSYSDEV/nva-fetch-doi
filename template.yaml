@@ -111,6 +111,7 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
+          API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Events:
         NvaDoi:

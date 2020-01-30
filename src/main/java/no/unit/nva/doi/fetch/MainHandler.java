@@ -40,6 +40,7 @@ public class MainHandler implements RequestStreamHandler {
     public static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
     public static final String ALLOWED_ORIGIN_ENV = "ALLOWED_ORIGIN";
     public static final String API_HOST_ENV = "API_HOST";
+    public static final String API_SCHEME_ENV = "API_SCHEME";
 
     private final transient ObjectMapper objectMapper;
     private final transient PublicationConverter publicationConverter;
@@ -47,6 +48,7 @@ public class MainHandler implements RequestStreamHandler {
     private final transient DoiProxyService doiProxyService;
     private final transient String allowedOrigin;
     private final transient String apiHost;
+    private final transient String apiScheme;
 
     public MainHandler() {
         this(createObjectMapper(), new PublicationConverter(), new DoiTransformService(), new DoiProxyService(),
@@ -68,6 +70,8 @@ public class MainHandler implements RequestStreamHandler {
         this.doiProxyService = doiProxyService;
         this.allowedOrigin = environment.get(ALLOWED_ORIGIN_ENV).orElseThrow(IllegalStateException::new);
         this.apiHost = environment.get(API_HOST_ENV).orElseThrow(IllegalStateException::new);
+        this.apiScheme = environment.get(API_SCHEME_ENV).orElseThrow(IllegalStateException::new);
+
     }
 
     @Override
@@ -88,7 +92,7 @@ public class MainHandler implements RequestStreamHandler {
         }
 
         try {
-            String apiUrl = String.join("://", "https", apiHost);
+            String apiUrl = String.join("://", apiScheme, apiHost);
             JsonNode dataciteData = doiProxyService.lookup(requestBody.getDoiUrl(), apiUrl, authorization);
             JsonNode publication = doiTransformService.transform(dataciteData, apiUrl, authorization);
             UUID identifier = UUID.randomUUID();

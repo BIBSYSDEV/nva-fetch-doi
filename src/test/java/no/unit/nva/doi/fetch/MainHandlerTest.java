@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static no.unit.nva.doi.fetch.MainHandler.ALLOWED_ORIGIN_ENV;
 import static no.unit.nva.doi.fetch.MainHandler.API_HOST_ENV;
+import static no.unit.nva.doi.fetch.MainHandler.API_SCHEME_ENV;
 import static org.apache.http.HttpHeaders.AUTHORIZATION;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
@@ -56,7 +57,9 @@ public class MainHandlerTest {
     public void setUp() {
         environment = Mockito.mock(Environment.class);
         when(environment.get(ALLOWED_ORIGIN_ENV)).thenReturn(Optional.of("*"));
-        when(environment.get(API_HOST_ENV)).thenReturn(Optional.of("http://localhost:3000"));
+        when(environment.get(API_HOST_ENV)).thenReturn(Optional.of("localhost:3000"));
+        when(environment.get(API_SCHEME_ENV)).thenReturn(Optional.of("http"));
+
     }
 
     @Rule
@@ -66,7 +69,8 @@ public class MainHandlerTest {
     @Test
     public void testDefaultConstructor() {
         environmentVariables.set(ALLOWED_ORIGIN_ENV, "*");
-        environmentVariables.set(API_HOST_ENV, "http://localhost:3000");
+        environmentVariables.set(API_HOST_ENV, "localhost:3000");
+        environmentVariables.set(API_SCHEME_ENV, "http");
         MainHandler findChannelFunctionApp = new MainHandler();
         assertNotNull(findChannelFunctionApp);
     }
