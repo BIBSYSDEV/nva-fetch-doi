@@ -1,4 +1,4 @@
-package no.unit.nva.doi.fetch;
+package no.unit.nva.doi.fetch.model;
 
 import java.net.URL;
 

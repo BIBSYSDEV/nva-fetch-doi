@@ -8,7 +8,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import no.unit.nva.doi.fetch.model.RequestBody;
 import no.unit.nva.doi.fetch.model.Summary;
+import no.unit.nva.doi.fetch.service.DoiProxyService;
+import no.unit.nva.doi.fetch.service.DoiTransformService;
+import no.unit.nva.doi.fetch.service.PublicationConverter;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ProblemModule;
 
