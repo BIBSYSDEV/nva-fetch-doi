@@ -47,7 +47,7 @@ Resources:
                 content:
                   application/json:
                     schema:
-                      type: object
+                      $ref: '#/components/schemas/DoiLookup'
               x-amazon-apigateway-integration:
                 uri:
                   Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchDoiFunction.Arn}/invocations
@@ -60,7 +60,7 @@ Resources:
                   content:
                     application/json:
                       schema:
-                        type: object
+                        $ref: '#/components/schemas/Summary'
         components:
           securitySchemes:
             CognitoUserPool:
@@ -72,6 +72,35 @@ Resources:
                 type: cognito_user_pools
                 providerARNs:
                   - !Ref CognitoAuthorizerArn
+          schemas:
+            DoiLookup:
+              type: object
+              properties:
+                doiUrl:
+                  type: string
+              required:
+                - doiUrl
+            Summary:
+              type: object
+              properties:
+                identifier:
+                  type: string
+                title:
+                  type: string
+                creatorName:
+                  type: string
+                date:
+                  type: object
+                  properties:
+                    year:
+                      type: string
+                    month:
+                      type: string
+                    day:
+                      type: string
+              required:
+                - identifier
+                - title
   NvaFetchDoiFunction:
     Type: AWS::Serverless::Function
     Properties:
