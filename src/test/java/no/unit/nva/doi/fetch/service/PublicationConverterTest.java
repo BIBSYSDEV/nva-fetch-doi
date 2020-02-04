@@ -8,7 +8,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.UUID;
 
 import static org.junit.Assert.assertNotNull;
 
@@ -22,7 +21,7 @@ public class PublicationConverterTest {
         JsonNode json = objectMapper.readTree(new File(TEST_FILE));
         PublicationConverter converter = new PublicationConverter();
 
-        Summary summary = converter.toSummary(json, UUID.randomUUID());
+        Summary summary = converter.toSummary(json);
 
         assertNotNull(summary.getIdentifier());
         assertNotNull(summary.getTitle());

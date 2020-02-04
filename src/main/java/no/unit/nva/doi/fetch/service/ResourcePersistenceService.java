@@ -9,34 +9,33 @@ import javax.ws.rs.client.Entity;
 import static javax.ws.rs.core.HttpHeaders.AUTHORIZATION;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
-public class DoiTransformService {
+public class ResourcePersistenceService {
 
-    public static final String PATH = "/doi-transform";
+    public static final String PATH = "/resource";
     private final Client client;
 
-    protected DoiTransformService(Client client) {
+    protected ResourcePersistenceService(Client client) {
         this.client = client;
     }
 
-    public DoiTransformService() {
+    public ResourcePersistenceService() {
         this(ClientBuilder.newClient());
     }
 
     /**
-     * Transform Datacite data to NVA data.
+     * Insert Resource in Database.
      *
-     * @param dataciteData  dataciteData
+     * @param publication  dataciteData
      * @param apiUrl  apiUrl
      * @param authorization authorization
-     * @return  jsonNode
      */
-    public JsonNode transform(JsonNode dataciteData, String apiUrl, String authorization) {
 
-        JsonNode response = client.target(apiUrl).path(PATH)
+    public void insertPublication(JsonNode publication, String apiUrl, String authorization) {
+
+        client.target(apiUrl).path(PATH)
                 .request(APPLICATION_JSON)
                 .header(AUTHORIZATION, authorization)
-                .post(Entity.entity(dataciteData, APPLICATION_JSON), JsonNode.class);
-
-        return response;
+                .post(Entity.entity(publication, APPLICATION_JSON), JsonNode.class);
     }
+
 }

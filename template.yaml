@@ -6,8 +6,6 @@ Description: >
   Sample SAM Template for AWS
 
 Globals:
-  Function:
-    Timeout: 20
   Api:
     Cors:
       AllowMethods: "'POST,OPTIONS'"

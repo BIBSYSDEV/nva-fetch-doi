@@ -13,6 +13,7 @@ import no.unit.nva.doi.fetch.model.Summary;
 import no.unit.nva.doi.fetch.service.DoiProxyService;
 import no.unit.nva.doi.fetch.service.DoiTransformService;
 import no.unit.nva.doi.fetch.service.PublicationConverter;
+import no.unit.nva.doi.fetch.service.ResourcePersistenceService;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ProblemModule;
 
@@ -23,7 +24,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
@@ -49,13 +49,14 @@ public class MainHandler implements RequestStreamHandler {
     private final transient PublicationConverter publicationConverter;
     private final transient DoiTransformService doiTransformService;
     private final transient DoiProxyService doiProxyService;
+    private final transient ResourcePersistenceService resourcePersistenceService;
     private final transient String allowedOrigin;
     private final transient String apiHost;
     private final transient String apiScheme;
 
     public MainHandler() {
         this(createObjectMapper(), new PublicationConverter(), new DoiTransformService(), new DoiProxyService(),
-                new Environment());
+                new ResourcePersistenceService(), new Environment());
     }
 
     /**
@@ -66,11 +67,13 @@ public class MainHandler implements RequestStreamHandler {
      */
     public MainHandler(ObjectMapper objectMapper, PublicationConverter publicationConverter,
                        DoiTransformService doiTransformService, DoiProxyService doiProxyService,
+                       ResourcePersistenceService resourcePersistenceService,
                        Environment environment) {
         this.objectMapper = objectMapper;
         this.publicationConverter = publicationConverter;
         this.doiTransformService = doiTransformService;
         this.doiProxyService = doiProxyService;
+        this.resourcePersistenceService = resourcePersistenceService;
         this.allowedOrigin = environment.get(ALLOWED_ORIGIN_ENV).orElseThrow(IllegalStateException::new);
         this.apiHost = environment.get(API_HOST_ENV).orElseThrow(IllegalStateException::new);
         this.apiScheme = environment.get(API_SCHEME_ENV).orElseThrow(IllegalStateException::new);
@@ -96,10 +99,13 @@ public class MainHandler implements RequestStreamHandler {
 
         try {
             String apiUrl = String.join("://", apiScheme, apiHost);
+
             JsonNode dataciteData = doiProxyService.lookup(requestBody.getDoiUrl(), apiUrl, authorization);
             JsonNode publication = doiTransformService.transform(dataciteData, apiUrl, authorization);
-            UUID identifier = UUID.randomUUID();
-            Summary summary = publicationConverter.toSummary(publication, identifier);
+            resourcePersistenceService.insertPublication(publication, apiUrl, authorization);
+
+            Summary summary = publicationConverter.toSummary(publication);
+
             objectMapper.writeValue(output, new GatewayResponse<>(
                     objectMapper.writeValueAsString(summary), headers(), SC_OK));
         } catch (ProcessingException | WebApplicationException e) {
