@@ -8,6 +8,7 @@ import no.unit.nva.doi.fetch.model.Summary;
 import no.unit.nva.doi.fetch.service.DoiProxyService;
 import no.unit.nva.doi.fetch.service.DoiTransformService;
 import no.unit.nva.doi.fetch.service.PublicationConverter;
+import no.unit.nva.doi.fetch.service.ResourcePersistenceService;
 import org.apache.http.entity.ContentType;
 import org.junit.Assert;
 import org.junit.Before;
@@ -78,12 +79,13 @@ public class MainHandlerTest {
     @Test
     public void testOkResponse() throws IOException {
         PublicationConverter publicationConverter = mock(PublicationConverter.class);
-        when(publicationConverter.toSummary(any(), any())).thenReturn(createSummary());
+        when(publicationConverter.toSummary(any())).thenReturn(createSummary());
         DoiTransformService doiTransformService = mock(DoiTransformService.class);
         DoiProxyService doiProxyService = mock(DoiProxyService.class);
+        ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
         Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
-                doiProxyService, environment);
+                doiProxyService, resourcePersistenceService, environment);
         OutputStream output = new ByteArrayOutputStream();
 
         mainHandler.handleRequest(inputStream(), output, context);
@@ -114,9 +116,10 @@ public class MainHandlerTest {
         PublicationConverter publicationConverter = mock(PublicationConverter.class);
         DoiTransformService doiTransformService = mock(DoiTransformService.class);
         DoiProxyService doiProxyService = mock(DoiProxyService.class);
+        ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
         Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
-                doiProxyService, environment);
+                doiProxyService, resourcePersistenceService, environment);
         OutputStream output = new ByteArrayOutputStream();
 
 
@@ -129,12 +132,13 @@ public class MainHandlerTest {
     @Test
     public  void testInternalServerErrorResponse() throws IOException {
         PublicationConverter publicationConverter = mock(PublicationConverter.class);
-        when(publicationConverter.toSummary(any(), any())).thenThrow(new RuntimeException());
+        when(publicationConverter.toSummary(any())).thenThrow(new RuntimeException());
         DoiTransformService doiTransformService = mock(DoiTransformService.class);
         DoiProxyService doiProxyService = mock(DoiProxyService.class);
+        ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
         Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
-                doiProxyService, environment);
+                doiProxyService, resourcePersistenceService, environment);
         OutputStream output = new ByteArrayOutputStream();
 
 
@@ -147,12 +151,13 @@ public class MainHandlerTest {
     @Test
     public  void testBadGatewayErrorResponse() throws IOException {
         PublicationConverter publicationConverter = mock(PublicationConverter.class);
-        when(publicationConverter.toSummary(any(), any())).thenThrow(new WebApplicationException());
+        when(publicationConverter.toSummary(any())).thenThrow(new WebApplicationException());
         DoiTransformService doiTransformService = mock(DoiTransformService.class);
         DoiProxyService doiProxyService = mock(DoiProxyService.class);
+        ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
         Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
-                doiProxyService, environment);
+                doiProxyService, resourcePersistenceService, environment);
         OutputStream output = new ByteArrayOutputStream();
 
 

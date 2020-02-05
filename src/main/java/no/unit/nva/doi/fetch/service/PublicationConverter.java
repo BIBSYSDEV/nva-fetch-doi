@@ -9,6 +9,7 @@ import java.util.UUID;
 
 public class PublicationConverter {
 
+    public static final String IDENTIFIER = "/identifier";
     public static final String ENTITY_DESCRIPTION_CONTRIBUTORS_0_NAME = "/entityDescription/contributors/0/name";
     public static final String ENTITY_DESCRIPTION_TITLES = "/entityDescription/titles/";
     public static final String ENTITY_DESCRIPTION_DATE_YEAR = "/entityDescription/date/year";
@@ -19,12 +20,12 @@ public class PublicationConverter {
      * Convert Publication JSON to Summary.
      *
      * @param json  json
-     * @param identifier    identifier
      * @return  summary
      */
-    public Summary toSummary(JsonNode json, UUID identifier) {
+    public Summary toSummary(JsonNode json) {
         return new Summary.Builder()
-                .withIdentifier(identifier)
+                .withIdentifier(UUID.fromString(Optional.ofNullable(json.at(IDENTIFIER).textValue())
+                        .orElse(UUID.randomUUID().toString())))
                 .withCreatorName(Optional.ofNullable(json.at(ENTITY_DESCRIPTION_CONTRIBUTORS_0_NAME).textValue())
                         .orElse(null))
                 .withTitle(Optional.ofNullable(json.at(ENTITY_DESCRIPTION_TITLES).textValue()).orElse(null))

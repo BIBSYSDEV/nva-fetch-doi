@@ -13,7 +13,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class DoiTransformServiceTest {
+public class ResourcePersistenceServiceTest {
 
     private ObjectMapper objectMapper = MainHandler.createObjectMapper();
 
@@ -29,9 +29,9 @@ public class DoiTransformServiceTest {
         when(builder.header(anyString(),anyString())).thenReturn(builder);
         when(builder.post(any(), (Class<Object>) any())).thenReturn(null);
 
-        DoiTransformService doiTransformService = new DoiTransformService(client);
+        ResourcePersistenceService resourcePersistenceService = new ResourcePersistenceService(client);
 
-        doiTransformService.transform(objectMapper.createObjectNode(), "http://example.org", "some api key");
+        resourcePersistenceService.insertPublication(objectMapper.createObjectNode(), "http://example.org", "some api key");
     }
 
 }
