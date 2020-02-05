@@ -11,7 +11,7 @@ public class PublicationConverter {
 
     public static final String IDENTIFIER = "/identifier";
     public static final String ENTITY_DESCRIPTION_CONTRIBUTORS_0_NAME = "/entityDescription/contributors/0/name";
-    public static final String ENTITY_DESCRIPTION_TITLES = "/entityDescription/titles/";
+    public static final String ENTITY_DESCRIPTION_MAIN_TITLE = "/entityDescription/mainTitle";
     public static final String ENTITY_DESCRIPTION_DATE_YEAR = "/entityDescription/date/year";
     public static final String ENTITY_DESCRIPTION_DATE_MONTH = "/entityDescription/date/month";
     public static final String ENTITY_DESCRIPTION_DATE_DAY = "/entityDescription/date/day";
@@ -28,7 +28,7 @@ public class PublicationConverter {
                         .orElse(UUID.randomUUID().toString())))
                 .withCreatorName(Optional.ofNullable(json.at(ENTITY_DESCRIPTION_CONTRIBUTORS_0_NAME).textValue())
                         .orElse(null))
-                .withTitle(Optional.ofNullable(json.at(ENTITY_DESCRIPTION_TITLES).textValue()).orElse(null))
+                .withTitle(Optional.ofNullable(json.at(ENTITY_DESCRIPTION_MAIN_TITLE).textValue()).orElse(null))
                 .withDate(new PublicationDate.Builder()
                         .withYear(Optional.ofNullable(json.at(ENTITY_DESCRIPTION_DATE_YEAR).textValue())
                                 .orElse(null))

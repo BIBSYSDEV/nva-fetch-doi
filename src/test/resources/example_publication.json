@@ -6,9 +6,7 @@
   "identifier": "4d96e658-c2e0-4f23-9f1d-ccae0c770ecd",
   "entityDescription": {
     "type": "JournalArticle",
-    "titles": {
-      "": "Toward unique identifiers"
-    },
+    "mainTitle": "Toward unique identifiers",
     "date": {
       "year": "1999"
     },
