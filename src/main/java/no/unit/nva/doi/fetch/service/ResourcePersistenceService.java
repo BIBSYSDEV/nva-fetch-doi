@@ -31,7 +31,6 @@ public class ResourcePersistenceService {
      */
 
     public void insertPublication(JsonNode publication, String apiUrl, String authorization) {
-
         client.target(apiUrl).path(PATH)
                 .request(APPLICATION_JSON)
                 .header(AUTHORIZATION, authorization)

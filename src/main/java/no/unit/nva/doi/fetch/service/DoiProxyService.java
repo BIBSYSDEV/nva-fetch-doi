@@ -35,12 +35,9 @@ public class DoiProxyService {
      * @return  jsonNode
      */
     public JsonNode lookup(URL doiUrl, String apiUrl, String authorization) {
-
-        JsonNode response = client.target(apiUrl).path(PATH)
+        return client.target(apiUrl).path(PATH)
                 .request(DATACITE_JSON)
                 .header(AUTHORIZATION, authorization)
                 .post(Entity.entity(singletonMap(DOI_URL, doiUrl), APPLICATION_JSON), JsonNode.class);
-
-        return response;
     }
 }

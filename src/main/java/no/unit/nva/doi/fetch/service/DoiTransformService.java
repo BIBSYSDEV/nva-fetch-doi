@@ -31,12 +31,9 @@ public class DoiTransformService {
      * @return  jsonNode
      */
     public JsonNode transform(JsonNode dataciteData, String apiUrl, String authorization) {
-
-        JsonNode response = client.target(apiUrl).path(PATH)
+        return client.target(apiUrl).path(PATH)
                 .request(APPLICATION_JSON)
                 .header(AUTHORIZATION, authorization)
                 .post(Entity.entity(dataciteData, APPLICATION_JSON), JsonNode.class);
-
-        return response;
     }
 }
