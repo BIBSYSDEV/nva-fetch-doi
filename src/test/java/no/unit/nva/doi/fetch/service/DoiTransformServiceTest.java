@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Invocation;
@@ -29,7 +30,9 @@ public class DoiTransformServiceTest {
         when(builder.post(any(), (Class<Object>) any())).thenReturn(null);
 
         DoiTransformService doiTransformService = new DoiTransformService(client);
-
-        doiTransformService.transform(objectMapper.createObjectNode(), "http://example.org", "some api key");
+        JsonNode sampleJson = objectMapper.createObjectNode();
+        String someContentLocation = "www.somecontentlocation.org";
+        DoiProxyResponse doiProxyResponse = new DoiProxyResponse(sampleJson, someContentLocation);
+        doiTransformService.transform(doiProxyResponse, "http://example.org", "some api key");
     }
 }

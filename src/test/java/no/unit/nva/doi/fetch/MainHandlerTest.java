@@ -1,5 +1,6 @@
 package no.unit.nva.doi.fetch;
 
+import static no.bibsys.aws.tools.JsonUtils.jsonParser;
 import static no.unit.nva.doi.fetch.MainHandler.ALLOWED_ORIGIN_ENV;
 import static no.unit.nva.doi.fetch.MainHandler.API_HOST_ENV;
 import static no.unit.nva.doi.fetch.MainHandler.API_SCHEME_ENV;
@@ -12,12 +13,15 @@ import static org.apache.http.HttpStatus.SC_OK;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.amazonaws.services.lambda.runtime.CognitoIdentity;
 import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -32,10 +36,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.ws.rs.WebApplicationException;
 import no.unit.nva.doi.fetch.model.PublicationDate;
 import no.unit.nva.doi.fetch.model.Summary;
+import no.unit.nva.doi.fetch.service.DoiProxyResponse;
 import no.unit.nva.doi.fetch.service.DoiProxyService;
 import no.unit.nva.doi.fetch.service.DoiTransformService;
 import no.unit.nva.doi.fetch.service.PublicationConverter;
 import no.unit.nva.doi.fetch.service.ResourcePersistenceService;
+import no.unit.nva.doi.fetch.service.exceptions.NoContentLocationFoundException;
 import org.apache.http.entity.ContentType;
 import org.junit.Assert;
 import org.junit.Before;
@@ -46,8 +52,11 @@ import org.mockito.Mockito;
 
 public class MainHandlerTest {
 
+    public static final String SOME_METADATA_SOURCE = "SomeMetadataSource";
+    @Rule
+    public final EnvironmentVariables environmentVariables
+        = new EnvironmentVariables();
     private ObjectMapper objectMapper = MainHandler.createObjectMapper();
-
     private Environment environment;
 
     /**
@@ -61,10 +70,6 @@ public class MainHandlerTest {
         when(environment.get(API_SCHEME_ENV)).thenReturn(Optional.of("http"));
     }
 
-    @Rule
-    public final EnvironmentVariables environmentVariables
-        = new EnvironmentVariables();
-
     @Test
     public void testDefaultConstructor() {
         environmentVariables.set(ALLOWED_ORIGIN_ENV, "*");
@@ -75,15 +80,14 @@ public class MainHandlerTest {
     }
 
     @Test
-    public void testOkResponse() throws IOException {
-        PublicationConverter publicationConverter = mock(PublicationConverter.class);
-        when(publicationConverter.toSummary(any())).thenReturn(createSummary());
-        DoiTransformService doiTransformService = mock(DoiTransformService.class);
-        DoiProxyService doiProxyService = mock(DoiProxyService.class);
+    public void testOkResponse() throws IOException, NoContentLocationFoundException {
+        PublicationConverter publicationConverter = mockPublicationConverter();
+        DoiTransformService doiTransformService = mockDoiTransformService();
+        DoiProxyService doiProxyService = mockDoiProxyService();
         ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
         Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
-                                                  doiProxyService, resourcePersistenceService, environment);
+            doiProxyService, resourcePersistenceService, environment);
         OutputStream output = new ByteArrayOutputStream();
 
         mainHandler.handleRequest(inputStream(), output, context);
@@ -93,8 +97,34 @@ public class MainHandlerTest {
         Assert.assertTrue(gatewayResponse.getHeaders().keySet().contains(CONTENT_TYPE));
         Assert.assertTrue(gatewayResponse.getHeaders().keySet().contains(MainHandler.ACCESS_CONTROL_ALLOW_ORIGIN));
         Summary summary = objectMapper.readValue(gatewayResponse.getBody().toString(),
-                                                 Summary.class);
+            Summary.class);
         assertNotNull(summary.getIdentifier());
+    }
+
+    private PublicationConverter mockPublicationConverter() {
+        PublicationConverter publicationConverter = mock(PublicationConverter.class);
+        when(publicationConverter.toSummary(any())).thenReturn(createSummary());
+        return publicationConverter;
+    }
+
+    private DoiTransformService mockDoiTransformService() {
+        DoiTransformService service = mock(DoiTransformService.class);
+        ObjectNode sampleNode = jsonParser.createObjectNode();
+        when(service.transform(any(), anyString(), anyString())).thenReturn(sampleNode);
+        return service;
+    }
+
+    private DoiProxyService mockDoiProxyService() throws NoContentLocationFoundException {
+        DoiProxyService doiProxyService = mock(DoiProxyService.class);
+        when(doiProxyService.lookup(any(), anyString(), anyString()))
+            .thenReturn(mockDoiProxyResponse());
+        return doiProxyService;
+    }
+
+    private Optional<DoiProxyResponse> mockDoiProxyResponse() {
+        JsonNode sampleNode = jsonParser.createObjectNode();
+        DoiProxyResponse doiProxyResponse = new DoiProxyResponse(sampleNode, SOME_METADATA_SOURCE);
+        return Optional.of(doiProxyResponse);
     }
 
     private Summary createSummary() {
@@ -103,20 +133,20 @@ public class MainHandlerTest {
             .withTitle("Title on publication")
             .withCreatorName("Name, Creator")
             .withDate(new PublicationDate.Builder()
-                          .withYear("2020")
-                          .build())
+                .withYear("2020")
+                .build())
             .build();
     }
 
     @Test
     public void testBadRequestResponse() throws IOException {
         PublicationConverter publicationConverter = mock(PublicationConverter.class);
-        DoiTransformService doiTransformService = mock(DoiTransformService.class);
+        DoiTransformService doiTransformService = mockDoiTransformService();
         DoiProxyService doiProxyService = mock(DoiProxyService.class);
         ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
         Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
-                                                  doiProxyService, resourcePersistenceService, environment);
+            doiProxyService, resourcePersistenceService, environment);
         OutputStream output = new ByteArrayOutputStream();
 
         mainHandler.handleRequest(new ByteArrayInputStream(new byte[0]), output, context);
@@ -126,15 +156,15 @@ public class MainHandlerTest {
     }
 
     @Test
-    public void testInternalServerErrorResponse() throws IOException {
+    public void testInternalServerErrorResponse() throws IOException, NoContentLocationFoundException {
         PublicationConverter publicationConverter = mock(PublicationConverter.class);
         when(publicationConverter.toSummary(any())).thenThrow(new RuntimeException());
-        DoiTransformService doiTransformService = mock(DoiTransformService.class);
-        DoiProxyService doiProxyService = mock(DoiProxyService.class);
+        DoiTransformService doiTransformService = mockDoiTransformService();
+        DoiProxyService doiProxyService = mockDoiProxyService();
         ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
         Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
-                                                  doiProxyService, resourcePersistenceService, environment);
+            doiProxyService, resourcePersistenceService, environment);
         OutputStream output = new ByteArrayOutputStream();
 
         mainHandler.handleRequest(inputStream(), output, context);
@@ -147,12 +177,12 @@ public class MainHandlerTest {
     public void testBadGatewayErrorResponse() throws IOException {
         PublicationConverter publicationConverter = mock(PublicationConverter.class);
         when(publicationConverter.toSummary(any())).thenThrow(new WebApplicationException());
-        DoiTransformService doiTransformService = mock(DoiTransformService.class);
+        DoiTransformService doiTransformService = mockDoiTransformService();
         DoiProxyService doiProxyService = mock(DoiProxyService.class);
         ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
         Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
-                                                  doiProxyService, resourcePersistenceService, environment);
+            doiProxyService, resourcePersistenceService, environment);
         OutputStream output = new ByteArrayOutputStream();
 
         mainHandler.handleRequest(inputStream(), output, context);
@@ -160,6 +190,10 @@ public class MainHandlerTest {
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
         assertEquals(SC_BAD_GATEWAY, gatewayResponse.getStatusCode());
     }
+
+
+
+
 
     private Context getMockContext() {
         Context context = mock(Context.class);

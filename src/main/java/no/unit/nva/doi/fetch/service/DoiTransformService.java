@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
-import no.unit.nva.doi.fetch.service.DoiProxyService.DoiProxyResponse;
 
 public class DoiTransformService {
 

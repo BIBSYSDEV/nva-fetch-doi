@@ -32,6 +32,7 @@ import no.unit.nva.doi.fetch.service.DoiProxyService;
 import no.unit.nva.doi.fetch.service.DoiTransformService;
 import no.unit.nva.doi.fetch.service.PublicationConverter;
 import no.unit.nva.doi.fetch.service.ResourcePersistenceService;
+import no.unit.nva.doi.fetch.service.exceptions.NoContentLocationFoundException;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ProblemModule;
 
@@ -43,6 +44,7 @@ public class MainHandler implements RequestStreamHandler {
     public static final String API_SCHEME_ENV = "API_SCHEME";
     public static final String HEADERS_AUTHORIZATION = "/headers/Authorization";
     public static final String BODY = "body";
+    public static final String ERROR_READING_METADATA = "Could not get publication metadata";
 
     private final transient ObjectMapper objectMapper;
     private final transient PublicationConverter publicationConverter;
@@ -55,7 +57,7 @@ public class MainHandler implements RequestStreamHandler {
 
     public MainHandler() {
         this(createObjectMapper(), new PublicationConverter(), new DoiTransformService(), new DoiProxyService(),
-             new ResourcePersistenceService(), new Environment());
+            new ResourcePersistenceService(), new Environment());
     }
 
     /**
@@ -78,6 +80,25 @@ public class MainHandler implements RequestStreamHandler {
         this.apiScheme = environment.get(API_SCHEME_ENV).orElseThrow(IllegalStateException::new);
     }
 
+    /**
+     * Create ObjectMapper.
+     *
+     * @return objectMapper
+     */
+    public static ObjectMapper createObjectMapper() {
+        return new ObjectMapper()
+            .registerModule(new ProblemModule())
+            .registerModule(new JavaTimeModule())
+            .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+            .configure(SerializationFeature.INDENT_OUTPUT, true)
+            .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    }
+
+    public static void log(String message) {
+        System.out.println(message);
+    }
+
     @Override
     public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
         RequestBody requestBody;
@@ -98,11 +119,11 @@ public class MainHandler implements RequestStreamHandler {
         try {
             String apiUrl = String.join("://", apiScheme, apiHost);
 
-            Optional<JsonNode> publication =
-                getPublicationMetadata(requestBody, authorization, apiUrl);
-
-            publication.ifPresent(p ->
-                                      resourcePersistenceService.insertPublication(p, apiUrl, authorization));
+            Optional<JsonNode> publication = getPublicationMetadata(requestBody, authorization, apiUrl);
+            publication.ifPresentOrElse(p -> insertPublication(authorization, apiUrl, p),
+                () -> {
+                    throw new WebApplicationException(ERROR_READING_METADATA);
+                });
 
             Optional<Summary> summary = publication.map(publicationConverter::toSummary);
             writeSummaryToOutput(output, summary);
@@ -115,6 +136,10 @@ public class MainHandler implements RequestStreamHandler {
             objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
                 Problem.valueOf(INTERNAL_SERVER_ERROR, e.getMessage())), headers(), SC_INTERNAL_SERVER_ERROR));
         }
+    }
+
+    private void insertPublication(String authorization, String apiUrl, JsonNode p) {
+        resourcePersistenceService.insertPublication(p, apiUrl, authorization);
     }
 
     private void writeSummaryToOutput(OutputStream output, Optional<Summary> summary) throws IOException {
@@ -130,7 +155,7 @@ public class MainHandler implements RequestStreamHandler {
     }
 
     private Optional<JsonNode> getPublicationMetadata(RequestBody requestBody, String authorization,
-                                                      String apiUrl) {
+                                                      String apiUrl) throws NoContentLocationFoundException {
         return doiProxyService.lookup(requestBody.getDoiUrl(), apiUrl, authorization)
                               .map(response -> doiTransformService.transform(response, apiUrl, authorization));
     }
@@ -140,24 +165,5 @@ public class MainHandler implements RequestStreamHandler {
         headers.put(ACCESS_CONTROL_ALLOW_ORIGIN, allowedOrigin);
         headers.put(CONTENT_TYPE, APPLICATION_JSON.getMimeType());
         return headers;
-    }
-
-    /**
-     * Create ObjectMapper.
-     *
-     * @return objectMapper
-     */
-    public static ObjectMapper createObjectMapper() {
-        return new ObjectMapper()
-            .registerModule(new ProblemModule())
-            .registerModule(new JavaTimeModule())
-            .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
-            .configure(SerializationFeature.INDENT_OUTPUT, true)
-            .setSerializationInclusion(JsonInclude.Include.NON_NULL)
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    }
-
-    public static void log(String message) {
-        System.out.println(message);
     }
 }
