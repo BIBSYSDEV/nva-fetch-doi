@@ -1,31 +1,5 @@
 package no.unit.nva.doi.fetch;
 
-import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import no.unit.nva.doi.fetch.model.RequestBody;
-import no.unit.nva.doi.fetch.model.Summary;
-import no.unit.nva.doi.fetch.service.DoiProxyService;
-import no.unit.nva.doi.fetch.service.DoiTransformService;
-import no.unit.nva.doi.fetch.service.PublicationConverter;
-import no.unit.nva.doi.fetch.service.ResourcePersistenceService;
-import org.zalando.problem.Problem;
-import org.zalando.problem.ProblemModule;
-
-import javax.ws.rs.ProcessingException;
-import javax.ws.rs.WebApplicationException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -35,6 +9,31 @@ import static org.apache.http.entity.ContentType.APPLICATION_JSON;
 import static org.zalando.problem.Status.BAD_GATEWAY;
 import static org.zalando.problem.Status.BAD_REQUEST;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
+
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import javax.ws.rs.ProcessingException;
+import javax.ws.rs.WebApplicationException;
+import no.unit.nva.doi.fetch.model.RequestBody;
+import no.unit.nva.doi.fetch.model.Summary;
+import no.unit.nva.doi.fetch.service.DoiProxyService;
+import no.unit.nva.doi.fetch.service.DoiTransformService;
+import no.unit.nva.doi.fetch.service.PublicationConverter;
+import no.unit.nva.doi.fetch.service.ResourcePersistenceService;
+import org.zalando.problem.Problem;
+import org.zalando.problem.ProblemModule;
 
 public class MainHandler implements RequestStreamHandler {
 
@@ -56,14 +55,14 @@ public class MainHandler implements RequestStreamHandler {
 
     public MainHandler() {
         this(createObjectMapper(), new PublicationConverter(), new DoiTransformService(), new DoiProxyService(),
-                new ResourcePersistenceService(), new Environment());
+             new ResourcePersistenceService(), new Environment());
     }
 
     /**
      * Constructor for MainHandler.
      *
-     * @param objectMapper  objectMapper
-     * @param environment   environment
+     * @param objectMapper objectMapper
+     * @param environment  environment
      */
     public MainHandler(ObjectMapper objectMapper, PublicationConverter publicationConverter,
                        DoiTransformService doiTransformService, DoiProxyService doiProxyService,
@@ -77,7 +76,6 @@ public class MainHandler implements RequestStreamHandler {
         this.allowedOrigin = environment.get(ALLOWED_ORIGIN_ENV).orElseThrow(IllegalStateException::new);
         this.apiHost = environment.get(API_HOST_ENV).orElseThrow(IllegalStateException::new);
         this.apiScheme = environment.get(API_SCHEME_ENV).orElseThrow(IllegalStateException::new);
-
     }
 
     @Override
@@ -87,40 +85,58 @@ public class MainHandler implements RequestStreamHandler {
         try {
             JsonNode event = objectMapper.readTree(input);
             authorization = Optional.ofNullable(event.at(HEADERS_AUTHORIZATION).textValue())
-                    .orElseThrow(IllegalArgumentException::new);
+                                    .orElseThrow(IllegalArgumentException::new);
             String body = event.get(BODY).textValue();
             requestBody = objectMapper.readValue(body, RequestBody.class);
         } catch (Exception e) {
             log(e.getMessage());
             objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
-                    Problem.valueOf(BAD_REQUEST, e.getMessage())), headers(), SC_BAD_REQUEST));
+                Problem.valueOf(BAD_REQUEST, e.getMessage())), headers(), SC_BAD_REQUEST));
             return;
         }
 
         try {
             String apiUrl = String.join("://", apiScheme, apiHost);
 
-            JsonNode dataciteData = doiProxyService.lookup(requestBody.getDoiUrl(), apiUrl, authorization);
-            JsonNode publication = doiTransformService.transform(dataciteData, apiUrl, authorization);
-            resourcePersistenceService.insertPublication(publication, apiUrl, authorization);
+            Optional<JsonNode> publication =
+                getPublicationMetadata(requestBody, authorization, apiUrl);
 
-            Summary summary = publicationConverter.toSummary(publication);
+            publication.ifPresent(p ->
+                                      resourcePersistenceService.insertPublication(p, apiUrl, authorization));
 
-            objectMapper.writeValue(output, new GatewayResponse<>(
-                    objectMapper.writeValueAsString(summary), headers(), SC_OK));
+            Optional<Summary> summary = publication.map(publicationConverter::toSummary);
+            writeSummaryToOutput(output, summary);
         } catch (ProcessingException | WebApplicationException e) {
             log(e.getMessage());
             objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
-                    Problem.valueOf(BAD_GATEWAY, e.getMessage())), headers(), SC_BAD_GATEWAY));
+                Problem.valueOf(BAD_GATEWAY, e.getMessage())), headers(), SC_BAD_GATEWAY));
         } catch (Exception e) {
             log(e.getMessage());
             objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
-                    Problem.valueOf(INTERNAL_SERVER_ERROR, e.getMessage())), headers(), SC_INTERNAL_SERVER_ERROR));
+                Problem.valueOf(INTERNAL_SERVER_ERROR, e.getMessage())), headers(), SC_INTERNAL_SERVER_ERROR));
         }
     }
 
-    private Map<String,String> headers() {
-        Map<String,String> headers = new ConcurrentHashMap<>();
+    private void writeSummaryToOutput(OutputStream output, Optional<Summary> summary) throws IOException {
+        if (summary.isPresent()) {
+            Summary s = summary.get();
+            writeOutput(output, s);
+        }
+    }
+
+    private void writeOutput(OutputStream output, Summary summary) throws IOException {
+        objectMapper.writeValue(output, new GatewayResponse<>(
+            objectMapper.writeValueAsString(summary), headers(), SC_OK));
+    }
+
+    private Optional<JsonNode> getPublicationMetadata(RequestBody requestBody, String authorization,
+                                                      String apiUrl) {
+        return doiProxyService.lookup(requestBody.getDoiUrl(), apiUrl, authorization)
+                              .map(response -> doiTransformService.transform(response, apiUrl, authorization));
+    }
+
+    private Map<String, String> headers() {
+        Map<String, String> headers = new ConcurrentHashMap<>();
         headers.put(ACCESS_CONTROL_ALLOW_ORIGIN, allowedOrigin);
         headers.put(CONTENT_TYPE, APPLICATION_JSON.getMimeType());
         return headers;
@@ -129,21 +145,19 @@ public class MainHandler implements RequestStreamHandler {
     /**
      * Create ObjectMapper.
      *
-     * @return  objectMapper
+     * @return objectMapper
      */
     public static ObjectMapper createObjectMapper() {
         return new ObjectMapper()
-                .registerModule(new ProblemModule())
-                .registerModule(new JavaTimeModule())
-                .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
-                .configure(SerializationFeature.INDENT_OUTPUT, true)
-                .setSerializationInclusion(JsonInclude.Include.NON_NULL)
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            .registerModule(new ProblemModule())
+            .registerModule(new JavaTimeModule())
+            .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+            .configure(SerializationFeature.INDENT_OUTPUT, true)
+            .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     public static void log(String message) {
         System.out.println(message);
     }
-
-
 }

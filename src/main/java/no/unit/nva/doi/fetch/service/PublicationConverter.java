@@ -1,11 +1,10 @@
 package no.unit.nva.doi.fetch.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import no.unit.nva.doi.fetch.model.PublicationDate;
-import no.unit.nva.doi.fetch.model.Summary;
-
 import java.util.Optional;
 import java.util.UUID;
+import no.unit.nva.doi.fetch.model.PublicationDate;
+import no.unit.nva.doi.fetch.model.Summary;
 
 public class PublicationConverter {
 
@@ -19,26 +18,24 @@ public class PublicationConverter {
     /**
      * Convert Publication JSON to Summary.
      *
-     * @param json  json
-     * @return  summary
+     * @param json json
+     * @return summary
      */
     public Summary toSummary(JsonNode json) {
         return new Summary.Builder()
-                .withIdentifier(UUID.fromString(Optional.ofNullable(json.at(IDENTIFIER).textValue())
-                        .orElse(UUID.randomUUID().toString())))
-                .withCreatorName(Optional.ofNullable(json.at(ENTITY_DESCRIPTION_CONTRIBUTORS_0_NAME).textValue())
-                        .orElse(null))
-                .withTitle(Optional.ofNullable(json.at(ENTITY_DESCRIPTION_MAIN_TITLE).textValue()).orElse(null))
-                .withDate(new PublicationDate.Builder()
-                        .withYear(Optional.ofNullable(json.at(ENTITY_DESCRIPTION_DATE_YEAR).textValue())
-                                .orElse(null))
-                        .withMonth(Optional.ofNullable(json.at(ENTITY_DESCRIPTION_DATE_MONTH).textValue())
-                                .orElse(null))
-                        .withDay(Optional.ofNullable(json.at(ENTITY_DESCRIPTION_DATE_DAY).textValue())
-                                .orElse(null))
-                        .build())
-                .build();
+            .withIdentifier(UUID.fromString(Optional.ofNullable(json.at(IDENTIFIER).textValue())
+                                                    .orElse(UUID.randomUUID().toString())))
+            .withCreatorName(Optional.ofNullable(json.at(ENTITY_DESCRIPTION_CONTRIBUTORS_0_NAME).textValue())
+                                     .orElse(null))
+            .withTitle(Optional.ofNullable(json.at(ENTITY_DESCRIPTION_MAIN_TITLE).textValue()).orElse(null))
+            .withDate(new PublicationDate.Builder()
+                          .withYear(Optional.ofNullable(json.at(ENTITY_DESCRIPTION_DATE_YEAR).textValue())
+                                            .orElse(null))
+                          .withMonth(Optional.ofNullable(json.at(ENTITY_DESCRIPTION_DATE_MONTH).textValue())
+                                             .orElse(null))
+                          .withDay(Optional.ofNullable(json.at(ENTITY_DESCRIPTION_DATE_DAY).textValue())
+                                           .orElse(null))
+                          .build())
+            .build();
     }
-
-
 }

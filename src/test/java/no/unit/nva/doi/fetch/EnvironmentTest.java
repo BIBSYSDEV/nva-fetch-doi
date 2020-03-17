@@ -1,13 +1,12 @@
 package no.unit.nva.doi.fetch;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+
+import java.util.Optional;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.EnvironmentVariables;
-
-import java.util.Optional;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 public class EnvironmentTest {
 
@@ -15,7 +14,7 @@ public class EnvironmentTest {
     public static final String TEST_VAL = "test";
     @Rule
     public final EnvironmentVariables environmentVariables
-            = new EnvironmentVariables();
+        = new EnvironmentVariables();
 
     @Test
     public void testEnv() {
@@ -31,5 +30,4 @@ public class EnvironmentTest {
         Optional<String> test = environment.get(TEST_ENV);
         assertFalse(test.isPresent());
     }
-
 }

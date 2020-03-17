@@ -52,8 +52,8 @@ public class Summary {
         this.date = date;
     }
 
-
     public static final class Builder {
+
         private UUID identifier;
         private String title;
         private String creatorName;

@@ -7,8 +7,8 @@ public class Environment {
     /**
      * Get environment variable.
      *
-     * @param name  name of environment variable
-     * @return  optional with value of environment variable
+     * @param name name of environment variable
+     * @return optional with value of environment variable
      */
     public Optional<String> get(String name) {
         String environmentVariable = System.getenv(name);
@@ -17,6 +17,6 @@ public class Environment {
             return Optional.empty();
         }
 
-        return  Optional.of(environmentVariable);
+        return Optional.of(environmentVariable);
     }
 }
