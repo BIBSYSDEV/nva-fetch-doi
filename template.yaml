@@ -115,7 +115,7 @@ Resources:
     Properties:
       CodeUri: .
       Handler: no.unit.nva.doi.fetch.MainHandler::handleRequest
-      Runtime: java8
+      Runtime: java11
       MemorySize: 512
       Environment:
         Variables:
