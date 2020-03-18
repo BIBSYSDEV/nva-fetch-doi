@@ -191,10 +191,6 @@ public class MainHandlerTest {
         assertEquals(SC_BAD_GATEWAY, gatewayResponse.getStatusCode());
     }
 
-
-
-
-
     private Context getMockContext() {
         Context context = mock(Context.class);
         CognitoIdentity cognitoIdentity = mock(CognitoIdentity.class);
