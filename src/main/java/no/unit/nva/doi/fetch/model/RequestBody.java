@@ -7,7 +7,6 @@ public class RequestBody {
     private URL doiUrl;
 
     public RequestBody() {
-
     }
 
     public URL getDoiUrl() {
