@@ -45,6 +45,8 @@ public class MainHandler implements RequestStreamHandler {
     public static final String HEADERS_AUTHORIZATION = "/headers/Authorization";
     public static final String BODY = "body";
     public static final String ERROR_READING_METADATA = "Could not get publication metadata";
+    public static final String MISSING_HEADER = "Missing header:";
+    private static final String APPLICATION_PROBLEM_JSON = "application/problem+json";
 
     private final transient ObjectMapper objectMapper;
     private final transient PublicationConverter publicationConverter;
@@ -75,9 +77,9 @@ public class MainHandler implements RequestStreamHandler {
         this.doiTransformService = doiTransformService;
         this.doiProxyService = doiProxyService;
         this.resourcePersistenceService = resourcePersistenceService;
-        this.allowedOrigin = environment.get(ALLOWED_ORIGIN_ENV).orElseThrow(IllegalStateException::new);
-        this.apiHost = environment.get(API_HOST_ENV).orElseThrow(IllegalStateException::new);
-        this.apiScheme = environment.get(API_SCHEME_ENV).orElseThrow(IllegalStateException::new);
+        this.allowedOrigin = environment.get(ALLOWED_ORIGIN_ENV);
+        this.apiHost = environment.get(API_HOST_ENV);
+        this.apiScheme = environment.get(API_SCHEME_ENV);
     }
 
     /**
@@ -105,14 +107,12 @@ public class MainHandler implements RequestStreamHandler {
         String authorization;
         try {
             JsonNode event = objectMapper.readTree(input);
-            authorization = Optional.ofNullable(event.at(HEADERS_AUTHORIZATION).textValue())
-                                    .orElseThrow(IllegalArgumentException::new);
-            String body = event.get(BODY).textValue();
-            requestBody = objectMapper.readValue(body, RequestBody.class);
+            authorization = extractAuthorization(event);
+            requestBody = extractRequestBody(event);
         } catch (Exception e) {
             log(e.getMessage());
             objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
-                Problem.valueOf(BAD_REQUEST, e.getMessage())), headers(), SC_BAD_REQUEST));
+                Problem.valueOf(BAD_REQUEST, e.getMessage())), failureHeaders(), SC_BAD_REQUEST));
             return;
         }
 
@@ -120,38 +120,49 @@ public class MainHandler implements RequestStreamHandler {
             String apiUrl = String.join("://", apiScheme, apiHost);
 
             Optional<JsonNode> publication = getPublicationMetadata(requestBody, authorization, apiUrl);
-            publication.ifPresentOrElse(p -> insertPublication(authorization, apiUrl, p),
-                () -> {
-                    throw new WebApplicationException(ERROR_READING_METADATA);
-                });
+            publication.ifPresentOrElse(p -> insertPublication(authorization, apiUrl, p), this::errorNoPublication);
 
-            Optional<Summary> summary = publication.map(publicationConverter::toSummary);
-            writeSummaryToOutput(output, summary);
+            Summary summary = publication.map(publicationConverter::toSummary)
+                                         .orElseThrow(this::unexpectedMissingSummary);
+            writeOutput(output, summary);
         } catch (ProcessingException | WebApplicationException e) {
             log(e.getMessage());
             objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
-                Problem.valueOf(BAD_GATEWAY, e.getMessage())), headers(), SC_BAD_GATEWAY));
+                Problem.valueOf(BAD_GATEWAY, e.getMessage())), failureHeaders(), SC_BAD_GATEWAY));
         } catch (Exception e) {
             log(e.getMessage());
             objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
-                Problem.valueOf(INTERNAL_SERVER_ERROR, e.getMessage())), headers(), SC_INTERNAL_SERVER_ERROR));
+                Problem.valueOf(INTERNAL_SERVER_ERROR, e.getMessage())), failureHeaders(), SC_INTERNAL_SERVER_ERROR));
         }
+    }
+
+    private RequestBody extractRequestBody(JsonNode event) throws com.fasterxml.jackson.core.JsonProcessingException {
+        RequestBody requestBody;
+        String body = event.get(BODY).textValue();
+        requestBody = objectMapper.readValue(body, RequestBody.class);
+        return requestBody;
+    }
+
+    private String extractAuthorization(JsonNode event) {
+        return Optional.ofNullable(event.at(HEADERS_AUTHORIZATION).textValue())
+                       .orElseThrow(() -> new IllegalArgumentException(MISSING_HEADER + HEADERS_AUTHORIZATION));
+    }
+
+    private IllegalStateException unexpectedMissingSummary() {
+        return new IllegalStateException("Unexpected missing publication summary");
+    }
+
+    private void errorNoPublication() {
+        throw new WebApplicationException(ERROR_READING_METADATA);
     }
 
     private void insertPublication(String authorization, String apiUrl, JsonNode p) {
         resourcePersistenceService.insertPublication(p, apiUrl, authorization);
     }
 
-    private void writeSummaryToOutput(OutputStream output, Optional<Summary> summary) throws IOException {
-        if (summary.isPresent()) {
-            Summary s = summary.get();
-            writeOutput(output, s);
-        }
-    }
-
     private void writeOutput(OutputStream output, Summary summary) throws IOException {
         objectMapper.writeValue(output, new GatewayResponse<>(
-            objectMapper.writeValueAsString(summary), headers(), SC_OK));
+            objectMapper.writeValueAsString(summary), successHeaders(), SC_OK));
     }
 
     private Optional<JsonNode> getPublicationMetadata(RequestBody requestBody, String authorization,
@@ -160,10 +171,17 @@ public class MainHandler implements RequestStreamHandler {
                               .map(response -> doiTransformService.transform(response, apiUrl, authorization));
     }
 
-    private Map<String, String> headers() {
+    private Map<String, String> successHeaders() {
         Map<String, String> headers = new ConcurrentHashMap<>();
         headers.put(ACCESS_CONTROL_ALLOW_ORIGIN, allowedOrigin);
         headers.put(CONTENT_TYPE, APPLICATION_JSON.getMimeType());
+        return headers;
+    }
+
+    private Map<String, String> failureHeaders() {
+        Map<String, String> headers = new ConcurrentHashMap<>();
+        headers.put(ACCESS_CONTROL_ALLOW_ORIGIN, allowedOrigin);
+        headers.put(CONTENT_TYPE, APPLICATION_PROBLEM_JSON);
         return headers;
     }
 }

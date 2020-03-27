@@ -65,9 +65,9 @@ public class MainHandlerTest {
     @Before
     public void setUp() {
         environment = Mockito.mock(Environment.class);
-        when(environment.get(ALLOWED_ORIGIN_ENV)).thenReturn(Optional.of("*"));
-        when(environment.get(API_HOST_ENV)).thenReturn(Optional.of("localhost:3000"));
-        when(environment.get(API_SCHEME_ENV)).thenReturn(Optional.of("http"));
+        when(environment.get(ALLOWED_ORIGIN_ENV)).thenReturn("*");
+        when(environment.get(API_HOST_ENV)).thenReturn("localhost:3000");
+        when(environment.get(API_SCHEME_ENV)).thenReturn("http");
     }
 
     @Test
