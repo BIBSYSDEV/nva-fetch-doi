@@ -13,6 +13,7 @@ import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,20 +22,27 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URISyntaxException;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.ws.rs.ProcessingException;
-import javax.ws.rs.WebApplicationException;
+import no.unit.nva.doi.fetch.exceptions.InsertPublicationException;
+import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
+import no.unit.nva.doi.fetch.exceptions.NoPublicationException;
 import no.unit.nva.doi.fetch.model.RequestBody;
 import no.unit.nva.doi.fetch.model.Summary;
+import no.unit.nva.doi.fetch.service.DoiProxyResponse;
 import no.unit.nva.doi.fetch.service.DoiProxyService;
 import no.unit.nva.doi.fetch.service.DoiTransformService;
 import no.unit.nva.doi.fetch.service.PublicationConverter;
 import no.unit.nva.doi.fetch.service.ResourcePersistenceService;
-import no.unit.nva.doi.fetch.service.exceptions.NoContentLocationFoundException;
+import no.unit.nva.doi.fetch.exceptions.NoContentLocationFoundException;
+import no.unit.nva.doi.fetch.exceptions.TransformFailedException;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ProblemModule;
+import org.zalando.problem.Status;
 
 public class MainHandler implements RequestStreamHandler {
 
@@ -44,7 +52,7 @@ public class MainHandler implements RequestStreamHandler {
     public static final String API_SCHEME_ENV = "API_SCHEME";
     public static final String HEADERS_AUTHORIZATION = "/headers/Authorization";
     public static final String BODY = "body";
-    public static final String ERROR_READING_METADATA = "Could not get publication metadata";
+    public static final String ERROR_READING_METADATA = "Could not get publication metadata.DOI:";
     public static final String MISSING_HEADER = "Missing header:";
     private static final String APPLICATION_PROBLEM_JSON = "application/problem+json";
 
@@ -56,6 +64,20 @@ public class MainHandler implements RequestStreamHandler {
     private final transient String allowedOrigin;
     private final transient String apiHost;
     private final transient String apiScheme;
+    public static final ObjectMapper jsonParser = MainHandler.createObjectMapper();
+
+
+    private static final Map<String,Status> EXCEPTION_MAP;
+
+
+    static{
+        Map<String, Status> exceptionMap= new HashMap<>();
+        exceptionMap.put(MetadataNotFoundException.class.getName(), BAD_GATEWAY);
+        exceptionMap.put(NoContentLocationFoundException.class.getName(), BAD_GATEWAY);
+        EXCEPTION_MAP= Collections.unmodifiableMap(exceptionMap);
+    }
+
+
 
     public MainHandler() {
         this(createObjectMapper(), new PublicationConverter(), new DoiTransformService(), new DoiProxyService(),
@@ -118,21 +140,38 @@ public class MainHandler implements RequestStreamHandler {
 
         try {
             String apiUrl = String.join("://", apiScheme, apiHost);
-
             Optional<JsonNode> publication = getPublicationMetadata(requestBody, authorization, apiUrl);
-            publication.ifPresentOrElse(p -> insertPublication(authorization, apiUrl, p), this::errorNoPublication);
+
+            tryInsertPublication(authorization, apiUrl, publication);
 
             Summary summary = publication.map(publicationConverter::toSummary)
                                          .orElseThrow(this::unexpectedMissingSummary);
             writeOutput(output, summary);
-        } catch (ProcessingException | WebApplicationException e) {
-            log(e.getMessage());
-            objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
-                Problem.valueOf(BAD_GATEWAY, e.getMessage())), failureHeaders(), SC_BAD_GATEWAY));
-        } catch (Exception e) {
-            log(e.getMessage());
-            objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
-                Problem.valueOf(INTERNAL_SERVER_ERROR, e.getMessage())), failureHeaders(), SC_INTERNAL_SERVER_ERROR));
+        }
+        catch (Exception e) {
+            writeFailure(output,e);
+        }
+    }
+
+
+    private void writeFailure(OutputStream outputStream,Exception exception) throws IOException {
+        if(!EXCEPTION_MAP.containsKey(exception.getClass().getName()))
+            throw new IOException(exception.getClass().getName());
+        Status errorStatus = EXCEPTION_MAP.get(exception.getClass().getName());
+        log(exception.getMessage());
+        objectMapper.writeValue(outputStream, new GatewayResponse<>(objectMapper.writeValueAsString(
+            Problem.valueOf(errorStatus, exception.getMessage())), failureHeaders(), errorStatus.getStatusCode()));
+
+
+
+    }
+
+    private void tryInsertPublication(String authorization, String apiUrl, Optional<JsonNode> publication)
+        throws NoPublicationException, InterruptedException, IOException, InsertPublicationException {
+        if (publication.isPresent()) {
+            insertPublication(authorization, apiUrl, publication.get());
+        } else {
+            throw new NoPublicationException(ERROR_READING_METADATA);
         }
     }
 
@@ -152,11 +191,8 @@ public class MainHandler implements RequestStreamHandler {
         return new IllegalStateException("Unexpected missing publication summary");
     }
 
-    private void errorNoPublication() {
-        throw new WebApplicationException(ERROR_READING_METADATA);
-    }
-
-    private void insertPublication(String authorization, String apiUrl, JsonNode p) {
+    private void insertPublication(String authorization, String apiUrl, JsonNode p)
+        throws InterruptedException, InsertPublicationException, IOException {
         resourcePersistenceService.insertPublication(p, apiUrl, authorization);
     }
 
@@ -166,9 +202,17 @@ public class MainHandler implements RequestStreamHandler {
     }
 
     private Optional<JsonNode> getPublicationMetadata(RequestBody requestBody, String authorization,
-                                                      String apiUrl) throws NoContentLocationFoundException {
-        return doiProxyService.lookup(requestBody.getDoiUrl(), apiUrl, authorization)
-                              .map(response -> doiTransformService.transform(response, apiUrl, authorization));
+                                                      String apiUrl)
+        throws NoContentLocationFoundException, URISyntaxException,
+        TransformFailedException, MetadataNotFoundException, IOException, InterruptedException {
+        Optional<DoiProxyResponse> externalModel = doiProxyService
+            .lookup(requestBody.getDoiUrl(), apiUrl, authorization);
+        if (externalModel.isPresent()) {
+            return Optional.of(doiTransformService.transform(externalModel.get(), apiUrl, authorization));
+        }
+        else{
+            throw new MetadataNotFoundException(ERROR_READING_METADATA+requestBody.getDoiUrl());
+        }
     }
 
     private Map<String, String> successHeaders() {

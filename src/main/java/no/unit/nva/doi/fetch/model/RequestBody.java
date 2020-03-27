@@ -4,6 +4,8 @@ import java.net.URL;
 
 public class RequestBody {
 
+    public static final String DOI_FIELD="doiUrl";
+
     private URL doiUrl;
 
     public RequestBody() {
