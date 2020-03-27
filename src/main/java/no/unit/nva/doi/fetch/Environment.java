@@ -22,6 +22,11 @@ public class Environment {
         return Optional.of(environmentVariable);
     }
 
+    /**
+     * Get an environment variable or throw Exception.
+     * @param variable the name of the variable.
+     * @return the value of the variable.
+     */
     public String get(String variable) {
         String value = System.getenv().get(variable);
         if (value == null || value.isBlank()) {
