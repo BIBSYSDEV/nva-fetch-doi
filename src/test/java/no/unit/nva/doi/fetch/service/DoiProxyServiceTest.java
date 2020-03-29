@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiPredicate;
+import no.unit.nva.doi.fetch.exceptions.MalformedRequestException;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
 import no.unit.nva.doi.fetch.exceptions.NoContentLocationFoundException;
 import no.unit.nva.doi.fetch.service.utils.RequestBodyReader;
@@ -38,7 +39,7 @@ public class DoiProxyServiceTest {
     @Test
     public void lookupShouldNotThrowExceptionForWellformedRequest()
         throws IOException, NoContentLocationFoundException, URISyntaxException, InterruptedException,
-        MetadataNotFoundException {
+        MetadataNotFoundException, MalformedRequestException {
         HttpClient client = mock(HttpClient.class);
         when(client.send(any(), any())).thenAnswer(this::responseEchoingRequestBody);
         DoiProxyService doiProxyService = new DoiProxyService(client);
@@ -49,7 +50,7 @@ public class DoiProxyServiceTest {
     @DisplayName("lookup sends a query with a json object containing the field 'doi' ")
     public void lookupShouldSendAQueryWithAJsonObjectWthTheFieldDoi()
         throws IOException, NoContentLocationFoundException, InterruptedException, URISyntaxException,
-        MetadataNotFoundException {
+        MetadataNotFoundException, MalformedRequestException {
         HttpClient client = mock(HttpClient.class);
         when(client.send(any(HttpRequest.class), any())).thenAnswer(this::responseEchoingRequestBody);
 
