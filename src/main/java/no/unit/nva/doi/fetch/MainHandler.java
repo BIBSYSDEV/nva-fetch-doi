@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import no.unit.nva.doi.fetch.exceptions.InsertPublicationException;
+import no.unit.nva.doi.fetch.exceptions.MalformedRequestException;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
 import no.unit.nva.doi.fetch.exceptions.NoContentLocationFoundException;
 import no.unit.nva.doi.fetch.exceptions.TransformFailedException;
@@ -123,7 +124,7 @@ public class MainHandler implements RequestStreamHandler {
 
     private JsonNode getPublicationMetadata(RequestBody requestBody, String authorization, String apiUrl)
         throws NoContentLocationFoundException, URISyntaxException, TransformFailedException,
-        MetadataNotFoundException, IOException, InterruptedException {
+        MetadataNotFoundException, IOException, InterruptedException, MalformedRequestException {
 
         DoiProxyResponse externalModel = doiProxyService.lookup(requestBody.getDoiUrl(), apiUrl, authorization);
         return doiTransformService.transform(externalModel, apiUrl, authorization);
@@ -205,6 +206,7 @@ public class MainHandler implements RequestStreamHandler {
         exceptionMap.put(NoContentLocationFoundException.class.getName(), BAD_GATEWAY);
         exceptionMap.put(TransformFailedException.class.getName(), BAD_GATEWAY);
         exceptionMap.put(InsertPublicationException.class.getName(), BAD_GATEWAY);
+        exceptionMap.put(MalformedRequestException.class.getName(), BAD_REQUEST);
         return exceptionMap;
     }
 
