@@ -136,8 +136,7 @@ public class MainHandlerTest {
     private DoiProxyResponse mockDoiProxyResponse() {
         Map<String, String> sampleValue = Collections.singletonMap(SOME_KEY, SOME_VALUE);
         JsonNode sampleNode = objectMapper.convertValue(sampleValue, JsonNode.class);
-        DoiProxyResponse doiProxyResponse = new DoiProxyResponse(sampleNode, SOME_METADATA_SOURCE);
-        return doiProxyResponse;
+        return new DoiProxyResponse(sampleNode, SOME_METADATA_SOURCE);
     }
 
     private Summary createSummary() {
