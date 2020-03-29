@@ -20,10 +20,9 @@ public class GatewayResponse<T> {
      * @param statusCode status code for response
      */
     @JsonCreator
-    public GatewayResponse(
-        @JsonProperty("body") final T body,
-        @JsonProperty("headers") final Map<String, String> headers,
-        @JsonProperty("statusCode") final int statusCode) {
+    public GatewayResponse(@JsonProperty("body") final T body,
+                           @JsonProperty("headers") final Map<String, String> headers,
+                           @JsonProperty("statusCode") final int statusCode) {
         this.statusCode = statusCode;
         this.body = body;
         this.headers = Collections.unmodifiableMap(new HashMap<>(headers));

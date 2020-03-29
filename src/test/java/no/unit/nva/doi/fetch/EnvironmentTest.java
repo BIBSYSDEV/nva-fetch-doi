@@ -14,8 +14,7 @@ public class EnvironmentTest {
     public static final String TEST_ENV = "TEST";
     public static final String TEST_VAL = "test";
     @Rule
-    public final EnvironmentVariables environmentVariables
-        = new EnvironmentVariables();
+    public final EnvironmentVariables environmentVariables = new EnvironmentVariables();
 
     @Test
     public void testEnv() {
@@ -29,6 +28,6 @@ public class EnvironmentTest {
     public void testNoEnv() {
         Environment environment = new Environment();
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> environment.get(TEST_ENV));
-        assertThat(exception.getMessage(),containsString(TEST_ENV));
+        assertThat(exception.getMessage(), containsString(TEST_ENV));
     }
 }

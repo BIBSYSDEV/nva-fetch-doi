@@ -1,97 +1,86 @@
 package no.unit.nva.doi.fetch.service;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.collection.IsMapContaining.hasKey;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
-import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.Invocation;
-import javax.ws.rs.client.Invocation.Builder;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Response;
-import no.unit.nva.doi.fetch.service.exceptions.NoContentLocationFoundException;
-import no.unit.nva.doi.fetch.service.utils.MockResponse;
+import java.util.function.BiPredicate;
+import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
+import no.unit.nva.doi.fetch.exceptions.NoContentLocationFoundException;
+import no.unit.nva.doi.fetch.service.utils.RequestBodyReader;
+import org.apache.http.HttpStatus;
 import org.junit.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 public class DoiProxyServiceTest {
 
-    public static final String EXPECTED_FIELD_IN_GET_BODY = "doi";
+    public static final String EXPECTED_FIELD_IN_POST_BODY = "doi";
+    public static final String SOME_CONTENT_LOCATION = "SomeContentLocation";
+    public static final BiPredicate<String, String> INCLUDE_ALL = (l, r) -> true;
 
     @Test
     public void lookupShouldNotThrowExceptionForWellformedRequest()
-        throws IOException, NoContentLocationFoundException {
-        Client client = mock(Client.class);
-        new CallChain(client);
+        throws IOException, NoContentLocationFoundException, URISyntaxException, InterruptedException,
+        MetadataNotFoundException {
+        HttpClient client = mock(HttpClient.class);
+        when(client.send(any(), any())).thenAnswer(this::responseEchoingRequestBody);
         DoiProxyService doiProxyService = new DoiProxyService(client);
         doiProxyService.lookup(new URL("http://example.org"), "http://example.org", "some api key");
     }
 
     @Test
     @DisplayName("lookup sends a query with a json object containing the field 'doi' ")
-    public void lookupShouldSendAQueryWithAJsonObjectWththeFieldDoi()
-        throws MalformedURLException, NoContentLocationFoundException {
-        Client client = mock(Client.class);
-        CallChain callChain = new CallChain(client);
+    public void lookupShouldSendAQueryWithAJsonObjectWthTheFieldDoi()
+        throws IOException, NoContentLocationFoundException, InterruptedException, URISyntaxException,
+        MetadataNotFoundException {
+        HttpClient client = mock(HttpClient.class);
+        when(client.send(any(HttpRequest.class), any())).thenAnswer(this::responseEchoingRequestBody);
+
         DoiProxyService doiProxyService = new DoiProxyService(client);
-        doiProxyService.lookup(new URL("http://example.org"), "http://example.org", "some api key");
-        assertThat(callChain.requestBody, hasKey(EXPECTED_FIELD_IN_GET_BODY));
+        String exampleDoiValue = "http://doivalue.org";
+
+        DoiProxyResponse result = doiProxyService
+            .lookup(new URL(exampleDoiValue), "http://example.org", "some api key");
+
+        JsonNode actualFieldValue = result.getJsonNode().findValue(EXPECTED_FIELD_IN_POST_BODY);
+        assertNotNull(actualFieldValue);
+        assertThat(actualFieldValue.asText(), is(equalTo(exampleDoiValue)));
     }
 
-    // Contains all mocks that are necessary for the Client to be mocked
-    private class CallChain {
+    private HttpResponse<String> responseEchoingRequestBody(InvocationOnMock invocation) {
+        HttpRequest request = invocation.getArgument(0);
+        String body = RequestBodyReader.requestBody(request);
+        return mockResponse(body);
+    }
 
-        private final Builder mockInvocationBuilder;
-        private final WebTarget mockWebTarget;
-        private final Client client;
-        private Invocation invocation;
-        private Map<String, URL> requestBody;
+    private HttpResponse<String> mockResponse(String body) {
+        HttpResponse<String> response = mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(HttpStatus.SC_OK);
+        when(response.body()).thenReturn(body);
+        when(response.headers()).thenReturn(mockHttpHeaders());
+        return response;
+    }
 
-        public CallChain(Client client) {
-            this.client = client;
-            this.mockInvocationBuilder = mock(Builder.class);
-            this.mockWebTarget = mock(WebTarget.class);
-            initialize();
-        }
-
-        public void initialize() {
-            this.invocation = mockRequestInvocation();
-
-            when(client.target(anyString())).thenReturn(mockWebTarget);
-
-            when(mockWebTarget.path(anyString())).thenReturn(mockWebTarget);
-            when(mockWebTarget.request(anyString())).thenReturn(mockInvocationBuilder);
-
-            when(mockInvocationBuilder.header(anyString(), anyString())).thenReturn(mockInvocationBuilder);
-            when(mockInvocationBuilder.buildPost(any())).thenAnswer(new Answer<Invocation>() {
-                @Override
-                public Invocation answer(InvocationOnMock args) throws Throwable {
-                    cachePostRequestBody(args);
-                    return invocation;
-                }
-            });
-        }
-
-        private void cachePostRequestBody(InvocationOnMock args) {
-            Entity<Map<String, URL>> entity = args.getArgument(0);
-            requestBody = entity.getEntity();
-        }
-
-        private Invocation mockRequestInvocation() {
-            Invocation invocation = mock(Invocation.class);
-            Response response = new MockResponse();
-            when(invocation.invoke()).thenReturn(response);
-            return invocation;
-        }
+    private HttpHeaders mockHttpHeaders() {
+        Map<String, List<String>> headersMap = new HashMap<>();
+        headersMap.put(org.apache.http.HttpHeaders.CONTENT_LOCATION, Collections.singletonList(SOME_CONTENT_LOCATION));
+        return HttpHeaders.of(headersMap, INCLUDE_ALL);
     }
 }

@@ -1,4 +1,4 @@
-package no.unit.nva.doi.fetch.service.exceptions;
+package no.unit.nva.doi.fetch.exceptions;
 
 public class NoContentLocationFoundException extends Exception {
 

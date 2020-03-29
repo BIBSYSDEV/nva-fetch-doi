@@ -1,36 +1,44 @@
 package no.unit.nva.doi.fetch.service;
 
-import static java.util.Collections.singletonMap;
-import static javax.ws.rs.core.HttpHeaders.AUTHORIZATION;
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+import static org.apache.http.HttpHeaders.ACCEPT;
+import static org.apache.http.HttpHeaders.AUTHORIZATION;
+import static org.apache.http.HttpHeaders.CONTENT_TYPE;
+import static org.apache.http.entity.ContentType.APPLICATION_JSON;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.Map;
-import java.util.Objects;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Optional;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.Invocation;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import no.unit.nva.doi.fetch.service.exceptions.NoContentLocationFoundException;
-import org.apache.http.HttpStatus;
+import no.unit.nva.doi.fetch.MainHandler;
+import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
+import no.unit.nva.doi.fetch.exceptions.NoContentLocationFoundException;
+import no.unit.nva.doi.fetch.utils.JacocoGenerated;
+import org.apache.http.HttpHeaders;
 
-public class DoiProxyService {
+public class DoiProxyService extends RestClient {
 
     public static final String DATACITE_JSON = "application/vnd.datacite.datacite+json";
     public static final String PATH = "/doi";
-    public static final String DOI = "doi";
-    private final Client client;
+    public static final String ERROR_READING_METADATA = "Could not get publication metadata.DOI:";
 
-    protected DoiProxyService(Client client) {
+    private final HttpClient client;
+    private final ObjectMapper jsonParser = MainHandler.createObjectMapper();
+
+    public DoiProxyService(HttpClient client) {
+        super();
         this.client = client;
     }
 
     public DoiProxyService() {
-        this(ClientBuilder.newClient());
+        this(HttpClient.newBuilder().build());
     }
 
     /**
@@ -41,43 +49,64 @@ public class DoiProxyService {
      * @param authorization authorization
      * @return jsonNode
      * @throws NoContentLocationFoundException thrown when the header Content-Location is missing from the response
+     * @throws MetadataNotFoundException when nva-doi-proxy sends a failed response
+     * @throws URISyntaxException when the input URL is not correct
+     * @throws IOException when IO error happens.
+     * @throws InterruptedException when a thread error happens.
      */
-    public Optional<DoiProxyResponse> lookup(URL doiUrl, String apiUrl, String authorization)
-        throws NoContentLocationFoundException {
-        Invocation invocation = client.target(apiUrl)
-                                      .path(PATH)
-                                      .request(DATACITE_JSON)
+    public DoiProxyResponse lookup(URL doiUrl, String apiUrl, String authorization)
+        throws NoContentLocationFoundException, MetadataNotFoundException, URISyntaxException, IOException,
+        InterruptedException {
+
+        String requestBody = jsonParser.writeValueAsString(new Request(doiUrl));
+
+        HttpRequest post = HttpRequest.newBuilder().uri(createURI(apiUrl, PATH))
+                                      .POST(BodyPublishers.ofString(requestBody)).header(ACCEPT, DATACITE_JSON)
                                       .header(AUTHORIZATION, authorization)
-                                      .buildPost(Entity.entity(queryBody(doiUrl), APPLICATION_JSON));
-        try (Response response = invocation.invoke()) {
-            if (responseIsSuccessful(response)) {
-                return Optional.of(returnBodyAndContentLocation(response));
-            } else {
-                return Optional.empty();
-            }
+                                      .header(CONTENT_TYPE, APPLICATION_JSON.getMimeType()).build();
+        HttpResponse<String> response = client.send(post, BodyHandlers.ofString());
+        if (responseIsSuccessful(response)) {
+            return returnBodyAndContentLocation(response);
+        } else {
+            throw new MetadataNotFoundException(ERROR_READING_METADATA + doiUrl);
         }
     }
 
-    private Map<String, URL> queryBody(URL doiUrl) {
-        return singletonMap(DOI, doiUrl);
+    private DoiProxyResponse returnBodyAndContentLocation(HttpResponse<String> response)
+        throws NoContentLocationFoundException, JsonProcessingException {
+        String contentLocation = exctractContentLocation(response);
+        String responseBodyString = response.body();
+        JsonNode responseJson = jsonParser.readTree(responseBodyString);
+        return new DoiProxyResponse(responseJson, contentLocation);
     }
 
-    private DoiProxyResponse returnBodyAndContentLocation(Response response) throws NoContentLocationFoundException {
-        String contentLocation = response.getStringHeaders().getFirst(HttpHeaders.CONTENT_LOCATION);
-        if (isNullOrEmpty(contentLocation)) {
-            throw new NoContentLocationFoundException("ContentLocation header should not be empty");
+    private String exctractContentLocation(HttpResponse<String> response) throws NoContentLocationFoundException {
+        Optional<String> contentOpt = response.headers().firstValue(HttpHeaders.CONTENT_LOCATION);
+        return contentOpt.filter(str -> !str.isEmpty()).orElseThrow(this::contentLocationNotFound);
+    }
+
+    private NoContentLocationFoundException contentLocationNotFound() {
+        return new NoContentLocationFoundException("ContentLocation header should not be empty");
+    }
+
+    public static class Request {
+
+        private URL doi;
+
+        @JacocoGenerated
+        public Request() {
         }
-        JsonNode body = response.readEntity(JsonNode.class);
-        return new DoiProxyResponse(body, contentLocation);
-    }
 
-    private boolean isNullOrEmpty(String contentLocation) {
-        return Objects.isNull(contentLocation) || contentLocation.length() == 0;
-    }
+        public Request(URL doi) {
+            this.doi = doi;
+        }
 
-    private boolean responseIsSuccessful(Response response) {
-        int status = response.getStatus();
-        // status should be in the range [200,300)
-        return status >= HttpStatus.SC_OK && status < HttpStatus.SC_MULTIPLE_CHOICES;
+        public URL getDoi() {
+            return doi;
+        }
+
+        public void setDoi(URL doi) {
+            this.doi = doi;
+        }
     }
 }

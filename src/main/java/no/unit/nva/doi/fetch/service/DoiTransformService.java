@@ -1,25 +1,36 @@
 package no.unit.nva.doi.fetch.service;
 
-import static javax.ws.rs.core.HttpHeaders.AUTHORIZATION;
-import static javax.ws.rs.core.HttpHeaders.CONTENT_LOCATION;
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+import static no.unit.nva.doi.fetch.MainHandler.jsonParser;
+import static org.apache.http.HttpHeaders.ACCEPT;
+import static org.apache.http.HttpHeaders.AUTHORIZATION;
+import static org.apache.http.HttpHeaders.CONTENT_LOCATION;
+import static org.apache.http.entity.ContentType.APPLICATION_JSON;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
+import no.unit.nva.doi.fetch.exceptions.TransformFailedException;
 
-public class DoiTransformService {
+public class DoiTransformService extends RestClient {
 
     public static final String PATH = "/doi-transform";
-    private final Client client;
+    public static final String WARNING_MESSAGE = "Transform failed.";
+    public static final String TRANSFORMATION_ERROR_MESSAGE =
+        WARNING_MESSAGE + "\nApiUrl:%s\n Path:%s\n RequestBody:%s";
+    private final HttpClient client;
 
-    protected DoiTransformService(Client client) {
+    public DoiTransformService(HttpClient client) {
+        super();
         this.client = client;
     }
 
     public DoiTransformService() {
-        this(ClientBuilder.newClient());
+        this(HttpClient.newBuilder().build());
     }
 
     /**
@@ -29,12 +40,28 @@ public class DoiTransformService {
      * @param apiUrl           apiUrl
      * @param authorization    authorization
      * @return jsonNode
+     * @throws IOException lorem ipsum.
+     * @throws URISyntaxException when the URI is not correct.
+     * @throws InterruptedException lorem ipsum.
+     * @throws TransformFailedException when the nva-doi-transform service returns a failed message.
      */
-    public JsonNode transform(DoiProxyResponse doiProxyResponse, String apiUrl, String authorization) {
-        return client.target(apiUrl).path(PATH)
-                     .request(APPLICATION_JSON)
-                     .header(AUTHORIZATION, authorization)
-                     .header(CONTENT_LOCATION, doiProxyResponse.getMetadataSource())
-                     .post(Entity.entity(doiProxyResponse.getJsonNode(), APPLICATION_JSON), JsonNode.class);
+    public JsonNode transform(DoiProxyResponse doiProxyResponse, String apiUrl, String authorization)
+        throws IOException, URISyntaxException, InterruptedException, TransformFailedException {
+        String requestBody = jsonParser.writeValueAsString(doiProxyResponse.getJsonNode());
+        HttpRequest request = HttpRequest.newBuilder().uri(createURI(apiUrl, PATH))
+                                         .header(ACCEPT, APPLICATION_JSON.getMimeType())
+                                         .header(AUTHORIZATION, authorization)
+                                         .header(CONTENT_LOCATION, doiProxyResponse.getMetadataSource())
+                                         .POST(BodyPublishers.ofString(requestBody)).build();
+        HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
+        if (responseIsSuccessful(response)) {
+            return jsonParser.readTree(response.body());
+        } else {
+            throw new TransformFailedException(getTransformationErrorMessage(apiUrl, requestBody));
+        }
+    }
+
+    private String getTransformationErrorMessage(String apiUrl, String requestBody) {
+        return String.format(TRANSFORMATION_ERROR_MESSAGE, apiUrl, PATH, requestBody);
     }
 }

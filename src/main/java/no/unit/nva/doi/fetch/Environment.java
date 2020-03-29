@@ -24,6 +24,7 @@ public class Environment {
 
     /**
      * Get an environment variable or throw Exception.
+     *
      * @param variable the name of the variable.
      * @return the value of the variable.
      */
