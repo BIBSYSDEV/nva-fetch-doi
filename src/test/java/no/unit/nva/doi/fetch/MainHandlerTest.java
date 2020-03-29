@@ -93,7 +93,7 @@ public class MainHandlerTest {
         throws IOException, NoContentLocationFoundException, InterruptedException, TransformFailedException,
         URISyntaxException, MetadataNotFoundException {
         PublicationConverter publicationConverter = mockPublicationConverter();
-        DoiTransformService doiTransformService = mockDoiTransformServiceRetunringSuccessfulResult();
+        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
         ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
         Context context = getMockContext();
@@ -117,7 +117,7 @@ public class MainHandlerTest {
         return publicationConverter;
     }
 
-    private DoiTransformService mockDoiTransformServiceRetunringSuccessfulResult()
+    private DoiTransformService mockDoiTransformServiceReturningSuccessfulResult()
         throws URISyntaxException, TransformFailedException, InterruptedException, IOException {
         DoiTransformService service = mock(DoiTransformService.class);
         ObjectNode sampleNode = objectMapper.createObjectNode();
@@ -150,7 +150,7 @@ public class MainHandlerTest {
     public void testBadRequestResponse()
         throws IOException, InterruptedException, TransformFailedException, URISyntaxException {
         PublicationConverter publicationConverter = mock(PublicationConverter.class);
-        DoiTransformService doiTransformService = mockDoiTransformServiceRetunringSuccessfulResult();
+        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mock(DoiProxyService.class);
         ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
         Context context = getMockContext();
@@ -170,7 +170,7 @@ public class MainHandlerTest {
         URISyntaxException, MetadataNotFoundException {
         PublicationConverter publicationConverter = mock(PublicationConverter.class);
         when(publicationConverter.toSummary(any())).thenThrow(new RuntimeException(SOME_ERROR_MESSAGE));
-        DoiTransformService doiTransformService = mockDoiTransformServiceRetunringSuccessfulResult();
+        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
         ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
         Context context = getMockContext();
@@ -191,11 +191,11 @@ public class MainHandlerTest {
         throws InterruptedException, URISyntaxException, IOException, TransformFailedException {
 
         PublicationConverter publicationConverter = mockPublicationConverter();
-        DoiTransformService doiTransforService = mockDoiTransformServiceRetunringSuccessfulResult();
+        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mockDoiProxyReceivingFailedResult();
         ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
 
-        MainHandler handler = new MainHandler(objectMapper, publicationConverter, doiTransforService, doiProxyService,
+        MainHandler handler = new MainHandler(objectMapper, publicationConverter, doiTransformService, doiProxyService,
                                               resourcePersistenceService, environment);
         OutputStream outputStream = outputStream();
         handler.handleRequest(mainHandlerInputStream(), outputStream, getMockContext());
@@ -234,7 +234,7 @@ public class MainHandlerTest {
 
         PublicationConverter publicationConverter = mockPublicationConverter();
         DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
-        DoiTransformService doiTransformService = mockDoiTransformServiceRetunringSuccessfulResult();
+        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
 
         ResourcePersistenceService resourcePersistenceService = mockResourcePersistenceServiceReceivingFailedResult();
 
@@ -249,21 +249,16 @@ public class MainHandlerTest {
 
     private ResourcePersistenceService mockResourcePersistenceServiceReceivingFailedResult()
         throws IOException, InterruptedException {
-        HttpClient client = mockHttpClientReceivingFailure();
-        return new ResourcePersistenceService(client);
+        return new ResourcePersistenceService(mockHttpClientReceivingFailure());
     }
 
     private DoiTransformService mockDoiTransformServiceReceivingFailedResult()
         throws IOException, InterruptedException {
-        HttpClient client = mockHttpClientReceivingFailure();
-        DoiTransformService service = new DoiTransformService(client);
-        return service;
+        return new DoiTransformService(mockHttpClientReceivingFailure());
     }
 
     private DoiProxyService mockDoiProxyReceivingFailedResult() throws InterruptedException, IOException {
-        HttpClient client = mockHttpClientReceivingFailure();
-        DoiProxyService service = new DoiProxyService(client);
-        return service;
+        return new DoiProxyService(mockHttpClientReceivingFailure());
     }
 
     private HttpClient mockHttpClientReceivingFailure() throws IOException, InterruptedException {

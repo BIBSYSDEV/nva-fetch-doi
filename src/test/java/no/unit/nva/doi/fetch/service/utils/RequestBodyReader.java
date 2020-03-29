@@ -9,6 +9,8 @@ import java.util.concurrent.Flow.Subscription;
 
 public class RequestBodyReader {
 
+    public static final String NO_BODY_PUBLISHER_ERROR = "HttpRequest has no bodyPublisher";
+
     /**
      * Extracts the body of a {@link HttpRequest} into a String.
      *
@@ -16,9 +18,10 @@ public class RequestBodyReader {
      * @return a String containing the contents of hte body.
      */
     public static String requestBody(HttpRequest request) {
-        BodyPublisher bodyPubisher = request.bodyPublisher().get();
+        BodyPublisher bodyPublisher = request.bodyPublisher()
+                                             .orElseThrow(() -> new IllegalStateException(NO_BODY_PUBLISHER_ERROR));
         RequestBodySubscriber subscriber = new RequestBodySubscriber();
-        bodyPubisher.subscribe(subscriber);
+        bodyPublisher.subscribe(subscriber);
         return subscriber.getBody();
     }
 
