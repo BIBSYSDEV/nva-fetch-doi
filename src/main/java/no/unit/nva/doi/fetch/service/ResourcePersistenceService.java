@@ -17,7 +17,7 @@ import no.unit.nva.doi.fetch.exceptions.InsertPublicationException;
 
 public class ResourcePersistenceService extends RestClient {
 
-    public static final String PATH = "/resource";
+    public static final String PATH = "resource";
     public static final String WARNING_MESSAGE = "Inserting publication failed.";
     public static final String INSERTING_PUBLICATION_FAILED = WARNING_MESSAGE + "\nAPI-URL:%s\nRequestBody:%s\n";
     private final HttpClient client;

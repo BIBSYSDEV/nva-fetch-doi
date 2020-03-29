@@ -26,7 +26,7 @@ import org.apache.http.HttpHeaders;
 public class DoiProxyService extends RestClient {
 
     public static final String DATACITE_JSON = "application/vnd.datacite.datacite+json";
-    public static final String PATH = "/doi";
+    public static final String PATH = "doi";
     public static final String ERROR_READING_METADATA = "Could not get publication metadata.DOI:";
 
     private final HttpClient client;
