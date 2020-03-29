@@ -87,8 +87,8 @@ public class MainHandler implements RequestStreamHandler {
         this.doiProxyService = doiProxyService;
         this.resourcePersistenceService = resourcePersistenceService;
         this.allowedOrigin = environment.get(ALLOWED_ORIGIN_ENV);
-        this.apiHost = environment.get(API_HOST_ENV);
-        this.apiScheme = environment.get(API_SCHEME_ENV);
+        this.apiHost = "api.dev.nva.aws.unit.no";
+        this.apiScheme = "https";
     }
 
     @Override

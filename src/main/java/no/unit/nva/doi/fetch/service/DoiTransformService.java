@@ -18,7 +18,7 @@ import no.unit.nva.doi.fetch.exceptions.TransformFailedException;
 
 public class DoiTransformService extends RestClient {
 
-    public static final String PATH = "/doi-transform";
+    public static final String PATH = "doi-transform";
     public static final String WARNING_MESSAGE = "Transform failed.";
     public static final String TRANSFORMATION_ERROR_MESSAGE =
         WARNING_MESSAGE + "\nApiUrl:%s\n Path:%s\n RequestBody:%s";
