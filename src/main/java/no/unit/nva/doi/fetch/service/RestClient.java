@@ -8,7 +8,7 @@ import org.apache.http.client.utils.URIBuilder;
 
 public class RestClient {
 
-    protected URI buildUriWithPath(String apiUrl, String... path) throws URISyntaxException {
+    protected URI createURI(String apiUrl, String... path) throws URISyntaxException {
         return new URIBuilder(apiUrl).setPathSegments(path).build();
     }
 

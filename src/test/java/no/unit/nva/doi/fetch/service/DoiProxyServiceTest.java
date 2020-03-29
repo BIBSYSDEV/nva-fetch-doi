@@ -4,7 +4,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -21,8 +20,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.BiPredicate;
+import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
 import no.unit.nva.doi.fetch.exceptions.NoContentLocationFoundException;
 import no.unit.nva.doi.fetch.service.utils.RequestBodyReader;
 import org.apache.http.HttpStatus;
@@ -38,9 +37,10 @@ public class DoiProxyServiceTest {
 
     @Test
     public void lookupShouldNotThrowExceptionForWellformedRequest()
-        throws IOException, NoContentLocationFoundException, URISyntaxException, InterruptedException {
+        throws IOException, NoContentLocationFoundException, URISyntaxException, InterruptedException,
+        MetadataNotFoundException {
         HttpClient client = mock(HttpClient.class);
-        when(client.send(any(),any())).thenAnswer(this::responseEchoingRequestBody);
+        when(client.send(any(), any())).thenAnswer(this::responseEchoingRequestBody);
         DoiProxyService doiProxyService = new DoiProxyService(client);
         doiProxyService.lookup(new URL("http://example.org"), "http://example.org", "some api key");
     }
@@ -48,16 +48,18 @@ public class DoiProxyServiceTest {
     @Test
     @DisplayName("lookup sends a query with a json object containing the field 'doi' ")
     public void lookupShouldSendAQueryWithAJsonObjectWthTheFieldDoi()
-        throws IOException, NoContentLocationFoundException, InterruptedException, URISyntaxException {
+        throws IOException, NoContentLocationFoundException, InterruptedException, URISyntaxException,
+        MetadataNotFoundException {
         HttpClient client = mock(HttpClient.class);
         when(client.send(any(HttpRequest.class), any())).thenAnswer(this::responseEchoingRequestBody);
+
         DoiProxyService doiProxyService = new DoiProxyService(client);
         String exampleDoiValue = "http://doivalue.org";
 
-        Optional<DoiProxyResponse> result = doiProxyService
+        DoiProxyResponse result = doiProxyService
             .lookup(new URL(exampleDoiValue), "http://example.org", "some api key");
-        assertTrue(result.isPresent());
-        JsonNode actualFieldValue = result.get().getJsonNode().findValue(EXPECTED_FIELD_IN_POST_BODY);
+
+        JsonNode actualFieldValue = result.getJsonNode().findValue(EXPECTED_FIELD_IN_POST_BODY);
         assertNotNull(actualFieldValue);
         assertThat(actualFieldValue.asText(), is(equalTo(exampleDoiValue)));
     }

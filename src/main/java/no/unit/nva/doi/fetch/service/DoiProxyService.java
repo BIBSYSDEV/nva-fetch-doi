@@ -18,17 +18,21 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Optional;
 import no.unit.nva.doi.fetch.MainHandler;
+import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
 import no.unit.nva.doi.fetch.exceptions.NoContentLocationFoundException;
+import no.unit.nva.doi.fetch.utils.JacocoGenerated;
 import org.apache.http.HttpHeaders;
 
-public class DoiProxyService  extends RestClient {
+public class DoiProxyService extends RestClient {
 
     public static final String DATACITE_JSON = "application/vnd.datacite.datacite+json";
     public static final String PATH = "/doi";
+    public static final String ERROR_READING_METADATA = "Could not get publication metadata.DOI:";
+
     private final HttpClient client;
     private final ObjectMapper jsonParser = MainHandler.createObjectMapper();
 
-    protected DoiProxyService(HttpClient client) {
+    public DoiProxyService(HttpClient client) {
         super();
         this.client = client;
     }
@@ -45,25 +49,26 @@ public class DoiProxyService  extends RestClient {
      * @param authorization authorization
      * @return jsonNode
      * @throws NoContentLocationFoundException thrown when the header Content-Location is missing from the response
+     * @throws MetadataNotFoundException when nva-doi-proxy sends a failed response
+     * @throws URISyntaxException when the input URL is not correct
+     * @throws IOException when IO error happens.
+     * @throws InterruptedException when a thread error happens.
      */
-    public Optional<DoiProxyResponse> lookup(URL doiUrl, String apiUrl, String authorization)
-        throws NoContentLocationFoundException, URISyntaxException, IOException, InterruptedException {
+    public DoiProxyResponse lookup(URL doiUrl, String apiUrl, String authorization)
+        throws NoContentLocationFoundException, MetadataNotFoundException, URISyntaxException, IOException,
+        InterruptedException {
 
-        Request request = new Request(doiUrl);
-        String requestBody = jsonParser.writeValueAsString(request);
+        String requestBody = jsonParser.writeValueAsString(new Request(doiUrl));
 
-        HttpRequest post = HttpRequest.newBuilder()
-                                      .uri(buildUriWithPath(apiUrl))
-                                      .POST(BodyPublishers.ofString(requestBody))
-                                      .header(ACCEPT, DATACITE_JSON)
+        HttpRequest post = HttpRequest.newBuilder().uri(createURI(apiUrl, PATH))
+                                      .POST(BodyPublishers.ofString(requestBody)).header(ACCEPT, DATACITE_JSON)
                                       .header(AUTHORIZATION, authorization)
-                                      .header(CONTENT_TYPE, APPLICATION_JSON.getMimeType())
-                                      .build();
+                                      .header(CONTENT_TYPE, APPLICATION_JSON.getMimeType()).build();
         HttpResponse<String> response = client.send(post, BodyHandlers.ofString());
         if (responseIsSuccessful(response)) {
-            return Optional.of(returnBodyAndContentLocation(response));
+            return returnBodyAndContentLocation(response);
         } else {
-            return Optional.empty();
+            throw new MetadataNotFoundException(ERROR_READING_METADATA + doiUrl);
         }
     }
 
@@ -75,8 +80,7 @@ public class DoiProxyService  extends RestClient {
         return new DoiProxyResponse(responseJson, contentLocation);
     }
 
-    private String exctractContentLocation(HttpResponse<String> response)
-        throws NoContentLocationFoundException {
+    private String exctractContentLocation(HttpResponse<String> response) throws NoContentLocationFoundException {
         Optional<String> contentOpt = response.headers().firstValue(HttpHeaders.CONTENT_LOCATION);
         return contentOpt.filter(str -> !str.isEmpty()).orElseThrow(this::contentLocationNotFound);
     }
@@ -85,12 +89,11 @@ public class DoiProxyService  extends RestClient {
         return new NoContentLocationFoundException("ContentLocation header should not be empty");
     }
 
-
-
     public static class Request {
 
         private URL doi;
 
+        @JacocoGenerated
         public Request() {
         }
 

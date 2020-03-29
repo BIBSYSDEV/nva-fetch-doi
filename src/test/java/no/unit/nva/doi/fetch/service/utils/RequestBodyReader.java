@@ -9,6 +9,12 @@ import java.util.concurrent.Flow.Subscription;
 
 public class RequestBodyReader {
 
+    /**
+     * Extracts the body of a {@link HttpRequest} into a String.
+     *
+     * @param request the {@link HttpRequest}.
+     * @return a String containing the contents of hte body.
+     */
     public static String requestBody(HttpRequest request) {
         BodyPublisher bodyPubisher = request.bodyPublisher().get();
         RequestBodySubscriber subscriber = new RequestBodySubscriber();
@@ -28,7 +34,7 @@ public class RequestBodyReader {
 
         @Override
         public void onSubscribe(Subscription subscription) {
-                subscription.request(NUMBER_OF_REQUESTS_TO_PUBLISHER);
+            subscription.request(NUMBER_OF_REQUESTS_TO_PUBLISHER);
         }
 
         @Override

@@ -1,6 +1,5 @@
 package no.unit.nva.doi.fetch;
 
-import static no.bibsys.aws.tools.JsonUtils.jsonParser;
 import static no.unit.nva.doi.fetch.MainHandler.ALLOWED_ORIGIN_ENV;
 import static no.unit.nva.doi.fetch.MainHandler.API_HOST_ENV;
 import static no.unit.nva.doi.fetch.MainHandler.API_SCHEME_ENV;
@@ -13,6 +12,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.hamcrest.core.StringContains.containsStringIgnoringCase;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -26,7 +26,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.sun.tools.javadoc.Main;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -35,16 +34,17 @@ import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.http.HttpHeaders;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandler;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiPredicate;
+import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
 import no.unit.nva.doi.fetch.exceptions.NoContentLocationFoundException;
 import no.unit.nva.doi.fetch.exceptions.TransformFailedException;
 import no.unit.nva.doi.fetch.model.PublicationDate;
@@ -57,19 +57,21 @@ import no.unit.nva.doi.fetch.service.PublicationConverter;
 import no.unit.nva.doi.fetch.service.ResourcePersistenceService;
 import org.apache.http.entity.ContentType;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
 import org.junit.contrib.java.lang.system.EnvironmentVariables;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.zalando.problem.Status;
 
 public class MainHandlerTest {
 
     public static final String SOME_METADATA_SOURCE = "SomeMetadataSource";
-    public static final BiPredicate<String, String> INCLUDE_ALL = (l, r) -> true;
-    @Rule
-    public final EnvironmentVariables environmentVariables = new EnvironmentVariables();
+    private static final String SOME_KEY = "DoiProxyServiceSomeKey";
+    private static final String SOME_VALUE = "DoiProxyServiceSomeValue";
+    private static final String SOME_ERROR_MESSAGE = "SomeErrorMessage";
+
+    public EnvironmentVariables environmentVariables = new EnvironmentVariables();
     private ObjectMapper objectMapper = MainHandler.createObjectMapper();
 
     private Environment environment;
@@ -77,8 +79,9 @@ public class MainHandlerTest {
     /**
      * Set up environment.
      */
-    @Before
+    @BeforeEach
     public void setUp() {
+        environmentVariables = new EnvironmentVariables();
         environment = Mockito.mock(Environment.class);
         when(environment.get(ALLOWED_ORIGIN_ENV)).thenReturn("*");
         when(environment.get(API_HOST_ENV)).thenReturn("localhost:3000");
@@ -86,24 +89,16 @@ public class MainHandlerTest {
     }
 
     @Test
-    public void testDefaultConstructor() {
-        environmentVariables.set(ALLOWED_ORIGIN_ENV, "*");
-        environmentVariables.set(API_HOST_ENV, "localhost:3000");
-        environmentVariables.set(API_SCHEME_ENV, "http");
-        MainHandler findChannelFunctionApp = new MainHandler();
-        assertNotNull(findChannelFunctionApp);
-    }
-
-    @Test
     public void testOkResponse()
-        throws IOException, NoContentLocationFoundException, InterruptedException, TransformFailedException, URISyntaxException {
+        throws IOException, NoContentLocationFoundException, InterruptedException, TransformFailedException,
+        URISyntaxException, MetadataNotFoundException {
         PublicationConverter publicationConverter = mockPublicationConverter();
-        DoiTransformService doiTransformService = mockDoiTransformService();
-        DoiProxyService doiProxyService = mockDoiProxyService();
+        DoiTransformService doiTransformService = mockDoiTransformServiceRetunringSuccessfulResult();
+        DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
         ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
         Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
-            doiProxyService, resourcePersistenceService, environment);
+                                                  doiProxyService, resourcePersistenceService, environment);
         OutputStream output = new ByteArrayOutputStream();
 
         mainHandler.handleRequest(inputStream(), output, context);
@@ -112,8 +107,7 @@ public class MainHandlerTest {
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         Assert.assertTrue(gatewayResponse.getHeaders().keySet().contains(CONTENT_TYPE));
         Assert.assertTrue(gatewayResponse.getHeaders().keySet().contains(MainHandler.ACCESS_CONTROL_ALLOW_ORIGIN));
-        Summary summary = objectMapper.readValue(gatewayResponse.getBody().toString(),
-            Summary.class);
+        Summary summary = objectMapper.readValue(gatewayResponse.getBody().toString(), Summary.class);
         assertNotNull(summary.getIdentifier());
     }
 
@@ -123,49 +117,45 @@ public class MainHandlerTest {
         return publicationConverter;
     }
 
-    private DoiTransformService mockDoiTransformService()
+    private DoiTransformService mockDoiTransformServiceRetunringSuccessfulResult()
         throws URISyntaxException, TransformFailedException, InterruptedException, IOException {
         DoiTransformService service = mock(DoiTransformService.class);
-        ObjectNode sampleNode = jsonParser.createObjectNode();
+        ObjectNode sampleNode = objectMapper.createObjectNode();
         when(service.transform(any(), anyString(), anyString())).thenReturn(sampleNode);
         return service;
     }
 
-    private DoiProxyService mockDoiProxyService()
-        throws NoContentLocationFoundException, InterruptedException, IOException, URISyntaxException {
+    private DoiProxyService mockDoiProxyServiceReceivingSuccessfulResult()
+        throws NoContentLocationFoundException, InterruptedException, IOException, URISyntaxException,
+        MetadataNotFoundException {
         DoiProxyService doiProxyService = mock(DoiProxyService.class);
-        when(doiProxyService.lookup(any(), anyString(), anyString()))
-            .thenReturn(mockDoiProxyResponse());
+        when(doiProxyService.lookup(any(), anyString(), anyString())).thenReturn(mockDoiProxyResponse());
         return doiProxyService;
     }
 
-    private Optional<DoiProxyResponse> mockDoiProxyResponse() {
-        JsonNode sampleNode = jsonParser.createObjectNode();
+    private DoiProxyResponse mockDoiProxyResponse() {
+        Map<String, String> sampleValue = Collections.singletonMap(SOME_KEY, SOME_VALUE);
+        JsonNode sampleNode = objectMapper.convertValue(sampleValue, JsonNode.class);
         DoiProxyResponse doiProxyResponse = new DoiProxyResponse(sampleNode, SOME_METADATA_SOURCE);
-        return Optional.of(doiProxyResponse);
+        return doiProxyResponse;
     }
 
     private Summary createSummary() {
-        return new Summary.Builder()
-            .withIdentifier(UUID.randomUUID())
-            .withTitle("Title on publication")
-            .withCreatorName("Name, Creator")
-            .withDate(new PublicationDate.Builder()
-                .withYear("2020")
-                .build())
-            .build();
+        return new Summary.Builder().withIdentifier(UUID.randomUUID()).withTitle("Title on publication")
+                                    .withCreatorName("Name, Creator")
+                                    .withDate(new PublicationDate.Builder().withYear("2020").build()).build();
     }
 
     @Test
     public void testBadRequestResponse()
         throws IOException, InterruptedException, TransformFailedException, URISyntaxException {
         PublicationConverter publicationConverter = mock(PublicationConverter.class);
-        DoiTransformService doiTransformService = mockDoiTransformService();
+        DoiTransformService doiTransformService = mockDoiTransformServiceRetunringSuccessfulResult();
         DoiProxyService doiProxyService = mock(DoiProxyService.class);
         ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
         Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
-            doiProxyService, resourcePersistenceService, environment);
+                                                  doiProxyService, resourcePersistenceService, environment);
         OutputStream output = new ByteArrayOutputStream();
 
         mainHandler.handleRequest(new ByteArrayInputStream(new byte[0]), output, context);
@@ -176,65 +166,118 @@ public class MainHandlerTest {
 
     @Test
     public void testInternalServerErrorResponse()
-        throws IOException, NoContentLocationFoundException, InterruptedException, TransformFailedException, URISyntaxException {
+        throws IOException, NoContentLocationFoundException, InterruptedException, TransformFailedException,
+        URISyntaxException, MetadataNotFoundException {
         PublicationConverter publicationConverter = mock(PublicationConverter.class);
-        when(publicationConverter.toSummary(any())).thenThrow(new RuntimeException());
-        DoiTransformService doiTransformService = mockDoiTransformService();
-        DoiProxyService doiProxyService = mockDoiProxyService();
+        when(publicationConverter.toSummary(any())).thenThrow(new RuntimeException(SOME_ERROR_MESSAGE));
+        DoiTransformService doiTransformService = mockDoiTransformServiceRetunringSuccessfulResult();
+        DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
         ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
         Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
-            doiProxyService, resourcePersistenceService, environment);
+                                                  doiProxyService, resourcePersistenceService, environment);
         OutputStream output = new ByteArrayOutputStream();
 
         mainHandler.handleRequest(inputStream(), output, context);
 
-        GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
+        GatewayResponse<String> gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
+        assertThat(gatewayResponse.getBody(), containsString(SOME_ERROR_MESSAGE));
     }
 
     @Test
-    public void handlerShouldReturnBadGatewayErrorWhenDoiProxyServiceReturnsEmptyResult()
-        throws InterruptedException, URISyntaxException, NoContentLocationFoundException, IOException, TransformFailedException {
+    @DisplayName("handler returns BadGateway error when DoiProxyService returns failed response")
+    public void handlerReturnsBadGatewayErrorWhenDoiProxyServiceReturnsFailedResponse()
+        throws InterruptedException, URISyntaxException, IOException, TransformFailedException {
+
         PublicationConverter publicationConverter = mockPublicationConverter();
-        DoiTransformService doiTransforService = mockDoiTransformService();
-        DoiProxyService doiProxyService = mockDoiProxyServiceReturningEmptyResult();
+        DoiTransformService doiTransforService = mockDoiTransformServiceRetunringSuccessfulResult();
+        DoiProxyService doiProxyService = mockDoiProxyReceivingFailedResult();
         ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
 
-        MainHandler handler = new MainHandler(jsonParser, publicationConverter, doiTransforService, doiProxyService,
-            resourcePersistenceService, environment);
+        MainHandler handler = new MainHandler(objectMapper, publicationConverter, doiTransforService, doiProxyService,
+                                              resourcePersistenceService, environment);
         OutputStream outputStream = outputStream();
         handler.handleRequest(mainHandlerInputStream(), outputStream, getMockContext());
         GatewayResponse<String> response = gatewayResponse(outputStream);
-        assertThat(response.getStatusCode(),is(equalTo(Status.BAD_GATEWAY.getStatusCode())));
-        assertThat(response.getBody(),containsString(MainHandler.ERROR_READING_METADATA));
+        assertThat(response.getStatusCode(), is(equalTo(Status.BAD_GATEWAY.getStatusCode())));
+        assertThat(response.getBody(), containsString(DoiProxyService.ERROR_READING_METADATA));
     }
 
-    private DoiProxyService mockDoiProxyServiceReturningEmptyResult()
-        throws InterruptedException, IOException, NoContentLocationFoundException, URISyntaxException {
-        DoiProxyService service = mock(DoiProxyService.class);
-        when(service.lookup(any(), anyString(), anyString())).thenReturn(Optional.empty());
+    @Test
+    @DisplayName("handler returns BadGateway when DoiTransformationService returns failed response")
+    public void handlerReturnsBadGatewayErrorWhenDoiTransformationServiceReturnsFailedResponse()
+        throws InterruptedException, URISyntaxException, IOException, MetadataNotFoundException,
+        NoContentLocationFoundException {
+
+        PublicationConverter publicationConverter = mockPublicationConverter();
+        DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
+        DoiTransformService doiTransformService = mockDoiTransformServiceReceivingFailedResult();
+
+        ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
+
+        MainHandler handler = new MainHandler(objectMapper, publicationConverter, doiTransformService, doiProxyService,
+                                              resourcePersistenceService, environment);
+        OutputStream outputStream = outputStream();
+        handler.handleRequest(mainHandlerInputStream(), outputStream, getMockContext());
+        GatewayResponse<String> response = gatewayResponse(outputStream);
+        assertThat(response.getStatusCode(), is(equalTo(Status.BAD_GATEWAY.getStatusCode())));
+        assertThat(response.getBody(), containsStringIgnoringCase(DoiTransformService.WARNING_MESSAGE));
+        assertThat(response.getBody(), containsStringIgnoringCase(SOME_VALUE));
+    }
+
+    @Test
+    @DisplayName("handler returns BadGateway when ResourcePersistenceService returns failed response")
+    public void handlerReturnsBadGatewayErrorWhenResourcePersistenceServiceReturnsFailedResponse()
+        throws InterruptedException, URISyntaxException, IOException, MetadataNotFoundException,
+        NoContentLocationFoundException, TransformFailedException {
+
+        PublicationConverter publicationConverter = mockPublicationConverter();
+        DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
+        DoiTransformService doiTransformService = mockDoiTransformServiceRetunringSuccessfulResult();
+
+        ResourcePersistenceService resourcePersistenceService = mockResourcePersistenceServiceReceivingFailedResult();
+
+        MainHandler handler = new MainHandler(objectMapper, publicationConverter, doiTransformService, doiProxyService,
+                                              resourcePersistenceService, environment);
+        OutputStream outputStream = outputStream();
+        handler.handleRequest(mainHandlerInputStream(), outputStream, getMockContext());
+        GatewayResponse<String> response = gatewayResponse(outputStream);
+        assertThat(response.getStatusCode(), is(equalTo(Status.BAD_GATEWAY.getStatusCode())));
+        assertThat(response.getBody(), containsString(ResourcePersistenceService.WARNING_MESSAGE));
+    }
+
+    private ResourcePersistenceService mockResourcePersistenceServiceReceivingFailedResult()
+        throws IOException, InterruptedException {
+        HttpClient client = mockHttpClientReceivingFailure();
+        return new ResourcePersistenceService(client);
+    }
+
+    private DoiTransformService mockDoiTransformServiceReceivingFailedResult()
+        throws IOException, InterruptedException {
+        HttpClient client = mockHttpClientReceivingFailure();
+        DoiTransformService service = new DoiTransformService(client);
         return service;
     }
 
-//    @Test
-//    public void testBadGatewayErrorResponse()
-//        throws IOException, InterruptedException, TransformFailedException, URISyntaxException {
-//        PublicationConverter publicationConverter = mock(PublicationConverter.class);
-//        when(publicationConverter.toSummary(any())).thenThrow(new MetadataNotFoundException("message"));
-//        DoiTransformService doiTransformService = mockDoiTransformService();
-//        DoiProxyService doiProxyService = mock(DoiProxyService.class);
-//        ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
-//        Context context = getMockContext();
-//        MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
-//            doiProxyService, resourcePersistenceService, environment);
-//        ;
-//
-//        mainHandler.handleRequest(inputStream(), output, context);
-//
-//        GatewayResponse gatewayResponse =
-//            assertEquals(SC_BAD_GATEWAY, gatewayResponse.getStatusCode());
-//    }
+    private DoiProxyService mockDoiProxyReceivingFailedResult() throws InterruptedException, IOException {
+        HttpClient client = mockHttpClientReceivingFailure();
+        DoiProxyService service = new DoiProxyService(client);
+        return service;
+    }
+
+    private HttpClient mockHttpClientReceivingFailure() throws IOException, InterruptedException {
+        HttpClient client = mock(HttpClient.class);
+        HttpResponse failedResponse = mockFailedHttpResponse();
+        when(client.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(failedResponse);
+        return client;
+    }
+
+    private HttpResponse<Object> mockFailedHttpResponse() {
+        HttpResponse<Object> response = mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(Status.BAD_REQUEST.getStatusCode());
+        return response;
+    }
 
     private Context getMockContext() {
         Context context = mock(Context.class);
@@ -245,11 +288,11 @@ public class MainHandlerTest {
     }
 
     private InputStream mainHandlerInputStream() throws MalformedURLException, JsonProcessingException {
-        Map<String,Object> event = new ConcurrentHashMap<>();
+        Map<String, Object> event = new ConcurrentHashMap<>();
         RequestBody requestBody = new RequestBody();
         requestBody.setDoiUrl(new URL("https://somedoi.org"));
-        event.put("body",objectMapper.writeValueAsString(requestBody));
-        event.put("headers",mainHandlerRequestHeaders());
+        event.put("body", objectMapper.writeValueAsString(requestBody));
+        event.put("headers", mainHandlerRequestHeaders());
         return new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
     }
 
@@ -264,9 +307,9 @@ public class MainHandlerTest {
         return new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
     }
 
-    private Map<String,String> mainHandlerRequestHeaders() {
+    private Map<String, String> mainHandlerRequestHeaders() {
         Map<String, String> headers = new ConcurrentHashMap<>();
-        headers.put(AUTHORIZATION,"some api key");
+        headers.put(AUTHORIZATION, "some api key");
         headers.put(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
         return headers;
     }

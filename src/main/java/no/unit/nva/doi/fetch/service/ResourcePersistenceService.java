@@ -6,7 +6,7 @@ import static org.apache.http.entity.ContentType.APPLICATION_JSON;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
-import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
@@ -18,11 +18,11 @@ import no.unit.nva.doi.fetch.exceptions.InsertPublicationException;
 public class ResourcePersistenceService extends RestClient {
 
     public static final String PATH = "/resource";
-    public static final String INSERTING_PUBLICATION_FAILED =
-        "Inserting publication failed.\nAPI-URL:%s\nRequestBody:%s\n";
+    public static final String WARNING_MESSAGE = "Inserting publication failed.";
+    public static final String INSERTING_PUBLICATION_FAILED = WARNING_MESSAGE + "\nAPI-URL:%s\nRequestBody:%s\n";
     private final HttpClient client;
 
-    protected ResourcePersistenceService(HttpClient client) {
+    public ResourcePersistenceService(HttpClient client) {
         super();
         this.client = client;
     }
@@ -37,17 +37,17 @@ public class ResourcePersistenceService extends RestClient {
      * @param publication   dataciteData
      * @param apiUrl        apiUrl
      * @param authorization authorization
+     * @throws IOException when json parsing failes
+     * @throws InterruptedException When HttpClient throws it.
+     * @throws InsertPublicationException When publication-service responsds with failure.
+     * @throws URISyntaxException when the input URL is invalid.
      */
-
     public void insertPublication(JsonNode publication, String apiUrl, String authorization)
-        throws IOException, InterruptedException, InsertPublicationException {
+        throws IOException, InterruptedException, InsertPublicationException, URISyntaxException {
         String requestBodyString = MainHandler.jsonParser.writeValueAsString(publication);
-        HttpRequest request = HttpRequest.newBuilder()
-                                         .POST(BodyPublishers.ofString(requestBodyString))
-                                         .uri(URI.create(apiUrl))
-                                         .header(AUTHORIZATION, authorization)
-                                         .header(CONTENT_TYPE, APPLICATION_JSON.getMimeType())
-                                         .build();
+        HttpRequest request = HttpRequest.newBuilder().POST(BodyPublishers.ofString(requestBodyString))
+                                         .uri(createURI(apiUrl, PATH)).header(AUTHORIZATION, authorization)
+                                         .header(CONTENT_TYPE, APPLICATION_JSON.getMimeType()).build();
         HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
 
         if (!responseIsSuccessful(response)) {

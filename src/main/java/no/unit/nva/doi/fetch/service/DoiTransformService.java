@@ -19,10 +19,12 @@ import no.unit.nva.doi.fetch.exceptions.TransformFailedException;
 public class DoiTransformService extends RestClient {
 
     public static final String PATH = "/doi-transform";
-    public static final String TRASFORMATION_ERROR_MESSAGE = "Transform failed. ApiUrl:%s\n Path:%s\n RequestBody:%s";
+    public static final String WARNING_MESSAGE = "Transform failed.";
+    public static final String TRANSFORMATION_ERROR_MESSAGE =
+        WARNING_MESSAGE + "\nApiUrl:%s\n Path:%s\n RequestBody:%s";
     private final HttpClient client;
 
-    protected DoiTransformService(HttpClient client) {
+    public DoiTransformService(HttpClient client) {
         super();
         this.client = client;
     }
@@ -38,26 +40,28 @@ public class DoiTransformService extends RestClient {
      * @param apiUrl           apiUrl
      * @param authorization    authorization
      * @return jsonNode
+     * @throws IOException lorem ipsum.
+     * @throws URISyntaxException when the URI is not correct.
+     * @throws InterruptedException lorem ipsum.
+     * @throws TransformFailedException when the nva-doi-transform service returns a failed message.
      */
     public JsonNode transform(DoiProxyResponse doiProxyResponse, String apiUrl, String authorization)
         throws IOException, URISyntaxException, InterruptedException, TransformFailedException {
         String requestBody = jsonParser.writeValueAsString(doiProxyResponse.getJsonNode());
-        HttpRequest request = HttpRequest.newBuilder()
-                                         .uri(buildUriWithPath(apiUrl, PATH))
+        HttpRequest request = HttpRequest.newBuilder().uri(createURI(apiUrl, PATH))
                                          .header(ACCEPT, APPLICATION_JSON.getMimeType())
                                          .header(AUTHORIZATION, authorization)
                                          .header(CONTENT_LOCATION, doiProxyResponse.getMetadataSource())
-                                         .POST(BodyPublishers.ofString(requestBody))
-                                         .build();
+                                         .POST(BodyPublishers.ofString(requestBody)).build();
         HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
         if (responseIsSuccessful(response)) {
             return jsonParser.readTree(response.body());
         } else {
-            throw new TransformFailedException(getTrasformationErrorMessage(apiUrl, requestBody));
+            throw new TransformFailedException(getTransformationErrorMessage(apiUrl, requestBody));
         }
     }
 
-    private String getTrasformationErrorMessage(String apiUrl, String requestBody) {
-        return String.format(TRASFORMATION_ERROR_MESSAGE, apiUrl, PATH, requestBody);
+    private String getTransformationErrorMessage(String apiUrl, String requestBody) {
+        return String.format(TRANSFORMATION_ERROR_MESSAGE, apiUrl, PATH, requestBody);
     }
 }
