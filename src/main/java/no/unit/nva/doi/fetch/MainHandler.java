@@ -120,8 +120,7 @@ public class MainHandler implements RequestStreamHandler {
             Summary summary = publicationConverter.toSummary(publication);
 
             writeOutput(outputStream, summary);
-        }
-        catch (NoContentLocationFoundException
+        } catch (NoContentLocationFoundException
             | InsertPublicationException
             | MisingClaimException
             | MalformedRequestException
