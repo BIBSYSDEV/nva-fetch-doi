@@ -18,7 +18,6 @@ repositories {
 }
 
 def jacksonVersion = '2.10.2'
-def jerseyVersion = '2.30'
 
 dependencies {
     implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.2.0'
@@ -28,6 +27,10 @@ dependencies {
     implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: jacksonVersion
     implementation group: 'org.zalando', name: 'problem', version: '0.23.0'
     implementation group: 'org.zalando', name: 'jackson-datatype-problem', version: '0.23.0'
+
+    implementation group:'com.github.BIBSYSDEV', name:'nva-doi-transformer', version:'develop-SNAPSHOT'
+    implementation group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: 'v0.4.0'
+
 
     testImplementation group:'com.github.BIBSYSDEV',name:'aws-build-tools', version:'v1.5.5'
     testImplementation group:'org.hamcrest', name:'hamcrest', version:'2.2'

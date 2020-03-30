@@ -55,6 +55,7 @@ public class DoiProxyService extends RestClient {
      * @throws URISyntaxException              when the input URL is not correct
      * @throws IOException                     when IO error happens.
      * @throws InterruptedException            when a thread error happens.
+     * @throws MalformedRequestException       when request is malformed
      */
     public DoiProxyResponse lookup(URL doiUrl, String apiUrl, String authorization)
         throws NoContentLocationFoundException, MetadataNotFoundException, URISyntaxException, IOException,

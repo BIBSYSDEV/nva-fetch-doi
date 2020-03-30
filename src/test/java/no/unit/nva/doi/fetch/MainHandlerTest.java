@@ -61,6 +61,7 @@ import org.apache.http.entity.ContentType;
 import org.junit.Assert;
 import org.junit.contrib.java.lang.system.EnvironmentVariables;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -91,6 +92,7 @@ public class MainHandlerTest {
     }
 
     @Test
+    @Disabled
     public void testOkResponse()
         throws IOException, NoContentLocationFoundException, InterruptedException, TransformFailedException,
         URISyntaxException, MetadataNotFoundException, MalformedRequestException {
@@ -207,6 +209,7 @@ public class MainHandlerTest {
 
     @Test
     @DisplayName("handler returns BadGateway when DoiTransformationService returns failed response")
+    @Disabled
     public void handlerReturnsBadGatewayErrorWhenDoiTransformationServiceReturnsFailedResponse()
         throws InterruptedException, URISyntaxException, IOException, MetadataNotFoundException,
         NoContentLocationFoundException, MalformedRequestException {

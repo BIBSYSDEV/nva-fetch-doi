@@ -36,6 +36,8 @@ import no.unit.nva.doi.fetch.service.DoiTransformService;
 import no.unit.nva.doi.fetch.service.PublicationConverter;
 import no.unit.nva.doi.fetch.service.ResourcePersistenceService;
 import no.unit.nva.doi.fetch.utils.JacocoGenerated;
+import no.unit.nva.doi.transformer.excpetions.MisingClaimException;
+import no.unit.nva.model.Publication;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ProblemModule;
 import org.zalando.problem.Status;
@@ -70,7 +72,7 @@ public class MainHandler implements RequestStreamHandler {
     @JacocoGenerated
     public MainHandler() {
         this(createObjectMapper(), new PublicationConverter(), new DoiTransformService(), new DoiProxyService(),
-             new ResourcePersistenceService(), new Environment());
+            new ResourcePersistenceService(), new Environment());
     }
 
     /**
@@ -96,38 +98,42 @@ public class MainHandler implements RequestStreamHandler {
     public void handleRequest(InputStream input, OutputStream outputStream, Context context) throws IOException {
         RequestBody requestBody;
         String authorization;
+        JsonNode event;
         try {
-            JsonNode event = objectMapper.readTree(input);
+            event = objectMapper.readTree(input);
             authorization = extractAuthorization(event);
             requestBody = extractRequestBody(event);
         } catch (Exception e) {
             log(e.getMessage());
-            objectMapper.writeValue(outputStream, new GatewayResponse<>(
-                objectMapper.writeValueAsString(Problem.valueOf(BAD_REQUEST, e.getMessage())), failureHeaders(),
-                SC_BAD_REQUEST));
+            objectMapper.writeValue(outputStream,
+                new GatewayResponse<>(objectMapper.writeValueAsString(Problem.valueOf(BAD_REQUEST, e.getMessage())),
+                    failureHeaders(), SC_BAD_REQUEST));
             return;
         }
 
         try {
             String apiUrl = String.join("://", apiScheme, apiHost);
-            JsonNode publication = getPublicationMetadata(requestBody, authorization, apiUrl);
+            JsonNode publication = getPublicationMetadata(requestBody, authorization, apiUrl, event);
 
             tryInsertPublication(authorization, apiUrl, publication);
 
             Summary summary = publicationConverter.toSummary(publication);
 
             writeOutput(outputStream, summary);
-        } catch (Exception e) {
+        } catch (NoContentLocationFoundException | URISyntaxException | MetadataNotFoundException | InterruptedException | MalformedRequestException | MisingClaimException | InsertPublicationException | RuntimeException e) {
             writeFailure(outputStream, e);
         }
     }
 
-    private JsonNode getPublicationMetadata(RequestBody requestBody, String authorization, String apiUrl)
-        throws NoContentLocationFoundException, URISyntaxException, TransformFailedException,
-        MetadataNotFoundException, IOException, InterruptedException, MalformedRequestException {
+    private JsonNode getPublicationMetadata(RequestBody requestBody, String authorization, String apiUrl,
+                                            JsonNode lambdaEvent)
+        throws NoContentLocationFoundException, URISyntaxException, MetadataNotFoundException, IOException,
+        InterruptedException, MalformedRequestException, MisingClaimException {
 
         DoiProxyResponse externalModel = doiProxyService.lookup(requestBody.getDoiUrl(), apiUrl, authorization);
-        return doiTransformService.transform(externalModel, apiUrl, authorization);
+
+        Publication publication = doiTransformService.transformLocally(externalModel, lambdaEvent);
+        return objectMapper.convertValue(publication, JsonNode.class);
     }
 
     private void tryInsertPublication(String authorization, String apiUrl, JsonNode publication)
@@ -154,8 +160,7 @@ public class MainHandler implements RequestStreamHandler {
 
     private void writeOutput(OutputStream output, Summary summary) throws IOException {
         objectMapper.writeValue(output,
-                                new GatewayResponse<>(objectMapper.writeValueAsString(summary), successHeaders(),
-                                                      SC_OK));
+            new GatewayResponse<>(objectMapper.writeValueAsString(summary), successHeaders(), SC_OK));
     }
 
     private void writeFailure(OutputStream outputStream, Exception exception) throws IOException {
@@ -181,9 +186,9 @@ public class MainHandler implements RequestStreamHandler {
     }
 
     private void reportError(OutputStream outputStream, Exception exception, Status errorStatus) throws IOException {
-        objectMapper.writeValue(outputStream, new GatewayResponse<>(
-            objectMapper.writeValueAsString(Problem.valueOf(errorStatus, exception.getMessage())), failureHeaders(),
-            errorStatus.getStatusCode()));
+        objectMapper.writeValue(outputStream,
+            new GatewayResponse<>(objectMapper.writeValueAsString(Problem.valueOf(errorStatus, exception.getMessage())),
+                failureHeaders(), errorStatus.getStatusCode()));
     }
 
     private Map<String, String> successHeaders() {
@@ -207,6 +212,7 @@ public class MainHandler implements RequestStreamHandler {
         exceptionMap.put(TransformFailedException.class.getName(), BAD_GATEWAY);
         exceptionMap.put(InsertPublicationException.class.getName(), BAD_GATEWAY);
         exceptionMap.put(MalformedRequestException.class.getName(), BAD_REQUEST);
+        exceptionMap.put(MisingClaimException.class.getName(), BAD_REQUEST);
         return exceptionMap;
     }
 
