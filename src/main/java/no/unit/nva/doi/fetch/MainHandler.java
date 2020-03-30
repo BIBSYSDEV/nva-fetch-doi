@@ -103,8 +103,7 @@ public class MainHandler implements RequestStreamHandler {
             event = objectMapper.readTree(input);
             authorization = extractAuthorization(event);
             requestBody = extractRequestBody(event);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log(e.getMessage());
             objectMapper.writeValue(outputStream,
                 new GatewayResponse<>(objectMapper.writeValueAsString(Problem.valueOf(BAD_REQUEST, e.getMessage())),
@@ -122,13 +121,15 @@ public class MainHandler implements RequestStreamHandler {
 
             writeOutput(outputStream, summary);
         }
-        catch (NoContentLocationFoundException | InsertPublicationException | MisingClaimException e) {
-            writeFailure(outputStream, e);
-        }
-        catch (MalformedRequestException | InterruptedException | MetadataNotFoundException | URISyntaxException e) {
-            writeFailure(outputStream, e);
-        }
-        catch (RuntimeException e) {
+        catch (NoContentLocationFoundException
+            | InsertPublicationException
+            | MisingClaimException
+            | MalformedRequestException
+            | InterruptedException
+            | MetadataNotFoundException
+            | URISyntaxException
+            | RuntimeException e
+        ) {
             writeFailure(outputStream, e);
         }
     }
