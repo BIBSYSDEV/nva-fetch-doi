@@ -53,7 +53,7 @@ public class DoiTransformService extends RestClient {
     }
 
     /**
-     * Method for transforming a publication inside another lambda, without calling the lambda handler
+     * Method for transforming a publication inside another lambda, without calling the lambda handler.
      *
      * @param response a {@link DoiProxyResponse}
      * @param event    a ApiGateway lambda event

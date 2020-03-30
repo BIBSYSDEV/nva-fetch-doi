@@ -103,7 +103,8 @@ public class MainHandler implements RequestStreamHandler {
             event = objectMapper.readTree(input);
             authorization = extractAuthorization(event);
             requestBody = extractRequestBody(event);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             log(e.getMessage());
             objectMapper.writeValue(outputStream,
                 new GatewayResponse<>(objectMapper.writeValueAsString(Problem.valueOf(BAD_REQUEST, e.getMessage())),
@@ -120,7 +121,14 @@ public class MainHandler implements RequestStreamHandler {
             Summary summary = publicationConverter.toSummary(publication);
 
             writeOutput(outputStream, summary);
-        } catch (NoContentLocationFoundException | URISyntaxException | MetadataNotFoundException | InterruptedException | MalformedRequestException | MisingClaimException | InsertPublicationException | RuntimeException e) {
+        }
+        catch (NoContentLocationFoundException | InsertPublicationException | MisingClaimException e) {
+            writeFailure(outputStream, e);
+        }
+        catch (MalformedRequestException | InterruptedException | MetadataNotFoundException | URISyntaxException e) {
+            writeFailure(outputStream, e);
+        }
+        catch (RuntimeException e) {
             writeFailure(outputStream, e);
         }
     }
@@ -128,7 +136,7 @@ public class MainHandler implements RequestStreamHandler {
     private JsonNode getPublicationMetadata(RequestBody requestBody, String authorization, String apiUrl,
                                             JsonNode lambdaEvent)
         throws NoContentLocationFoundException, URISyntaxException, MetadataNotFoundException, IOException,
-        InterruptedException, MalformedRequestException, MisingClaimException {
+               InterruptedException, MalformedRequestException, MisingClaimException {
 
         DoiProxyResponse externalModel = doiProxyService.lookup(requestBody.getDoiUrl(), apiUrl, authorization);
 
