@@ -92,7 +92,6 @@ public class MainHandlerTest {
     }
 
     @Test
-    @Disabled
     public void testOkResponse()
         throws IOException, NoContentLocationFoundException, InterruptedException, TransformFailedException,
         URISyntaxException, MetadataNotFoundException, MalformedRequestException {

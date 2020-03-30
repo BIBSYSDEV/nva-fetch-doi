@@ -76,9 +76,9 @@ public class DoiTransformService extends RestClient {
      * @param apiUrl           apiUrl
      * @param authorization    authorization
      * @return jsonNode
-     * @throws IOException              lorem ipsum.
+     * @throws IOException              when HttpClient throws IoException.
      * @throws URISyntaxException       when the URI is not correct.
-     * @throws InterruptedException     lorem ipsum.
+     * @throws InterruptedException     when HttpClient throws InterruptedException.
      * @throws TransformFailedException when the nva-doi-transform service returns a failed message.
      */
     public JsonNode transform(DoiProxyResponse doiProxyResponse, String apiUrl, String authorization)

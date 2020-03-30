@@ -220,6 +220,7 @@ public class MainHandler implements RequestStreamHandler {
         exceptionMap.put(NoContentLocationFoundException.class.getName(), BAD_GATEWAY);
         exceptionMap.put(TransformFailedException.class.getName(), BAD_GATEWAY);
         exceptionMap.put(InsertPublicationException.class.getName(), BAD_GATEWAY);
+        exceptionMap.put(ResourcePersistenceService.class.getName(),BAD_GATEWAY);
         exceptionMap.put(MalformedRequestException.class.getName(), BAD_REQUEST);
         exceptionMap.put(MisingClaimException.class.getName(), BAD_REQUEST);
         return exceptionMap;
