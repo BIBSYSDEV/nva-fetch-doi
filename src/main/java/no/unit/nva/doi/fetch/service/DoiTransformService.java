@@ -62,7 +62,7 @@ public class DoiTransformService extends RestClient {
      * @throws MisingClaimException    when {@link PublicationTransformer} throws exception
      */
     public Publication transformLocally(DoiProxyResponse response, JsonNode event)
-        throws JsonProcessingException, MisingClaimException {
+        throws JsonProcessingException, MisingClaimException, URISyntaxException {
         String body = objectMapper.writeValueAsString(response.getJsonNode());
         Publication publication = publicationTransformer
             .transformPublication(event, body, response.getMetadataSource());
