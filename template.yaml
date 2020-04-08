@@ -10,9 +10,9 @@ Metadata:
     Name: nva-fetch-doi
     Description: Backend for retrieving metadata from DOI source
     Author: Unit
-    SemanticVersion: 1.0.0
     SpdxLicenseId: MIT
     LicenseUrl: LICENSE
+    Labels: ['${CODEBUILD_RESOLVED_SOURCE_VERSION}', '${GIT_REPO}']
 
 Globals:
   Function:
@@ -115,7 +115,7 @@ Resources:
     Properties:
       CodeUri: .
       Handler: no.unit.nva.doi.fetch.MainHandler::handleRequest
-      Runtime: java8
+      Runtime: java11
       MemorySize: 512
       Environment:
         Variables:
