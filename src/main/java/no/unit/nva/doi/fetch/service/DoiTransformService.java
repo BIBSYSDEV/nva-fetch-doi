@@ -60,6 +60,7 @@ public class DoiTransformService extends RestClient {
      * @return a {@link Publication}
      * @throws JsonProcessingException when {@link PublicationTransformer} throws exception
      * @throws MisingClaimException    when {@link PublicationTransformer} throws exception
+     * @throws URISyntaxException    when {@link PublicationTransformer} throws exception
      */
     public Publication transformLocally(DoiProxyResponse response, JsonNode event)
         throws JsonProcessingException, MisingClaimException, URISyntaxException {
