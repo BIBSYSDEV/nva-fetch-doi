@@ -1,10 +1,11 @@
 package no.unit.nva.doi.fetch.service;
 
+import org.apache.http.HttpStatus;
+import org.apache.http.client.utils.URIBuilder;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.utils.URIBuilder;
 
 public class RestClient {
 

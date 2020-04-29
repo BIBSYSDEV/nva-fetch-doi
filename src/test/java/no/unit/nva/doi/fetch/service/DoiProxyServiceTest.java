@@ -1,14 +1,15 @@
 package no.unit.nva.doi.fetch.service;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.fasterxml.jackson.databind.JsonNode;
+import no.unit.nva.doi.fetch.exceptions.MalformedRequestException;
+import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
+import no.unit.nva.doi.fetch.exceptions.NoContentLocationFoundException;
+import no.unit.nva.doi.fetch.service.utils.RequestBodyReader;
+import org.apache.http.HttpStatus;
+import org.junit.Test;
+import org.junit.jupiter.api.DisplayName;
+import org.mockito.invocation.InvocationOnMock;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -21,14 +22,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiPredicate;
-import no.unit.nva.doi.fetch.exceptions.MalformedRequestException;
-import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
-import no.unit.nva.doi.fetch.exceptions.NoContentLocationFoundException;
-import no.unit.nva.doi.fetch.service.utils.RequestBodyReader;
-import org.apache.http.HttpStatus;
-import org.junit.Test;
-import org.junit.jupiter.api.DisplayName;
-import org.mockito.invocation.InvocationOnMock;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class DoiProxyServiceTest {
 

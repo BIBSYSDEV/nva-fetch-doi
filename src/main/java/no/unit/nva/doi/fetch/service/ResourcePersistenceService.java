@@ -1,10 +1,9 @@
 package no.unit.nva.doi.fetch.service;
 
-import static org.apache.http.HttpHeaders.AUTHORIZATION;
-import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.http.entity.ContentType.APPLICATION_JSON;
-
 import com.fasterxml.jackson.databind.JsonNode;
+import no.unit.nva.doi.fetch.MainHandler;
+import no.unit.nva.doi.fetch.exceptions.InsertPublicationException;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -12,8 +11,10 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import no.unit.nva.doi.fetch.MainHandler;
-import no.unit.nva.doi.fetch.exceptions.InsertPublicationException;
+
+import static org.apache.http.HttpHeaders.AUTHORIZATION;
+import static org.apache.http.HttpHeaders.CONTENT_TYPE;
+import static org.apache.http.entity.ContentType.APPLICATION_JSON;
 
 public class ResourcePersistenceService extends RestClient {
 
