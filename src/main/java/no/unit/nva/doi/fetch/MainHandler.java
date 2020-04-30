@@ -1,12 +1,5 @@
 package no.unit.nva.doi.fetch;
 
-import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
-import static org.apache.http.HttpStatus.SC_OK;
-import static org.apache.http.entity.ContentType.APPLICATION_JSON;
-import static org.zalando.problem.Status.BAD_GATEWAY;
-import static org.zalando.problem.Status.BAD_REQUEST;
-
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -15,14 +8,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URISyntaxException;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import no.unit.nva.doi.fetch.exceptions.InsertPublicationException;
 import no.unit.nva.doi.fetch.exceptions.MalformedRequestException;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
@@ -41,6 +26,22 @@ import no.unit.nva.model.Publication;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ProblemModule;
 import org.zalando.problem.Status;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URISyntaxException;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static org.apache.http.HttpHeaders.CONTENT_TYPE;
+import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
+import static org.apache.http.HttpStatus.SC_OK;
+import static org.apache.http.entity.ContentType.APPLICATION_JSON;
+import static org.zalando.problem.Status.BAD_GATEWAY;
+import static org.zalando.problem.Status.BAD_REQUEST;
 
 public class MainHandler implements RequestStreamHandler {
 

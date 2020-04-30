@@ -1,14 +1,15 @@
 package no.unit.nva.doi.fetch.service;
 
-import static org.junit.Assert.assertNotNull;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.File;
-import java.io.IOException;
 import no.unit.nva.doi.fetch.MainHandler;
 import no.unit.nva.doi.fetch.model.Summary;
 import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+
+import static org.junit.Assert.assertNotNull;
 
 public class PublicationConverterTest {
 

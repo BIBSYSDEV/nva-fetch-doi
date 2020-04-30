@@ -2,6 +2,12 @@ package no.unit.nva.doi.fetch.service.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import no.bibsys.aws.tools.JsonUtils;
+import no.unit.nva.doi.fetch.MainHandler;
+import org.apache.http.HttpHeaders;
+import org.apache.http.HttpStatus;
+
+import javax.net.ssl.SSLSession;
 import java.net.URI;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
@@ -11,11 +17,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import javax.net.ssl.SSLSession;
-import no.bibsys.aws.tools.JsonUtils;
-import no.unit.nva.doi.fetch.MainHandler;
-import org.apache.http.HttpHeaders;
-import org.apache.http.HttpStatus;
 
 public class MockResponse implements HttpResponse {
 

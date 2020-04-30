@@ -1,13 +1,16 @@
 package no.unit.nva.doi.fetch.service;
 
-import static org.apache.http.HttpHeaders.ACCEPT;
-import static org.apache.http.HttpHeaders.AUTHORIZATION;
-import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.http.entity.ContentType.APPLICATION_JSON;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.doi.fetch.DoiValidator;
+import no.unit.nva.doi.fetch.MainHandler;
+import no.unit.nva.doi.fetch.exceptions.MalformedRequestException;
+import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
+import no.unit.nva.doi.fetch.exceptions.NoContentLocationFoundException;
+import no.unit.nva.doi.fetch.utils.JacocoGenerated;
+import org.apache.http.HttpHeaders;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -17,12 +20,11 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Optional;
-import no.unit.nva.doi.fetch.MainHandler;
-import no.unit.nva.doi.fetch.exceptions.MalformedRequestException;
-import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
-import no.unit.nva.doi.fetch.exceptions.NoContentLocationFoundException;
-import no.unit.nva.doi.fetch.utils.JacocoGenerated;
-import org.apache.http.HttpHeaders;
+
+import static org.apache.http.HttpHeaders.ACCEPT;
+import static org.apache.http.HttpHeaders.AUTHORIZATION;
+import static org.apache.http.HttpHeaders.CONTENT_TYPE;
+import static org.apache.http.entity.ContentType.APPLICATION_JSON;
 
 public class DoiProxyService extends RestClient {
 
@@ -76,10 +78,10 @@ public class DoiProxyService extends RestClient {
     }
 
     private Request validateRequest(Request request) throws MalformedRequestException {
-        if (request.doi == null) {
-            throw new MalformedRequestException(REQUEST_BODY_MALFORMED);
+        if (DoiValidator.validate(request.getDoi())) {
+            return request;
         }
-        return request;
+        throw new MalformedRequestException(REQUEST_BODY_MALFORMED);
     }
 
     private DoiProxyResponse returnBodyAndContentLocation(HttpResponse<String> response)
