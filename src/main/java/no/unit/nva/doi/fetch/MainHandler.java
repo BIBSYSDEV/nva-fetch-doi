@@ -19,7 +19,7 @@ import no.unit.nva.doi.fetch.service.DoiProxyResponse;
 import no.unit.nva.doi.fetch.service.DoiProxyService;
 import no.unit.nva.doi.fetch.service.DoiTransformService;
 import no.unit.nva.doi.fetch.service.PublicationConverter;
-import no.unit.nva.doi.fetch.service.ResourcePersistenceService;
+import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
 import no.unit.nva.doi.fetch.utils.JacocoGenerated;
 import no.unit.nva.doi.transformer.excpetions.MisingClaimException;
 import no.unit.nva.model.Publication;
@@ -58,7 +58,7 @@ public class MainHandler implements RequestStreamHandler {
     private final transient PublicationConverter publicationConverter;
     private final transient DoiTransformService doiTransformService;
     private final transient DoiProxyService doiProxyService;
-    private final transient ResourcePersistenceService resourcePersistenceService;
+    private final transient PublicationPersistenceService publicationPersistenceService;
     private final transient String allowedOrigin;
     private final transient String apiHost;
     private final transient String apiScheme;
@@ -73,7 +73,7 @@ public class MainHandler implements RequestStreamHandler {
     @JacocoGenerated
     public MainHandler() {
         this(createObjectMapper(), new PublicationConverter(), new DoiTransformService(), new DoiProxyService(),
-            new ResourcePersistenceService(), new Environment());
+            new PublicationPersistenceService(), new Environment());
     }
 
     /**
@@ -84,12 +84,12 @@ public class MainHandler implements RequestStreamHandler {
      */
     public MainHandler(ObjectMapper objectMapper, PublicationConverter publicationConverter,
                        DoiTransformService doiTransformService, DoiProxyService doiProxyService,
-                       ResourcePersistenceService resourcePersistenceService, Environment environment) {
+                       PublicationPersistenceService publicationPersistenceService, Environment environment) {
         this.objectMapper = objectMapper;
         this.publicationConverter = publicationConverter;
         this.doiTransformService = doiTransformService;
         this.doiProxyService = doiProxyService;
-        this.resourcePersistenceService = resourcePersistenceService;
+        this.publicationPersistenceService = publicationPersistenceService;
         this.allowedOrigin = environment.get(ALLOWED_ORIGIN_ENV);
         this.apiHost = environment.get(API_HOST_ENV);
         this.apiScheme = environment.get(API_SCHEME_ENV);
@@ -114,11 +114,11 @@ public class MainHandler implements RequestStreamHandler {
 
         try {
             String apiUrl = String.join("://", apiScheme, apiHost);
-            JsonNode publication = getPublicationMetadata(requestBody, authorization, apiUrl, event);
+            Publication publication = getPublicationMetadata(requestBody, authorization, apiUrl, event);
 
             tryInsertPublication(authorization, apiUrl, publication);
 
-            Summary summary = publicationConverter.toSummary(publication);
+            Summary summary = publicationConverter.toSummary(objectMapper.convertValue(publication, JsonNode.class));
 
             writeOutput(outputStream, summary);
         } catch (NoContentLocationFoundException
@@ -134,18 +134,17 @@ public class MainHandler implements RequestStreamHandler {
         }
     }
 
-    private JsonNode getPublicationMetadata(RequestBody requestBody, String authorization, String apiUrl,
+    private Publication getPublicationMetadata(RequestBody requestBody, String authorization, String apiUrl,
                                             JsonNode lambdaEvent)
         throws NoContentLocationFoundException, URISyntaxException, MetadataNotFoundException, IOException,
                InterruptedException, MalformedRequestException, MisingClaimException {
 
         DoiProxyResponse externalModel = doiProxyService.lookup(requestBody.getDoiUrl(), apiUrl, authorization);
 
-        Publication publication = doiTransformService.transformLocally(externalModel, lambdaEvent);
-        return objectMapper.convertValue(publication, JsonNode.class);
+        return doiTransformService.transformLocally(externalModel, lambdaEvent);
     }
 
-    private void tryInsertPublication(String authorization, String apiUrl, JsonNode publication)
+    private void tryInsertPublication(String authorization, String apiUrl, Publication publication)
         throws InterruptedException, IOException, InsertPublicationException, URISyntaxException {
         insertPublication(authorization, apiUrl, publication);
     }
@@ -162,9 +161,9 @@ public class MainHandler implements RequestStreamHandler {
                        .orElseThrow(() -> new IllegalArgumentException(MISSING_HEADER + HEADERS_AUTHORIZATION));
     }
 
-    private void insertPublication(String authorization, String apiUrl, JsonNode p)
+    private void insertPublication(String authorization, String apiUrl, Publication publication)
         throws InterruptedException, InsertPublicationException, IOException, URISyntaxException {
-        resourcePersistenceService.insertPublication(p, apiUrl, authorization);
+        publicationPersistenceService.insertPublication(publication, apiUrl, authorization);
     }
 
     private void writeOutput(OutputStream output, Summary summary) throws IOException {
@@ -220,7 +219,7 @@ public class MainHandler implements RequestStreamHandler {
         exceptionMap.put(NoContentLocationFoundException.class.getName(), BAD_GATEWAY);
         exceptionMap.put(TransformFailedException.class.getName(), BAD_GATEWAY);
         exceptionMap.put(InsertPublicationException.class.getName(), BAD_GATEWAY);
-        exceptionMap.put(ResourcePersistenceService.class.getName(),BAD_GATEWAY);
+        exceptionMap.put(PublicationPersistenceService.class.getName(),BAD_GATEWAY);
         exceptionMap.put(MalformedRequestException.class.getName(), BAD_REQUEST);
         exceptionMap.put(MisingClaimException.class.getName(), BAD_REQUEST);
         return exceptionMap;
