@@ -1,10 +1,11 @@
 package no.unit.nva.doi.fetch.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.util.Optional;
-import java.util.UUID;
 import no.unit.nva.doi.fetch.model.PublicationDate;
 import no.unit.nva.doi.fetch.model.Summary;
+
+import java.util.Optional;
+import java.util.UUID;
 
 public class PublicationConverter {
 

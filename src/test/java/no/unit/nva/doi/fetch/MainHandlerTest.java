@@ -1,31 +1,32 @@
 package no.unit.nva.doi.fetch;
 
-import static no.unit.nva.doi.fetch.MainHandler.ALLOWED_ORIGIN_ENV;
-import static no.unit.nva.doi.fetch.MainHandler.API_HOST_ENV;
-import static no.unit.nva.doi.fetch.MainHandler.API_SCHEME_ENV;
-import static org.apache.http.HttpHeaders.AUTHORIZATION;
-import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
-import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
-import static org.apache.http.HttpStatus.SC_OK;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.StringContains.containsString;
-import static org.hamcrest.core.StringContains.containsStringIgnoringCase;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.amazonaws.services.lambda.runtime.CognitoIdentity;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import no.unit.nva.doi.fetch.exceptions.MalformedRequestException;
+import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
+import no.unit.nva.doi.fetch.exceptions.NoContentLocationFoundException;
+import no.unit.nva.doi.fetch.exceptions.TransformFailedException;
+import no.unit.nva.doi.fetch.model.PublicationDate;
+import no.unit.nva.doi.fetch.model.RequestBody;
+import no.unit.nva.doi.fetch.model.Summary;
+import no.unit.nva.doi.fetch.service.DoiProxyResponse;
+import no.unit.nva.doi.fetch.service.DoiProxyService;
+import no.unit.nva.doi.fetch.service.DoiTransformService;
+import no.unit.nva.doi.fetch.service.PublicationConverter;
+import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
+import org.apache.http.entity.ContentType;
+import org.junit.Assert;
+import org.junit.contrib.java.lang.system.EnvironmentVariables;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.zalando.problem.Status;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -45,27 +46,25 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import no.unit.nva.doi.fetch.exceptions.MalformedRequestException;
-import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
-import no.unit.nva.doi.fetch.exceptions.NoContentLocationFoundException;
-import no.unit.nva.doi.fetch.exceptions.TransformFailedException;
-import no.unit.nva.doi.fetch.model.PublicationDate;
-import no.unit.nva.doi.fetch.model.RequestBody;
-import no.unit.nva.doi.fetch.model.Summary;
-import no.unit.nva.doi.fetch.service.DoiProxyResponse;
-import no.unit.nva.doi.fetch.service.DoiProxyService;
-import no.unit.nva.doi.fetch.service.DoiTransformService;
-import no.unit.nva.doi.fetch.service.PublicationConverter;
-import no.unit.nva.doi.fetch.service.ResourcePersistenceService;
-import org.apache.http.entity.ContentType;
-import org.junit.Assert;
-import org.junit.contrib.java.lang.system.EnvironmentVariables;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.zalando.problem.Status;
+
+import static no.unit.nva.doi.fetch.MainHandler.ALLOWED_ORIGIN_ENV;
+import static no.unit.nva.doi.fetch.MainHandler.API_HOST_ENV;
+import static no.unit.nva.doi.fetch.MainHandler.API_SCHEME_ENV;
+import static org.apache.http.HttpHeaders.AUTHORIZATION;
+import static org.apache.http.HttpHeaders.CONTENT_TYPE;
+import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
+import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
+import static org.apache.http.HttpStatus.SC_OK;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class MainHandlerTest {
 
@@ -73,6 +72,7 @@ public class MainHandlerTest {
     private static final String SOME_KEY = "DoiProxyServiceSomeKey";
     private static final String SOME_VALUE = "DoiProxyServiceSomeValue";
     private static final String SOME_ERROR_MESSAGE = "SomeErrorMessage";
+    public static final String VALID_DOI = "https://doi.org/10.1109/5.771073";
 
     public EnvironmentVariables environmentVariables = new EnvironmentVariables();
     private ObjectMapper objectMapper = MainHandler.createObjectMapper();
@@ -98,10 +98,10 @@ public class MainHandlerTest {
         PublicationConverter publicationConverter = mockPublicationConverter();
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
-        ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
+        PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
         Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
-                                                  doiProxyService, resourcePersistenceService, environment);
+                                                  doiProxyService, publicationPersistenceService, environment);
         OutputStream output = new ByteArrayOutputStream();
 
         mainHandler.handleRequest(inputStream(), output, context);
@@ -154,10 +154,10 @@ public class MainHandlerTest {
         PublicationConverter publicationConverter = mock(PublicationConverter.class);
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mock(DoiProxyService.class);
-        ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
+        PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
         Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
-                                                  doiProxyService, resourcePersistenceService, environment);
+                                                  doiProxyService, publicationPersistenceService, environment);
         OutputStream output = new ByteArrayOutputStream();
 
         mainHandler.handleRequest(new ByteArrayInputStream(new byte[0]), output, context);
@@ -174,10 +174,10 @@ public class MainHandlerTest {
         when(publicationConverter.toSummary(any())).thenThrow(new RuntimeException(SOME_ERROR_MESSAGE));
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
-        ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
+        PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
         Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
-                                                  doiProxyService, resourcePersistenceService, environment);
+                                                  doiProxyService, publicationPersistenceService, environment);
         OutputStream output = new ByteArrayOutputStream();
 
         mainHandler.handleRequest(inputStream(), output, context);
@@ -195,38 +195,15 @@ public class MainHandlerTest {
         PublicationConverter publicationConverter = mockPublicationConverter();
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mockDoiProxyReceivingFailedResult();
-        ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
+        PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
 
         MainHandler handler = new MainHandler(objectMapper, publicationConverter, doiTransformService, doiProxyService,
-                                              resourcePersistenceService, environment);
+                publicationPersistenceService, environment);
         OutputStream outputStream = outputStream();
         handler.handleRequest(mainHandlerInputStream(), outputStream, getMockContext());
         GatewayResponse<String> response = gatewayResponse(outputStream);
         assertThat(response.getStatusCode(), is(equalTo(Status.BAD_GATEWAY.getStatusCode())));
         assertThat(response.getBody(), containsString(DoiProxyService.ERROR_READING_METADATA));
-    }
-
-    @Test
-    @DisplayName("handler returns BadGateway when DoiTransformationService returns failed response")
-    @Disabled
-    public void handlerReturnsBadGatewayErrorWhenDoiTransformationServiceReturnsFailedResponse()
-        throws InterruptedException, URISyntaxException, IOException, MetadataNotFoundException,
-        NoContentLocationFoundException, MalformedRequestException {
-
-        PublicationConverter publicationConverter = mockPublicationConverter();
-        DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
-        DoiTransformService doiTransformService = mockDoiTransformServiceReceivingFailedResult();
-
-        ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
-
-        MainHandler handler = new MainHandler(objectMapper, publicationConverter, doiTransformService, doiProxyService,
-                                              resourcePersistenceService, environment);
-        OutputStream outputStream = outputStream();
-        handler.handleRequest(mainHandlerInputStream(), outputStream, getMockContext());
-        GatewayResponse<String> response = gatewayResponse(outputStream);
-        assertThat(response.getStatusCode(), is(equalTo(Status.BAD_GATEWAY.getStatusCode())));
-        assertThat(response.getBody(), containsStringIgnoringCase(DoiTransformService.WARNING_MESSAGE));
-        assertThat(response.getBody(), containsStringIgnoringCase(SOME_VALUE));
     }
 
     @Test
@@ -239,15 +216,16 @@ public class MainHandlerTest {
         DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
 
-        ResourcePersistenceService resourcePersistenceService = mockResourcePersistenceServiceReceivingFailedResult();
+        PublicationPersistenceService publicationPersistenceService =
+                mockResourcePersistenceServiceReceivingFailedResult();
 
         MainHandler handler = new MainHandler(objectMapper, publicationConverter, doiTransformService, doiProxyService,
-                                              resourcePersistenceService, environment);
+                publicationPersistenceService, environment);
         OutputStream outputStream = outputStream();
         handler.handleRequest(mainHandlerInputStream(), outputStream, getMockContext());
         GatewayResponse<String> response = gatewayResponse(outputStream);
         assertThat(response.getStatusCode(), is(equalTo(Status.BAD_GATEWAY.getStatusCode())));
-        assertThat(response.getBody(), containsString(ResourcePersistenceService.WARNING_MESSAGE));
+        assertThat(response.getBody(), containsString(PublicationPersistenceService.WARNING_MESSAGE));
     }
 
     @Test
@@ -259,10 +237,11 @@ public class MainHandlerTest {
         DoiProxyService doiProxyService = new DoiProxyService(null);
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
 
-        ResourcePersistenceService resourcePersistenceService = mockResourcePersistenceServiceReceivingFailedResult();
+        PublicationPersistenceService publicationPersistenceService =
+                mockResourcePersistenceServiceReceivingFailedResult();
 
         MainHandler handler = new MainHandler(objectMapper, publicationConverter, doiTransformService, doiProxyService,
-                                              resourcePersistenceService, environment);
+                publicationPersistenceService, environment);
         OutputStream outputStream = outputStream();
         handler.handleRequest(mainHandlerMalformedRequestInputStream(), outputStream, getMockContext());
         GatewayResponse<String> response = gatewayResponse(outputStream);
@@ -270,9 +249,9 @@ public class MainHandlerTest {
         assertThat(response.getBody(), containsString(DoiProxyService.REQUEST_BODY_MALFORMED));
     }
 
-    private ResourcePersistenceService mockResourcePersistenceServiceReceivingFailedResult()
+    private PublicationPersistenceService mockResourcePersistenceServiceReceivingFailedResult()
         throws IOException, InterruptedException {
-        return new ResourcePersistenceService(mockHttpClientReceivingFailure());
+        return new PublicationPersistenceService(mockHttpClientReceivingFailure());
     }
 
     private DoiTransformService mockDoiTransformServiceReceivingFailedResult()
@@ -308,7 +287,7 @@ public class MainHandlerTest {
     private InputStream mainHandlerInputStream() throws MalformedURLException, JsonProcessingException {
         Map<String, Object> event = new ConcurrentHashMap<>();
         RequestBody requestBody = new RequestBody();
-        requestBody.setDoiUrl(new URL("https://somedoi.org"));
+        requestBody.setDoiUrl(new URL(VALID_DOI));
         event.put("body", objectMapper.writeValueAsString(requestBody));
         event.put("headers", mainHandlerRequestHeaders());
         return new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
