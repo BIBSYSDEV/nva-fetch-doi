@@ -23,6 +23,8 @@ import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
 import no.unit.nva.doi.fetch.utils.JacocoGenerated;
 import no.unit.nva.doi.transformer.excpetions.MisingClaimException;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.exceptions.InvalidIssnException;
+import no.unit.nva.model.exceptions.InvalidPageTypeException;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ProblemModule;
 import org.zalando.problem.Status;
@@ -122,13 +124,15 @@ public class MainHandler implements RequestStreamHandler {
 
             writeOutput(outputStream, summary);
         } catch (NoContentLocationFoundException
-            | InsertPublicationException
-            | MisingClaimException
-            | MalformedRequestException
-            | InterruptedException
-            | MetadataNotFoundException
-            | URISyntaxException
-            | RuntimeException e
+                | InsertPublicationException
+                | MisingClaimException
+                | MalformedRequestException
+                | InterruptedException
+                | MetadataNotFoundException
+                | URISyntaxException
+                | RuntimeException
+                | InvalidIssnException
+                | InvalidPageTypeException e
         ) {
             writeFailure(outputStream, e);
         }
@@ -136,8 +140,9 @@ public class MainHandler implements RequestStreamHandler {
 
     private Publication getPublicationMetadata(RequestBody requestBody, String authorization, String apiUrl,
                                             JsonNode lambdaEvent)
-        throws NoContentLocationFoundException, URISyntaxException, MetadataNotFoundException, IOException,
-               InterruptedException, MalformedRequestException, MisingClaimException {
+            throws NoContentLocationFoundException, URISyntaxException, MetadataNotFoundException, IOException,
+            InterruptedException, MalformedRequestException, MisingClaimException, InvalidIssnException,
+            InvalidPageTypeException {
 
         DoiProxyResponse externalModel = doiProxyService.lookup(requestBody.getDoiUrl(), apiUrl, authorization);
 

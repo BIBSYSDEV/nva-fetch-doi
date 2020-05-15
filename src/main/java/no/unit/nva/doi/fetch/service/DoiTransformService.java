@@ -8,6 +8,8 @@ import no.unit.nva.doi.fetch.exceptions.TransformFailedException;
 import no.unit.nva.doi.transformer.PublicationTransformer;
 import no.unit.nva.doi.transformer.excpetions.MisingClaimException;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.exceptions.InvalidIssnException;
+import no.unit.nva.model.exceptions.InvalidPageTypeException;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -62,13 +64,15 @@ public class DoiTransformService extends RestClient {
      * @throws JsonProcessingException when {@link PublicationTransformer} throws exception
      * @throws MisingClaimException    when {@link PublicationTransformer} throws exception
      * @throws URISyntaxException    when {@link PublicationTransformer} throws exception
+     * @throws InvalidIssnException when {@link PublicationTransformer} throws exception
+     * @throws InvalidPageTypeException when {@link PublicationTransformer} throws exception
      */
     public Publication transformLocally(DoiProxyResponse response, JsonNode event)
-        throws JsonProcessingException, MisingClaimException, URISyntaxException {
+            throws JsonProcessingException, MisingClaimException, URISyntaxException, InvalidIssnException,
+            InvalidPageTypeException {
         String body = objectMapper.writeValueAsString(response.getJsonNode());
-        Publication publication = publicationTransformer
+        return publicationTransformer
             .transformPublication(event, body, response.getMetadataSource());
-        return publication;
     }
 
     /**
