@@ -3,7 +3,11 @@ plugins {
     id 'jacoco'
     id 'checkstyle'
     id 'pmd'
+    id 'nebula.lint' version '16.8.0'
 }
+
+gradleLint.rules = ['all-dependency']
+
 
 group 'no.unit.nva'
 version '1.0-SNAPSHOT'
