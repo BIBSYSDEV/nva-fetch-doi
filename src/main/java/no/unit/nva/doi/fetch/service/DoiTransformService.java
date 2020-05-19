@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.doi.fetch.MainHandler;
 import no.unit.nva.doi.fetch.exceptions.TransformFailedException;
 import no.unit.nva.doi.transformer.PublicationTransformer;
-import no.unit.nva.doi.transformer.excpetions.MisingClaimException;
+import no.unit.nva.doi.transformer.exception.MissingClaimException;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidPageTypeException;
@@ -62,13 +62,13 @@ public class DoiTransformService extends RestClient {
      * @param event    a ApiGateway lambda event
      * @return a {@link Publication}
      * @throws JsonProcessingException when {@link PublicationTransformer} throws exception
-     * @throws MisingClaimException    when {@link PublicationTransformer} throws exception
+     * @throws MissingClaimException    when {@link PublicationTransformer} throws exception
      * @throws URISyntaxException    when {@link PublicationTransformer} throws exception
      * @throws InvalidIssnException when {@link PublicationTransformer} throws exception
      * @throws InvalidPageTypeException when {@link PublicationTransformer} throws exception
      */
     public Publication transformLocally(DoiProxyResponse response, JsonNode event)
-            throws JsonProcessingException, MisingClaimException, URISyntaxException, InvalidIssnException,
+            throws JsonProcessingException, MissingClaimException, URISyntaxException, InvalidIssnException,
             InvalidPageTypeException {
         String body = objectMapper.writeValueAsString(response.getJsonNode());
         return publicationTransformer
