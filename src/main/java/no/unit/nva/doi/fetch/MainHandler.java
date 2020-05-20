@@ -21,7 +21,7 @@ import no.unit.nva.doi.fetch.service.DoiTransformService;
 import no.unit.nva.doi.fetch.service.PublicationConverter;
 import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
 import no.unit.nva.doi.fetch.utils.JacocoGenerated;
-import no.unit.nva.doi.transformer.excpetions.MisingClaimException;
+import no.unit.nva.doi.transformer.exception.MissingClaimException;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidPageTypeException;
@@ -125,7 +125,7 @@ public class MainHandler implements RequestStreamHandler {
             writeOutput(outputStream, summary);
         } catch (NoContentLocationFoundException
                 | InsertPublicationException
-                | MisingClaimException
+                | MissingClaimException
                 | MalformedRequestException
                 | InterruptedException
                 | MetadataNotFoundException
@@ -141,7 +141,7 @@ public class MainHandler implements RequestStreamHandler {
     private Publication getPublicationMetadata(RequestBody requestBody, String authorization, String apiUrl,
                                             JsonNode lambdaEvent)
             throws NoContentLocationFoundException, URISyntaxException, MetadataNotFoundException, IOException,
-            InterruptedException, MalformedRequestException, MisingClaimException, InvalidIssnException,
+            InterruptedException, MalformedRequestException, MissingClaimException, InvalidIssnException,
             InvalidPageTypeException {
 
         DoiProxyResponse externalModel = doiProxyService.lookup(requestBody.getDoiUrl(), apiUrl, authorization);
@@ -226,7 +226,7 @@ public class MainHandler implements RequestStreamHandler {
         exceptionMap.put(InsertPublicationException.class.getName(), BAD_GATEWAY);
         exceptionMap.put(PublicationPersistenceService.class.getName(),BAD_GATEWAY);
         exceptionMap.put(MalformedRequestException.class.getName(), BAD_REQUEST);
-        exceptionMap.put(MisingClaimException.class.getName(), BAD_REQUEST);
+        exceptionMap.put(MissingClaimException.class.getName(), BAD_REQUEST);
         return exceptionMap;
     }
 
