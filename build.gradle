@@ -41,8 +41,8 @@ dependencies {
     implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.9'
     implementation group: 'org.apache.httpcomponents', name: 'httpcore', version: '4.4.11'
 
-    implementation group: 'com.github.BIBSYSDEV', name: 'nva-doi-transformer', version: 'b554b4b'
-    implementation group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: '0.8.1'
+    implementation group: 'com.github.BIBSYSDEV', name: 'nva-doi-transformer', version: 'v1.7'
+    implementation group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: 'v0.8.1'
 
     testImplementation(group: 'junit', name: 'junit', version: '4.11') {
         constraints {
