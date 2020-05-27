@@ -1,5 +1,7 @@
 package no.unit.nva.doi.fetch.service;
 
+import no.unit.nva.PublicationMapper;
+import no.unit.nva.api.CreatePublicationRequest;
 import no.unit.nva.doi.fetch.MainHandler;
 import no.unit.nva.doi.fetch.exceptions.InsertPublicationException;
 import no.unit.nva.model.Publication;
@@ -45,7 +47,10 @@ public class PublicationPersistenceService extends RestClient {
      */
     public void insertPublication(Publication publication, String apiUrl, String authorization)
         throws IOException, InterruptedException, InsertPublicationException, URISyntaxException {
-        String requestBodyString = MainHandler.jsonParser.writeValueAsString(publication);
+        //TODO: toResponse is exactly the same method as convertValue and will be changed upon next release
+        CreatePublicationRequest requestBody =
+            PublicationMapper.toResponse(publication, CreatePublicationRequest.class);
+        String requestBodyString = MainHandler.jsonParser.writeValueAsString(requestBody);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(createURI(apiUrl, PATH))
