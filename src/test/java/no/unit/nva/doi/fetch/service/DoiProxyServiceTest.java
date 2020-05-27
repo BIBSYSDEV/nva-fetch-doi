@@ -45,7 +45,7 @@ public class DoiProxyServiceTest {
         HttpClient client = mock(HttpClient.class);
         when(client.send(any(), any())).thenAnswer(this::responseEchoingRequestBody);
         DoiProxyService doiProxyService = new DoiProxyService(client);
-        doiProxyService.lookup(new URL("http://dx.doi.org/10.1038/nphys1170"), "http://example.org", "some api key");
+        doiProxyService.lookup(new URL(EXAMPLE_DOI), "http://example.org", "some api key");
     }
 
     @Test
