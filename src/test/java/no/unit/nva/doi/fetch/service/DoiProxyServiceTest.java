@@ -6,8 +6,8 @@ import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
 import no.unit.nva.doi.fetch.exceptions.NoContentLocationFoundException;
 import no.unit.nva.doi.fetch.service.utils.RequestBodyReader;
 import org.apache.http.HttpStatus;
-import org.junit.Test;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 
 import java.io.IOException;
@@ -36,6 +36,7 @@ public class DoiProxyServiceTest {
     public static final String EXPECTED_FIELD_IN_POST_BODY = "doi";
     public static final String SOME_CONTENT_LOCATION = "SomeContentLocation";
     public static final BiPredicate<String, String> INCLUDE_ALL = (l, r) -> true;
+    public static final String EXAMPLE_DOI = "http://dx.doi.org/10.1038/nphys1170";
 
     @Test
     public void lookupShouldNotThrowExceptionForWellformedRequest()
@@ -44,7 +45,7 @@ public class DoiProxyServiceTest {
         HttpClient client = mock(HttpClient.class);
         when(client.send(any(), any())).thenAnswer(this::responseEchoingRequestBody);
         DoiProxyService doiProxyService = new DoiProxyService(client);
-        doiProxyService.lookup(new URL("http://example.org"), "http://example.org", "some api key");
+        doiProxyService.lookup(new URL("http://dx.doi.org/10.1038/nphys1170"), "http://example.org", "some api key");
     }
 
     @Test
@@ -56,14 +57,13 @@ public class DoiProxyServiceTest {
         when(client.send(any(HttpRequest.class), any())).thenAnswer(this::responseEchoingRequestBody);
 
         DoiProxyService doiProxyService = new DoiProxyService(client);
-        String exampleDoiValue = "http://doivalue.org";
 
         DoiProxyResponse result = doiProxyService
-            .lookup(new URL(exampleDoiValue), "http://example.org", "some api key");
+            .lookup(new URL(EXAMPLE_DOI), "http://example.org", "some api key");
 
         JsonNode actualFieldValue = result.getJsonNode().findValue(EXPECTED_FIELD_IN_POST_BODY);
         assertNotNull(actualFieldValue);
-        assertThat(actualFieldValue.asText(), is(equalTo(exampleDoiValue)));
+        assertThat(actualFieldValue.asText(), is(equalTo(EXAMPLE_DOI)));
     }
 
     private HttpResponse<String> responseEchoingRequestBody(InvocationOnMock invocation) {

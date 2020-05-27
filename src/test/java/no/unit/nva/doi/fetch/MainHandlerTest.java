@@ -1,52 +1,5 @@
 package no.unit.nva.doi.fetch;
 
-import com.amazonaws.services.lambda.runtime.CognitoIdentity;
-import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import no.unit.nva.doi.fetch.exceptions.MalformedRequestException;
-import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
-import no.unit.nva.doi.fetch.exceptions.NoContentLocationFoundException;
-import no.unit.nva.doi.fetch.exceptions.TransformFailedException;
-import no.unit.nva.doi.fetch.model.PublicationDate;
-import no.unit.nva.doi.fetch.model.RequestBody;
-import no.unit.nva.doi.fetch.model.Summary;
-import no.unit.nva.doi.fetch.service.DoiProxyResponse;
-import no.unit.nva.doi.fetch.service.DoiProxyService;
-import no.unit.nva.doi.fetch.service.DoiTransformService;
-import no.unit.nva.doi.fetch.service.PublicationConverter;
-import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
-import org.apache.http.entity.ContentType;
-import org.junit.Assert;
-import org.junit.contrib.java.lang.system.EnvironmentVariables;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.zalando.problem.Status;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.http.HttpResponse.BodyHandler;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-
 import static no.unit.nva.doi.fetch.MainHandler.ALLOWED_ORIGIN_ENV;
 import static no.unit.nva.doi.fetch.MainHandler.API_HOST_ENV;
 import static no.unit.nva.doi.fetch.MainHandler.API_SCHEME_ENV;
@@ -65,6 +18,61 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import com.amazonaws.services.lambda.runtime.CognitoIdentity;
+import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandler;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import no.unit.nva.doi.fetch.exceptions.MalformedRequestException;
+import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
+import no.unit.nva.doi.fetch.exceptions.NoContentLocationFoundException;
+import no.unit.nva.doi.fetch.exceptions.TransformFailedException;
+import no.unit.nva.doi.fetch.model.PublicationDate;
+import no.unit.nva.doi.fetch.model.RequestBody;
+import no.unit.nva.doi.fetch.model.Summary;
+import no.unit.nva.doi.fetch.service.DoiProxyResponse;
+import no.unit.nva.doi.fetch.service.DoiProxyService;
+import no.unit.nva.doi.fetch.service.DoiTransformService;
+import no.unit.nva.doi.fetch.service.PublicationConverter;
+import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
+import no.unit.nva.doi.transformer.exception.MissingClaimException;
+import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Organization;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.exceptions.InvalidIssnException;
+import no.unit.nva.model.exceptions.InvalidPageTypeException;
+import org.apache.http.entity.ContentType;
+import org.junit.Assert;
+import org.junit.contrib.java.lang.system.EnvironmentVariables;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.zalando.problem.Status;
 
 public class MainHandlerTest {
 
@@ -93,8 +101,7 @@ public class MainHandlerTest {
 
     @Test
     public void testOkResponse()
-        throws IOException, NoContentLocationFoundException, InterruptedException, TransformFailedException,
-        URISyntaxException, MetadataNotFoundException, MalformedRequestException {
+        throws Exception {
         PublicationConverter publicationConverter = mockPublicationConverter();
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
@@ -121,11 +128,25 @@ public class MainHandlerTest {
     }
 
     private DoiTransformService mockDoiTransformServiceReturningSuccessfulResult()
-        throws URISyntaxException, TransformFailedException, InterruptedException, IOException {
+        throws URISyntaxException, TransformFailedException, InterruptedException, IOException,
+               InvalidPageTypeException, MissingClaimException, InvalidIssnException {
         DoiTransformService service = mock(DoiTransformService.class);
         ObjectNode sampleNode = objectMapper.createObjectNode();
         when(service.transform(any(), anyString(), anyString())).thenReturn(sampleNode);
+        when(service.transformLocally(any(DoiProxyResponse.class), any(JsonNode.class))).thenReturn(getPublication());
         return service;
+    }
+
+    private Publication getPublication() {
+        return new Publication.Builder()
+            .withIdentifier(UUID.randomUUID())
+            .withCreatedDate(Instant.now())
+            .withModifiedDate(Instant.now())
+            .withStatus(PublicationStatus.DRAFT)
+            .withPublisher(new Organization.Builder().withId(URI.create("http://example.org/123")).build())
+            .withEntityDescription(new EntityDescription.Builder().withMainTitle("Main title").build())
+            .withOwner("Owner")
+            .build();
     }
 
     private DoiProxyService mockDoiProxyServiceReceivingSuccessfulResult()
@@ -149,8 +170,7 @@ public class MainHandlerTest {
     }
 
     @Test
-    public void testBadRequestResponse()
-        throws IOException, InterruptedException, TransformFailedException, URISyntaxException {
+    public void testBadRequestResponse() throws Exception {
         PublicationConverter publicationConverter = mock(PublicationConverter.class);
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mock(DoiProxyService.class);
@@ -167,9 +187,7 @@ public class MainHandlerTest {
     }
 
     @Test
-    public void testInternalServerErrorResponse()
-        throws IOException, NoContentLocationFoundException, InterruptedException, TransformFailedException,
-        URISyntaxException, MetadataNotFoundException, MalformedRequestException {
+    public void testInternalServerErrorResponse() throws Exception {
         PublicationConverter publicationConverter = mock(PublicationConverter.class);
         when(publicationConverter.toSummary(any())).thenThrow(new RuntimeException(SOME_ERROR_MESSAGE));
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
@@ -190,7 +208,7 @@ public class MainHandlerTest {
     @Test
     @DisplayName("handler returns BadGateway error when DoiProxyService returns failed response")
     public void handlerReturnsBadGatewayErrorWhenDoiProxyServiceReturnsFailedResponse()
-        throws InterruptedException, URISyntaxException, IOException, TransformFailedException {
+        throws Exception {
 
         PublicationConverter publicationConverter = mockPublicationConverter();
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
@@ -209,8 +227,7 @@ public class MainHandlerTest {
     @Test
     @DisplayName("handler returns BadGateway when ResourcePersistenceService returns failed response")
     public void handlerReturnsBadGatewayErrorWhenResourcePersistenceServiceReturnsFailedResponse()
-        throws InterruptedException, URISyntaxException, IOException, MetadataNotFoundException,
-        NoContentLocationFoundException, TransformFailedException, MalformedRequestException {
+        throws Exception {
 
         PublicationConverter publicationConverter = mockPublicationConverter();
         DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
@@ -231,7 +248,7 @@ public class MainHandlerTest {
     @Test
     @DisplayName("handler returns BadRequest when request body is malformed")
     public void handlerReturnsBadRequestErrorWhenRequestBodyIsMalformed()
-        throws InterruptedException, URISyntaxException, IOException, TransformFailedException {
+        throws Exception {
 
         PublicationConverter publicationConverter = mockPublicationConverter();
         DoiProxyService doiProxyService = new DoiProxyService(null);
