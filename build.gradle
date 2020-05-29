@@ -49,6 +49,8 @@ dependencies {
     testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: jupiterVersion
     testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.3.3'
     testImplementation group: 'com.github.stefanbirkner', name: 'system-rules', version: '1.19.0'
+    testImplementation 'junit:junit:4.11'
+    testImplementation 'org.hamcrest:hamcrest-core:1.3'
 }
 
 

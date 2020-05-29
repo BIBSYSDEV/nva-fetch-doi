@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.doi.fetch.exceptions.InsertPublicationException;
 import no.unit.nva.doi.fetch.exceptions.MalformedRequestException;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
@@ -118,9 +119,10 @@ public class MainHandler implements RequestStreamHandler {
             String apiUrl = String.join("://", apiScheme, apiHost);
             Publication publication = getPublicationMetadata(requestBody, authorization, apiUrl, event);
 
-            tryInsertPublication(authorization, apiUrl, publication);
+            PublicationResponse publicationResponse = tryInsertPublication(authorization, apiUrl, publication);
 
-            Summary summary = publicationConverter.toSummary(objectMapper.convertValue(publication, JsonNode.class));
+            Summary summary = publicationConverter
+                .toSummary(objectMapper.convertValue(publicationResponse, JsonNode.class));
 
             writeOutput(outputStream, summary);
         } catch (NoContentLocationFoundException
@@ -149,9 +151,9 @@ public class MainHandler implements RequestStreamHandler {
         return doiTransformService.transformLocally(externalModel, lambdaEvent);
     }
 
-    private void tryInsertPublication(String authorization, String apiUrl, Publication publication)
+    private PublicationResponse tryInsertPublication(String authorization, String apiUrl, Publication publication)
         throws InterruptedException, IOException, InsertPublicationException, URISyntaxException {
-        insertPublication(authorization, apiUrl, publication);
+        return insertPublication(authorization, apiUrl, publication);
     }
 
     private RequestBody extractRequestBody(JsonNode event) throws com.fasterxml.jackson.core.JsonProcessingException {
@@ -166,9 +168,9 @@ public class MainHandler implements RequestStreamHandler {
                        .orElseThrow(() -> new IllegalArgumentException(MISSING_HEADER + HEADERS_AUTHORIZATION));
     }
 
-    private void insertPublication(String authorization, String apiUrl, Publication publication)
+    private PublicationResponse insertPublication(String authorization, String apiUrl, Publication publication)
         throws InterruptedException, InsertPublicationException, IOException, URISyntaxException {
-        publicationPersistenceService.insertPublication(publication, apiUrl, authorization);
+        return publicationPersistenceService.insertPublication(publication, apiUrl, authorization);
     }
 
     private void writeOutput(OutputStream output, Summary summary) throws IOException {

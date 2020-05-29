@@ -1,7 +1,9 @@
 package no.unit.nva.doi.fetch.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.CreatePublicationRequest;
+import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.doi.fetch.MainHandler;
 import no.unit.nva.doi.fetch.exceptions.InsertPublicationException;
 import no.unit.nva.model.Publication;
@@ -24,6 +26,7 @@ public class PublicationPersistenceService extends RestClient {
     public static final String WARNING_MESSAGE = "Inserting publication failed.";
     public static final String INSERTING_PUBLICATION_FAILED = WARNING_MESSAGE + "\nAPI-URL:%s\nRequestBody:%s\n";
     private final HttpClient client;
+    private final ObjectMapper objectMapper = MainHandler.createObjectMapper();
 
     public PublicationPersistenceService(HttpClient client) {
         super();
@@ -45,7 +48,7 @@ public class PublicationPersistenceService extends RestClient {
      * @throws InsertPublicationException When publication api service responds with failure.
      * @throws URISyntaxException when the input URL is invalid.
      */
-    public void insertPublication(Publication publication, String apiUrl, String authorization)
+    public PublicationResponse insertPublication(Publication publication, String apiUrl, String authorization)
         throws IOException, InterruptedException, InsertPublicationException, URISyntaxException {
         //TODO: toResponse is exactly the same method as convertValue and will be changed upon next release
         CreatePublicationRequest requestBody =
@@ -64,6 +67,8 @@ public class PublicationPersistenceService extends RestClient {
         if (!responseIsSuccessful(response)) {
             throw new InsertPublicationException(insertionErrorMessage(apiUrl, requestBodyString));
         }
+
+        return objectMapper.readValue(response.body(), PublicationResponse.class);
     }
 
     private String insertionErrorMessage(String apiUrl, String requestBodyString) {
