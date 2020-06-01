@@ -12,8 +12,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -66,8 +67,6 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidPageTypeException;
 import org.apache.http.entity.ContentType;
-import org.junit.Assert;
-import org.junit.contrib.java.lang.system.EnvironmentVariables;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -82,7 +81,7 @@ public class MainHandlerTest {
     private static final String SOME_ERROR_MESSAGE = "SomeErrorMessage";
     public static final String VALID_DOI = "https://doi.org/10.1109/5.771073";
 
-    public EnvironmentVariables environmentVariables = new EnvironmentVariables();
+
     private ObjectMapper objectMapper = MainHandler.createObjectMapper();
 
     private Environment environment;
@@ -92,7 +91,6 @@ public class MainHandlerTest {
      */
     @BeforeEach
     public void setUp() {
-        environmentVariables = new EnvironmentVariables();
         environment = Mockito.mock(Environment.class);
         when(environment.get(ALLOWED_ORIGIN_ENV)).thenReturn("*");
         when(environment.get(API_HOST_ENV)).thenReturn("localhost:3000");
@@ -115,8 +113,8 @@ public class MainHandlerTest {
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
-        Assert.assertTrue(gatewayResponse.getHeaders().keySet().contains(CONTENT_TYPE));
-        Assert.assertTrue(gatewayResponse.getHeaders().keySet().contains(MainHandler.ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertTrue(gatewayResponse.getHeaders().keySet().contains(CONTENT_TYPE));
+        assertTrue(gatewayResponse.getHeaders().keySet().contains(MainHandler.ACCESS_CONTROL_ALLOW_ORIGIN));
         Summary summary = objectMapper.readValue(gatewayResponse.getBody().toString(), Summary.class);
         assertNotNull(summary.getIdentifier());
     }
