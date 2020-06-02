@@ -1,6 +1,7 @@
 package no.unit.nva.doi.fetch.model;
 
-import org.junit.Assert;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -12,6 +13,6 @@ public class RequestBodyTest {
     public void test() throws MalformedURLException {
         RequestBody requestBody = new RequestBody();
         requestBody.setDoiUrl(new URL("http://example.org"));
-        Assert.assertNotNull(requestBody.getDoiUrl());
+        assertNotNull(requestBody.getDoiUrl());
     }
 }

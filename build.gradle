@@ -45,10 +45,9 @@ dependencies {
     implementation group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: 'v0.8.1'
 
     testImplementation group: 'org.hamcrest', name: 'hamcrest', version: hamcrestVersion
-    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: jupiterVersion
-    testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: jupiterVersion
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter', version: jupiterVersion
     testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.3.3'
-    testImplementation group: 'com.github.stefanbirkner', name: 'system-rules', version: '1.19.0'
+
 }
 
 
