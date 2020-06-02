@@ -1,5 +1,7 @@
 package no.unit.nva.doi.fetch.service;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.doi.fetch.MainHandler;
@@ -9,7 +11,6 @@ import java.io.File;
 import java.io.IOException;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertNotNull;
 
 public class PublicationConverterTest {
 
