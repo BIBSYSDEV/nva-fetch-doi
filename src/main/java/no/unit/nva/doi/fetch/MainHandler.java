@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.doi.fetch.exceptions.InsertPublicationException;
 import no.unit.nva.doi.fetch.exceptions.MalformedRequestException;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
@@ -21,8 +22,10 @@ import no.unit.nva.doi.fetch.service.DoiTransformService;
 import no.unit.nva.doi.fetch.service.PublicationConverter;
 import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
 import no.unit.nva.doi.fetch.utils.JacocoGenerated;
-import no.unit.nva.doi.transformer.excpetions.MisingClaimException;
+import no.unit.nva.doi.transformer.exception.MissingClaimException;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.exceptions.InvalidIssnException;
+import no.unit.nva.model.exceptions.InvalidPageTypeException;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ProblemModule;
 import org.zalando.problem.Status;
@@ -116,19 +119,22 @@ public class MainHandler implements RequestStreamHandler {
             String apiUrl = String.join("://", apiScheme, apiHost);
             Publication publication = getPublicationMetadata(requestBody, authorization, apiUrl, event);
 
-            tryInsertPublication(authorization, apiUrl, publication);
+            PublicationResponse publicationResponse = tryInsertPublication(authorization, apiUrl, publication);
 
-            Summary summary = publicationConverter.toSummary(objectMapper.convertValue(publication, JsonNode.class));
+            Summary summary = publicationConverter
+                .toSummary(objectMapper.convertValue(publicationResponse, JsonNode.class));
 
             writeOutput(outputStream, summary);
         } catch (NoContentLocationFoundException
-            | InsertPublicationException
-            | MisingClaimException
-            | MalformedRequestException
-            | InterruptedException
-            | MetadataNotFoundException
-            | URISyntaxException
-            | RuntimeException e
+                | InsertPublicationException
+                | MissingClaimException
+                | MalformedRequestException
+                | InterruptedException
+                | MetadataNotFoundException
+                | URISyntaxException
+                | RuntimeException
+                | InvalidIssnException
+                | InvalidPageTypeException e
         ) {
             writeFailure(outputStream, e);
         }
@@ -136,17 +142,18 @@ public class MainHandler implements RequestStreamHandler {
 
     private Publication getPublicationMetadata(RequestBody requestBody, String authorization, String apiUrl,
                                             JsonNode lambdaEvent)
-        throws NoContentLocationFoundException, URISyntaxException, MetadataNotFoundException, IOException,
-               InterruptedException, MalformedRequestException, MisingClaimException {
+            throws NoContentLocationFoundException, URISyntaxException, MetadataNotFoundException, IOException,
+            InterruptedException, MalformedRequestException, MissingClaimException, InvalidIssnException,
+            InvalidPageTypeException {
 
         DoiProxyResponse externalModel = doiProxyService.lookup(requestBody.getDoiUrl(), apiUrl, authorization);
 
         return doiTransformService.transformLocally(externalModel, lambdaEvent);
     }
 
-    private void tryInsertPublication(String authorization, String apiUrl, Publication publication)
+    private PublicationResponse tryInsertPublication(String authorization, String apiUrl, Publication publication)
         throws InterruptedException, IOException, InsertPublicationException, URISyntaxException {
-        insertPublication(authorization, apiUrl, publication);
+        return insertPublication(authorization, apiUrl, publication);
     }
 
     private RequestBody extractRequestBody(JsonNode event) throws com.fasterxml.jackson.core.JsonProcessingException {
@@ -161,9 +168,9 @@ public class MainHandler implements RequestStreamHandler {
                        .orElseThrow(() -> new IllegalArgumentException(MISSING_HEADER + HEADERS_AUTHORIZATION));
     }
 
-    private void insertPublication(String authorization, String apiUrl, Publication publication)
+    private PublicationResponse insertPublication(String authorization, String apiUrl, Publication publication)
         throws InterruptedException, InsertPublicationException, IOException, URISyntaxException {
-        publicationPersistenceService.insertPublication(publication, apiUrl, authorization);
+        return publicationPersistenceService.insertPublication(publication, apiUrl, authorization);
     }
 
     private void writeOutput(OutputStream output, Summary summary) throws IOException {
@@ -221,7 +228,7 @@ public class MainHandler implements RequestStreamHandler {
         exceptionMap.put(InsertPublicationException.class.getName(), BAD_GATEWAY);
         exceptionMap.put(PublicationPersistenceService.class.getName(),BAD_GATEWAY);
         exceptionMap.put(MalformedRequestException.class.getName(), BAD_REQUEST);
-        exceptionMap.put(MisingClaimException.class.getName(), BAD_REQUEST);
+        exceptionMap.put(MissingClaimException.class.getName(), BAD_REQUEST);
         return exceptionMap;
     }
 
