@@ -2,6 +2,7 @@ package no.unit.nva.doi.transformer.model.crossrefmodel;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@SuppressWarnings("PMD.ShortClassName")
 public class Link {
     /*
         "URL": "http:\/\/link.springer.com\/content\/pdf\/10.1007\/s00115-004-1822-4.pdf",

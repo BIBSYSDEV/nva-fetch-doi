@@ -5,19 +5,19 @@ import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.api.PublicationResponse;
-import no.unit.nva.doi.fetch.exceptions.ExceptionsMap;
 import no.unit.nva.doi.fetch.exceptions.InsertPublicationException;
 import no.unit.nva.doi.fetch.exceptions.MalformedRequestException;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
 import no.unit.nva.doi.fetch.exceptions.NoContentLocationFoundException;
+import no.unit.nva.doi.fetch.exceptions.TransformFailedException;
 import no.unit.nva.doi.fetch.model.DoiProxyResponse;
 import no.unit.nva.doi.fetch.model.RequestBody;
 import no.unit.nva.doi.fetch.model.Summary;
 import no.unit.nva.doi.fetch.service.DoiProxyService;
-import no.unit.nva.doi.fetch.service.DoiTransformService;
 import no.unit.nva.doi.fetch.service.PublicationConverter;
 import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
 import no.unit.nva.doi.fetch.utils.JacocoGenerated;
+import no.unit.nva.doi.transformer.PublicationTransformer;
 import no.unit.nva.doi.transformer.exception.MissingClaimException;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIssnException;
@@ -38,6 +38,7 @@ import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.apache.http.entity.ContentType.APPLICATION_JSON;
+import static org.zalando.problem.Status.BAD_GATEWAY;
 import static org.zalando.problem.Status.BAD_REQUEST;
 
 public class MainHandler implements RequestStreamHandler {
@@ -53,7 +54,7 @@ public class MainHandler implements RequestStreamHandler {
 
     private final transient ObjectMapper objectMapper;
     private final transient PublicationConverter publicationConverter;
-    private final transient DoiTransformService doiTransformService;
+    private final transient LocalDoiTransformService doiTransformService;
     private final transient DoiProxyService doiProxyService;
     private final transient PublicationPersistenceService publicationPersistenceService;
     private final transient String allowedOrigin;
@@ -64,13 +65,13 @@ public class MainHandler implements RequestStreamHandler {
     private static final Map<String, Status> EXCEPTIONS_TO_STATUSES;
 
     static {
-        EXCEPTIONS_TO_STATUSES = Collections.unmodifiableMap(ExceptionsMap.createExceptionMap());
+        EXCEPTIONS_TO_STATUSES = Collections.unmodifiableMap(createExceptionMap());
     }
 
     @JacocoGenerated
     public MainHandler() {
-        this(jsonParser, new PublicationConverter(), new DoiTransformService(), new DoiProxyService(),
-            new PublicationPersistenceService(), new Environment());
+        this(jsonParser, new PublicationConverter(), new LocalDoiTransformService(new PublicationTransformer()),
+            new DoiProxyService(), new PublicationPersistenceService(), new Environment());
     }
 
     /**
@@ -80,7 +81,7 @@ public class MainHandler implements RequestStreamHandler {
      * @param environment  environment.
      */
     public MainHandler(ObjectMapper objectMapper, PublicationConverter publicationConverter,
-                       DoiTransformService doiTransformService, DoiProxyService doiProxyService,
+                       LocalDoiTransformService doiTransformService, DoiProxyService doiProxyService,
                        PublicationPersistenceService publicationPersistenceService, Environment environment) {
         this.objectMapper = objectMapper;
         this.publicationConverter = publicationConverter;
@@ -212,6 +213,18 @@ public class MainHandler implements RequestStreamHandler {
         headers.put(ACCESS_CONTROL_ALLOW_ORIGIN, allowedOrigin);
         headers.put(CONTENT_TYPE, APPLICATION_PROBLEM_JSON);
         return headers;
+    }
+
+    public static Map<String, Status> createExceptionMap() {
+        Map<String, Status> exceptionMap = new ConcurrentHashMap<>();
+        exceptionMap.put(MetadataNotFoundException.class.getName(), BAD_GATEWAY);
+        exceptionMap.put(NoContentLocationFoundException.class.getName(), BAD_GATEWAY);
+        exceptionMap.put(TransformFailedException.class.getName(), BAD_GATEWAY);
+        exceptionMap.put(InsertPublicationException.class.getName(), BAD_GATEWAY);
+        exceptionMap.put(PublicationPersistenceService.class.getName(),BAD_GATEWAY);
+        exceptionMap.put(MalformedRequestException.class.getName(), BAD_REQUEST);
+        exceptionMap.put(MissingClaimException.class.getName(), BAD_REQUEST);
+        return exceptionMap;
     }
 
     public static void log(String message) {

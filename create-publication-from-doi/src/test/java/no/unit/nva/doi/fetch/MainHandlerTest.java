@@ -47,6 +47,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import net.bytebuddy.asm.Advice.Local;
 import no.unit.nva.doi.fetch.exceptions.MalformedRequestException;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
 import no.unit.nva.doi.fetch.exceptions.NoContentLocationFoundException;
@@ -100,7 +101,7 @@ public class MainHandlerTest {
     public void testOkResponse()
         throws Exception {
         PublicationConverter publicationConverter = mockPublicationConverter();
-        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
+        LocalDoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
         PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
         Context context = getMockContext();
@@ -124,10 +125,10 @@ public class MainHandlerTest {
         return publicationConverter;
     }
 
-    private DoiTransformService mockDoiTransformServiceReturningSuccessfulResult()
+    private LocalDoiTransformService mockDoiTransformServiceReturningSuccessfulResult()
         throws URISyntaxException, TransformFailedException, InterruptedException, IOException,
                InvalidPageTypeException, MissingClaimException, InvalidIssnException {
-        DoiTransformService service = mock(DoiTransformService.class);
+        LocalDoiTransformService service = mock(LocalDoiTransformService.class);
         ObjectNode sampleNode = objectMapper.createObjectNode();
         when(service.transform(any(), anyString(), anyString())).thenReturn(sampleNode);
         when(service.transformLocally(any(DoiProxyResponse.class), any(JsonNode.class))).thenReturn(getPublication());
@@ -169,7 +170,7 @@ public class MainHandlerTest {
     @Test
     public void testBadRequestResponse() throws Exception {
         PublicationConverter publicationConverter = mock(PublicationConverter.class);
-        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
+        LocalDoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mock(DoiProxyService.class);
         PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
         Context context = getMockContext();
@@ -187,7 +188,7 @@ public class MainHandlerTest {
     public void testInternalServerErrorResponse() throws Exception {
         PublicationConverter publicationConverter = mock(PublicationConverter.class);
         when(publicationConverter.toSummary(any())).thenThrow(new RuntimeException(SOME_ERROR_MESSAGE));
-        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
+        LocalDoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
         PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
         Context context = getMockContext();
@@ -208,7 +209,7 @@ public class MainHandlerTest {
         throws Exception {
 
         PublicationConverter publicationConverter = mockPublicationConverter();
-        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
+        LocalDoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mockDoiProxyReceivingFailedResult();
         PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
 
@@ -228,7 +229,7 @@ public class MainHandlerTest {
 
         PublicationConverter publicationConverter = mockPublicationConverter();
         DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
-        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
+        LocalDoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
 
         PublicationPersistenceService publicationPersistenceService =
                 mockResourcePersistenceServiceReceivingFailedResult();
@@ -249,7 +250,7 @@ public class MainHandlerTest {
 
         PublicationConverter publicationConverter = mockPublicationConverter();
         DoiProxyService doiProxyService = new DoiProxyService(null);
-        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
+        LocalDoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
 
         PublicationPersistenceService publicationPersistenceService =
                 mockResourcePersistenceServiceReceivingFailedResult();

@@ -46,8 +46,8 @@ public class CrossrefDate {
         return dateParts;
     }
 
-    public void setDateParts(int[][] input) {
-        this.dateParts = input;
+    public void setDateParts(int[]... input) {
+        this.dateParts = input.clone();
     }
 
     public String getDateTime() {
@@ -88,7 +88,7 @@ public class CrossrefDate {
         return Stream.empty();
     }
 
-    private boolean hasYear(int[] dateArray) {
+    private boolean hasYear(int... dateArray) {
         return dateArray != null && dateArray.length > 0;
     }
 

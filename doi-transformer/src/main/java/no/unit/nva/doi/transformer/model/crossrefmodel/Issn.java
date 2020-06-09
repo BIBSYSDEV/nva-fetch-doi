@@ -3,6 +3,7 @@ package no.unit.nva.doi.transformer.model.crossrefmodel;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Arrays;
 
+@SuppressWarnings("PMD.ShortClassName")
 public class Issn {
 
     @JsonProperty("value")

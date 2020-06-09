@@ -41,7 +41,7 @@ public final class StringUtils {
             NodeList nodeList = getDocumentNodes(document);
             output = textWithoutXmlTags(nodeList);
         } catch (XPathExpressionException | ParserConfigurationException | IOException | SAXException e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         } finally {
             if (isNull(output)) {
                 output = input;
@@ -118,11 +118,11 @@ public final class StringUtils {
         return new Range.Builder().withBegin(start).withEnd(end).build();
     }
 
-    private static boolean hasSecondArg(String[] array) {
+    private static boolean hasSecondArg(String... array) {
         return array.length > 1;
     }
 
-    private static boolean isNotEmpty(String[] array) {
+    private static boolean isNotEmpty(String... array) {
         return array.length > 0;
     }
 }

@@ -1,3 +1,7 @@
 dependencies {
     implementation project(":fetch-doi-commons")
+
+    implementation(group: 'com.ibm.icu', name: 'icu4j', version: '66.1') {
+        because 'We use this to map ordinals to numbers'
+    }
 }

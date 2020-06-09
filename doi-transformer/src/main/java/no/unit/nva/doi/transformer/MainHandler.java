@@ -78,7 +78,7 @@ public class MainHandler implements RequestStreamHandler {
             body = extractRequestBody(event);
             contentLocation = extractContentLocationHeader(event);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             objectMapper.writeValue(output,
                     new GatewayResponse<>(objectMapper.writeValueAsString(Problem.valueOf(BAD_REQUEST, e.getMessage())),
                             failureResponseHeaders(), SC_BAD_REQUEST));
@@ -91,7 +91,7 @@ public class MainHandler implements RequestStreamHandler {
             objectMapper.writeValue(output,
                 new GatewayResponse<>(objectMapper.writeValueAsString(publication), sucessResponseHeaders(), SC_OK));
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             objectMapper.writeValue(output, new GatewayResponse<>(
                     objectMapper.writeValueAsString(Problem.valueOf(INTERNAL_SERVER_ERROR, e.getMessage())),
                     failureResponseHeaders(), SC_INTERNAL_SERVER_ERROR));

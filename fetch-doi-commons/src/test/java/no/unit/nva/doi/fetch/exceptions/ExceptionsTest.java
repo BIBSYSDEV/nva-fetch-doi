@@ -1,22 +1,12 @@
 package no.unit.nva.doi.fetch.exceptions;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import java.util.Map;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class ExceptionsTest {
 
     public static final String MESSAGE = "message";
-
-    @Test
-    public void canCreateExceptionsMap() {
-        Map exceptionsMap = ExceptionsMap.createExceptionMap();
-        assertNotNull(exceptionsMap);
-        assertFalse(exceptionsMap.isEmpty());
-    }
 
     @Test
     public void canCreateInsertPublicationException() {

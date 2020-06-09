@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.zalando.problem.ProblemModule;
 
-public class ObjectMapperConfig {
+public final class ObjectMapperConfig {
 
     private ObjectMapperConfig() {
 

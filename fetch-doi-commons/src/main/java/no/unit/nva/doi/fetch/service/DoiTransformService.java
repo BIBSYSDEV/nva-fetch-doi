@@ -1,17 +1,13 @@
 package no.unit.nva.doi.fetch.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import static org.apache.http.HttpHeaders.ACCEPT;
+import static org.apache.http.HttpHeaders.AUTHORIZATION;
+import static org.apache.http.HttpHeaders.CONTENT_LOCATION;
+import static org.apache.http.HttpHeaders.CONTENT_TYPE;
+import static org.apache.http.entity.ContentType.APPLICATION_JSON;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import no.unit.nva.doi.fetch.ObjectMapperConfig;
-import no.unit.nva.doi.fetch.exceptions.TransformFailedException;
-import no.unit.nva.doi.fetch.model.DoiProxyResponse;
-import no.unit.nva.doi.transformer.PublicationTransformer;
-import no.unit.nva.doi.transformer.exception.MissingClaimException;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.exceptions.InvalidPageTypeException;
-
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -19,12 +15,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-
-import static org.apache.http.HttpHeaders.ACCEPT;
-import static org.apache.http.HttpHeaders.AUTHORIZATION;
-import static org.apache.http.HttpHeaders.CONTENT_LOCATION;
-import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.http.entity.ContentType.APPLICATION_JSON;
+import no.unit.nva.doi.fetch.ObjectMapperConfig;
+import no.unit.nva.doi.fetch.exceptions.TransformFailedException;
+import no.unit.nva.doi.fetch.model.DoiProxyResponse;
 
 public class DoiTransformService extends RestClient {
 
@@ -33,8 +26,7 @@ public class DoiTransformService extends RestClient {
     public static final String TRANSFORMATION_ERROR_MESSAGE =
         WARNING_MESSAGE + "\nApiUrl:%s\n Path:%s\n RequestBody:%s";
     private final HttpClient client;
-    private final PublicationTransformer publicationTransformer;
-    private final ObjectMapper objectMapper;
+    protected final ObjectMapper objectMapper;
 
     /**
      * Transform sevice with custom client.
@@ -44,7 +36,6 @@ public class DoiTransformService extends RestClient {
     public DoiTransformService(HttpClient client) {
         super();
         this.client = client;
-        this.publicationTransformer = new PublicationTransformer();
         this.objectMapper = ObjectMapperConfig.createObjectMapper();
     }
 
@@ -53,26 +44,6 @@ public class DoiTransformService extends RestClient {
      */
     public DoiTransformService() {
         this(HttpClient.newBuilder().build());
-    }
-
-    /**
-     * Method for transforming a publication inside another lambda, without calling the lambda handler.
-     *
-     * @param response a {@link DoiProxyResponse}
-     * @param event    a ApiGateway lambda event
-     * @return a {@link Publication}
-     * @throws JsonProcessingException when {@link PublicationTransformer} throws exception
-     * @throws MissingClaimException    when {@link PublicationTransformer} throws exception
-     * @throws URISyntaxException    when {@link PublicationTransformer} throws exception
-     * @throws InvalidIssnException when {@link PublicationTransformer} throws exception
-     * @throws InvalidPageTypeException when {@link PublicationTransformer} throws exception
-     */
-    public Publication transformLocally(DoiProxyResponse response, JsonNode event)
-            throws JsonProcessingException, MissingClaimException, URISyntaxException, InvalidIssnException,
-            InvalidPageTypeException {
-        String body = objectMapper.writeValueAsString(response.getJsonNode());
-        return publicationTransformer
-            .transformPublication(event, body, response.getMetadataSource());
     }
 
     /**

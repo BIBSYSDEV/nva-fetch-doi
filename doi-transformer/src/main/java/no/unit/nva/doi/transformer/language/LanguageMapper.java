@@ -79,7 +79,7 @@ public final class LanguageMapper {
         return new SimpleEntry<>(key, value);
     }
 
-    private static boolean keepOnlyLinesWithTwoEntries(String[] array) {
+    private static boolean keepOnlyLinesWithTwoEntries(String... array) {
         return array.length >= 2;
     }
 

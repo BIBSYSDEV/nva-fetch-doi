@@ -30,7 +30,7 @@ public class RequestBodyReader {
 
         public static final int NUMBER_OF_REQUESTS_TO_PUBLISHER = 1000;
 
-        private ByteBuffer cache = ByteBuffer.allocate(100);
+        private final ByteBuffer cache = ByteBuffer.allocate(100);
 
         public String getBody() {
             return new String(cache.array(), StandardCharsets.UTF_8);
