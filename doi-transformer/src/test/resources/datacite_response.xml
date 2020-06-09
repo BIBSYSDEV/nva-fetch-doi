@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<publication xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://datacite.org/schema/kernel-4"
+  xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/entityDescription.xsd">
+  <identifier identifierType="DOI">10.1109/5.771073</identifier>
+  <creators>
+    <creator>
+      <creatorName nameType="Personal">Paskin, N.</creatorName>
+      <givenName>N.</givenName>
+      <familyName>Paskin</familyName>
+    </creator>
+  </creators>
+  <titles>
+    <title>Toward unique identifiers</title>
+  </titles>
+  <publisher>Institute of Electrical and Electronics Engineers (IEEE)</publisher>
+  <publicationYear>1999</publicationYear>
+  <resourceType resourceTypeGeneral="Text">JournalArticle</resourceType>
+  <dates>
+    <publicationDate dateType="Issued">1999-07</publicationDate>
+    <publicationDate dateType="Updated">2017-03-10T01:41:02Z</publicationDate>
+  </dates>
+  <relatedIdentifiers>
+    <relatedIdentifier relatedIdentifierType="ISSN" relationType="IsPartOf"
+      resourceTypeGeneral="Collection">00189219
+    </relatedIdentifier>
+  </relatedIdentifiers>
+  <version/>
+  <descriptions>
+    <description descriptionType="SeriesInformation">Proceedings of the IEEE, 87(7), 1208-1227
+    </description>
+  </descriptions>
+</publication>

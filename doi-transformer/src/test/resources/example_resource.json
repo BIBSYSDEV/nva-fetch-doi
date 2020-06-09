@@ -1,0 +1,101 @@
+{
+  "type": "Publication",
+  "created": "2019-01-13T15:31:55.123450+01:00",
+  "hasEntityDescription": {
+    "hasContributor": {
+      "type": "Contributor",
+      "hasIdentifier": "000001",
+      "hasIdentity": "http://link.to.base/0000001",
+      "hasRole": "http://nva.unit.no/ontology#CreatorRole"
+    },
+    "hasDate": {
+      "type": "Date",
+      "hasDay": "01",
+      "hasMonth": "01",
+      "hasYear": "2019"
+    },
+    "hasTitle": [
+      {
+        "language": "en",
+        "value": "A journey towards a valid data model"
+      },
+      {
+        "language": "nb",
+        "value": "En reise mot en valid datamodell"
+      }
+    ],
+    "hasType": "http://nva.unit.no/ontology#JournalArticle"
+  },
+  "hasFileSet": {
+    "type": "FileSet",
+    "hasFile": [
+      {
+        "type": "File",
+        "hasIdentifier": "0000001",
+        "hasMimeType": "application/pdf",
+        "hasName": "my_lovely_file.pdf",
+        "hasSize": "22"
+      }
+    ]
+  },
+  "hasHandle": {
+    "id": "https://hndl.net/some/link"
+  },
+  "hasIdentifier": "000001",
+  "hasLicense": {
+    "type": "License",
+    "hasIdentifier": "CCBY4.0",
+    "hasLink": "http://link.to.license",
+    "hasTitle": {
+      "language": "en",
+      "value": "CC BY 4.0"
+    }
+  },
+  "hasLink": "http://nva.unit.no/publication/000001",
+  "hasPublisher": [
+    {
+      "type": "Organization",
+      "hasIdentifier": "0000001",
+      "hasTitle": [
+        {
+          "language": "en",
+          "value": "Norwegian Univeristy of Science and Technology"
+        },
+        {
+          "language": "nb",
+          "value": "Norges tekniske og naturvitenskaplige universitet"
+        },
+        {
+          "language": "nn",
+          "value": "Noregs tekniske og naturvitskaplege universitet"
+        }
+      ]
+    },
+    {
+      "hasIdentifier": "000000001",
+      "hasTitle": [
+        {
+          "language": "nn",
+          "value": "Unit"
+        },
+        {
+          "language": "se",
+          "value": "Unit"
+        },
+        {
+          "language": "en",
+          "value": "Unit"
+        },
+        {
+          "language": "nb",
+          "value": "Unit"
+        }
+      ]
+    }
+  ],
+  "hasStatus": "http://nva.unit.no/ontology#PublishedStatus",
+  "indexedDate": "2019-01-14T15:31:55.130010+01:00",
+  "modified": "2019-01-14T15:31:55.123450+01:00",
+  "owner": "zzz@unit.no",
+  "publishedDate": "2019-01-13T15:31:55.123450+01:00"
+}

@@ -1,0 +1,69 @@
+{
+  "id": "https://doi.org/10.1109/5.771073",
+  "doi": "10.1109/5.771073",
+  "url": "http://ieeexplore.ieee.org/document/771073/",
+  "types": {
+    "ris": "JOUR",
+    "bibtex": "article",
+    "citeproc": "article-journal",
+    "schemaOrg": "ScholarlyArticle",
+    "resourceType": "JournalArticle",
+    "resourceTypeGeneral": "Text"
+  },
+  "creators": [
+    {
+      "name": "Paskin, N.",
+      "nameType": "Personal",
+      "givenName": "N.",
+      "familyName": "Paskin",
+      "affiliation": []
+    }
+  ],
+  "titles": [
+    {
+      "title": "Toward unique identifiers"
+    }
+  ],
+  "publisher": "Institute of Electrical and Electronics Engineers (IEEE)",
+  "container": {
+    "type": "Journal",
+    "issue": "7",
+    "title": "Proceedings of the IEEE",
+    "volume": "87",
+    "lastPage": "1227",
+    "firstPage": "1208",
+    "identifier": "00189219",
+    "identifierType": "ISSN"
+  },
+  "contributors": [],
+  "dates": [
+    {
+      "date": "1999-07",
+      "dateType": "Issued"
+    },
+    {
+      "date": "2017-03-10T01:41:02Z",
+      "dateType": "Updated"
+    }
+  ],
+  "publicationYear": 1999,
+  "identifiers": [
+    {
+      "identifier": "https://doi.org/10.1109/5.771073",
+      "identifierType": "DOI"
+    }
+  ],
+  "relatedIdentifiers": [
+    {
+      "relationType": "IsPartOf",
+      "relatedIdentifier": "00189219",
+      "resourceTypeGeneral": "Collection",
+      "relatedIdentifierType": "ISSN"
+    }
+  ],
+  "schemaVersion": "http://datacite.org/schema/kernel-4",
+  "providerId": "crossref",
+  "clientId": "crossref.citations",
+  "agency": "Crossref",
+  "state": "findable"
+}

@@ -1,0 +1,31 @@
+def jacksonVersion = '2.10.2'
+def problemVersion = '0.24.0'
+
+dependencies {
+    api group: 'org.apache.commons', name: 'commons-lang3', version: '3.9'
+    api group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.2.0'
+    api group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion
+    api group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
+    api group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
+    api group: 'org.glassfish.jersey.core', name: 'jersey-common', version: '2.30.1'
+    api group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: jacksonVersion
+    api(group: 'org.zalando', name: 'problem', version: problemVersion) {
+        compileOnly(group: 'org.apiguardian', name: 'apiguardian-api', version: '1.1.0') {
+            because 'Dependency has maven scope provided'
+        }
+    }
+    api(group: 'com.ibm.icu', name: 'icu4j', version: '66.1') {
+        because 'We use this to map ordinals to numbers'
+    }
+    api group: 'org.zalando', name: 'jackson-datatype-problem', version: problemVersion
+    api group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.9'
+    api group: 'org.apache.httpcomponents', name: 'httpcore', version: '4.4.11'
+    api(group: 'org.slf4j', name: 'slf4j-api', version: '1.8.0-beta4') {
+        because 'Used by org.apache.logging.log4j:log4j-slf4j18-impl:2.13.2 in nva-commons'
+    }
+    api 'com.github.BIBSYSDEV:aws-build-tools:v1.5.5'
+    api group: 'com.github.BIBSYSDEV', name: 'nva-doi-transformer', version: '0.1.8'
+    api group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: 'v0.8.1'
+    api group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: '0.3.4'
+
+}
