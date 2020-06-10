@@ -84,7 +84,7 @@ public class DoiProxyService extends RestClient {
         try {
             System.out.println(jsonParser.writeValueAsString(request));
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            e.printStackTrace(System.out);
         }
         throw new MalformedRequestException(REQUEST_BODY_MALFORMED);
     }
