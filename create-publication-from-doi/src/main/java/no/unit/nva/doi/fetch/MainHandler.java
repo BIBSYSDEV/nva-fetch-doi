@@ -1,30 +1,17 @@
 package no.unit.nva.doi.fetch;
 
+import static org.apache.http.HttpHeaders.CONTENT_TYPE;
+import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
+import static org.apache.http.HttpStatus.SC_OK;
+import static org.apache.http.entity.ContentType.APPLICATION_JSON;
+import static org.zalando.problem.Status.BAD_GATEWAY;
+import static org.zalando.problem.Status.BAD_REQUEST;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import no.unit.nva.api.PublicationResponse;
-import no.unit.nva.doi.fetch.exceptions.InsertPublicationException;
-import no.unit.nva.doi.fetch.exceptions.MalformedRequestException;
-import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
-import no.unit.nva.doi.fetch.exceptions.NoContentLocationFoundException;
-import no.unit.nva.doi.fetch.exceptions.TransformFailedException;
-import no.unit.nva.doi.fetch.model.DoiProxyResponse;
-import no.unit.nva.doi.fetch.model.RequestBody;
-import no.unit.nva.doi.fetch.model.Summary;
-import no.unit.nva.doi.fetch.service.DoiProxyService;
-import no.unit.nva.doi.fetch.service.PublicationConverter;
-import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
-import no.unit.nva.doi.fetch.utils.JacocoGenerated;
-import no.unit.nva.doi.transformer.PublicationTransformer;
-import no.unit.nva.doi.transformer.exception.MissingClaimException;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.exceptions.InvalidPageTypeException;
-import org.zalando.problem.Problem;
-import org.zalando.problem.Status;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -33,13 +20,28 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
-import static org.apache.http.HttpStatus.SC_OK;
-import static org.apache.http.entity.ContentType.APPLICATION_JSON;
-import static org.zalando.problem.Status.BAD_GATEWAY;
-import static org.zalando.problem.Status.BAD_REQUEST;
+import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.doi.DataciteContentType;
+import no.unit.nva.doi.DoiProxyService;
+import no.unit.nva.doi.MetadataAndContentLocation;
+import no.unit.nva.doi.fetch.exceptions.InsertPublicationException;
+import no.unit.nva.doi.fetch.exceptions.MalformedRequestException;
+import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
+import no.unit.nva.doi.fetch.exceptions.NoContentLocationFoundException;
+import no.unit.nva.doi.fetch.exceptions.TransformFailedException;
+import no.unit.nva.doi.fetch.model.RequestBody;
+import no.unit.nva.doi.fetch.model.Summary;
+import no.unit.nva.doi.fetch.service.PublicationConverter;
+import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
+import no.unit.nva.doi.fetch.utils.JacocoGenerated;
+import no.unit.nva.doi.transformer.DoiTransformService;
+import no.unit.nva.doi.transformer.PublicationTransformer;
+import no.unit.nva.doi.transformer.exception.MissingClaimException;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.exceptions.InvalidIssnException;
+import no.unit.nva.model.exceptions.InvalidPageTypeException;
+import org.zalando.problem.Problem;
+import org.zalando.problem.Status;
 
 public class MainHandler implements RequestStreamHandler {
 
@@ -54,7 +56,7 @@ public class MainHandler implements RequestStreamHandler {
 
     private final transient ObjectMapper objectMapper;
     private final transient PublicationConverter publicationConverter;
-    private final transient LocalDoiTransformService doiTransformService;
+    private final transient DoiTransformService doiTransformService;
     private final transient DoiProxyService doiProxyService;
     private final transient PublicationPersistenceService publicationPersistenceService;
     private final transient String allowedOrigin;
@@ -70,7 +72,7 @@ public class MainHandler implements RequestStreamHandler {
 
     @JacocoGenerated
     public MainHandler() {
-        this(jsonParser, new PublicationConverter(), new LocalDoiTransformService(new PublicationTransformer()),
+        this(jsonParser, new PublicationConverter(), new DoiTransformService(new PublicationTransformer()),
             new DoiProxyService(), new PublicationPersistenceService(), new Environment());
     }
 
@@ -81,7 +83,7 @@ public class MainHandler implements RequestStreamHandler {
      * @param environment  environment.
      */
     public MainHandler(ObjectMapper objectMapper, PublicationConverter publicationConverter,
-                       LocalDoiTransformService doiTransformService, DoiProxyService doiProxyService,
+                       DoiTransformService doiTransformService, DoiProxyService doiProxyService,
                        PublicationPersistenceService publicationPersistenceService, Environment environment) {
         this.objectMapper = objectMapper;
         this.publicationConverter = publicationConverter;
@@ -112,7 +114,7 @@ public class MainHandler implements RequestStreamHandler {
 
         try {
             String apiUrl = String.join("://", apiScheme, apiHost);
-            Publication publication = getPublicationMetadata(requestBody, authorization, apiUrl, event);
+            Publication publication = getPublicationMetadata(requestBody, event);
 
             PublicationResponse publicationResponse = tryInsertPublication(authorization, apiUrl, publication);
 
@@ -120,30 +122,29 @@ public class MainHandler implements RequestStreamHandler {
                 .toSummary(objectMapper.convertValue(publicationResponse, JsonNode.class));
 
             writeOutput(outputStream, summary);
-        } catch (NoContentLocationFoundException
-                | InsertPublicationException
+        } catch (InsertPublicationException
                 | MissingClaimException
-                | MalformedRequestException
                 | InterruptedException
-                | MetadataNotFoundException
                 | URISyntaxException
                 | RuntimeException
                 | InvalidIssnException
-                | InvalidPageTypeException e
+                | InvalidPageTypeException
+                | MetadataNotFoundException e
         ) {
             writeFailure(outputStream, e);
         }
     }
 
-    private Publication getPublicationMetadata(RequestBody requestBody, String authorization, String apiUrl,
+    private Publication getPublicationMetadata(RequestBody requestBody,
                                             JsonNode lambdaEvent)
-            throws NoContentLocationFoundException, URISyntaxException, MetadataNotFoundException, IOException,
-            InterruptedException, MalformedRequestException, MissingClaimException, InvalidIssnException,
-            InvalidPageTypeException {
+        throws URISyntaxException, IOException, MissingClaimException, InvalidIssnException,
+               InvalidPageTypeException, MetadataNotFoundException {
+        MetadataAndContentLocation metadataAndContentLocation = doiProxyService.lookupDoiMetadata(
+            requestBody.getDoiUrl().toString(), DataciteContentType.DATACITE_JSON);
 
-        DoiProxyResponse externalModel = doiProxyService.lookup(requestBody.getDoiUrl(), apiUrl, authorization);
-
-        return doiTransformService.transformLocally(externalModel, lambdaEvent);
+        return doiTransformService.transform(objectMapper.readTree(
+            metadataAndContentLocation.getJson()),
+            metadataAndContentLocation.getContentHeader(), lambdaEvent);
     }
 
     private PublicationResponse tryInsertPublication(String authorization, String apiUrl, Publication publication)
@@ -151,7 +152,7 @@ public class MainHandler implements RequestStreamHandler {
         return insertPublication(authorization, apiUrl, publication);
     }
 
-    private RequestBody extractRequestBody(JsonNode event) throws com.fasterxml.jackson.core.JsonProcessingException {
+    private RequestBody extractRequestBody(JsonNode event) throws JsonProcessingException {
         RequestBody requestBody;
         String body = event.get(BODY).textValue();
         requestBody = objectMapper.readValue(body, RequestBody.class);

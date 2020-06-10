@@ -8,6 +8,7 @@ import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
+import no.unit.nva.doi.fetch.ObjectMapperConfig;
 import no.unit.nva.doi.transformer.exception.MissingClaimException;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossRefDocument;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefApiResponse;
@@ -30,7 +31,7 @@ public class PublicationTransformer {
 
     public PublicationTransformer() {
         this(new DataciteResponseConverter(),
-                new CrossRefConverter(), MainHandler.createObjectMapper());
+                new CrossRefConverter(), ObjectMapperConfig.createObjectMapper());
     }
 
     /**

@@ -6,6 +6,7 @@ import no.unit.nva.api.CreatePublicationRequest;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.doi.fetch.ObjectMapperConfig;
 import no.unit.nva.doi.fetch.exceptions.InsertPublicationException;
+import no.unit.nva.doi.fetch.utils.JacocoGenerated;
 import no.unit.nva.model.Publication;
 
 import java.io.IOException;
@@ -33,6 +34,7 @@ public class PublicationPersistenceService extends RestClient {
         this.client = client;
     }
 
+    @JacocoGenerated
     public PublicationPersistenceService() {
         this(HttpClient.newBuilder().build());
     }

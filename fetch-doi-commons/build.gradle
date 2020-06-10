@@ -1,4 +1,4 @@
-def jacksonVersion = '2.10.2'
+def jacksonVersion = '2.10.3'
 def problemVersion = '0.24.0'
 
 dependencies {

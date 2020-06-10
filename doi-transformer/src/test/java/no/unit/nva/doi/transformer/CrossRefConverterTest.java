@@ -25,6 +25,7 @@ import java.util.Locale;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import no.unit.nva.doi.fetch.ObjectMapperConfig;
 import no.unit.nva.doi.transformer.language.LanguageMapper;
 import no.unit.nva.doi.transformer.language.exceptions.LanguageUriNotFoundException;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossRefDocument;
@@ -78,7 +79,7 @@ public class CrossRefConverterTest extends ConversionTest {
     private CrossRefDocument sampleInputDocument = createSampleDocument();
     private final CrossRefConverter converter = new CrossRefConverter();
     private Publication samplePublication;
-    private static final ObjectMapper objectMapper = MainHandler.createObjectMapper();
+    private static final ObjectMapper objectMapper = ObjectMapperConfig.createObjectMapper();
 
     @BeforeEach
     public void init() throws InvalidIssnException, InvalidPageTypeException {

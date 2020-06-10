@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import no.unit.nva.doi.fetch.ObjectMapperConfig;
 import no.unit.nva.doi.transformer.language.LanguageMapper;
 import no.unit.nva.doi.transformer.model.internal.external.DataciteCreator;
 import no.unit.nva.doi.transformer.model.internal.external.DataciteResponse;
@@ -34,7 +35,7 @@ public class DataciteResponseConverterTest {
     private static final UUID SOME_ID = UUID.randomUUID();
     private static final String SOME_OWNER = "SomeOwner";
     private static final URI SOME_URI = URI.create("SomeUri");
-    private final ObjectMapper objectMapper = MainHandler.createObjectMapper();
+    private final ObjectMapper objectMapper = ObjectMapperConfig.createObjectMapper();
 
     @DisplayName("DataciteResponseConverter::toPublication returns valid JSON when input is valid")
     @Test
