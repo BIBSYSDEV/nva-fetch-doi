@@ -81,6 +81,11 @@ public class DoiProxyService extends RestClient {
         if (DoiValidator.validate(request.getDoi())) {
             return request;
         }
+        try {
+            System.out.println(jsonParser.writeValueAsString(request));
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
         throw new MalformedRequestException(REQUEST_BODY_MALFORMED);
     }
 
