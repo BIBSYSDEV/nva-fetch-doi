@@ -249,6 +249,7 @@ public class CrossRefConverter extends AbstractConverter {
     }
 
     protected List<Contributor> toContributors(List<CrossrefAuthor> authors) {
+        List<Contributor> contributors = Collections.emptyList();
         if (authors != null) {
             List<Try<Contributor>> contributorMappings =
                 IntStream.range(0, authors.size())
@@ -257,10 +258,9 @@ public class CrossRefConverter extends AbstractConverter {
                     .collect(Collectors.toList());
 
             reportFailures(contributorMappings);
-            return successfulMappings(contributorMappings);
-        } else {
-            return Collections.emptyList();
+            contributors = successfulMappings(contributorMappings);
         }
+        return  contributors;
     }
 
     private List<Contributor> successfulMappings(List<Try<Contributor>> contributorMappings) {

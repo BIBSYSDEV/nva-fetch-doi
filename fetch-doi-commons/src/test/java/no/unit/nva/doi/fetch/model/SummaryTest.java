@@ -13,16 +13,18 @@ public class SummaryTest {
 
     @Test
     public void canMapSummary() throws JsonProcessingException {
-        PublicationDate date = new PublicationDate();
-        date.setDay("08");
-        date.setMonth("06");
-        date.setYear("2020");
+        PublicationDate date = new PublicationDate.Builder()
+            .withDay("08")
+            .withMonth("06")
+            .withYear("2020")
+            .build();
 
-        Summary summary = new Summary();
-        summary.setCreatorName("creator name");
-        summary.setIdentifier(UUID.randomUUID());
-        summary.setTitle("title");
-        summary.setDate(date);
+        Summary summary = new Summary.Builder()
+            .withCreatorName("creator name")
+            .withIdentifier(UUID.randomUUID())
+            .withTitle("title")
+            .withDate(date)
+            .build();
 
         Summary mappedSummary = objectMapper.readValue(objectMapper.writeValueAsString(summary), Summary.class);
 

@@ -96,7 +96,7 @@ public final class LanguageMapper {
         return new InputStreamReader(stream, StandardCharsets.UTF_8);
     }
 
-    private static List<String> linesfromResource(Path path) {
+    protected static List<String> linesfromResource(Path path) {
         try (BufferedReader reader = new BufferedReader(newInputStreamReader(inputStreamFromResources(path)))) {
             List<String> lines = new ArrayList<>();
             String line = reader.readLine();

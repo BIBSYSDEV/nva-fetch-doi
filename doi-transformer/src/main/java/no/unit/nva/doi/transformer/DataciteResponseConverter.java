@@ -127,13 +127,13 @@ public class DataciteResponseConverter extends AbstractConverter {
             .build();
     }
 
-    private PublicationInstance extractPublicationInstance(DataciteResponse dataciteResponse) throws
-                                                                                              InvalidPageTypeException {
+    private PublicationInstance extractPublicationInstance(DataciteResponse dataciteResponse) throws InvalidPageTypeException {
+        PublicationInstance publicationInstance = null;
         if (JOURNAL_CONTENT.equals(extractPublicationType(dataciteResponse))) {
             DataciteContainer container = dataciteResponse.getContainer();
             String issue = Optional.ofNullable(container.getIssue()).orElse(null);
             String volume = Optional.ofNullable(container.getVolume()).orElse(null);
-            return new JournalArticle.Builder()
+            publicationInstance = new JournalArticle.Builder()
                 .withArticleNumber(null)
                 .withIssue(issue)
                 .withPages(extractPages(container))
@@ -141,7 +141,7 @@ public class DataciteResponseConverter extends AbstractConverter {
                 .withPeerReviewed(true)
                 .build();
         }
-        return null;
+        return publicationInstance;
     }
 
     private Range extractPages(DataciteContainer container) {
@@ -151,12 +151,13 @@ public class DataciteResponseConverter extends AbstractConverter {
             .build();
     }
 
-    private PublicationContext extractPublicationContext(DataciteResponse dataciteResponse) throws
-                                                                                            InvalidIssnException {
+    private PublicationContext extractPublicationContext(DataciteResponse dataciteResponse)
+        throws InvalidIssnException {
+        PublicationContext publicationContext = null;
         PublicationType type = extractPublicationType(dataciteResponse);
         if (nonNull(type) && type.equals(JOURNAL_CONTENT)) {
 
-            return new Journal.Builder()
+            publicationContext = new Journal.Builder()
                 .withPrintIssn(extractPrintIssn(dataciteResponse))
                 .withTitle(dataciteResponse.getContainer().getTitle())
                 .withOnlineIssn(extractOnlineIssn(dataciteResponse))
@@ -165,7 +166,7 @@ public class DataciteResponseConverter extends AbstractConverter {
                 .withLevel(Level.NO_LEVEL)
                 .build();
         }
-        return null;
+        return publicationContext;
     }
 
     private String extractOnlineIssn(DataciteResponse dataciteResponse) {
@@ -216,7 +217,7 @@ public class DataciteResponseConverter extends AbstractConverter {
             .anyMatch(this::hasOpenAccessRights);
     }
 
-    private boolean hasOpenAccessRights(DataciteRights dataciteRights) {
+    protected boolean hasOpenAccessRights(DataciteRights dataciteRights) {
         return Optional.ofNullable(dataciteRights.getRightsUri())
             .map(LicensingIndicator::isOpen).orElse(false);
     }

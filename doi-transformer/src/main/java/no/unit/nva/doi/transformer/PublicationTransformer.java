@@ -20,11 +20,6 @@ import no.unit.nva.model.util.OrgNumberMapper;
 
 public class PublicationTransformer {
 
-    public static final String REQUEST_CONTEXT_AUTHORIZER_CLAIMS = "/requestContext/authorizer/claims/";
-    public static final String CUSTOM_FEIDE_ID = "custom:feideId";
-    public static final String CUSTOM_ORG_NUMBER = "custom:orgNumber";
-    public static final String MISSING_CLAIM_IN_REQUEST_CONTEXT = "Missing claim in requestContext: ";
-
     private final DataciteResponseConverter dataciteConverter;
     private final CrossRefConverter crossRefConverter;
     private final ObjectMapper objectMapper;
@@ -52,9 +47,10 @@ public class PublicationTransformer {
     /**
      * Transforms publication.
      *
-     * @param event           the lambda event.
      * @param body            the request body as extracted from the event.
      * @param contentLocation crossref or datacite.
+     * @param owner           the owner.
+     * @param orgNumber       the orgNumber.
      * @return a Publication.
      * @throws JsonProcessingException  when cannot process json.
      * @throws MissingClaimException     when request does not have the required claims.
@@ -63,11 +59,9 @@ public class PublicationTransformer {
      * @throws InvalidPageTypeException thrown if the provided page type is incompatible with
      *                                  the publication instance type.
      */
-    public Publication transformPublication(JsonNode event, String body, String contentLocation)
+    public Publication transformPublication(String body, String contentLocation, String owner, String orgNumber)
             throws JsonProcessingException, MissingClaimException, URISyntaxException, InvalidIssnException,
                    InvalidPageTypeException {
-        String owner = getClaimValueFromRequestContext(event, CUSTOM_FEIDE_ID);
-        String orgNumber = getClaimValueFromRequestContext(event, CUSTOM_ORG_NUMBER);
         UUID uuid = UUID.randomUUID();
         URI publisherID = toPublisherId(orgNumber);
         Instant now = Instant.now();
@@ -97,11 +91,6 @@ public class PublicationTransformer {
 
         CrossRefDocument document = objectMapper.readValue(body, CrossrefApiResponse.class).getMessage();
         return crossRefConverter.toPublication(document, now, owner, identifier, publisherId);
-    }
-
-    private String getClaimValueFromRequestContext(JsonNode event, String claimName) throws MissingClaimException {
-        return Optional.ofNullable(event.at(REQUEST_CONTEXT_AUTHORIZER_CLAIMS + claimName).textValue())
-                .orElseThrow(() -> new MissingClaimException(MISSING_CLAIM_IN_REQUEST_CONTEXT + claimName));
     }
 
     private URI toPublisherId(String orgNumber) {

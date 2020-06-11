@@ -21,11 +21,14 @@ import no.unit.nva.doi.fetch.ObjectMapperConfig;
 import no.unit.nva.doi.transformer.language.LanguageMapper;
 import no.unit.nva.doi.transformer.model.internal.external.DataciteCreator;
 import no.unit.nva.doi.transformer.model.internal.external.DataciteResponse;
+import no.unit.nva.doi.transformer.model.internal.external.DataciteRights;
+import no.unit.nva.doi.transformer.utils.LicensingIndicator;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidPageTypeException;
 import nva.commons.utils.IoUtils;
 import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -100,6 +103,16 @@ public class DataciteResponseConverterTest {
         List<URI> validUris = new ArrayList<>(LanguageMapper.languageUris());
         // for some reason hamcrest containsInAnyOrder does not want to work
         assertTrue(validUris.containsAll(languageUris));
+    }
+
+    @Test
+    public  void hasOpenAccessRightsReturnsTrueOnCreativeCommons() {
+        DataciteResponseConverter converter = new DataciteResponseConverter();
+        DataciteRights dataciteRights = new DataciteRights();
+        dataciteRights.setRightsUri("creativecommons");
+        boolean hasOpenAccessRights = converter.hasOpenAccessRights(dataciteRights);
+
+        Assertions.assertTrue(hasOpenAccessRights);
     }
 
     private Publication readPublicationWithMutlipleTitles() throws IOException, URISyntaxException,
