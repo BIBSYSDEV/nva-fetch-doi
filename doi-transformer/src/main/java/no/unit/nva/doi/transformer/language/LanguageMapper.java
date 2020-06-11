@@ -96,6 +96,7 @@ public final class LanguageMapper {
         return new InputStreamReader(stream, StandardCharsets.UTF_8);
     }
 
+    @SuppressWarnings("PMD.AvoidProtectedMethodInFinalClassNotExtending")
     protected static List<String> linesfromResource(Path path) {
         try (BufferedReader reader = new BufferedReader(newInputStreamReader(inputStreamFromResources(path)))) {
             List<String> lines = new ArrayList<>();
