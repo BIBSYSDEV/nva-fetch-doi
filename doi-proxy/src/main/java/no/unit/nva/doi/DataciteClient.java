@@ -5,10 +5,15 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
+import nva.commons.utils.JacocoGenerated;
 
 public class DataciteClient {
 
     public static final String DATACITE_BASE_URL_STRING = "https://data.datacite.org";
+
+    @JacocoGenerated
+    public DataciteClient() {
+    }
 
     protected URL createRequestUrl(String doiUrlString, DataciteContentType dataciteContentType)
         throws MalformedURLException {

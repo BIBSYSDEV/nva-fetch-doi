@@ -5,6 +5,7 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.util.Optional;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
+import nva.commons.utils.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +23,7 @@ public class DoiProxyService {
         this.dataciteClient = dataciteClient;
     }
 
+    @JacocoGenerated
     public DoiProxyService() {
         this(new CrossRefClient(HttpClient.newBuilder().build()), new DataciteClient());
     }

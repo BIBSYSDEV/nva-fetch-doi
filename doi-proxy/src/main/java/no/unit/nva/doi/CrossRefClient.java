@@ -15,6 +15,7 @@ import java.util.concurrent.ExecutionException;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.MediaType;
+import no.unit.nva.doi.fetch.utils.JacocoGenerated;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.utils.URIBuilder;
@@ -35,6 +36,7 @@ public class CrossRefClient {
 
     private final transient HttpClient httpClient;
 
+    @JacocoGenerated
     public CrossRefClient() {
         this(HttpClient.newHttpClient());
     }
