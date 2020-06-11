@@ -1,6 +1,7 @@
-package no.unit.nva.doi.transformer.model.internal.external;
+package no.unit.nva.doi.transformer.model.datacitemodel;
 
 import java.util.List;
+import nva.commons.utils.JacocoGenerated;
 
 public class DataciteCreator {
 
@@ -45,6 +46,7 @@ public class DataciteCreator {
         this.familyName = familyName;
     }
 
+    @JacocoGenerated
     public List<DataciteAffiliation> getAffiliation() {
         return affiliation;
     }

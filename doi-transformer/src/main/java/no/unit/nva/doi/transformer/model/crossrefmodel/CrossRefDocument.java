@@ -2,6 +2,7 @@ package no.unit.nva.doi.transformer.model.crossrefmodel;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import nva.commons.utils.JacocoGenerated;
 
 @SuppressWarnings({"PMD.TooManyFields", "PMD.ExcessivePublicCount"})
 public class CrossRefDocument {
@@ -130,6 +131,7 @@ public class CrossRefDocument {
         return license;
     }
 
+    @JacocoGenerated
     public void setLicense(List<License> input) {
         this.license = input;
     }

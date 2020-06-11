@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
+import nva.commons.utils.JacocoGenerated;
 
 /**
  * Parses dates in the following (JSON) format.
@@ -42,6 +43,7 @@ public class CrossrefDate {
     @JsonProperty("timestamp")
     private long timestamp;
 
+    @JacocoGenerated
     public int[][] getDateParts() {
         return dateParts;
     }
@@ -50,6 +52,7 @@ public class CrossrefDate {
         this.dateParts = input.clone();
     }
 
+    @JacocoGenerated
     public String getDateTime() {
         return dateTime;
     }
@@ -58,6 +61,7 @@ public class CrossrefDate {
         this.dateTime = input;
     }
 
+    @JacocoGenerated
     public long getTimestamp() {
         return timestamp;
     }

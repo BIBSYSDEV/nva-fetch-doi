@@ -50,17 +50,14 @@ import no.unit.nva.doi.CrossRefClient;
 import no.unit.nva.doi.DataciteClient;
 import no.unit.nva.doi.DoiProxyService;
 import no.unit.nva.doi.MetadataAndContentLocation;
-import no.unit.nva.doi.fetch.exceptions.MalformedRequestException;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
-import no.unit.nva.doi.fetch.exceptions.NoContentLocationFoundException;
-import no.unit.nva.doi.fetch.exceptions.TransformFailedException;
 import no.unit.nva.doi.model.DoiProxyResponse;
 import no.unit.nva.doi.fetch.model.PublicationDate;
 import no.unit.nva.doi.fetch.model.RequestBody;
 import no.unit.nva.doi.fetch.model.Summary;
-import no.unit.nva.doi.transformer.DoiTransformService;
 import no.unit.nva.doi.fetch.service.PublicationConverter;
 import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
+import no.unit.nva.doi.transformer.DoiTransformService;
 import no.unit.nva.doi.transformer.exception.MissingClaimException;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
@@ -68,6 +65,12 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidPageTypeException;
+import no.unit.nva.model.util.OrgNumberMapper;
+import no.unit.nva.testutils.HandlerRequestBuilder;
+import no.unit.nva.testutils.TestHeaders;
+import nva.commons.handlers.GatewayResponse;
+import nva.commons.utils.Environment;
+import org.apache.http.HttpHeaders;
 import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -82,6 +85,11 @@ public class MainHandlerTest {
     private static final String SOME_ERROR_MESSAGE = "SomeErrorMessage";
     public static final String VALID_DOI = "https://doi.org/10.1109/5.771073";
 
+    public static final String AUTHORIZER = "authorizer";
+    public static final String CLAIMS = "claims";
+    public static final String CUSTOM_FEIDE_ID = "custom:feideId";
+    public static final String CUSTOM_ORG_NUMBER = "custom:orgNumber";
+    public static final String JUNIT = "junit";
 
     private ObjectMapper objectMapper = ObjectMapperConfig.createObjectMapper();
 
@@ -93,9 +101,9 @@ public class MainHandlerTest {
     @BeforeEach
     public void setUp() {
         environment = mock(Environment.class);
-        when(environment.get(ALLOWED_ORIGIN_ENV)).thenReturn("*");
-        when(environment.get(API_HOST_ENV)).thenReturn("localhost:3000");
-        when(environment.get(API_SCHEME_ENV)).thenReturn("http");
+        when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
+        when(environment.readEnv(API_HOST_ENV)).thenReturn("localhost:3000");
+        when(environment.readEnv(API_SCHEME_ENV)).thenReturn("http");
     }
 
     @Test
@@ -130,7 +138,8 @@ public class MainHandlerTest {
         throws URISyntaxException, IOException,
                InvalidPageTypeException, MissingClaimException, InvalidIssnException {
         DoiTransformService service = mock(DoiTransformService.class);
-        when(service.transform(any(), any(), any())).thenReturn(getPublication());
+        when(service.transformPublication(anyString(), anyString(), anyString(), anyString()))
+            .thenReturn(getPublication());
         return service;
     }
 
@@ -181,7 +190,7 @@ public class MainHandlerTest {
                                                   doiProxyService, publicationPersistenceService, environment);
         OutputStream output = new ByteArrayOutputStream();
 
-        mainHandler.handleRequest(new ByteArrayInputStream(new byte[0]), output, context);
+        mainHandler.handleRequest(malformedInputStream(), output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
         assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
@@ -279,39 +288,31 @@ public class MainHandlerTest {
     }
 
     private InputStream mainHandlerInputStream() throws MalformedURLException, JsonProcessingException {
-        Map<String, Object> event = new ConcurrentHashMap<>();
+
         RequestBody requestBody = new RequestBody();
         requestBody.setDoiUrl(new URL(VALID_DOI));
-        event.put("body", objectMapper.writeValueAsString(requestBody));
-        event.put("headers", mainHandlerRequestHeaders());
-        return new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
+
+        Map<String, String> requestHeaders = new HashMap<>();
+        requestHeaders.put(AUTHORIZATION, "some api key");
+        requestHeaders.putAll(TestHeaders.getRequestHeaders());
+
+        return new HandlerRequestBuilder<RequestBody>(objectMapper)
+            .withBody(requestBody)
+            .withHeaders(requestHeaders)
+            .withRequestContext(getRequestContext())
+            .build();
     }
 
-    private InputStream mainHandlerMalformedRequestInputStream() throws MalformedURLException, JsonProcessingException {
-        Map<String, Object> event = new ConcurrentHashMap<>();
-        Map<String, String> requestBody = new HashMap<>();
-        requestBody.put("doiSomething", "https://doi.org");
-        event.put("body", objectMapper.writeValueAsString(requestBody));
-        event.put("headers", mainHandlerRequestHeaders());
-        return new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
-    }
+    private InputStream malformedInputStream() throws MalformedURLException, JsonProcessingException {
 
-    private InputStream inputStream() throws IOException {
-        Map<String, Object> event = new ConcurrentHashMap<>();
-        String body = new String(Files.readAllBytes(Paths.get("src/test/resources/example_publication.json")));
-        event.put("body", body);
-        Map<String, String> headers = new ConcurrentHashMap<>();
-        headers.put(AUTHORIZATION, "some api key");
-        headers.put(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
-        event.put("headers", headers);
-        return new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
-    }
+        Map<String, String> requestHeaders = new HashMap<>();
+        requestHeaders.put(AUTHORIZATION, "some api key");
+        requestHeaders.putAll(TestHeaders.getRequestHeaders());
 
-    private Map<String, String> mainHandlerRequestHeaders() {
-        Map<String, String> headers = new ConcurrentHashMap<>();
-        headers.put(AUTHORIZATION, "some api key");
-        headers.put(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
-        return headers;
+        return new HandlerRequestBuilder<RequestBody>(objectMapper)
+            .withHeaders(requestHeaders)
+            .withRequestContext(getRequestContext())
+            .build();
     }
 
     private OutputStream outputStream() {
@@ -320,5 +321,14 @@ public class MainHandlerTest {
 
     private GatewayResponse gatewayResponse(OutputStream outputStream) throws JsonProcessingException {
         return objectMapper.readValue(outputStream.toString(), GatewayResponse.class);
+    }
+
+    private Map<String, Object> getRequestContext() {
+        return Map.of(AUTHORIZER, Map.of(
+            CLAIMS, Map.of(
+                CUSTOM_FEIDE_ID, JUNIT,
+                CUSTOM_ORG_NUMBER, OrgNumberMapper.UNIT_ORG_NUMBER
+            ))
+        );
     }
 }

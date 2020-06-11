@@ -18,16 +18,35 @@ public class DoiProxyService {
 
     private static final Logger logger = LoggerFactory.getLogger(DoiProxyService.class);
 
+    /**
+     * Constructor for DoiProxyService.
+     *
+     * @param crossRefClient    crossRefClient
+     * @param dataciteClient    dataciteClient
+     */
     public DoiProxyService(CrossRefClient crossRefClient, DataciteClient dataciteClient) {
         this.crossRefClient = crossRefClient;
         this.dataciteClient = dataciteClient;
     }
 
+    /**
+     * Default constructor for DoiProxyService.
+     */
     @JacocoGenerated
     public DoiProxyService() {
         this(new CrossRefClient(HttpClient.newBuilder().build()), new DataciteClient());
     }
 
+    /**
+     * Look up metadata for doi url.
+     *
+     * @param doiUrl    doiUrl
+     * @param dataciteContentType   dataciteContentType
+     * @return  metadata and content location
+     * @throws MetadataNotFoundException    when no metadata found
+     * @throws IOException  when error reading from IO
+     * @throws URISyntaxException   when malformed doi url
+     */
     public MetadataAndContentLocation lookupDoiMetadata(String doiUrl, DataciteContentType dataciteContentType)
         throws MetadataNotFoundException, IOException, URISyntaxException {
         logger.info("getDoiMetadata(doi:" + doiUrl + ")");

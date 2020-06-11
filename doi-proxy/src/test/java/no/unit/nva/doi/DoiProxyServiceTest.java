@@ -16,6 +16,8 @@ import org.mockito.Mockito;
 public class DoiProxyServiceTest {
 
     public static final String EXAMPLE_DOI_URL = "https://doi.org/10.1000/182";
+    public static final String CONTENT_HEADER = "content header";
+    public static final String METADATA_JSON = "metadata json";
     private CrossRefClient crossRefClient;
     private DataciteClient dataciteClient;
 
@@ -26,9 +28,11 @@ public class DoiProxyServiceTest {
     }
 
     @Test
-    public void lookupDoiMetadataReturnsMetadataOnValidDoi() throws MetadataNotFoundException, IOException, URISyntaxException {
+    public void lookupDoiMetadataReturnsMetadataOnValidDoi()
+        throws MetadataNotFoundException, IOException, URISyntaxException {
         DoiProxyService doiProxyService = new DoiProxyService(crossRefClient, dataciteClient);
-        when(dataciteClient.fetchMetadata(anyString(), any())).thenReturn(new MetadataAndContentLocation("", ""));
+        when(dataciteClient.fetchMetadata(anyString(), any()))
+            .thenReturn(new MetadataAndContentLocation(CONTENT_HEADER, METADATA_JSON));
 
         MetadataAndContentLocation metadataAndContentLocation = doiProxyService.lookupDoiMetadata(EXAMPLE_DOI_URL,
             DataciteContentType.DATACITE_JSON);

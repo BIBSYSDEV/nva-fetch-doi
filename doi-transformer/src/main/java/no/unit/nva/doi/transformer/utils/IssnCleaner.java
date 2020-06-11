@@ -4,7 +4,7 @@ import static java.util.Objects.isNull;
 
 import no.unit.nva.model.validator.IssnValidator;
 
-public class IssnCleaner {
+public final class IssnCleaner {
 
     public static final String DELIMITER = "-";
     public static final String INVALID_CHARS = "[^[0-9]Xx]+";
@@ -13,6 +13,9 @@ public class IssnCleaner {
     public static final int BEGIN_FIRST_PART = 0;
     public static final int END_FIRST_PART = 4;
     public static final int BEGIN_SECOND_PART = 4;
+
+    private IssnCleaner() {
+    }
 
     /**
      * Takes an input string that is an ISSN candidate, tests it and formats it if possible or returns null.

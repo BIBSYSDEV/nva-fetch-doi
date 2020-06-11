@@ -8,12 +8,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import no.unit.nva.doi.transformer.model.internal.external.DataciteResponse;
-import no.unit.nva.doi.transformer.model.internal.external.DataciteTypes;
+import no.unit.nva.doi.transformer.model.datacitemodel.DataciteResponse;
+import no.unit.nva.doi.transformer.model.datacitemodel.DataciteTypes;
 import no.unit.nva.model.PublicationType;
+import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.SingletonCollector;
 
-public class DataciteTypesUtil {
+public final class DataciteTypesUtil {
 
     public static final String TYPE_TEXT = "text";
     public static final String JOURNAL = "journal";
@@ -21,6 +22,9 @@ public class DataciteTypesUtil {
     public static final int SINGLETON = 1;
     public static final int ONLY_ELEMENT = 0;
     public static final int SINGLE_ELEMENT = 1;
+
+    private DataciteTypesUtil() {
+    }
 
     /**
      * Maps the potentially many content types found in a Datacite response to a PublicationType.
@@ -41,6 +45,7 @@ public class DataciteTypesUtil {
                 && dataciteTypes.getResourceTypeGeneral().equalsIgnoreCase(TYPE_TEXT);
     }
 
+    @JacocoGenerated
     private static PublicationType getAnalyzedType(DataciteTypes types) {
         List<PublicationType> publicationTypeList = populateTypeList(types);
 
@@ -64,6 +69,7 @@ public class DataciteTypesUtil {
      * @param publicationTypeTally a map of types and number of occurrences.
      * @return the most mapped type.
      */
+    @JacocoGenerated
     private static PublicationType findMostAppliedMapping(Map<PublicationType, Long> publicationTypeTally) {
         if (publicationTypeTally.size() == SINGLE_ELEMENT) {
             return publicationTypeTally

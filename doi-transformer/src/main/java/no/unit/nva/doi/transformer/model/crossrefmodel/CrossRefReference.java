@@ -1,6 +1,7 @@
 package no.unit.nva.doi.transformer.model.crossrefmodel;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import nva.commons.utils.JacocoGenerated;
 
 public class CrossRefReference {
 
@@ -23,6 +24,7 @@ public class CrossRefReference {
     @JsonProperty("journal-title")
     private String journalTitle;
 
+    @JacocoGenerated
     public String getKey() {
         return key;
     }
@@ -31,6 +33,7 @@ public class CrossRefReference {
         this.key = key;
     }
 
+    @JacocoGenerated
     public String getDoiAssertedBy() {
         return doiAssertedBy;
     }
@@ -39,6 +42,7 @@ public class CrossRefReference {
         this.doiAssertedBy = doiAssertedBy;
     }
 
+    @JacocoGenerated
     public String getFirstPage() {
         return firstPage;
     }
@@ -47,6 +51,7 @@ public class CrossRefReference {
         this.firstPage = firstPage;
     }
 
+    @JacocoGenerated
     public String getDoi() {
         return doi;
     }
@@ -55,6 +60,7 @@ public class CrossRefReference {
         this.doi = doi;
     }
 
+    @JacocoGenerated
     public String getVolume() {
         return volume;
     }
@@ -63,6 +69,7 @@ public class CrossRefReference {
         this.volume = volume;
     }
 
+    @JacocoGenerated
     public String getAuthor() {
         return author;
     }
@@ -71,6 +78,7 @@ public class CrossRefReference {
         this.author = author;
     }
 
+    @JacocoGenerated
     public String getYear() {
         return year;
     }
@@ -79,14 +87,17 @@ public class CrossRefReference {
         this.year = year;
     }
 
+    @JacocoGenerated
     public String getUnstructuredReference() {
         return unstructuredReference;
     }
 
+    @JacocoGenerated
     public void setUnstructuredReference(String unstructuredReference) {
         this.unstructuredReference = unstructuredReference;
     }
 
+    @JacocoGenerated
     public String getJournalTitle() {
         return journalTitle;
     }

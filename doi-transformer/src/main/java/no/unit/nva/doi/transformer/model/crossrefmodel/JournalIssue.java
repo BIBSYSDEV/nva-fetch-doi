@@ -1,6 +1,7 @@
 package no.unit.nva.doi.transformer.model.crossrefmodel;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import nva.commons.utils.JacocoGenerated;
 
 public class JournalIssue {
 
@@ -9,6 +10,7 @@ public class JournalIssue {
     @JsonProperty("issue")
     private String issue;
 
+    @JacocoGenerated
     public CrossrefDate getPublishedPrint() {
         return publishedPrint;
     }
@@ -17,6 +19,7 @@ public class JournalIssue {
         this.publishedPrint = publishedPrint;
     }
 
+    @JacocoGenerated
     public String getIssue() {
         return issue;
     }

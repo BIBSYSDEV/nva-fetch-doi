@@ -15,6 +15,7 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import no.unit.nva.model.pages.Range;
+import nva.commons.utils.JacocoGenerated;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
@@ -26,6 +27,9 @@ public final class StringUtils {
     public static final String NOT_DIGIT = "\\D";
     public static final String DOUBLE_WHITESPACE = "\\s\\s";
     public static final String PATH_TO_TEXT = "//text()";
+
+    private StringUtils() {
+    }
 
     /**
      * Removes XML-style tags from String.
@@ -118,10 +122,12 @@ public final class StringUtils {
         return new Range.Builder().withBegin(start).withEnd(end).build();
     }
 
+    @JacocoGenerated
     private static boolean hasSecondArg(String... array) {
         return array.length > 1;
     }
 
+    @JacocoGenerated
     private static boolean isNotEmpty(String... array) {
         return array.length > 0;
     }

@@ -1,4 +1,6 @@
-package no.unit.nva.doi.transformer.model.internal.external;
+package no.unit.nva.doi.transformer.model.datacitemodel;
+
+import nva.commons.utils.JacocoGenerated;
 
 public class DataciteContainer {
 
@@ -11,6 +13,7 @@ public class DataciteContainer {
     private String identifier;
     private String identifierType;
 
+    @JacocoGenerated
     public String getType() {
         return type;
     }
@@ -59,6 +62,7 @@ public class DataciteContainer {
         this.firstPage = firstPage;
     }
 
+    @JacocoGenerated
     public String getIdentifier() {
         return identifier;
     }
@@ -67,6 +71,7 @@ public class DataciteContainer {
         this.identifier = identifier;
     }
 
+    @JacocoGenerated
     public String getIdentifierType() {
         return identifierType;
     }

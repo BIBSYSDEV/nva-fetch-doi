@@ -1,10 +1,13 @@
-package no.unit.nva.doi.transformer.model.internal.external;
+package no.unit.nva.doi.transformer.model.datacitemodel;
+
+import nva.commons.utils.JacocoGenerated;
 
 public class DataciteDate {
 
     private String date;
     private String dateType;
 
+    @JacocoGenerated
     public String getDate() {
         return date;
     }
@@ -13,6 +16,7 @@ public class DataciteDate {
         this.date = date;
     }
 
+    @JacocoGenerated
     public String getDateType() {
         return dateType;
     }

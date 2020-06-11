@@ -1,4 +1,4 @@
-package no.unit.nva.doi.transformer.model.internal.external;
+package no.unit.nva.doi.transformer.model.datacitemodel;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -6,6 +6,7 @@ import no.unit.nva.doi.transformer.utils.BibTexType;
 import no.unit.nva.doi.transformer.utils.CiteProcType;
 import no.unit.nva.doi.transformer.utils.RisType;
 import no.unit.nva.doi.transformer.utils.SchemaOrgType;
+import nva.commons.utils.JacocoGenerated;
 
 public class DataciteTypes {
 
@@ -88,6 +89,7 @@ public class DataciteTypes {
         return resourceType;
     }
 
+    @JacocoGenerated
     public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
     }
@@ -96,6 +98,7 @@ public class DataciteTypes {
         return resourceTypeGeneral;
     }
 
+    @JacocoGenerated
     public void setResourceTypeGeneral(String resourceTypeGeneral) {
         this.resourceTypeGeneral = resourceTypeGeneral;
     }

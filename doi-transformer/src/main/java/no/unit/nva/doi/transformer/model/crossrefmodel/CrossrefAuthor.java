@@ -2,6 +2,7 @@ package no.unit.nva.doi.transformer.model.crossrefmodel;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import nva.commons.utils.JacocoGenerated;
 
 public class CrossrefAuthor {
 
@@ -38,6 +39,7 @@ public class CrossrefAuthor {
         this.sequence = sequence;
     }
 
+    @JacocoGenerated
     public List<CrossrefAffiliation> getAffiliation() {
         return affiliation;
     }
@@ -71,6 +73,7 @@ public class CrossrefAuthor {
             return this;
         }
 
+        @JacocoGenerated
         public Builder withAffiliation(List<CrossrefAffiliation> affiliation) {
             this.affiliation = affiliation;
             return this;

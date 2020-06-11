@@ -4,6 +4,7 @@ import static java.util.Objects.isNull;
 
 import java.util.Arrays;
 import no.unit.nva.model.PublicationType;
+import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.SingletonCollector;
 
 public enum RisType {
@@ -74,6 +75,7 @@ public enum RisType {
         return this.publicationType;
     }
 
+    @JacocoGenerated
     public String getType() {
         return type;
     }

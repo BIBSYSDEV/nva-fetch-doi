@@ -44,6 +44,7 @@ import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.model.instancetypes.JournalArticle;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Range;
+import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.attempt.Try;
 import nva.commons.utils.doi.DoiConverterImpl;
 import org.slf4j.Logger;
@@ -219,6 +220,7 @@ public class CrossRefConverter extends AbstractConverter {
             .orElse(null);
     }
 
+    @JacocoGenerated
     private Map<String, String> extractAlternativeTitles(CrossRefDocument document) {
         String mainTitle = extractTitle(document);
         return document.getTitle().stream()
@@ -270,6 +272,7 @@ public class CrossRefConverter extends AbstractConverter {
             .collect(Collectors.toList());
     }
 
+    @JacocoGenerated
     private void reportFailures(List<Try<Contributor>> contributors) {
         contributors.stream().filter(Try::isFailure)
             .map(Try::getException)

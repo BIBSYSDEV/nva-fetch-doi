@@ -16,7 +16,7 @@ import no.unit.nva.model.exceptions.InvalidPageTypeException;
 import nva.commons.utils.IoUtils;
 import org.junit.jupiter.api.Test;
 
-public class PublicationTransformerTest {
+public class DoiTransformServiceTest {
 
     public static final String OWNER = "owner";
     public static final Path CROSSREF_JSON_PATH = Path.of("crossref.json");
@@ -26,10 +26,10 @@ public class PublicationTransformerTest {
     public void transFormPublicationReturnsPublicationOnValidCrossrefBody()
         throws MissingClaimException, URISyntaxException, InvalidPageTypeException, InvalidIssnException,
                               JsonProcessingException {
-        PublicationTransformer publicationTransformer = new PublicationTransformer();
+        DoiTransformService doiTransformService = new DoiTransformService();
         String crossrefBody = IoUtils.stringFromResources(CROSSREF_JSON_PATH);
 
-        Publication publication = publicationTransformer.transformPublication(crossrefBody, CROSSREF_STRING, OWNER,
+        Publication publication = doiTransformService.transformPublication(crossrefBody, CROSSREF_STRING, OWNER,
             UNIT_ORG_NUMBER);
 
         assertNotNull(publication);
@@ -40,10 +40,10 @@ public class PublicationTransformerTest {
     public void transFormPublicationReturnsPublicationOnValidDataciteBody()
         throws MissingClaimException, URISyntaxException, InvalidPageTypeException, InvalidIssnException,
                JsonProcessingException {
-        PublicationTransformer publicationTransformer = new PublicationTransformer();
+        DoiTransformService doiTransformService = new DoiTransformService();
         String crossrefBody = IoUtils.stringFromResources(DATACITE_JSON_PATH);
 
-        Publication publication = publicationTransformer.transformPublication(crossrefBody, DATACITE_STRING, OWNER,
+        Publication publication = doiTransformService.transformPublication(crossrefBody, DATACITE_STRING, OWNER,
             UNIT_ORG_NUMBER);
 
         assertNotNull(publication);

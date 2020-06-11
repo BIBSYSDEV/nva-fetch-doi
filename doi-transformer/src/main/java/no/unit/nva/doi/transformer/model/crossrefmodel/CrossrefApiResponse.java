@@ -1,6 +1,7 @@
 package no.unit.nva.doi.transformer.model.crossrefmodel;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import nva.commons.utils.JacocoGenerated;
 
 public class CrossrefApiResponse {
 
@@ -13,6 +14,7 @@ public class CrossrefApiResponse {
     @JsonProperty("message")
     private CrossRefDocument message;
 
+    @JacocoGenerated
     public String getStatus() {
         return status;
     }
@@ -21,6 +23,7 @@ public class CrossrefApiResponse {
         this.status = input;
     }
 
+    @JacocoGenerated
     public String getMessageType() {
         return messageType;
     }
@@ -29,6 +32,7 @@ public class CrossrefApiResponse {
         this.messageType = input;
     }
 
+    @JacocoGenerated
     public String getMessageVersion() {
         return messageVersion;
     }

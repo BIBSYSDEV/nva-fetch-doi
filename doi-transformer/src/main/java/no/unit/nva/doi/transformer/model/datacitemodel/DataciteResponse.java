@@ -1,8 +1,9 @@
-package no.unit.nva.doi.transformer.model.internal.external;
+package no.unit.nva.doi.transformer.model.datacitemodel;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.net.URL;
 import java.util.List;
+import nva.commons.utils.JacocoGenerated;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @SuppressWarnings({"PMD.TooManyFields", "PMD.ExcessivePublicCount"})
@@ -52,6 +53,7 @@ public class DataciteResponse {
         setRightsList(builder.rightsList);
     }
 
+    @JacocoGenerated
     public URL getId() {
         return id;
     }
@@ -100,6 +102,7 @@ public class DataciteResponse {
         this.titles = titles;
     }
 
+    @JacocoGenerated
     public String getPublisher() {
         return publisher;
     }
@@ -116,6 +119,7 @@ public class DataciteResponse {
         this.container = container;
     }
 
+    @JacocoGenerated
     public List<DataciteContributor> getContributors() {
         return contributors;
     }
@@ -124,6 +128,7 @@ public class DataciteResponse {
         this.contributors = contributors;
     }
 
+    @JacocoGenerated
     public List<DataciteDate> getDates() {
         return dates;
     }
@@ -140,6 +145,7 @@ public class DataciteResponse {
         this.publicationYear = publicationYear;
     }
 
+    @JacocoGenerated
     public List<DataciteIdentifier> getIdentifiers() {
         return identifiers;
     }
@@ -156,6 +162,7 @@ public class DataciteResponse {
         this.relatedIdentifiers = relatedIdentifiers;
     }
 
+    @JacocoGenerated
     public String getSchemaVersion() {
         return schemaVersion;
     }
@@ -164,6 +171,7 @@ public class DataciteResponse {
         this.schemaVersion = schemaVersion;
     }
 
+    @JacocoGenerated
     public String getProviderId() {
         return providerId;
     }
@@ -172,6 +180,7 @@ public class DataciteResponse {
         this.providerId = providerId;
     }
 
+    @JacocoGenerated
     public String getClientId() {
         return clientId;
     }
@@ -180,6 +189,7 @@ public class DataciteResponse {
         this.clientId = clientId;
     }
 
+    @JacocoGenerated
     public String getAgency() {
         return agency;
     }
@@ -188,6 +198,7 @@ public class DataciteResponse {
         this.agency = agency;
     }
 
+    @JacocoGenerated
     public String getState() {
         return state;
     }
@@ -228,16 +239,19 @@ public class DataciteResponse {
         public Builder() {
         }
 
+        @JacocoGenerated
         public Builder withId(URL id) {
             this.id = id;
             return this;
         }
 
+        @JacocoGenerated
         public Builder withDoi(String doi) {
             this.doi = doi;
             return this;
         }
 
+        @JacocoGenerated
         public Builder withUrl(URL url) {
             this.url = url;
             return this;
@@ -248,76 +262,91 @@ public class DataciteResponse {
             return this;
         }
 
+        @JacocoGenerated
         public Builder withCreators(List<DataciteCreator> creators) {
             this.creators = creators;
             return this;
         }
 
+        @JacocoGenerated
         public Builder withTitles(List<DataciteTitle> titles) {
             this.titles = titles;
             return this;
         }
 
+        @JacocoGenerated
         public Builder withPublisher(String publisher) {
             this.publisher = publisher;
             return this;
         }
 
+        @JacocoGenerated
         public Builder withContainer(DataciteContainer container) {
             this.container = container;
             return this;
         }
 
+        @JacocoGenerated
         public Builder withContributors(List<DataciteContributor> contributors) {
             this.contributors = contributors;
             return this;
         }
 
+        @JacocoGenerated
         public Builder withDates(List<DataciteDate> dates) {
             this.dates = dates;
             return this;
         }
 
+        @JacocoGenerated
         public Builder withPublicationYear(Integer publicationYear) {
             this.publicationYear = publicationYear;
             return this;
         }
 
+        @JacocoGenerated
         public Builder withIdentifiers(List<DataciteIdentifier> identifiers) {
             this.identifiers = identifiers;
             return this;
         }
 
+        @JacocoGenerated
         public Builder withRelatedIdentifiers(List<DataciteRelatedIdentifier> relatedIdentifiers) {
             this.relatedIdentifiers = relatedIdentifiers;
             return this;
         }
 
+        @JacocoGenerated
         public Builder withSchemaVersion(String schemaVersion) {
             this.schemaVersion = schemaVersion;
             return this;
         }
 
+        @JacocoGenerated
         public Builder withProviderId(String providerId) {
             this.providerId = providerId;
             return this;
         }
 
+        @JacocoGenerated
         public Builder withClientId(String clientId) {
             this.clientId = clientId;
             return this;
         }
 
+        @JacocoGenerated
         public Builder withAgency(String agency) {
             this.agency = agency;
             return this;
         }
 
+        @JacocoGenerated
         public Builder withState(String state) {
             this.state = state;
             return this;
         }
 
+        @JacocoGenerated
         public Builder withRightsList(List<DataciteRights> rights) {
             this.rightsList = rights;
             return this;

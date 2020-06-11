@@ -1,10 +1,9 @@
-package no.unit.nva.doi.transformer.model.external;
+package no.unit.nva.doi.transformer.model.datacitemodel;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import no.unit.nva.doi.fetch.ObjectMapperConfig;
-import no.unit.nva.doi.transformer.model.internal.external.DataciteResponse;
 import org.junit.Assert;
 import org.junit.Test;
 

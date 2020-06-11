@@ -1,6 +1,7 @@
 package no.unit.nva.doi.transformer.model.crossrefmodel;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import nva.commons.utils.JacocoGenerated;
 
 @SuppressWarnings("PMD.ShortClassName")
 public class Link {
@@ -20,6 +21,7 @@ public class Link {
     @JsonProperty("intended-application")
     private String intendedApplication;
 
+    @JacocoGenerated
     public String getUrl() {
         return url;
     }
@@ -28,6 +30,7 @@ public class Link {
         this.url = url;
     }
 
+    @JacocoGenerated
     public String getContentType() {
         return contentType;
     }
@@ -36,6 +39,7 @@ public class Link {
         this.contentType = contentType;
     }
 
+    @JacocoGenerated
     public String getContentVersion() {
         return contentVersion;
     }
@@ -44,6 +48,7 @@ public class Link {
         this.contentVersion = contentVersion;
     }
 
+    @JacocoGenerated
     public String getIntendedApplication() {
         return intendedApplication;
     }

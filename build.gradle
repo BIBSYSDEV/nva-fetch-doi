@@ -33,7 +33,7 @@ subprojects {
     def junit5Version = '5.6.0'
 
     dependencies {
-        testImplementation group: 'com.github.BIBSYSDEV', name: 'nva-testutils', version: 'v0.1.7'
+        testImplementation group: 'com.github.BIBSYSDEV', name: 'nva-testutils', version: 'v0.1.9'
         testImplementation(group: 'junit', name: 'junit', version: '4.13') {
             constraints {
                 implementation(group: 'org.hamcrest', name: 'hamcrest-core', version: '2.2')

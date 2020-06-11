@@ -1,4 +1,4 @@
-package no.unit.nva.doi.transformer.model.internal.external;
+package no.unit.nva.doi.transformer.model.datacitemodel;
 
 public class DataciteTitle {
 

@@ -1,4 +1,6 @@
-package no.unit.nva.doi.transformer.model.internal.external;
+package no.unit.nva.doi.transformer.model.datacitemodel;
+
+import nva.commons.utils.JacocoGenerated;
 
 public class DataciteRelatedIdentifier {
 
@@ -23,6 +25,7 @@ public class DataciteRelatedIdentifier {
         this.relatedIdentifier = relatedIdentifier;
     }
 
+    @JacocoGenerated
     public String getResourceTypeGeneral() {
         return resourceTypeGeneral;
     }

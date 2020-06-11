@@ -2,6 +2,7 @@ package no.unit.nva.doi.transformer.model.crossrefmodel;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import nva.commons.utils.JacocoGenerated;
 
 public class ContentDomain {
 
@@ -10,6 +11,7 @@ public class ContentDomain {
     @JsonProperty("crossmark-restriction")
     private boolean crossmarkRestriction;
 
+    @JacocoGenerated
     public List<String> getDomain() {
         return domain;
     }
@@ -18,6 +20,7 @@ public class ContentDomain {
         this.domain = domain;
     }
 
+    @JacocoGenerated
     public boolean isCrossmarkRestriction() {
         return crossmarkRestriction;
     }

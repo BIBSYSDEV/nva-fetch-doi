@@ -1,10 +1,13 @@
-package no.unit.nva.doi.transformer.model.internal.external;
+package no.unit.nva.doi.transformer.model.datacitemodel;
+
+import nva.commons.utils.JacocoGenerated;
 
 public class DataciteIdentifier {
 
     private String identifier;
     private String identifierType;
 
+    @JacocoGenerated
     public String getIdentifier() {
         return identifier;
     }
@@ -13,6 +16,7 @@ public class DataciteIdentifier {
         this.identifier = identifier;
     }
 
+    @JacocoGenerated
     public String getIdentifierType() {
         return identifierType;
     }

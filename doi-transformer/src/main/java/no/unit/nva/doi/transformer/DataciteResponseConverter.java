@@ -18,12 +18,12 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.doi.transformer.language.LanguageDetector;
 import no.unit.nva.doi.transformer.language.SimpleLanguageDetector;
-import no.unit.nva.doi.transformer.model.internal.external.DataciteContainer;
-import no.unit.nva.doi.transformer.model.internal.external.DataciteCreator;
-import no.unit.nva.doi.transformer.model.internal.external.DataciteRelatedIdentifier;
-import no.unit.nva.doi.transformer.model.internal.external.DataciteResponse;
-import no.unit.nva.doi.transformer.model.internal.external.DataciteRights;
-import no.unit.nva.doi.transformer.model.internal.external.DataciteTitle;
+import no.unit.nva.doi.transformer.model.datacitemodel.DataciteContainer;
+import no.unit.nva.doi.transformer.model.datacitemodel.DataciteCreator;
+import no.unit.nva.doi.transformer.model.datacitemodel.DataciteRelatedIdentifier;
+import no.unit.nva.doi.transformer.model.datacitemodel.DataciteResponse;
+import no.unit.nva.doi.transformer.model.datacitemodel.DataciteRights;
+import no.unit.nva.doi.transformer.model.datacitemodel.DataciteTitle;
 import no.unit.nva.doi.transformer.utils.DataciteRelatedIdentifierType;
 import no.unit.nva.doi.transformer.utils.DataciteRelationType;
 import no.unit.nva.doi.transformer.utils.DataciteTypesUtil;
@@ -127,7 +127,8 @@ public class DataciteResponseConverter extends AbstractConverter {
             .build();
     }
 
-    private PublicationInstance extractPublicationInstance(DataciteResponse dataciteResponse) throws InvalidPageTypeException {
+    private PublicationInstance extractPublicationInstance(DataciteResponse dataciteResponse)
+        throws InvalidPageTypeException {
         PublicationInstance publicationInstance = null;
         if (JOURNAL_CONTENT.equals(extractPublicationType(dataciteResponse))) {
             DataciteContainer container = dataciteResponse.getContainer();
