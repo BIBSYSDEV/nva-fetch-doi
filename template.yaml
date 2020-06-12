@@ -113,7 +113,7 @@ Resources:
   NvaFetchDoiFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: .
+      CodeUri: create-publication-from-doi
       Handler: no.unit.nva.doi.fetch.MainHandler::handleRequest
       Runtime: java11
       MemorySize: 1400
