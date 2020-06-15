@@ -20,6 +20,8 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CrossRefClient {
 
@@ -35,6 +37,7 @@ public class CrossRefClient {
     public static final String FETCH_ERROR = "CrossRefClient failed while trying to fetch:";
 
     private final transient HttpClient httpClient;
+    private final static Logger logger = LoggerFactory.getLogger(CrossRefClient.class);
 
     @JacocoGenerated
     public CrossRefClient() {
@@ -68,8 +71,8 @@ public class CrossRefClient {
             | NotFoundException
             | BadRequestException e) {
             String details = FETCH_ERROR + doiUri;
-            System.out.println(details);
-            System.out.print(e.getMessage());
+            logger.warn(details);
+            logger.warn(e.getMessage());
             return Optional.empty();
         }
     }
@@ -84,8 +87,7 @@ public class CrossRefClient {
 
     private String getFromWeb(HttpRequest request)
         throws InterruptedException, ExecutionException {
-        HttpResponse<String> response = httpClient.sendAsync(request, BodyHandlers.ofString())
-                                                  .get();
+        HttpResponse<String> response = httpClient.sendAsync(request, BodyHandlers.ofString()).get();
         if (responseIsSuccessful(response)) {
             return response.body();
         } else {
@@ -107,8 +109,8 @@ public class CrossRefClient {
 
     protected URI createUrlToCrossRef(String doi)
         throws URISyntaxException {
-        List<String> doiPathSegments = stripHttpPartFromDoi(doi);
-        List<String> pathSegments = composeAllPathSegments(doiPathSegments);
+        List<String> doiPathSegments = extractPathSegmentsFromDoiUri(doi);
+        List<String> pathSegments = composeAllPathSegmentsForCrossrefUrl(doiPathSegments);
         return addPathSegments(pathSegments);
     }
 
@@ -118,14 +120,14 @@ public class CrossRefClient {
             .build();
     }
 
-    private List<String> composeAllPathSegments(List<String> doiPathSegments) {
+    private List<String> composeAllPathSegmentsForCrossrefUrl(List<String> doiPathSegments) {
         List<String> pathSegments = new ArrayList<>();
         pathSegments.add(WORKS);
         pathSegments.addAll(doiPathSegments);
         return pathSegments;
     }
 
-    private List<String> stripHttpPartFromDoi(String doi) {
+    private List<String> extractPathSegmentsFromDoiUri(String doi) {
         String path = URI.create(doi).getPath();
         if (Objects.isNull(path) || path.isBlank()) {
             throw new IllegalArgumentException(ILLEGAL_DOI_MESSAGE + doi);
