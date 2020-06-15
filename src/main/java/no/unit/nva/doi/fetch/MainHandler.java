@@ -25,7 +25,7 @@ import no.unit.nva.doi.fetch.utils.JacocoGenerated;
 import no.unit.nva.doi.transformer.exception.MissingClaimException;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.exceptions.InvalidPageTypeException;
+import no.unit.nva.model.exceptions.InvalidPageRangeException;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ProblemModule;
 import org.zalando.problem.Status;
@@ -134,7 +134,7 @@ public class MainHandler implements RequestStreamHandler {
                 | URISyntaxException
                 | RuntimeException
                 | InvalidIssnException
-                | InvalidPageTypeException e
+                | InvalidPageRangeException e
         ) {
             writeFailure(outputStream, e);
         }
@@ -144,7 +144,7 @@ public class MainHandler implements RequestStreamHandler {
                                             JsonNode lambdaEvent)
             throws NoContentLocationFoundException, URISyntaxException, MetadataNotFoundException, IOException,
             InterruptedException, MalformedRequestException, MissingClaimException, InvalidIssnException,
-            InvalidPageTypeException {
+                   InvalidPageRangeException {
 
         DoiProxyResponse externalModel = doiProxyService.lookup(requestBody.getDoiUrl(), apiUrl, authorization);
 

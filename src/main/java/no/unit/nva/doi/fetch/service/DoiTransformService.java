@@ -9,7 +9,7 @@ import no.unit.nva.doi.transformer.PublicationTransformer;
 import no.unit.nva.doi.transformer.exception.MissingClaimException;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.exceptions.InvalidPageTypeException;
+import no.unit.nva.model.exceptions.InvalidPageRangeException;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -65,11 +65,11 @@ public class DoiTransformService extends RestClient {
      * @throws MissingClaimException    when {@link PublicationTransformer} throws exception
      * @throws URISyntaxException    when {@link PublicationTransformer} throws exception
      * @throws InvalidIssnException when {@link PublicationTransformer} throws exception
-     * @throws InvalidPageTypeException when {@link PublicationTransformer} throws exception
+     * @throws InvalidPageRangeException when {@link PublicationTransformer} throws exception
      */
     public Publication transformLocally(DoiProxyResponse response, JsonNode event)
             throws JsonProcessingException, MissingClaimException, URISyntaxException, InvalidIssnException,
-            InvalidPageTypeException {
+                   InvalidPageRangeException {
         String body = objectMapper.writeValueAsString(response.getJsonNode());
         return publicationTransformer
             .transformPublication(event, body, response.getMetadataSource());

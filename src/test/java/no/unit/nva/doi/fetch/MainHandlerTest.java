@@ -65,7 +65,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.exceptions.InvalidPageTypeException;
+import no.unit.nva.model.exceptions.InvalidPageRangeException;
 import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -127,7 +127,7 @@ public class MainHandlerTest {
 
     private DoiTransformService mockDoiTransformServiceReturningSuccessfulResult()
         throws URISyntaxException, TransformFailedException, InterruptedException, IOException,
-               InvalidPageTypeException, MissingClaimException, InvalidIssnException {
+               InvalidPageRangeException, MissingClaimException, InvalidIssnException {
         DoiTransformService service = mock(DoiTransformService.class);
         ObjectNode sampleNode = objectMapper.createObjectNode();
         when(service.transform(any(), anyString(), anyString())).thenReturn(sampleNode);
