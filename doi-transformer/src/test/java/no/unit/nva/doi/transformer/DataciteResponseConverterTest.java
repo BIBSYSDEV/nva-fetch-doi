@@ -1,8 +1,10 @@
 package no.unit.nva.doi.transformer;
 
 import static java.time.Instant.now;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
@@ -26,7 +28,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidPageTypeException;
 import nva.commons.utils.IoUtils;
-import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -51,7 +52,7 @@ public class DataciteResponseConverterTest {
         Publication publication = converter.toPublication(dataciteResponse, now(), UUID.randomUUID(), "junit",
             URI.create("http://example.org/123"));
         String json = objectMapper.writeValueAsString(publication);
-        Assert.assertNotNull(json);
+        assertNotNull(json);
     }
 
     @DisplayName("DataciteResponseConverter::toName creates valid, inverted name when input is valid")
@@ -64,7 +65,7 @@ public class DataciteResponseConverterTest {
 
         String name = converter.toName(dataciteCreator);
 
-        Assert.assertEquals("Family, Given", name);
+        assertEquals("Family, Given", name);
     }
 
     @Test
@@ -75,7 +76,7 @@ public class DataciteResponseConverterTest {
         Publication publication = readPublicationWithMutlipleTitles();
         Map<String, String> alternativeTitles = publication.getEntityDescription().getAlternativeTitles();
         Collection<String> languageTags = alternativeTitles.values();
-        languageTags.forEach(Assert::assertNotNull);
+        languageTags.forEach(Assertions::assertNotNull);
     }
 
     @Test
@@ -97,7 +98,7 @@ public class DataciteResponseConverterTest {
         Publication publication = readPublicationWithMutlipleTitles();
         Map<String, String> alternativeTitles = publication.getEntityDescription().getAlternativeTitles();
         Collection<String> languageTags = alternativeTitles.values();
-        languageTags.forEach(Assert::assertNotNull);
+        languageTags.forEach(Assertions::assertNotNull);
         List<URI> languageUris = languageTags.stream().map(URI::create).collect(Collectors.toList());
         List<URI> validUris = new ArrayList<>(LanguageMapper.languageUris());
         // for some reason hamcrest containsInAnyOrder does not want to work
@@ -111,7 +112,7 @@ public class DataciteResponseConverterTest {
         dataciteRights.setRightsUri("creativecommons");
         boolean hasOpenAccessRights = converter.hasOpenAccessRights(dataciteRights);
 
-        Assertions.assertTrue(hasOpenAccessRights);
+        assertTrue(hasOpenAccessRights);
     }
 
     private Publication readPublicationWithMutlipleTitles() throws IOException, URISyntaxException,

@@ -1,10 +1,9 @@
 package no.unit.nva.doi;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import no.unit.nva.doi.DataciteContentType;
 import org.junit.jupiter.api.Test;
 
 public class DataciteContentTypeTest {
