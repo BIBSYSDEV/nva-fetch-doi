@@ -52,7 +52,7 @@ public class PublicationPersistenceService extends RestClient {
         throws IOException, InterruptedException, InsertPublicationException, URISyntaxException {
         //TODO: toResponse is exactly the same method as convertValue and will be changed upon next release
         CreatePublicationRequest requestBody =
-            PublicationMapper.toResponse(publication, CreatePublicationRequest.class);
+            PublicationMapper.convertValue(publication, CreatePublicationRequest.class);
         String requestBodyString = MainHandler.jsonParser.writeValueAsString(requestBody);
 
         HttpRequest request = HttpRequest.newBuilder()
