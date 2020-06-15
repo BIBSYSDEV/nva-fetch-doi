@@ -1,8 +1,8 @@
 package no.unit.nva.doi.transformer.utils;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.Assert.assertThat;
 
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
