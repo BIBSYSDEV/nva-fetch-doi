@@ -38,7 +38,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MainHandler extends ApiGatewayHandler<RequestBody,Summary> {
+public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     public static final String API_HOST_ENV = "API_HOST";
     public static final String API_SCHEME_ENV = "API_SCHEME";
@@ -87,7 +87,6 @@ public class MainHandler extends ApiGatewayHandler<RequestBody,Summary> {
         throws ApiGatewayException {
 
         URI apiUrl = urlToPublicationProxy();
-
         validate(input);
 
         String owner = RequestUtils.getRequestContextParameter(requestInfo, FEIDE_ID);
@@ -109,8 +108,8 @@ public class MainHandler extends ApiGatewayHandler<RequestBody,Summary> {
     }
 
     private URI urlToPublicationProxy() {
-        return attempt(()-> new URIBuilder().setHost(apiHost).setScheme(apiScheme).build())
-            .orElseThrow(failure-> new IllegalStateException(failure.getException()));
+        return attempt(() -> new URIBuilder().setHost(apiHost).setScheme(apiScheme).build())
+            .orElseThrow(failure -> new IllegalStateException(failure.getException()));
     }
 
     private void validate(RequestBody input) throws MalformedRequestException {
@@ -125,7 +124,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody,Summary> {
     }
 
     private Publication getPublicationMetadata(RequestBody requestBody,
-                                            String owner, String orgNumber)
+                                               String owner, String orgNumber)
         throws URISyntaxException, IOException, MissingClaimException, InvalidIssnException,
                InvalidPageTypeException, MetadataNotFoundException {
         MetadataAndContentLocation metadataAndContentLocation = doiProxyService.lookupDoiMetadata(

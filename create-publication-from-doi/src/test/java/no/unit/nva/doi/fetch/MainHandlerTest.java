@@ -108,13 +108,9 @@ public class MainHandlerTest {
     @Test
     public void testOkResponse()
         throws Exception {
-        PublicationConverter publicationConverter = mockPublicationConverter();
-        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
-        DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
-        PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
+
+        MainHandler mainHandler = createMainHandler(environment);
         Context context = getMockContext();
-        MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
-            doiProxyService, publicationPersistenceService, environment);
         OutputStream output = new ByteArrayOutputStream();
 
         mainHandler.handleRequest(mainHandlerInputStream(), output, context);
@@ -136,20 +132,25 @@ public class MainHandlerTest {
         when(environment.readEnv(API_HOST_ENV)).thenReturn(INVALID_HOST_STRING);
         when(environment.readEnv(API_SCHEME_ENV)).thenReturn(HTTP);
 
-        PublicationConverter publicationConverter = mockPublicationConverter();
-        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
-        DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
-        PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
-
-        MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
-            doiProxyService, publicationPersistenceService, environment);
-         RequestBody requestBody = new RequestBody();
-         requestBody.setDoiUrl(new URL(VALID_DOI));
+        MainHandler mainHandler = createMainHandler(environment);
+        RequestBody requestBody = new RequestBody();
+        requestBody.setDoiUrl(new URL(VALID_DOI));
         Executable action = () -> mainHandler.processInput(requestBody, null,
             getMockContext());
 
         IllegalStateException exception = assertThrows(IllegalStateException.class, action);
-        assertThat(exception.getCause().getClass(),is(equalTo(URISyntaxException.class)));
+        assertThat(exception.getCause().getClass(), is(equalTo(URISyntaxException.class)));
+    }
+
+    private MainHandler createMainHandler(Environment environment)
+        throws URISyntaxException, IOException, InvalidPageTypeException, MissingClaimException, InvalidIssnException,
+               MetadataNotFoundException {
+        PublicationConverter publicationConverter = mockPublicationConverter();
+        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
+        DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
+        PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
+        return new MainHandler(objectMapper, publicationConverter, doiTransformService,
+            doiProxyService, publicationPersistenceService, environment);
     }
 
     private PublicationConverter mockPublicationConverter() {
