@@ -1,5 +1,7 @@
 package no.unit.nva.doi;
 
+import static java.util.Objects.isNull;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -52,16 +54,15 @@ public class DoiProxyService {
     public MetadataAndContentLocation lookupDoiMetadata(String doiUrl, DataciteContentType dataciteContentType)
         throws MetadataNotFoundException, IOException, URISyntaxException {
         logger.info(GETING_DOI_METADATA_INFO_MESSAGE + doiUrl );
-        MetadataAndContentLocation metadataAndContentLocation = null;
+        MetadataAndContentLocation metadataAndContentLocation;
         Optional<MetadataAndContentLocation> crossRefResult = crossRefClient.fetchDataForDoi(doiUrl);
         if (crossRefResult.isEmpty()) {
-            metadataAndContentLocation = dataciteClient.fetchMetadata(doiUrl,
-                dataciteContentType);
+            metadataAndContentLocation = dataciteClient.fetchMetadata(doiUrl,dataciteContentType);
         } else {
             metadataAndContentLocation = crossRefResult.get();
         }
 
-        if (metadataAndContentLocation == null) {
+        if (isNull(metadataAndContentLocation)) {
             throw new MetadataNotFoundException(ERROR_READING_METADATA + SPACE + doiUrl);
         }
 
