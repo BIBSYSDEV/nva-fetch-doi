@@ -1,21 +1,19 @@
 package no.unit.nva.doi.fetch.service;
 
+import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import no.unit.nva.doi.fetch.ObjectMapperConfig;
-import no.unit.nva.doi.fetch.model.Summary;
-
 import java.io.File;
 import java.io.IOException;
+import no.unit.nva.doi.fetch.model.Summary;
 import org.junit.jupiter.api.Test;
 
 
 public class PublicationConverterTest {
 
     public static final String TEST_FILE = "src/test/resources/example_publication.json";
-    private ObjectMapper objectMapper = ObjectMapperConfig.createObjectMapper();
+
 
     @Test
     public void test() throws IOException {
