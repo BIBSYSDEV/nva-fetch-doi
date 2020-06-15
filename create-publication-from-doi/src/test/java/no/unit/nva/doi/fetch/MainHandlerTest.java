@@ -192,12 +192,6 @@ public class MainHandlerTest {
             objectMapper.writeValueAsString(getPublication()));
     }
 
-    private DoiProxyResponse mockDoiProxyResponse() {
-        Map<String, String> sampleValue = Collections.singletonMap(SOME_KEY, SOME_VALUE);
-        JsonNode sampleNode = objectMapper.convertValue(sampleValue, JsonNode.class);
-        return new DoiProxyResponse(sampleNode, SOME_METADATA_SOURCE);
-    }
-
     private Summary createSummary() {
         return new Summary.Builder().withIdentifier(UUID.randomUUID()).withTitle("Title on publication")
             .withCreatorName("Name, Creator")
