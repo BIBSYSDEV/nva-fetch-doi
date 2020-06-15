@@ -115,7 +115,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     }
 
     private void validate(RequestBody input) throws MalformedRequestException {
-        if (isNull(input) || input.getDoiUrl() == null) {
+        if (isNull(input) || isNull(input.getDoiUrl())) {
             throw new MalformedRequestException(NULL_DOI_URL_ERROR);
         }
     }
