@@ -1,6 +1,7 @@
 package no.unit.nva.doi.fetch.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.URI;
 import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.CreatePublicationRequest;
 import no.unit.nva.api.PublicationResponse;
@@ -50,7 +51,7 @@ public class PublicationPersistenceService extends RestClient {
      * @throws InsertPublicationException When publication api service responds with failure.
      * @throws URISyntaxException when the input URL is invalid.
      */
-    public PublicationResponse insertPublication(Publication publication, String apiUrl, String authorization)
+    public PublicationResponse insertPublication(Publication publication, URI apiUrl, String authorization)
         throws IOException, InterruptedException, InsertPublicationException, URISyntaxException {
         //TODO: toResponse is exactly the same method as convertValue and will be changed upon next release
         CreatePublicationRequest requestBody =
@@ -73,7 +74,7 @@ public class PublicationPersistenceService extends RestClient {
         return objectMapper.readValue(response.body(), PublicationResponse.class);
     }
 
-    private String insertionErrorMessage(String apiUrl, String requestBodyString) {
+    private String insertionErrorMessage(URI apiUrl, String requestBodyString) {
         return String.format(INSERTING_PUBLICATION_FAILED, apiUrl, requestBodyString);
     }
 }

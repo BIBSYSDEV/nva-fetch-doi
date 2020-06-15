@@ -1,5 +1,6 @@
 package no.unit.nva.doi.fetch;
 
+import static nva.commons.utils.attempt.Try.attempt;
 import static org.apache.http.HttpStatus.SC_OK;
 
 import com.amazonaws.services.lambda.runtime.Context;
@@ -7,6 +8,7 @@ import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.doi.DataciteContentType;
@@ -32,6 +34,7 @@ import nva.commons.handlers.RequestInfo;
 import nva.commons.utils.Environment;
 import nva.commons.utils.RequestUtils;
 import org.apache.http.HttpHeaders;
+import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,7 +85,8 @@ public class MainHandler extends ApiGatewayHandler<RequestBody,Summary> {
     @Override
     protected Summary processInput(RequestBody input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-        String apiUrl = String.join("://", apiScheme, apiHost);
+
+        URI apiUrl = urlToPublicationProxy();
 
         validate(input);
 
@@ -102,6 +106,11 @@ public class MainHandler extends ApiGatewayHandler<RequestBody,Summary> {
             | InterruptedException e) {
             throw new TransformFailedException(e.getMessage());
         }
+    }
+
+    private URI urlToPublicationProxy() {
+        return attempt(()-> new URIBuilder().setHost(apiHost).setScheme(apiScheme).build())
+            .orElseThrow(failure-> new IllegalStateException(failure.getException()));
     }
 
     private void validate(RequestBody input) throws MalformedRequestException {
@@ -127,12 +136,12 @@ public class MainHandler extends ApiGatewayHandler<RequestBody,Summary> {
             metadataAndContentLocation.getContentHeader(), owner, orgNumber);
     }
 
-    private PublicationResponse tryInsertPublication(String authorization, String apiUrl, Publication publication)
+    private PublicationResponse tryInsertPublication(String authorization, URI apiUrl, Publication publication)
         throws InterruptedException, IOException, InsertPublicationException, URISyntaxException {
         return insertPublication(authorization, apiUrl, publication);
     }
 
-    private PublicationResponse insertPublication(String authorization, String apiUrl, Publication publication)
+    private PublicationResponse insertPublication(String authorization, URI apiUrl, Publication publication)
         throws InterruptedException, InsertPublicationException, IOException, URISyntaxException {
         return publicationPersistenceService.insertPublication(publication, apiUrl, authorization);
     }

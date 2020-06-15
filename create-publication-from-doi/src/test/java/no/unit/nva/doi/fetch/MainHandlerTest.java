@@ -14,6 +14,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -25,7 +26,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,25 +38,22 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import no.unit.nva.doi.CrossRefClient;
 import no.unit.nva.doi.DataciteClient;
 import no.unit.nva.doi.DoiProxyService;
 import no.unit.nva.doi.MetadataAndContentLocation;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
-import no.unit.nva.doi.model.DoiProxyResponse;
 import no.unit.nva.doi.fetch.model.PublicationDate;
 import no.unit.nva.doi.fetch.model.RequestBody;
 import no.unit.nva.doi.fetch.model.Summary;
 import no.unit.nva.doi.fetch.service.PublicationConverter;
 import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
+import no.unit.nva.doi.model.DoiProxyResponse;
 import no.unit.nva.doi.transformer.DoiTransformService;
 import no.unit.nva.doi.transformer.exception.MissingClaimException;
 import no.unit.nva.model.EntityDescription;
@@ -70,11 +67,10 @@ import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.TestHeaders;
 import nva.commons.handlers.GatewayResponse;
 import nva.commons.utils.Environment;
-import org.apache.http.HttpHeaders;
-import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 import org.zalando.problem.Status;
 
 public class MainHandlerTest {
@@ -90,6 +86,9 @@ public class MainHandlerTest {
     public static final String CUSTOM_FEIDE_ID = "custom:feideId";
     public static final String CUSTOM_ORG_NUMBER = "custom:orgNumber";
     public static final String JUNIT = "junit";
+    public static final String ALL_ORIGINS = "*";
+    public static final String INVALID_HOST_STRING = "https://\\.)_";
+    public static final String HTTP = "http";
 
     private ObjectMapper objectMapper = ObjectMapperConfig.createObjectMapper();
 
@@ -101,7 +100,7 @@ public class MainHandlerTest {
     @BeforeEach
     public void setUp() {
         environment = mock(Environment.class);
-        when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
+        when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(ALL_ORIGINS);
         when(environment.readEnv(API_HOST_ENV)).thenReturn("localhost:3000");
         when(environment.readEnv(API_SCHEME_ENV)).thenReturn("http");
     }
@@ -115,7 +114,7 @@ public class MainHandlerTest {
         PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
         Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
-                                                  doiProxyService, publicationPersistenceService, environment);
+            doiProxyService, publicationPersistenceService, environment);
         OutputStream output = new ByteArrayOutputStream();
 
         mainHandler.handleRequest(mainHandlerInputStream(), output, context);
@@ -126,6 +125,31 @@ public class MainHandlerTest {
         assertTrue(gatewayResponse.getHeaders().keySet().contains(MainHandler.ACCESS_CONTROL_ALLOW_ORIGIN));
         Summary summary = objectMapper.readValue(gatewayResponse.getBody().toString(), Summary.class);
         assertNotNull(summary.getIdentifier());
+    }
+
+    @Test
+    public void processInputThrowsIllegalStateExceptionWithInternalCauseWhenUrlToPublicationProxyDoesIsNotValid()
+        throws MissingClaimException, IOException, InvalidPageTypeException, InvalidIssnException, URISyntaxException,
+               MetadataNotFoundException {
+        Environment environment = mock(Environment.class);
+        when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(ALL_ORIGINS);
+        when(environment.readEnv(API_HOST_ENV)).thenReturn(INVALID_HOST_STRING);
+        when(environment.readEnv(API_SCHEME_ENV)).thenReturn(HTTP);
+
+        PublicationConverter publicationConverter = mockPublicationConverter();
+        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
+        DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
+        PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
+
+        MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
+            doiProxyService, publicationPersistenceService, environment);
+         RequestBody requestBody = new RequestBody();
+         requestBody.setDoiUrl(new URL(VALID_DOI));
+        Executable action = () -> mainHandler.processInput(requestBody, null,
+            getMockContext());
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class, action);
+        assertThat(exception.getCause().getClass(),is(equalTo(URISyntaxException.class)));
     }
 
     private PublicationConverter mockPublicationConverter() {
@@ -175,8 +199,8 @@ public class MainHandlerTest {
 
     private Summary createSummary() {
         return new Summary.Builder().withIdentifier(UUID.randomUUID()).withTitle("Title on publication")
-                                    .withCreatorName("Name, Creator")
-                                    .withDate(new PublicationDate.Builder().withYear("2020").build()).build();
+            .withCreatorName("Name, Creator")
+            .withDate(new PublicationDate.Builder().withYear("2020").build()).build();
     }
 
     @Test
@@ -187,7 +211,7 @@ public class MainHandlerTest {
         PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
         Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
-                                                  doiProxyService, publicationPersistenceService, environment);
+            doiProxyService, publicationPersistenceService, environment);
         OutputStream output = new ByteArrayOutputStream();
 
         mainHandler.handleRequest(malformedInputStream(), output, context);
@@ -205,7 +229,7 @@ public class MainHandlerTest {
         PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
         Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
-                                                  doiProxyService, publicationPersistenceService, environment);
+            doiProxyService, publicationPersistenceService, environment);
         OutputStream output = new ByteArrayOutputStream();
 
         mainHandler.handleRequest(mainHandlerInputStream(), output, context);
@@ -226,7 +250,7 @@ public class MainHandlerTest {
         PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
 
         MainHandler handler = new MainHandler(objectMapper, publicationConverter, doiTransformService, doiProxyService,
-                publicationPersistenceService, environment);
+            publicationPersistenceService, environment);
         OutputStream outputStream = outputStream();
         handler.handleRequest(mainHandlerInputStream(), outputStream, getMockContext());
         GatewayResponse<String> response = gatewayResponse(outputStream);
@@ -250,10 +274,10 @@ public class MainHandlerTest {
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
 
         PublicationPersistenceService publicationPersistenceService =
-                mockResourcePersistenceServiceReceivingFailedResult();
+            mockResourcePersistenceServiceReceivingFailedResult();
 
         MainHandler handler = new MainHandler(objectMapper, publicationConverter, doiTransformService, doiProxyService,
-                publicationPersistenceService, environment);
+            publicationPersistenceService, environment);
         OutputStream outputStream = outputStream();
         handler.handleRequest(mainHandlerInputStream(), outputStream, getMockContext());
         GatewayResponse<String> response = gatewayResponse(outputStream);

@@ -9,7 +9,7 @@ import java.net.http.HttpResponse;
 
 public class RestClient {
 
-    protected URI createURI(String apiUrl, String... path) throws URISyntaxException {
+    protected URI createURI(URI apiUrl, String... path) throws URISyntaxException {
         return new URIBuilder(apiUrl).setPathSegments(path).build();
     }
 
