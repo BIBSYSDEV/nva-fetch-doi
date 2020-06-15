@@ -111,7 +111,7 @@ public class MainHandlerTest {
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertTrue(gatewayResponse.getHeaders().keySet().contains(CONTENT_TYPE));
         assertTrue(gatewayResponse.getHeaders().keySet().contains(MainHandler.ACCESS_CONTROL_ALLOW_ORIGIN));
-        Summary summary = objectMapper.readValue(gatewayResponse.getBody().toString(), Summary.class);
+        Summary summary = objectMapper.readValue(gatewayResponse.getBody(), Summary.class);
         assertNotNull(summary.getIdentifier());
     }
 
@@ -132,62 +132,6 @@ public class MainHandlerTest {
 
         IllegalStateException exception = assertThrows(IllegalStateException.class, action);
         assertThat(exception.getCause().getClass(), is(equalTo(URISyntaxException.class)));
-    }
-
-    private MainHandler createMainHandler(Environment environment)
-        throws URISyntaxException, IOException, InvalidPageTypeException, MissingClaimException, InvalidIssnException,
-               MetadataNotFoundException {
-        PublicationConverter publicationConverter = mockPublicationConverter();
-        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
-        DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
-        PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
-        return new MainHandler(objectMapper, publicationConverter, doiTransformService,
-            doiProxyService, publicationPersistenceService, environment);
-    }
-
-    private PublicationConverter mockPublicationConverter() {
-        PublicationConverter publicationConverter = mock(PublicationConverter.class);
-        when(publicationConverter.toSummary(any())).thenReturn(createSummary());
-        return publicationConverter;
-    }
-
-    private DoiTransformService mockDoiTransformServiceReturningSuccessfulResult()
-        throws URISyntaxException, IOException,
-               InvalidPageTypeException, MissingClaimException, InvalidIssnException {
-        DoiTransformService service = mock(DoiTransformService.class);
-        when(service.transformPublication(anyString(), anyString(), anyString(), anyString()))
-            .thenReturn(getPublication());
-        return service;
-    }
-
-    private Publication getPublication() {
-        return new Publication.Builder()
-            .withIdentifier(UUID.randomUUID())
-            .withCreatedDate(Instant.now())
-            .withModifiedDate(Instant.now())
-            .withStatus(PublicationStatus.DRAFT)
-            .withPublisher(new Organization.Builder().withId(URI.create("http://example.org/123")).build())
-            .withEntityDescription(new EntityDescription.Builder().withMainTitle("Main title").build())
-            .withOwner("Owner")
-            .build();
-    }
-
-    private DoiProxyService mockDoiProxyServiceReceivingSuccessfulResult()
-        throws MetadataNotFoundException, IOException, URISyntaxException {
-        DoiProxyService doiProxyService = mock(DoiProxyService.class);
-        when(doiProxyService.lookupDoiMetadata(anyString(), any())).thenReturn(metadataAndContentLocation());
-        return doiProxyService;
-    }
-
-    private MetadataAndContentLocation metadataAndContentLocation() throws JsonProcessingException {
-        return new MetadataAndContentLocation("datacite",
-            objectMapper.writeValueAsString(getPublication()));
-    }
-
-    private Summary createSummary() {
-        return new Summary.Builder().withIdentifier(UUID.randomUUID()).withTitle("Title on publication")
-            .withCreatorName("Name, Creator")
-            .withDate(new PublicationDate.Builder().withYear("2020").build()).build();
     }
 
     @Test
@@ -245,12 +189,6 @@ public class MainHandlerTest {
         assertThat(response.getBody(), containsString(DoiProxyService.ERROR_READING_METADATA));
     }
 
-    private DoiProxyService mockDoiProxyReceivingFailedResult() {
-        DataciteClient dataciteClient = mock(DataciteClient.class);
-        CrossRefClient crossRefClient = mock(CrossRefClient.class);
-        return new DoiProxyService(crossRefClient, dataciteClient);
-    }
-
     @Test
     @DisplayName("handler returns BadGateway when ResourcePersistenceService returns failed response")
     public void handlerReturnsBadGatewayErrorWhenResourcePersistenceServiceReturnsFailedResponse()
@@ -270,6 +208,68 @@ public class MainHandlerTest {
         GatewayResponse<String> response = gatewayResponse(outputStream);
         assertThat(response.getStatusCode(), is(equalTo(Status.BAD_GATEWAY.getStatusCode())));
         assertThat(response.getBody(), containsString(PublicationPersistenceService.WARNING_MESSAGE));
+    }
+
+    private DoiProxyService mockDoiProxyReceivingFailedResult() {
+        DataciteClient dataciteClient = mock(DataciteClient.class);
+        CrossRefClient crossRefClient = mock(CrossRefClient.class);
+        return new DoiProxyService(crossRefClient, dataciteClient);
+    }
+
+    private MainHandler createMainHandler(Environment environment)
+        throws URISyntaxException, IOException, InvalidPageTypeException, MissingClaimException, InvalidIssnException,
+               MetadataNotFoundException {
+        PublicationConverter publicationConverter = mockPublicationConverter();
+        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
+        DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
+        PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
+        return new MainHandler(objectMapper, publicationConverter, doiTransformService,
+            doiProxyService, publicationPersistenceService, environment);
+    }
+
+    private PublicationConverter mockPublicationConverter() {
+        PublicationConverter publicationConverter = mock(PublicationConverter.class);
+        when(publicationConverter.toSummary(any())).thenReturn(createSummary());
+        return publicationConverter;
+    }
+
+    private DoiTransformService mockDoiTransformServiceReturningSuccessfulResult()
+        throws URISyntaxException, IOException,
+               InvalidPageTypeException, MissingClaimException, InvalidIssnException {
+        DoiTransformService service = mock(DoiTransformService.class);
+        when(service.transformPublication(anyString(), anyString(), anyString(), anyString()))
+            .thenReturn(getPublication());
+        return service;
+    }
+
+    private Publication getPublication() {
+        return new Publication.Builder()
+            .withIdentifier(UUID.randomUUID())
+            .withCreatedDate(Instant.now())
+            .withModifiedDate(Instant.now())
+            .withStatus(PublicationStatus.DRAFT)
+            .withPublisher(new Organization.Builder().withId(URI.create("http://example.org/123")).build())
+            .withEntityDescription(new EntityDescription.Builder().withMainTitle("Main title").build())
+            .withOwner("Owner")
+            .build();
+    }
+
+    private DoiProxyService mockDoiProxyServiceReceivingSuccessfulResult()
+        throws MetadataNotFoundException, IOException, URISyntaxException {
+        DoiProxyService doiProxyService = mock(DoiProxyService.class);
+        when(doiProxyService.lookupDoiMetadata(anyString(), any())).thenReturn(metadataAndContentLocation());
+        return doiProxyService;
+    }
+
+    private MetadataAndContentLocation metadataAndContentLocation() throws JsonProcessingException {
+        return new MetadataAndContentLocation("datacite",
+            objectMapper.writeValueAsString(getPublication()));
+    }
+
+    private Summary createSummary() {
+        return new Summary.Builder().withIdentifier(UUID.randomUUID()).withTitle("Title on publication")
+            .withCreatorName("Name, Creator")
+            .withDate(new PublicationDate.Builder().withYear("2020").build()).build();
     }
 
     private PublicationPersistenceService mockResourcePersistenceServiceReceivingFailedResult()
