@@ -12,6 +12,8 @@ import org.slf4j.LoggerFactory;
 public class DoiProxyService {
 
     public static final String ERROR_READING_METADATA = "Could not get publication metadata.DOI:";
+    public static final String SPACE = " ";
+    public static final String GETING_DOI_METADATA_INFO_MESSAGE = "getting doi metadata for doi:";
 
     private final CrossRefClient crossRefClient;
     private final DataciteClient dataciteClient;
@@ -49,7 +51,7 @@ public class DoiProxyService {
      */
     public MetadataAndContentLocation lookupDoiMetadata(String doiUrl, DataciteContentType dataciteContentType)
         throws MetadataNotFoundException, IOException, URISyntaxException {
-        logger.info("getDoiMetadata(doi:" + doiUrl + ")");
+        logger.info(GETING_DOI_METADATA_INFO_MESSAGE + doiUrl );
         MetadataAndContentLocation metadataAndContentLocation = null;
         Optional<MetadataAndContentLocation> crossRefResult = crossRefClient.fetchDataForDoi(doiUrl);
         if (crossRefResult.isEmpty()) {
@@ -60,7 +62,7 @@ public class DoiProxyService {
         }
 
         if (metadataAndContentLocation == null) {
-            throw new MetadataNotFoundException(ERROR_READING_METADATA + " " + doiUrl);
+            throw new MetadataNotFoundException(ERROR_READING_METADATA + SPACE + doiUrl);
         }
 
         return metadataAndContentLocation;
