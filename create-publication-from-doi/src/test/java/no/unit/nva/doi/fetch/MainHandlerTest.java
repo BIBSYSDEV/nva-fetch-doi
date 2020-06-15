@@ -3,6 +3,7 @@ package no.unit.nva.doi.fetch;
 import static no.unit.nva.doi.fetch.MainHandler.ALLOWED_ORIGIN_ENV;
 import static no.unit.nva.doi.fetch.MainHandler.API_HOST_ENV;
 import static no.unit.nva.doi.fetch.MainHandler.API_SCHEME_ENV;
+import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.apache.http.HttpHeaders.AUTHORIZATION;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -24,8 +25,6 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.CognitoIdentity;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,7 +38,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -53,7 +51,6 @@ import no.unit.nva.doi.fetch.model.RequestBody;
 import no.unit.nva.doi.fetch.model.Summary;
 import no.unit.nva.doi.fetch.service.PublicationConverter;
 import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
-import no.unit.nva.doi.model.DoiProxyResponse;
 import no.unit.nva.doi.transformer.DoiTransformService;
 import no.unit.nva.doi.transformer.exception.MissingClaimException;
 import no.unit.nva.model.EntityDescription;
@@ -75,9 +72,6 @@ import org.zalando.problem.Status;
 
 public class MainHandlerTest {
 
-    public static final String SOME_METADATA_SOURCE = "SomeMetadataSource";
-    private static final String SOME_KEY = "DoiProxyServiceSomeKey";
-    private static final String SOME_VALUE = "DoiProxyServiceSomeValue";
     private static final String SOME_ERROR_MESSAGE = "SomeErrorMessage";
     public static final String VALID_DOI = "https://doi.org/10.1109/5.771073";
 
@@ -89,8 +83,6 @@ public class MainHandlerTest {
     public static final String ALL_ORIGINS = "*";
     public static final String INVALID_HOST_STRING = "https://\\.)_";
     public static final String HTTP = "http";
-
-    private ObjectMapper objectMapper = ObjectMapperConfig.createObjectMapper();
 
     private Environment environment;
 
