@@ -19,10 +19,13 @@ import org.junit.jupiter.api.Test;
 public class DataciteClientTest {
 
     public static final String EXAMPLE_URL = "http://example.org";
-    public static final String DATACITE_RESPONSE_FILE_RESOURCE = "dataciteResponse.json";
-    public static final String EMPTY_RESPONSE_FILE_RESOURCE = "emptyResponse";
+    public static final String SAMPLE_RESPONSE_RESOURCE = "dataciteResponseSample.json";
+    public static final String EMPTY_RESPONSE_RESOURCE = "emptyResponse";
     public static final String MOCK_URL_CONTENT = "Some content for the example URL";
     public static final String EMPTY_STRING = "";
+
+
+
 
     @Test
     public void fetchMetadataReturnsUrlContentForSomeUrl() throws IOException {
@@ -35,24 +38,23 @@ public class DataciteClientTest {
             .fetchMetadata(EXAMPLE_URL, DataciteContentType.CITEPROC_JSON);
 
         assertNotNull(metadata);
-        assertThat(metadata.getJson(),is(equalTo(MOCK_URL_CONTENT)));
-
+        assertThat(metadata.getJson(), is(equalTo(MOCK_URL_CONTENT)));
     }
 
     @Test
     public void testValidResponseUrl() throws IOException {
-        Path resourceAbsolutePath = Path.of(resourceAbsolutePathString(DATACITE_RESPONSE_FILE_RESOURCE));
+        Path resourceAbsolutePath = Path.of(resourceAbsolutePathString(SAMPLE_RESPONSE_RESOURCE));
         DataciteClient dataciteClient = mock(DataciteClient.class);
         when(dataciteClient.readStringFromUrl(any(URL.class))).thenCallRealMethod();
         String actualContent = dataciteClient.readStringFromUrl(resourceAbsolutePath.toUri().toURL());
-        String expected= IoUtils.stringFromResources(Path.of(DATACITE_RESPONSE_FILE_RESOURCE));
-        assertThat(actualContent,is(equalTo(expected)));
+        String expected = IoUtils.stringFromResources(Path.of(SAMPLE_RESPONSE_RESOURCE));
+        assertThat(actualContent, is(equalTo(expected)));
+
     }
 
     @Test
     public void testEmptyResponseUrl() throws IOException {
-        Path resourceAbsolutePath = Path.of(resourceAbsolutePathString(EMPTY_RESPONSE_FILE_RESOURCE));
-
+        Path resourceAbsolutePath = Path.of(resourceAbsolutePathString(EMPTY_RESPONSE_RESOURCE));
         DataciteClient dataciteClient = mock(DataciteClient.class);
         when(dataciteClient.readStringFromUrl(any(URL.class))).thenCallRealMethod();
         String stringFromUrl = dataciteClient.readStringFromUrl(resourceAbsolutePath.toUri().toURL());

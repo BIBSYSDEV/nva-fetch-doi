@@ -4,6 +4,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 
+import no.unit.nva.model.exceptions.InvalidPageRangeException;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import org.junit.jupiter.api.DisplayName;
@@ -22,7 +23,7 @@ public class StringUtilsTest {
 
     @Test
     @DisplayName("parsePage returns a begin and end apge for pages split with dash")
-    public void parsePageReturnsABeginAndEndPageForPagesSplitWithDash() {
+    public void parsePageReturnsABeginAndEndPageForPagesSplitWithDash() throws InvalidPageRangeException {
         String begins = "12";
         String ends = "34";
         String delimiter = "-";
@@ -33,17 +34,17 @@ public class StringUtilsTest {
     }
 
     @Test
-    @DisplayName("parsePage returns a \"begin\" without an \"end\" for page string with as single number")
-    public void parsePageReturnsABeginWithoutAnEndPageForPagesBeingASingleNumber() {
+    @DisplayName("parsePage returns a \"begin\" repeating \"begin\" for page string with as single number")
+    public void parsePageReturnsABeginWithoutAnEndPageForPagesBeingASingleNumber() throws InvalidPageRangeException {
         String pagesString = "12";
-        Pages expected = new Range.Builder().withBegin(pagesString).withEnd(null).build();
+        Pages expected = new Range.Builder().withBegin(pagesString).withEnd(pagesString).build();
         Pages actual = StringUtils.parsePage(pagesString);
         assertThat(actual, is(equalTo(expected)));
     }
 
     @Test
     @DisplayName("parsePage returns a \"begin\" and \"end\" for page strings that have prefix.")
-    public void parsePageReturnsABeginAndEndPageForPagesThatHaveAPrefix() {
+    public void parsePageReturnsABeginAndEndPageForPagesThatHaveAPrefix() throws InvalidPageRangeException {
         String prefix = "p.";
         String begins = "12";
         String ends = "34";
@@ -56,7 +57,8 @@ public class StringUtilsTest {
 
     @Test
     @DisplayName("parsePage returns a \"begin\" and \"end\" for page strings that have prefix word with space.")
-    public void parsePageReturnsABeginAndEndPageForPagesThatHaveAPrefixWordWithSpace() {
+    public void parsePageReturnsABeginAndEndPageForPagesThatHaveAPrefixWordWithSpace() throws
+                                                                                       InvalidPageRangeException {
         String prefix = "pages ";
         String begins = "12";
         String ends = "34";

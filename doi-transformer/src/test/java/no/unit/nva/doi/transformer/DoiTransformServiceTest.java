@@ -12,7 +12,7 @@ import java.nio.file.Path;
 import no.unit.nva.doi.transformer.exception.MissingClaimException;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.exceptions.InvalidPageTypeException;
+import no.unit.nva.model.exceptions.InvalidPageRangeException;
 import nva.commons.utils.IoUtils;
 import org.junit.jupiter.api.Test;
 
@@ -24,8 +24,8 @@ public class DoiTransformServiceTest {
 
     @Test
     public void transFormPublicationReturnsPublicationOnValidCrossrefBody()
-        throws MissingClaimException, URISyntaxException, InvalidPageTypeException, InvalidIssnException,
-                              JsonProcessingException {
+        throws MissingClaimException, URISyntaxException, InvalidPageRangeException, InvalidIssnException,
+               JsonProcessingException {
         DoiTransformService doiTransformService = new DoiTransformService();
         String crossrefBody = IoUtils.stringFromResources(CROSSREF_JSON_PATH);
 
@@ -38,7 +38,7 @@ public class DoiTransformServiceTest {
 
     @Test
     public void transFormPublicationReturnsPublicationOnValidDataciteBody()
-        throws MissingClaimException, URISyntaxException, InvalidPageTypeException, InvalidIssnException,
+        throws MissingClaimException, URISyntaxException, InvalidPageRangeException, InvalidIssnException,
                JsonProcessingException {
         DoiTransformService doiTransformService = new DoiTransformService();
         String crossrefBody = IoUtils.stringFromResources(DATACITE_JSON_PATH);

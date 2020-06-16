@@ -4,20 +4,21 @@ import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import no.unit.nva.doi.fetch.model.Summary;
+import nva.commons.utils.IoUtils;
 import org.junit.jupiter.api.Test;
 
 
 public class PublicationConverterTest {
 
-    public static final String TEST_FILE = "src/test/resources/example_publication.json";
+    public static final Path TEST_FILE = Path.of("example_publication.json");
 
 
     @Test
-    public void test() throws IOException {
-        JsonNode json = objectMapper.readTree(new File(TEST_FILE));
+    public void publicationConverterReturnsSummaryForValidJsonObject() throws IOException {
+        JsonNode json = objectMapper.readTree(IoUtils.inputStreamFromResources(TEST_FILE));
         PublicationConverter converter = new PublicationConverter();
 
         Summary summary = converter.toSummary(json);

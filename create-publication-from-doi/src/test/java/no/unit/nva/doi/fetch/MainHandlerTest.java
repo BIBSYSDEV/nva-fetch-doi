@@ -58,12 +58,12 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.exceptions.InvalidPageTypeException;
 import no.unit.nva.model.util.OrgNumberMapper;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.TestHeaders;
 import nva.commons.handlers.GatewayResponse;
 import nva.commons.utils.Environment;
+import no.unit.nva.model.exceptions.InvalidPageRangeException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -117,7 +117,7 @@ public class MainHandlerTest {
 
     @Test
     public void processInputThrowsIllegalStateExceptionWithInternalCauseWhenUrlToPublicationProxyDoesIsNotValid()
-        throws MissingClaimException, IOException, InvalidPageTypeException, InvalidIssnException, URISyntaxException,
+        throws MissingClaimException, IOException, InvalidPageRangeException, InvalidIssnException, URISyntaxException,
                MetadataNotFoundException {
         Environment environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(ALL_ORIGINS);
@@ -217,7 +217,7 @@ public class MainHandlerTest {
     }
 
     private MainHandler createMainHandler(Environment environment)
-        throws URISyntaxException, IOException, InvalidPageTypeException, MissingClaimException, InvalidIssnException,
+        throws URISyntaxException, IOException, InvalidPageRangeException, MissingClaimException, InvalidIssnException,
                MetadataNotFoundException {
         PublicationConverter publicationConverter = mockPublicationConverter();
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
@@ -235,7 +235,7 @@ public class MainHandlerTest {
 
     private DoiTransformService mockDoiTransformServiceReturningSuccessfulResult()
         throws URISyntaxException, IOException,
-               InvalidPageTypeException, MissingClaimException, InvalidIssnException {
+               InvalidPageRangeException, MissingClaimException, InvalidIssnException {
         DoiTransformService service = mock(DoiTransformService.class);
         when(service.transformPublication(anyString(), anyString(), anyString(), anyString()))
             .thenReturn(getPublication());
