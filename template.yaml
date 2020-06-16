@@ -120,8 +120,8 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          API_SCHEME: https
-          API_HOST: !Ref CustomDomain
+          PUBLICATION_API_SCHEME: https
+          PUBLICATION_API_HOST: !Ref CustomDomain
       Events:
         NvaDoi:
           Type: Api

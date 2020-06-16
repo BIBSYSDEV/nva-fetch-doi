@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Objects;
+import nva.commons.utils.JacocoGenerated;
 
 public class DoiProxyResponse {
 
@@ -26,6 +27,7 @@ public class DoiProxyResponse {
         return metadataSource;
     }
 
+    @JacocoGenerated
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -35,10 +37,11 @@ public class DoiProxyResponse {
             return false;
         }
         DoiProxyResponse that = (DoiProxyResponse) o;
-        return Objects.equals(getJsonNode(), that.getJsonNode()) &&
-            Objects.equals(getMetadataSource(), that.getMetadataSource());
+        return Objects.equals(getJsonNode(), that.getJsonNode())
+            && Objects.equals(getMetadataSource(), that.getMetadataSource());
     }
 
+    @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(getJsonNode(), getMetadataSource());

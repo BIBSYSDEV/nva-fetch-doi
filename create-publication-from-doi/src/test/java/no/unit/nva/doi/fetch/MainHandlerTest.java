@@ -1,8 +1,8 @@
 package no.unit.nva.doi.fetch;
 
 import static no.unit.nva.doi.fetch.MainHandler.ALLOWED_ORIGIN_ENV;
-import static no.unit.nva.doi.fetch.MainHandler.API_HOST_ENV;
-import static no.unit.nva.doi.fetch.MainHandler.API_SCHEME_ENV;
+import static no.unit.nva.doi.fetch.MainHandler.PUBLICATION_API_HOST_ENV;
+import static no.unit.nva.doi.fetch.MainHandler.PUBLICATION_API_SCHEME_ENV;
 import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.apache.http.HttpHeaders.AUTHORIZATION;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
@@ -93,8 +93,8 @@ public class MainHandlerTest {
     public void setUp() {
         environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(ALL_ORIGINS);
-        when(environment.readEnv(API_HOST_ENV)).thenReturn("localhost:3000");
-        when(environment.readEnv(API_SCHEME_ENV)).thenReturn("http");
+        when(environment.readEnv(PUBLICATION_API_HOST_ENV)).thenReturn("localhost:3000");
+        when(environment.readEnv(PUBLICATION_API_SCHEME_ENV)).thenReturn("http");
     }
 
     @Test
@@ -121,8 +121,8 @@ public class MainHandlerTest {
                MetadataNotFoundException {
         Environment environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(ALL_ORIGINS);
-        when(environment.readEnv(API_HOST_ENV)).thenReturn(INVALID_HOST_STRING);
-        when(environment.readEnv(API_SCHEME_ENV)).thenReturn(HTTP);
+        when(environment.readEnv(PUBLICATION_API_HOST_ENV)).thenReturn(INVALID_HOST_STRING);
+        when(environment.readEnv(PUBLICATION_API_SCHEME_ENV)).thenReturn(HTTP);
 
         MainHandler mainHandler = createMainHandler(environment);
         RequestBody requestBody = new RequestBody();

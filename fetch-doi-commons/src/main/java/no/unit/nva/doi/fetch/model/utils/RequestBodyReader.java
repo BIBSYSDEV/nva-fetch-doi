@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
-import no.unit.nva.doi.fetch.utils.JacocoGenerated;
+import nva.commons.utils.JacocoGenerated;
 
 @JacocoGenerated
 public class RequestBodyReader {

@@ -23,7 +23,6 @@ import no.unit.nva.doi.fetch.model.RequestBody;
 import no.unit.nva.doi.fetch.model.Summary;
 import no.unit.nva.doi.fetch.service.PublicationConverter;
 import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
-import no.unit.nva.doi.fetch.utils.JacocoGenerated;
 import no.unit.nva.doi.transformer.DoiTransformService;
 import no.unit.nva.doi.transformer.exception.MissingClaimException;
 import no.unit.nva.model.Publication;
@@ -33,6 +32,7 @@ import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.ApiGatewayHandler;
 import nva.commons.handlers.RequestInfo;
 import nva.commons.utils.Environment;
+import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 import nva.commons.utils.RequestUtils;
 import org.apache.http.HttpHeaders;
@@ -42,8 +42,8 @@ import org.slf4j.LoggerFactory;
 
 public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
-    public static final String API_HOST_ENV = "API_HOST";
-    public static final String API_SCHEME_ENV = "API_SCHEME";
+    public static final String PUBLICATION_API_HOST_ENV = "PUBLICATION_API_HOST";
+    public static final String PUBLICATION_API_SCHEME_ENV = "PUBLICATION_API_SCHEME";
 
     public static final JsonPointer FEIDE_ID = JsonPointer.compile("/authorizer/claims/custom:feideId");
     public static final JsonPointer ORG_NUMBER = JsonPointer.compile("/authorizer/claims/custom:orgNumber");
@@ -54,8 +54,8 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     private final transient DoiTransformService doiTransformService;
     private final transient DoiProxyService doiProxyService;
     private final transient PublicationPersistenceService publicationPersistenceService;
-    private final transient String apiHost;
-    private final transient String apiScheme;
+    private final transient String publicationApiHost;
+    private final transient String publicationApiScheme;
 
     private static final Logger logger = LoggerFactory.getLogger(MainHandler.class);
 
@@ -80,8 +80,8 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         this.doiTransformService = doiTransformService;
         this.doiProxyService = doiProxyService;
         this.publicationPersistenceService = publicationPersistenceService;
-        this.apiHost = environment.readEnv(API_HOST_ENV);
-        this.apiScheme = environment.readEnv(API_SCHEME_ENV);
+        this.publicationApiHost = environment.readEnv(PUBLICATION_API_HOST_ENV);
+        this.publicationApiScheme = environment.readEnv(PUBLICATION_API_SCHEME_ENV);
     }
 
     @Override
@@ -110,7 +110,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     }
 
     private URI urlToPublicationProxy() {
-        return attempt(() -> new URIBuilder().setHost(apiHost).setScheme(apiScheme).build())
+        return attempt(() -> new URIBuilder().setHost(publicationApiHost).setScheme(publicationApiScheme).build())
             .orElseThrow(failure -> new IllegalStateException(failure.getException()));
     }
 

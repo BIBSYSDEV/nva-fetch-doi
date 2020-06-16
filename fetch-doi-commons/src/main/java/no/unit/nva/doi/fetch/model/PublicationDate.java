@@ -1,6 +1,6 @@
 package no.unit.nva.doi.fetch.model;
 
-import no.unit.nva.doi.fetch.utils.JacocoGenerated;
+import nva.commons.utils.JacocoGenerated;
 
 public class PublicationDate {
 

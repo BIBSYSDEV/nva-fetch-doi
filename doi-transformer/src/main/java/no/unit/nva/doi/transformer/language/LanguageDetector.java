@@ -3,8 +3,8 @@ package no.unit.nva.doi.transformer.language;
 import java.net.URI;
 import java.util.Locale;
 import java.util.Optional;
-import no.unit.nva.doi.fetch.utils.JacocoGenerated;
 import no.unit.nva.doi.transformer.language.exceptions.LanguageUriNotFoundException;
+import nva.commons.utils.JacocoGenerated;
 
 public interface LanguageDetector {
 
@@ -19,7 +19,7 @@ public interface LanguageDetector {
      * @param input the text we want to detect its language.
      * @return a language URI.
      */
-    @JacocoGenerated()
+    @JacocoGenerated
     default URI detectLangWithDefault(String input) {
         try {
             return detectLangOpt(detectLocale(input).getISO3Language())
