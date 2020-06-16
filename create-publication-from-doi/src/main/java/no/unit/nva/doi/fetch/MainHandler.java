@@ -71,9 +71,12 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
      * @param objectMapper objectMapper.
      * @param environment  environment.
      */
-    public MainHandler(ObjectMapper objectMapper, PublicationConverter publicationConverter,
-                       DoiTransformService doiTransformService, DoiProxyService doiProxyService,
-                       PublicationPersistenceService publicationPersistenceService, Environment environment) {
+    public MainHandler(ObjectMapper objectMapper,
+                       PublicationConverter publicationConverter,
+                       DoiTransformService doiTransformService,
+                       DoiProxyService doiProxyService,
+                       PublicationPersistenceService publicationPersistenceService,
+                       Environment environment) {
         super(RequestBody.class, environment, logger);
         this.objectMapper = objectMapper;
         this.publicationConverter = publicationConverter;
