@@ -25,12 +25,11 @@ public class MockHttpClient<R> extends HttpClient {
 
     // T must be the same with R
     @Override
+    @SuppressWarnings("unchecked")
     public <T> CompletableFuture<HttpResponse<T>> sendAsync(HttpRequest request,
                                                             BodyHandler<T> responseBodyHandler) {
 
-        CompletableFuture<HttpResponse<T>> result = CompletableFuture.completedFuture(
-            ((HttpResponse<T>) response));
-        return result;
+        return CompletableFuture.completedFuture(((HttpResponse<T>) response));
     }
 
     @Override
