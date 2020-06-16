@@ -25,8 +25,8 @@ public class DoiProxyService {
     /**
      * Constructor for DoiProxyService.
      *
-     * @param crossRefClient    crossRefClient
-     * @param dataciteClient    dataciteClient
+     * @param crossRefClient crossRefClient
+     * @param dataciteClient dataciteClient
      */
     public DoiProxyService(CrossRefClient crossRefClient, DataciteClient dataciteClient) {
         this.crossRefClient = crossRefClient;
@@ -44,20 +44,20 @@ public class DoiProxyService {
     /**
      * Look up metadata for doi url.
      *
-     * @param doiUrl    doiUrl
-     * @param dataciteContentType   dataciteContentType
-     * @return  metadata and content location
-     * @throws MetadataNotFoundException    when no metadata found
-     * @throws IOException  when error reading from IO
-     * @throws URISyntaxException   when malformed doi url
+     * @param doiUrl              doiUrl
+     * @param dataciteContentType dataciteContentType
+     * @return metadata and content location
+     * @throws MetadataNotFoundException when no metadata found
+     * @throws IOException               when error reading from IO
+     * @throws URISyntaxException        when malformed doi url
      */
     public MetadataAndContentLocation lookupDoiMetadata(String doiUrl, DataciteContentType dataciteContentType)
         throws MetadataNotFoundException, IOException, URISyntaxException {
-        logger.info(GETING_DOI_METADATA_INFO_MESSAGE + doiUrl );
+        logger.info(GETING_DOI_METADATA_INFO_MESSAGE + doiUrl);
         MetadataAndContentLocation metadataAndContentLocation;
         Optional<MetadataAndContentLocation> crossRefResult = crossRefClient.fetchDataForDoi(doiUrl);
         if (crossRefResult.isEmpty()) {
-            metadataAndContentLocation = dataciteClient.fetchMetadata(doiUrl,dataciteContentType);
+            metadataAndContentLocation = dataciteClient.fetchMetadata(doiUrl, dataciteContentType);
         } else {
             metadataAndContentLocation = crossRefResult.get();
         }
@@ -68,5 +68,4 @@ public class DoiProxyService {
 
         return metadataAndContentLocation;
     }
-
 }
