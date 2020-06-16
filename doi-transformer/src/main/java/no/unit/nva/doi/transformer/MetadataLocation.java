@@ -9,8 +9,7 @@ public enum MetadataLocation {
 
     public static final String CROSSREF_STRING = "crossref";
     public static final String DATACITE_STRING = "datacite";
-    private static String ILLEGAL_ARGUMENT_ERROR = "Illegal MetadataLocation value. Valid values are:";
-    private static Map<String, MetadataLocation> valuesMap;
+    private static final Map<String, MetadataLocation> valuesMap;
     private final String value;
 
     static {

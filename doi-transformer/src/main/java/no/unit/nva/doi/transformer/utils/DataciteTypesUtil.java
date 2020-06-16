@@ -10,7 +10,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteResponse;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteTypes;
-import no.unit.nva.model.PublicationType;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.SingletonCollector;
 

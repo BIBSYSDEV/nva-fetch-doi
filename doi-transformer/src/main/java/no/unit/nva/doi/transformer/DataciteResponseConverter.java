@@ -2,7 +2,6 @@ package no.unit.nva.doi.transformer;
 
 import static java.util.Objects.nonNull;
 import static java.util.function.Predicate.not;
-import static no.unit.nva.model.PublicationType.JOURNAL_CONTENT;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -29,6 +28,7 @@ import no.unit.nva.doi.transformer.utils.DataciteRelationType;
 import no.unit.nva.doi.transformer.utils.DataciteTypesUtil;
 import no.unit.nva.doi.transformer.utils.IssnCleaner;
 import no.unit.nva.doi.transformer.utils.LicensingIndicator;
+import no.unit.nva.doi.transformer.utils.PublicationType;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
@@ -36,13 +36,12 @@ import no.unit.nva.model.Level;
 import no.unit.nva.model.NameType;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationType;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.contexttypes.BasicContext;
 import no.unit.nva.model.contexttypes.Journal;
-import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.exceptions.InvalidPageTypeException;
+import no.unit.nva.model.exceptions.InvalidPageRangeException;
 import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.model.instancetypes.JournalArticle;
 import no.unit.nva.model.instancetypes.PublicationInstance;
@@ -67,11 +66,11 @@ public class DataciteResponseConverter extends AbstractConverter {
      * @param owner            owner
      * @return publication
      * @throws URISyntaxException       when dataciteResponse contains invalid URIs
-     * @throws InvalidPageTypeException when the mapping uses an incorrect page type related to the PublicationContext
+     * @throws InvalidPageRangeException when the mapping uses an incorrect page type related to the PublicationContext
      * @throws InvalidIssnException     when the ISSN is invalid
      */
     public Publication toPublication(DataciteResponse dataciteResponse, Instant now, UUID identifier, String owner,
-                                     URI publisherId) throws URISyntaxException, InvalidPageTypeException,
+                                     URI publisherId) throws URISyntaxException, InvalidPageRangeException,
                                                              InvalidIssnException {
 
         return new Publication.Builder()
@@ -118,7 +117,7 @@ public class DataciteResponseConverter extends AbstractConverter {
         return null;
     }
 
-    private Reference createReference(DataciteResponse dataciteResponse) throws InvalidPageTypeException,
+    private Reference createReference(DataciteResponse dataciteResponse) throws InvalidPageRangeException,
                                                                                 InvalidIssnException {
         return new Reference.Builder()
             .withDoi(doiConverter.toUri(dataciteResponse.getDoi()))
@@ -128,9 +127,9 @@ public class DataciteResponseConverter extends AbstractConverter {
     }
 
     private PublicationInstance extractPublicationInstance(DataciteResponse dataciteResponse)
-        throws InvalidPageTypeException {
+        throws InvalidPageRangeException {
         PublicationInstance publicationInstance = null;
-        if (JOURNAL_CONTENT.equals(extractPublicationType(dataciteResponse))) {
+        if (PublicationType.JOURNAL_CONTENT.equals(extractPublicationType(dataciteResponse))) {
             DataciteContainer container = dataciteResponse.getContainer();
             String issue = Optional.ofNullable(container.getIssue()).orElse(null);
             String volume = Optional.ofNullable(container.getVolume()).orElse(null);
@@ -145,20 +144,20 @@ public class DataciteResponseConverter extends AbstractConverter {
         return publicationInstance;
     }
 
-    private Range extractPages(DataciteContainer container) {
+    private Range extractPages(DataciteContainer container) throws InvalidPageRangeException {
         return new Range.Builder()
             .withBegin(container.getFirstPage())
             .withEnd(container.getLastPage())
             .build();
     }
 
-    private PublicationContext extractPublicationContext(DataciteResponse dataciteResponse)
+    private BasicContext extractPublicationContext(DataciteResponse dataciteResponse)
         throws InvalidIssnException {
-        PublicationContext publicationContext = null;
+        BasicContext basicContext = null;
         PublicationType type = extractPublicationType(dataciteResponse);
-        if (nonNull(type) && type.equals(JOURNAL_CONTENT)) {
+        if (nonNull(type) && type.equals(PublicationType.JOURNAL_CONTENT)) {
 
-            publicationContext = new Journal.Builder()
+            basicContext = new Journal.Builder()
                 .withPrintIssn(extractPrintIssn(dataciteResponse))
                 .withTitle(dataciteResponse.getContainer().getTitle())
                 .withOnlineIssn(extractOnlineIssn(dataciteResponse))
@@ -167,7 +166,7 @@ public class DataciteResponseConverter extends AbstractConverter {
                 .withLevel(Level.NO_LEVEL)
                 .build();
         }
-        return publicationContext;
+        return basicContext;
     }
 
     private String extractOnlineIssn(DataciteResponse dataciteResponse) {

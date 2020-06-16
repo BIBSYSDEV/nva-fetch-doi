@@ -25,7 +25,6 @@ import java.util.Locale;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import no.unit.nva.doi.fetch.ObjectMapperConfig;
 import no.unit.nva.doi.transformer.language.LanguageMapper;
 import no.unit.nva.doi.transformer.language.exceptions.LanguageUriNotFoundException;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossRefDocument;
@@ -40,11 +39,12 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.exceptions.InvalidPageTypeException;
+import no.unit.nva.model.exceptions.InvalidPageRangeException;
 import no.unit.nva.model.instancetypes.JournalArticle;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.utils.IoUtils;
+import nva.commons.utils.JsonUtils;
 import nva.commons.utils.doi.DoiConverter;
 import nva.commons.utils.doi.DoiConverterImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -79,10 +79,10 @@ public class CrossRefConverterTest extends ConversionTest {
     private CrossRefDocument sampleInputDocument = createSampleDocument();
     private final CrossRefConverter converter = new CrossRefConverter();
     private Publication samplePublication;
-    private static final ObjectMapper objectMapper = ObjectMapperConfig.createObjectMapper();
+    private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
 
     @BeforeEach
-    public void init() throws InvalidIssnException, InvalidPageTypeException {
+    public void init() throws InvalidIssnException, InvalidPageRangeException {
         sampleInputDocument = createSampleDocument();
         samplePublication = toPublication(sampleInputDocument);
     }
@@ -125,7 +125,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @Test
     @DisplayName("toPublication sets null EntityDescription date when input has no \"published-print\" date")
     public void entityDescriptionDateIsNullWhenInputDataHasNoPublicationDate() throws InvalidIssnException,
-                                                                                      InvalidPageTypeException {
+                                                                                      InvalidPageRangeException {
         sampleInputDocument.setPublishedPrint(null);
         Publication publicationWithoutDate = toPublication(sampleInputDocument);
         PublicationDate actualDate = publicationWithoutDate.getEntityDescription().getDate();
@@ -152,7 +152,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @Test
     @DisplayName("toPublication sets as sequence the position of the author in the list when ordinal is not numerical")
     public void toPublicationSetsOrdinalAsSecondAuthorIfInputOrdinalIsNotAValidOrdinal()
-        throws InvalidIssnException,InvalidPageTypeException {
+        throws InvalidIssnException,InvalidPageRangeException {
         int numberOfAuthors = sampleInputDocument.getAuthor().size();
         sampleInputDocument.getAuthor().forEach(a -> {
             a.setSequence(INVALID_ORDINAL);
@@ -168,7 +168,7 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("toPublication sets the correct number when the sequence ordinal is valid")
-    public void toPublicationSetsCorrectNumberForValidOrdinal() throws InvalidIssnException, InvalidPageTypeException {
+    public void toPublicationSetsCorrectNumberForValidOrdinal() throws InvalidIssnException, InvalidPageRangeException {
         CrossrefAuthor author = sampleInputDocument.getAuthor().stream().findFirst().get();
         String validOrdinal = "second";
         int expected = 2;
@@ -182,7 +182,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @Test
     @DisplayName("toPublication sets abstract when input has non empty abstract")
     public void toPublicationSetsAbstractWhenInputHasNonEmptyAbstract() throws IOException, InvalidIssnException,
-                                                                               InvalidPageTypeException {
+                                                                               InvalidPageRangeException {
         String json = IoUtils.stringFromResources(Path.of(CROSSREF_WITH_ABSTRACT_JSON));
         CrossRefDocument docWithAbstract = objectMapper.readValue(json, CrossrefApiResponse.class).getMessage();
         String abstractText = toPublication(docWithAbstract).getEntityDescription().getAbstract();
@@ -194,7 +194,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @Test
     @DisplayName("toPublication sets the language to a URI when the input is an ISO639-3 entry")
     public void toPublicationSetsTheLanguageToAUriWhenTheInputFollowsTheIso3Standard()
-        throws LanguageUriNotFoundException, InvalidIssnException, InvalidPageTypeException {
+        throws LanguageUriNotFoundException, InvalidIssnException, InvalidPageRangeException {
         Locale sampleLanguage = Locale.ENGLISH;
         sampleInputDocument.setLanguage(sampleLanguage.getISO3Language());
         URI actualLanguage = toPublication(sampleInputDocument).getEntityDescription().getLanguage();
@@ -206,7 +206,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @Test
     @DisplayName("toPublication sets the doi of the Reference when the Crossref document has a \"DOI\" value ")
     public void toPublicationSetsTheDoiOfTheReferenceWhenTheCrossrefDocHasADoiValue() throws InvalidIssnException,
-                                                                                             InvalidPageTypeException {
+                                                                                             InvalidPageRangeException {
         DoiConverter doiConverter = new DoiConverterImpl();
         sampleInputDocument.setDoi(SOME_DOI);
         URI actualDoi = toPublication(sampleInputDocument).getEntityDescription().getReference().getDoi();
@@ -217,20 +217,20 @@ public class CrossRefConverterTest extends ConversionTest {
     @DisplayName("toPublication sets the doi of the Reference when the Crossref document has at least one"
         + " \"Container\" value ")
     public void toPublicationSetsTheNameOfTheReferenceWhenTheCrossrefDocHasAtLeatOneContainterTitle()
-        throws InvalidIssnException, InvalidPageTypeException {
+        throws InvalidIssnException, InvalidPageRangeException {
         String firstNameOfJournal = "Journal 1st Name";
         String secondNameOfJournal = "Journal 2nd Name";
         sampleInputDocument.setContainerTitle(Arrays.asList(firstNameOfJournal, secondNameOfJournal));
 
-        String actualJournalName = toPublication(sampleInputDocument).getEntityDescription().getReference()
-            .getPublicationContext().getTitle();
+        String actualJournalName = ((Journal)toPublication(sampleInputDocument).getEntityDescription().getReference()
+            .getPublicationContext()).getTitle();
         assertThat(actualJournalName, is(equalTo(firstNameOfJournal)));
     }
 
     @Test
     @DisplayName("toPublication sets the volume of the Reference when the Crosref document has a \"Volume\" value")
     public void toPublicationSetsTheVolumeOfTheReferenceWhentheCrossrefDocHasAVolume()
-        throws InvalidIssnException, InvalidPageTypeException {
+        throws InvalidIssnException, InvalidPageRangeException {
         String expectedVolume = "Vol. 1";
         sampleInputDocument.setVolume(expectedVolume);
         String actualVolume = ((JournalArticle) (toPublication(sampleInputDocument)
@@ -243,7 +243,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @Test
     @DisplayName("toPublication sets the pages of the Reference when the Crosref document has a \"Pages\" value")
     public void toPublicationSetsThePagesOfTheReferenceWhentheCrossrefDocHasPages()
-        throws InvalidIssnException, InvalidPageTypeException {
+        throws InvalidIssnException, InvalidPageRangeException {
         String pages = "45-89";
 
         sampleInputDocument.setPage(pages);
@@ -257,7 +257,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @Test
     @DisplayName("toPublication sets the issue of the Reference when the Crosref document has a \"Issue\" value")
     public void toPublicationSetsTheIssueOfTheReferenceWhentheCrossrefDocHasAnIssueValue()
-        throws InvalidIssnException,InvalidPageTypeException {
+        throws InvalidIssnException,InvalidPageRangeException {
         String expectedIssue = "SomeIssue";
 
         sampleInputDocument.setIssue(expectedIssue);
@@ -273,7 +273,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @DisplayName("toPublication sets the MetadataSource to the CrossRef URL when the Crossref "
         + "document has a \"source\" containing the word crossref")
     public void toPublicationSetsTheMetadataSourceToTheCrossRefUrlWhenTheCrossrefDocHasCrossrefAsSource()
-        throws InvalidIssnException, InvalidPageTypeException {
+        throws InvalidIssnException, InvalidPageRangeException {
         String source = "Crossref";
         URI expectedURI = CrossRefConverter.CROSSEF_URI;
 
@@ -287,7 +287,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @DisplayName("toPublication sets the MetadataSource to the specfied URL when the Crossref "
         + "document has as \"source\" a valid URL")
     public void toPublicationSetsTheMetadataSourceToTheSourceUrlIfTheDocHasAsSourceAValidUrl()
-        throws InvalidIssnException, InvalidPageTypeException {
+        throws InvalidIssnException, InvalidPageRangeException {
         String source = "http://www.something.com";
         URI expectedURI = URI.create(source);
 
@@ -300,7 +300,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @Test
     @DisplayName("toPublication sets null for online ISSN when only print ISSN is available")
     public void toPublicationSetsNullOnlineIssnWhenOnlyPrintISSnIsAvailable()
-        throws InvalidIssnException, InvalidPageTypeException {
+        throws InvalidIssnException, InvalidPageRangeException {
         IssnType type = IssnType.PRINT;
         Issn printIssn = sampleIssn(type,VALID_ISSN_A);
         sampleInputDocument.setIssnType(Collections.singletonList(printIssn));
@@ -316,7 +316,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @Test
     @DisplayName("toPublication sets null for print ISSN when only online ISSN is available")
     public void toPublicationSetsNullPrintIssnWhenOnlyOnlineISSnIsAvailable()
-        throws InvalidIssnException, InvalidPageTypeException {
+        throws InvalidIssnException, InvalidPageRangeException {
         IssnType type = IssnType.ELECTRONIC;
         Issn onlineIssn = sampleIssn(type,VALID_ISSN_A);
         sampleInputDocument.setIssnType(Collections.singletonList(onlineIssn));
@@ -332,7 +332,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @Test
     @DisplayName("toPublication sets one of many online ISSNs when multiple online ISSNs are  available")
     public void toPublicationSetsOneOfManyOnlineIssnsWhenMultipleOfTheSameTypeAreAvailable()
-        throws InvalidIssnException, InvalidPageTypeException {
+        throws InvalidIssnException, InvalidPageRangeException {
         IssnType type = IssnType.ELECTRONIC;
         Issn onlineIssnA = sampleIssn(type, VALID_ISSN_A);
         Issn onlineIssnB = sampleIssn(type, VALID_ISSN_B);
@@ -352,7 +352,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @Test
     @DisplayName("toPublication sets one of many print ISSNs when multiple print ISSNs are available")
     public void toPublicationSetsOneOfManyPrintIssnsWhenMultipleOfTheSameTypeAreAvailable()
-        throws InvalidIssnException, InvalidPageTypeException {
+        throws InvalidIssnException, InvalidPageRangeException {
         IssnType type = IssnType.PRINT;
         Issn printIssnA = sampleIssn(type, VALID_ISSN_A);
         Issn printIssnB = sampleIssn(type, VALID_ISSN_B);
@@ -376,7 +376,7 @@ public class CrossRefConverterTest extends ConversionTest {
         return issn;
     }
 
-    private Publication toPublication(CrossRefDocument doc) throws InvalidIssnException, InvalidPageTypeException {
+    private Publication toPublication(CrossRefDocument doc) throws InvalidIssnException, InvalidPageRangeException {
         return converter.toPublication(doc, NOW, OWNER, DOC_ID, SOME_PUBLISHER_URI);
     }
 

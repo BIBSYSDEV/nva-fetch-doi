@@ -3,7 +3,6 @@ package no.unit.nva.doi.transformer.utils;
 import static java.util.Objects.isNull;
 
 import java.util.Arrays;
-import no.unit.nva.model.PublicationType;
 import nva.commons.utils.SingletonCollector;
 
 public enum CrossrefType {
