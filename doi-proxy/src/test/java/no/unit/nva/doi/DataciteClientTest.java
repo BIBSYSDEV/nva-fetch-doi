@@ -1,6 +1,5 @@
 package no.unit.nva.doi;
 
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -9,15 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
-import java.net.URLConnection;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import nva.commons.utils.IoUtils;
 import org.junit.jupiter.api.Test;
 
@@ -40,8 +35,7 @@ public class DataciteClientTest {
             .fetchMetadata(EXAMPLE_URL, DataciteContentType.CITEPROC_JSON);
 
         assertNotNull(metadata);
-        assertThat(metadata.getJson(),is(equalTo(MOCK_URL_CONTENT)));
-
+        assertThat(metadata.getJson(), is(equalTo(MOCK_URL_CONTENT)));
     }
 
     @Test
@@ -50,8 +44,8 @@ public class DataciteClientTest {
         DataciteClient dataciteClient = mock(DataciteClient.class);
         when(dataciteClient.readStringFromUrl(any(URL.class))).thenCallRealMethod();
         String actualContent = dataciteClient.readStringFromUrl(resourceAbsolutePath.toUri().toURL());
-        String expected= IoUtils.stringFromResources(Path.of(DATACITE_RESPONSE_FILE_RESOURCE));
-        assertThat(actualContent,is(equalTo(expected)));
+        String expected = IoUtils.stringFromResources(Path.of(DATACITE_RESPONSE_FILE_RESOURCE));
+        assertThat(actualContent, is(equalTo(expected)));
     }
 
     @Test
