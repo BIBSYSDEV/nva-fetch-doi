@@ -37,7 +37,7 @@ public class CrossRefClient {
     public static final String FETCH_ERROR = "CrossRefClient failed while trying to fetch:";
 
     private final transient HttpClient httpClient;
-    private final static Logger logger = LoggerFactory.getLogger(CrossRefClient.class);
+    private static final Logger logger = LoggerFactory.getLogger(CrossRefClient.class);
 
     @JacocoGenerated
     public CrossRefClient() {
@@ -65,7 +65,7 @@ public class CrossRefClient {
         HttpRequest request = createRequest(doiUri);
         try {
             return Optional.ofNullable(getFromWeb(request))
-                           .map(json -> new MetadataAndContentLocation(CROSSREF_LINK, json));
+                .map(json -> new MetadataAndContentLocation(CROSSREF_LINK, json));
         } catch (InterruptedException
             | ExecutionException
             | NotFoundException
@@ -79,10 +79,10 @@ public class CrossRefClient {
 
     private HttpRequest createRequest(URI doiUri) {
         return HttpRequest.newBuilder(doiUri)
-                          .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
-                          .timeout(Duration.ofSeconds(TIMEOUT_DURATION))
-                          .GET()
-                          .build();
+            .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+            .timeout(Duration.ofSeconds(TIMEOUT_DURATION))
+            .GET()
+            .build();
     }
 
     private String getFromWeb(HttpRequest request)
