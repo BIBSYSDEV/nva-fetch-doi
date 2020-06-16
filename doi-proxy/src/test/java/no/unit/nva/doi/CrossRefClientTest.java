@@ -10,20 +10,30 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Optional;
 import no.bibsys.aws.tools.IoUtils;
-import no.unit.nva.doi.CrossRefClient;
-import no.unit.nva.doi.MetadataAndContentLocation;
-import no.unit.nva.doi.utils.AbstractLambdaTest;
+import no.unit.nva.doi.utils.HttpResponseStatus200;
+import no.unit.nva.doi.utils.HttpResponseStatus404;
+import no.unit.nva.doi.utils.HttpResponseStatus500;
+import no.unit.nva.doi.utils.MockHttpClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-public class CrossRefClientTest extends AbstractLambdaTest {
+public class CrossRefClientTest {
+
+    public static final String DOI_STRING = "10.1007/s00115-004-1822-4";
+    public static final String DOI_DX_URL_PREFIX = "https://dx.doi.org";
+    public static final String DOI_URL_PREFIX = "https://doi.org";
+
+    public static final Path CROSS_REF_SAMPLE_PATH = Paths.get("crossRefSample.json");
+
+    public static final String ERROR_MESSAGE = "404 error message";
+    public static final String ILLEGAL_DOI_STRING = "doi:" + DOI_STRING;
 
     private CrossRefClient crossRefClient;
-
-    public static final String ILLEGAL_DOI_STRING = "doi:" + DOI_STRING;
 
     @BeforeEach
     void before() throws IOException {
@@ -60,7 +70,7 @@ public class CrossRefClientTest extends AbstractLambdaTest {
     public void fetchDataForDoiReturnAnOptionalWithAJsonObjectForAnExistingUrl()
         throws IOException, URISyntaxException {
         Optional<String> result = crossRefClient.fetchDataForDoi(DOI_STRING).map(MetadataAndContentLocation::getJson);
-        String expected = IoUtils.resourceAsString(CrossRefSamplePath);
+        String expected = IoUtils.resourceAsString(CROSS_REF_SAMPLE_PATH);
         assertThat(result.isPresent(), is(true));
         assertThat(result.get(), is(equalTo(expected)));
     }
@@ -97,5 +107,25 @@ public class CrossRefClientTest extends AbstractLambdaTest {
 
         String output = crossRefClient.createUrlToCrossRef(doiURL).toString();
         assertThat(output, is(equalTo(expected)));
+    }
+
+    private HttpClient mockHttpClientWithNonEmptyResponse() throws IOException {
+        String responseBody = IoUtils.resourceAsString(CROSS_REF_SAMPLE_PATH);
+        HttpResponseStatus200<String> response = new HttpResponseStatus200<>(responseBody);
+        return new MockHttpClient<>(response);
+    }
+
+    private CrossRefClient crossRefClientReceives404() {
+        HttpResponseStatus404<String> errorResponse = new HttpResponseStatus404<>(
+            ERROR_MESSAGE);
+        MockHttpClient<String> mockHttpClient = new MockHttpClient<>(errorResponse);
+        return new CrossRefClient(mockHttpClient);
+    }
+
+    private CrossRefClient crossRefClientReceives500() {
+        HttpResponseStatus500<String> errorResponse = new HttpResponseStatus500<>(
+            ERROR_MESSAGE);
+        MockHttpClient<String> mockHttpClient = new MockHttpClient<>(errorResponse);
+        return new CrossRefClient(mockHttpClient);
     }
 }
