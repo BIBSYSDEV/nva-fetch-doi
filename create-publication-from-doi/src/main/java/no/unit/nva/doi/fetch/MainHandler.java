@@ -1,5 +1,6 @@
 package no.unit.nva.doi.fetch;
 
+import static java.util.Objects.isNull;
 import static nva.commons.utils.attempt.Try.attempt;
 import static org.apache.http.HttpStatus.SC_OK;
 
@@ -32,6 +33,7 @@ import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.ApiGatewayHandler;
 import nva.commons.handlers.RequestInfo;
 import nva.commons.utils.Environment;
+import nva.commons.utils.JsonUtils;
 import nva.commons.utils.RequestUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.utils.URIBuilder;
@@ -45,21 +47,21 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     public static final JsonPointer FEIDE_ID = JsonPointer.compile("/authorizer/claims/custom:feideId");
     public static final JsonPointer ORG_NUMBER = JsonPointer.compile("/authorizer/claims/custom:orgNumber");
+    public static final String NULL_DOI_URL_ERROR = "doiUrl can not be null";
 
-    private final transient ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
     private final transient PublicationConverter publicationConverter;
     private final transient DoiTransformService doiTransformService;
     private final transient DoiProxyService doiProxyService;
     private final transient PublicationPersistenceService publicationPersistenceService;
     private final transient String apiHost;
     private final transient String apiScheme;
-    public static final ObjectMapper jsonParser = ObjectMapperConfig.createObjectMapper();
 
     private static final Logger logger = LoggerFactory.getLogger(MainHandler.class);
 
     @JacocoGenerated
     public MainHandler() {
-        this(jsonParser, new PublicationConverter(), new DoiTransformService(),
+        this(JsonUtils.objectMapper, new PublicationConverter(), new DoiTransformService(),
             new DoiProxyService(), new PublicationPersistenceService(), new Environment());
     }
 
@@ -113,8 +115,8 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     }
 
     private void validate(RequestBody input) throws MalformedRequestException {
-        if (input == null || input.getDoiUrl() == null) {
-            throw new MalformedRequestException("doiUrl can not be null");
+        if (isNull(input) || isNull(input.getDoiUrl())) {
+            throw new MalformedRequestException(NULL_DOI_URL_ERROR);
         }
     }
 
