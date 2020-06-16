@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import no.unit.nva.doi.fetch.ObjectMapperConfig;
 import no.unit.nva.doi.transformer.language.LanguageMapper;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteCreator;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteResponse;
@@ -28,6 +27,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidPageRangeException;
 import nva.commons.utils.IoUtils;
+import nva.commons.utils.JsonUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -38,7 +38,7 @@ public class DataciteResponseConverterTest {
     private static final UUID SOME_ID = UUID.randomUUID();
     private static final String SOME_OWNER = "SomeOwner";
     private static final URI SOME_URI = URI.create("SomeUri");
-    private final ObjectMapper objectMapper = ObjectMapperConfig.createObjectMapper();
+    private final ObjectMapper objectMapper = JsonUtils.objectMapper;
 
     @DisplayName("DataciteResponseConverter::toPublication returns valid JSON when input is valid")
     @Test
