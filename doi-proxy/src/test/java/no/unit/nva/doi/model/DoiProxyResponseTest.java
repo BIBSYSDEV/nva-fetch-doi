@@ -2,14 +2,14 @@ package no.unit.nva.doi.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import no.unit.nva.doi.fetch.ObjectMapperConfig;
 import no.unit.nva.doi.fetch.model.utils.MetadataSource;
+import nva.commons.utils.JsonUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class DoiProxyResponseTest {
 
-    private ObjectMapper objectMapper = ObjectMapperConfig.createObjectMapper();
+    private ObjectMapper objectMapper = JsonUtils.objectMapper;
 
     @Test
     public void canMapDoiProxyResponse() throws JsonProcessingException {

@@ -6,8 +6,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.UUID;
-import no.unit.nva.doi.fetch.ObjectMapperConfig;
-import no.unit.nva.doi.transformer.exception.MissingClaimException;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossRefDocument;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefApiResponse;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteResponse;
@@ -15,6 +13,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidPageRangeException;
 import no.unit.nva.model.util.OrgNumberMapper;
+import nva.commons.utils.JsonUtils;
 
 public class DoiTransformService {
 
@@ -24,7 +23,7 @@ public class DoiTransformService {
 
     public DoiTransformService() {
         this(new DataciteResponseConverter(),
-                new CrossRefConverter(), ObjectMapperConfig.createObjectMapper());
+                new CrossRefConverter(), JsonUtils.objectMapper);
     }
 
     /**
@@ -51,14 +50,13 @@ public class DoiTransformService {
      * @param orgNumber       the orgNumber.
      * @return a Publication.
      * @throws JsonProcessingException  when cannot process json.
-     * @throws MissingClaimException     when request does not have the required claims.
      * @throws URISyntaxException       when the input contains invalid URIs
      * @throws InvalidIssnException     thrown if a provided ISSN is invalid.
      * @throws InvalidPageRangeException thrown if the provided page type is incompatible with
      *                                  the publication instance type.
      */
     public Publication transformPublication(String body, String contentLocation, String owner, String orgNumber)
-            throws JsonProcessingException, MissingClaimException, URISyntaxException, InvalidIssnException,
+            throws JsonProcessingException, URISyntaxException, InvalidIssnException,
                    InvalidPageRangeException {
         UUID uuid = UUID.randomUUID();
         URI publisherID = toPublisherId(orgNumber);

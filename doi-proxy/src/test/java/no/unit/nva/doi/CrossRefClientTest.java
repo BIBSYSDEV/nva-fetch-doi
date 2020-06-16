@@ -12,8 +12,6 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.util.Optional;
 import no.bibsys.aws.tools.IoUtils;
-import no.unit.nva.doi.CrossRefClient;
-import no.unit.nva.doi.MetadataAndContentLocation;
 import no.unit.nva.doi.utils.AbstractLambdaTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

@@ -5,7 +5,6 @@ import java.net.URI;
 import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.CreatePublicationRequest;
 import no.unit.nva.api.PublicationResponse;
-import no.unit.nva.doi.fetch.ObjectMapperConfig;
 import no.unit.nva.doi.fetch.exceptions.InsertPublicationException;
 import no.unit.nva.doi.fetch.utils.JacocoGenerated;
 import no.unit.nva.model.Publication;
@@ -17,6 +16,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import nva.commons.utils.JsonUtils;
 
 import static org.apache.http.HttpHeaders.AUTHORIZATION;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
@@ -28,7 +28,7 @@ public class PublicationPersistenceService extends RestClient {
     public static final String WARNING_MESSAGE = "Inserting publication failed.";
     public static final String INSERTING_PUBLICATION_FAILED = WARNING_MESSAGE + "\nAPI-URL:%s\nRequestBody:%s\n";
     private final HttpClient client;
-    private final ObjectMapper objectMapper = ObjectMapperConfig.createObjectMapper();
+    private final ObjectMapper objectMapper = JsonUtils.objectMapper;
 
     public PublicationPersistenceService(HttpClient client) {
         super();
@@ -53,7 +53,6 @@ public class PublicationPersistenceService extends RestClient {
      */
     public PublicationResponse insertPublication(Publication publication, URI apiUrl, String authorization)
         throws IOException, InterruptedException, InsertPublicationException, URISyntaxException {
-        //TODO: toResponse is exactly the same method as convertValue and will be changed upon next release
         CreatePublicationRequest requestBody =
         PublicationMapper.convertValue(publication, CreatePublicationRequest.class);
         String requestBodyString = objectMapper.writeValueAsString(requestBody);

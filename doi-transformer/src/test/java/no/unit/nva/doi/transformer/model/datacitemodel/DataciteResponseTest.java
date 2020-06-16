@@ -5,12 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
-import no.unit.nva.doi.fetch.ObjectMapperConfig;
+import nva.commons.utils.JsonUtils;
 import org.junit.jupiter.api.Test;
 
 public class DataciteResponseTest {
 
-    private ObjectMapper objectMapper = ObjectMapperConfig.createObjectMapper();
+    private ObjectMapper objectMapper = JsonUtils.objectMapper;
 
     @Test
     public void test() throws IOException {

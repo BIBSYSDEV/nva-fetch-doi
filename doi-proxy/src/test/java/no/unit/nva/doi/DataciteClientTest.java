@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 public class DataciteClientTest {
 
     public static final String EXAMPLE_URL = "http://example.org";
-    public static final String DATACITE_RESPONSE_FILE = "src/test/resources/dataciteResponse.json";
+    public static final String SAMPLE_RESPONSE_FILE = "src/test/resources/dataciteResponseSample.json";
     public static final String EMPTY_RESPONSE_FILE = "src/test/resources/emptyResponse";
 
     @Test
@@ -37,7 +37,7 @@ public class DataciteClientTest {
         DataciteClient dataciteClient = mock(DataciteClient.class);
         when(dataciteClient.readStringFromUrl(any(URL.class))).thenCallRealMethod();
         String stringFromUrl = dataciteClient
-            .readStringFromUrl(Paths.get(DATACITE_RESPONSE_FILE).toUri().toURL());
+            .readStringFromUrl(Paths.get(SAMPLE_RESPONSE_FILE).toUri().toURL());
         assertNotNull(stringFromUrl);
     }
 
