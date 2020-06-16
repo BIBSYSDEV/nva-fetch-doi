@@ -28,7 +28,7 @@ import no.unit.nva.doi.transformer.DoiTransformService;
 import no.unit.nva.doi.transformer.exception.MissingClaimException;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.exceptions.InvalidPageTypeException;
+import no.unit.nva.model.exceptions.InvalidPageRangeException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.ApiGatewayHandler;
 import nva.commons.handlers.RequestInfo;
@@ -103,7 +103,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         } catch (URISyntaxException
             | IOException
             | InvalidIssnException
-            | InvalidPageTypeException
+            | InvalidPageRangeException
             | InterruptedException e) {
             throw new TransformFailedException(e.getMessage());
         }
@@ -128,7 +128,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     private Publication getPublicationMetadata(RequestBody requestBody,
                                                String owner, String orgNumber)
         throws URISyntaxException, IOException, MissingClaimException, InvalidIssnException,
-               InvalidPageTypeException, MetadataNotFoundException {
+               InvalidPageRangeException, MetadataNotFoundException {
         MetadataAndContentLocation metadataAndContentLocation = doiProxyService.lookupDoiMetadata(
             requestBody.getDoiUrl().toString(), DataciteContentType.DATACITE_JSON);
 

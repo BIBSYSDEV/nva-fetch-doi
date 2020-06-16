@@ -26,7 +26,7 @@ import no.unit.nva.doi.transformer.model.datacitemodel.DataciteResponse;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteRights;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.exceptions.InvalidPageTypeException;
+import no.unit.nva.model.exceptions.InvalidPageRangeException;
 import nva.commons.utils.IoUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -43,7 +43,7 @@ public class DataciteResponseConverterTest {
     @DisplayName("DataciteResponseConverter::toPublication returns valid JSON when input is valid")
     @Test
     public void toPublicationReturnsValidJsonWhenInputIsValid() throws IOException, URISyntaxException,
-            InvalidPageTypeException, InvalidIssnException {
+                                                                       InvalidPageRangeException, InvalidIssnException {
 
         DataciteResponse dataciteResponse = objectMapper.readValue(
             new File("src/test/resources/datacite_response.json"), DataciteResponse.class);
@@ -72,7 +72,7 @@ public class DataciteResponseConverterTest {
     @DisplayName("Publication contains alternativeTitles with non null langauge tags when datacite document has "
         + "many titles")
     public void publicationContainsAlternativeTitlesWithNonNullLanguageTagsWhenDatataciteDocumentHasManyTitles()
-            throws IOException, URISyntaxException, InvalidPageTypeException, InvalidIssnException {
+            throws IOException, URISyntaxException, InvalidPageRangeException, InvalidIssnException {
         Publication publication = readPublicationWithMutlipleTitles();
         Map<String, String> alternativeTitles = publication.getEntityDescription().getAlternativeTitles();
         Collection<String> languageTags = alternativeTitles.values();
@@ -83,7 +83,7 @@ public class DataciteResponseConverterTest {
     @DisplayName("Publication does not contain the main title in the alternative titles when the datacite document"
         + " has many titles")
     public void publicationDoesNotContainMainTitleInAlternativeTItleWhenDataciteDocHasManyTitles()
-            throws IOException, URISyntaxException, InvalidPageTypeException, InvalidIssnException {
+            throws IOException, URISyntaxException, InvalidPageRangeException, InvalidIssnException {
         Publication publication = readPublicationWithMutlipleTitles();
         String mainTitle = publication.getEntityDescription().getMainTitle();
         Set<String> altTitles = publication.getEntityDescription().getAlternativeTitles().keySet();
@@ -94,7 +94,7 @@ public class DataciteResponseConverterTest {
     @DisplayName("Publication contains alternative titles with valid language URIs when the datacite document has "
         + " many titles")
     public void publicationContainsAlternativeTtitlesWithValidLanguageURisWhenDataciteDocHasManyTitles()
-            throws IOException, URISyntaxException, InvalidPageTypeException, InvalidIssnException {
+            throws IOException, URISyntaxException, InvalidPageRangeException, InvalidIssnException {
         Publication publication = readPublicationWithMutlipleTitles();
         Map<String, String> alternativeTitles = publication.getEntityDescription().getAlternativeTitles();
         Collection<String> languageTags = alternativeTitles.values();
@@ -116,7 +116,7 @@ public class DataciteResponseConverterTest {
     }
 
     private Publication readPublicationWithMutlipleTitles() throws IOException, URISyntaxException,
-            InvalidPageTypeException, InvalidIssnException {
+                                                                   InvalidPageRangeException, InvalidIssnException {
         String input = IoUtils.stringFromResources(Path.of(ENTRY_WITH_ALTERNATIVE_TITLE));
         DataciteResponseConverter converter = new DataciteResponseConverter();
         DataciteResponse response = objectMapper.readValue(input, DataciteResponse.class);
