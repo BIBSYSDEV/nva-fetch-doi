@@ -58,12 +58,12 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.exceptions.InvalidIssnException;
+import no.unit.nva.model.exceptions.InvalidPageRangeException;
 import no.unit.nva.model.util.OrgNumberMapper;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.TestHeaders;
 import nva.commons.handlers.GatewayResponse;
 import nva.commons.utils.Environment;
-import no.unit.nva.model.exceptions.InvalidPageRangeException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -152,6 +152,7 @@ public class MainHandlerTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testInternalServerErrorResponse() throws Exception {
         PublicationConverter publicationConverter = mock(PublicationConverter.class);
         when(publicationConverter.toSummary(any())).thenThrow(new RuntimeException(SOME_ERROR_MESSAGE));
@@ -172,6 +173,7 @@ public class MainHandlerTest {
 
     @Test
     @DisplayName("handler returns BadGateway error when DoiProxyService returns failed response")
+    @SuppressWarnings("unchecked")
     public void handlerReturnsBadGatewayErrorWhenDoiProxyServiceReturnsFailedResponse()
         throws Exception {
 
@@ -191,6 +193,7 @@ public class MainHandlerTest {
 
     @Test
     @DisplayName("handler returns BadGateway when ResourcePersistenceService returns failed response")
+    @SuppressWarnings("unchecked")
     public void handlerReturnsBadGatewayErrorWhenResourcePersistenceServiceReturnsFailedResponse()
         throws Exception {
 
@@ -235,7 +238,7 @@ public class MainHandlerTest {
 
     private DoiTransformService mockDoiTransformServiceReturningSuccessfulResult()
         throws URISyntaxException, IOException,
-               InvalidPageRangeException, MissingClaimException, InvalidIssnException {
+               InvalidPageRangeException, InvalidIssnException {
         DoiTransformService service = mock(DoiTransformService.class);
         when(service.transformPublication(anyString(), anyString(), anyString(), anyString()))
             .thenReturn(getPublication());
@@ -277,6 +280,7 @@ public class MainHandlerTest {
         return new PublicationPersistenceService(mockHttpClientReceivingFailure());
     }
 
+    @SuppressWarnings("unchecked")
     private HttpClient mockHttpClientReceivingFailure() throws IOException, InterruptedException {
         HttpClient client = mock(HttpClient.class);
         HttpResponse failedResponse = mockFailedHttpResponse();
@@ -284,6 +288,7 @@ public class MainHandlerTest {
         return client;
     }
 
+    @SuppressWarnings("unchecked")
     private HttpResponse<Object> mockFailedHttpResponse() {
         HttpResponse<Object> response = mock(HttpResponse.class);
         when(response.statusCode()).thenReturn(Status.BAD_REQUEST.getStatusCode());
@@ -314,7 +319,7 @@ public class MainHandlerTest {
             .build();
     }
 
-    private InputStream malformedInputStream() throws MalformedURLException, JsonProcessingException {
+    private InputStream malformedInputStream() throws JsonProcessingException {
 
         Map<String, String> requestHeaders = new HashMap<>();
         requestHeaders.put(AUTHORIZATION, "some api key");
