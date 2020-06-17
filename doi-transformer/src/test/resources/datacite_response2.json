@@ -1,0 +1,69 @@
+{
+  "id": "https://doi.org/10.1126/science.169.3946.635",
+  "doi": "10.1126/science.169.3946.635",
+  "url": "https://www.sciencemag.org/lookup/doi/10.1126/science.169.3946.635",
+  "types": {
+    "resourceTypeGeneral": "Text",
+    "resourceType": "JournalArticle",
+    "schemaOrg": "ScholarlyArticle",
+    "citeproc": "article-journal",
+    "bibtex": "article",
+    "ris": "JOUR"
+  },
+  "creators": {
+    "nameType": "Personal",
+    "name": "Frank, H. S.",
+    "givenName": "H. S.",
+    "familyName": "Frank"
+  },
+  "titles": [
+    {
+      "title": "The Structure of Ordinary Water: New data and interpretations are yielding new insights into this fascinating substance"
+    }
+  ],
+  "publisher": "American Association for the Advancement of Science (AAAS)",
+  "container": {
+    "type": "Journal",
+    "identifier": "1095-9203",
+    "identifierType": "ISSN",
+    "title": "Science",
+    "volume": "169",
+    "issue": "3946",
+    "firstPage": "635",
+    "lastPage": "641"
+  },
+  "dates": [
+    {
+      "date": "1970-08-14",
+      "dateType": "Issued"
+    },
+    {
+      "date": "2020-02-05T16:15:06Z",
+      "dateType": "Updated"
+    }
+  ],
+  "publicationYear": "1970",
+  "identifiers": [
+    {
+      "identifierType": "DOI",
+      "identifier": "https://doi.org/10.1126/science.169.3946.635"
+    },
+    {
+      "identifier": "169/3946/635",
+      "identifierType": "Publisher ID"
+    }
+  ],
+  "rightsList": [],
+  "descriptions": [],
+  "fundingReferences": [],
+  "relatedIdentifiers": [
+    {
+      "relatedIdentifier": "1095-9203",
+      "relationType": "IsPartOf",
+      "relatedIdentifierType": "ISSN",
+      "resourceTypeGeneral": "Collection"
+    }
+  ],
+  "agency": "Crossref",
+  "state": "findable"
+}

@@ -1,0 +1,269 @@
+{
+  "status": "ok",
+  "message-type": "work",
+  "message-version": "1.0.0",
+  "message": {
+    "indexed": {
+      "date-parts": [
+        [
+          2019,
+          11,
+          18
+        ]
+      ],
+      "date-time": "2019-11-18T17:57:31Z",
+      "timestamp": 1574099851510
+    },
+    "reference-count": 16,
+    "publisher": "Informa UK Limited",
+    "issue": "3-4",
+    "content-domain": {
+      "domain": [],
+      "crossmark-restriction": false
+    },
+    "short-container-title": [
+      "History of European Ideas"
+    ],
+    "published-print": {
+      "date-parts": [
+        [
+          2000,
+          10
+        ]
+      ]
+    },
+    "DOI": "10.1016/s0191-6599(01)00009-2",
+    "type": "journal-article",
+    "created": {
+      "date-parts": [
+        [
+          2002,
+          7,
+          25
+        ]
+      ],
+      "date-time": "2002-07-25T17:19:59Z",
+      "timestamp": 1027617599000
+    },
+    "page": "143-158",
+    "source": "Crossref",
+    "is-referenced-by-count": 2,
+    "title": [
+      "Coleridge, natural history, and the ‘Analogy of Being’"
+    ],
+    "prefix": "10.1080",
+    "volume": "26",
+    "author": [
+      {
+        "given": "Anthony John",
+        "family": "Harding",
+        "sequence": "first",
+        "affiliation": [
+          {
+            "name": "a   Department of English , University of Saskatchewan , Saskatoon SK,  Canada S7N 5A5"
+          }
+        ]
+      }
+    ],
+    "member": "301",
+    "published-online": {
+      "date-parts": [
+        [
+          2012,
+          1,
+          3
+        ]
+      ]
+    },
+    "reference": [
+      {
+        "key": "CIT0005",
+        "author": "Barfield O",
+        "year": "1971",
+        "volume-title": "What Coleridge Thought,"
+      },
+      {
+        "key": "CIT0006",
+        "DOI": "10.4324/9780203006016",
+        "doi-asserted-by": "publisher"
+      },
+      {
+        "key": "CIT0007",
+        "author": "Brown S",
+        "year": "1984",
+        "volume-title": "Leibniz"
+      },
+      {
+        "key": "CIT0015",
+        "author": "Cottingham J",
+        "year": "1988",
+        "volume-title": "The Rationalists"
+      },
+      {
+        "key": "CIT0018",
+        "author": "Harding AJ",
+        "volume": "96",
+        "first-page": "204",
+        "year": "1999",
+        "journal-title": "Studies in Philology"
+      },
+      {
+        "key": "CIT0019",
+        "author": "Heidegger M",
+        "year": "1962",
+        "volume-title": "Being and Time (trans. John Macquarrie and Edward Robinson)"
+      },
+      {
+        "key": "CIT0021",
+        "author": "Kooy MJ",
+        "volume": "60",
+        "first-page": "717",
+        "year": "1999",
+        "journal-title": "Journal of the History of Ideas",
+        "DOI": "10.1353/jhi.1999.0038",
+        "doi-asserted-by": "crossref"
+      },
+      {
+        "key": "CIT0024",
+        "author": "Levere TH",
+        "year": "1981",
+        "volume-title": "Poetry Realized in Nature: Samuel Taylor Coleridge and Early Nineteenth-century Science",
+        "DOI": "10.1017/CBO9780511529313",
+        "doi-asserted-by": "crossref"
+      },
+      {
+        "key": "CIT0025",
+        "author": "McFarland T",
+        "year": "1969",
+        "volume-title": "Coleridge and the Pantheist Tradition"
+      },
+      {
+        "key": "CIT0026",
+        "author": "Modiano R",
+        "year": "1985",
+        "volume-title": "Coleridge and the Concept of Nature",
+        "DOI": "10.1007/978-1-349-07135-7",
+        "doi-asserted-by": "crossref"
+      },
+      {
+        "key": "CIT0027",
+        "author": "Nori G",
+        "volume": "34",
+        "first-page": "3",
+        "year": "1995",
+        "journal-title": "Studies in Romanticism",
+        "DOI": "10.2307/25601097",
+        "doi-asserted-by": "crossref"
+      },
+      {
+        "key": "CIT0028",
+        "author": "Orsini GNG",
+        "year": "1969",
+        "volume-title": "Coleridge and German Idealism"
+      },
+      {
+        "key": "CIT0029",
+        "author": "Perkins MA",
+        "year": "1994",
+        "volume-title": "Coleridge's Philosophy: The Logos as Unifying Principle",
+        "DOI": "10.1093/acprof:oso/9780198240754.001.0001",
+        "doi-asserted-by": "crossref"
+      },
+      {
+        "key": "CIT0030",
+        "author": "Reese WL",
+        "year": "1980",
+        "volume-title": "Dictionary of Philosophy and Religion"
+      },
+      {
+        "key": "CIT0032",
+        "author": "Snyder AD",
+        "year": "1929",
+        "volume-title": "Coleridge on Logic and Learning"
+      },
+      {
+        "key": "CIT0033",
+        "author": "Kearney R",
+        "year": "1991",
+        "volume-title": "Poetics of Imagining from Husserl to Lyotard"
+      }
+    ],
+    "container-title": [
+      "History of European Ideas"
+    ],
+    "original-title": [],
+    "language": "en",
+    "link": [
+      {
+        "URL": "https://www.tandfonline.com/doi/pdf/10.1016/S0191-6599%2801%2900009-2",
+        "content-type": "unspecified",
+        "content-version": "vor",
+        "intended-application": "similarity-checking"
+      }
+    ],
+    "deposited": {
+      "date-parts": [
+        [
+          2018,
+          9,
+          6
+        ]
+      ],
+      "date-time": "2018-09-06T21:08:30Z",
+      "timestamp": 1536268110000
+    },
+    "score": 1.0,
+    "subtitle": [],
+    "short-title": [],
+    "issued": {
+      "date-parts": [
+        [
+          2000,
+          10
+        ]
+      ]
+    },
+    "references-count": 16,
+    "journal-issue": {
+      "published-online": {
+        "date-parts": [
+          [
+            2012,
+            1,
+            3
+          ]
+        ]
+      },
+      "published-print": {
+        "date-parts": [
+          [
+            2000,
+            10
+          ]
+        ]
+      },
+      "issue": "3-4"
+    },
+    "alternative-id": [
+      "10.1016/S0191-6599(01)00009-2"
+    ],
+    "URL": "http://dx.doi.org/10.1016/s0191-6599(01)00009-2",
+    "relation": {
+      "cites": []
+    },
+    "ISSN": [
+      "0191-6599",
+      "1873-541X"
+    ],
+    "issn-type": [
+      {
+        "value": "0191-6599",
+        "type": "print"
+      },
+      {
+        "value": "1873-541X",
+        "type": "electronic"
+      }
+    ]
+  }
+}

@@ -282,3 +282,7 @@ gradle-app.setting
 **/build/
 
 # End of https://www.gitignore.io/api/java,linux,macos,gradle,windows,eclipse,intellij+all,visualstudiocode
+
+### SAM build output files ###
+/packaged.yaml
+/sampackaged_raw.yaml

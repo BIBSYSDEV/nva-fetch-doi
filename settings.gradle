@@ -1,2 +1,5 @@
 rootProject.name = 'nva-fetch-doi'
-
+include 'fetch-doi-commons'
+include 'doi-transformer'
+include 'create-publication-from-doi'
+include 'doi-proxy'
