@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 public class DataciteResponseTest {
 
     private ObjectMapper objectMapper = JsonUtils.objectMapper;
-    private final static Path DATACITE_RESPONSE= Path.of("datacite_response.json");
+    private static final Path DATACITE_RESPONSE = Path.of("datacite_response.json");
 
     @Test
     void testSettersAndGetters() throws IOException {
@@ -23,6 +23,6 @@ public class DataciteResponseTest {
             IoUtils.stringFromResources(DATACITE_RESPONSE), DataciteResponse.class);
 
         assertNotNull(dataciteResponse);
-        assertThat(dataciteResponse,doesNotHaveNullOrEmptyFields());
+        assertThat(dataciteResponse, doesNotHaveNullOrEmptyFields());
     }
 }
