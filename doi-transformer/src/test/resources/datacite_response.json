@@ -35,7 +35,21 @@
     "identifier": "00189219",
     "identifierType": "ISSN"
   },
-  "contributors": [],
+  "contributors": [
+    {
+      "nameType" : "someNameType",
+      "name" : "John",
+      "familyName" : "Smith",
+      "affiliation": [
+        {
+          "affiliation": "someAffiliation",
+          "affiliationIdentifier": "someAffiliationIdentifier",
+          "affiliationIdentifierScheme": "someScheme",
+          "schemeURI": "http://someUri.com"
+        }
+      ]
+    }
+  ],
   "dates": [
     {
       "date": "1999-07",
@@ -65,5 +79,11 @@
   "providerId": "crossref",
   "clientId": "crossref.citations",
   "agency": "Crossref",
-  "state": "findable"
+  "state": "findable",
+  "rightsList": [
+    {
+      "rights": "someRights",
+      "rightsUri": "http://someRightsUri.com"
+    }
+  ]
 }

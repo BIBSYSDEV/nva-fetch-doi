@@ -1,7 +1,8 @@
 package no.unit.nva.doi.transformer;
 
+import static nva.commons.utils.JsonUtils.objectMapper;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
@@ -13,17 +14,15 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidPageRangeException;
 import no.unit.nva.model.util.OrgNumberMapper;
-import nva.commons.utils.JsonUtils;
 
 public class DoiTransformService {
 
     private final DataciteResponseConverter dataciteConverter;
     private final CrossRefConverter crossRefConverter;
-    private final ObjectMapper objectMapper;
+
 
     public DoiTransformService() {
-        this(new DataciteResponseConverter(),
-                new CrossRefConverter(), JsonUtils.objectMapper);
+        this(new DataciteResponseConverter(),new CrossRefConverter());
     }
 
     /**
@@ -31,14 +30,12 @@ public class DoiTransformService {
      *
      * @param dataciteConverter dataciteConverter.
      * @param crossRefConverter crossrefConverter.
-     * @param objectMapper      jsonParser.
+     *
      */
-    public DoiTransformService(DataciteResponseConverter dataciteConverter, CrossRefConverter crossRefConverter,
-                               ObjectMapper objectMapper) {
+    public DoiTransformService(DataciteResponseConverter dataciteConverter, CrossRefConverter crossRefConverter) {
 
         this.dataciteConverter = dataciteConverter;
         this.crossRefConverter = crossRefConverter;
-        this.objectMapper = objectMapper;
     }
 
     /**

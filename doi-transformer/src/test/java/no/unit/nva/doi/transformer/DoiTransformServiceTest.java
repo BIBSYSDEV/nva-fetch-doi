@@ -24,7 +24,7 @@ public class DoiTransformServiceTest {
 
     @Test
     public void transFormPublicationReturnsPublicationOnValidCrossrefBody()
-        throws MissingClaimException, URISyntaxException, InvalidPageRangeException, InvalidIssnException,
+        throws URISyntaxException, InvalidPageRangeException, InvalidIssnException,
                JsonProcessingException {
         DoiTransformService doiTransformService = new DoiTransformService();
         String crossrefBody = IoUtils.stringFromResources(CROSSREF_JSON_PATH);
@@ -38,7 +38,7 @@ public class DoiTransformServiceTest {
 
     @Test
     public void transFormPublicationReturnsPublicationOnValidDataciteBody()
-        throws MissingClaimException, URISyntaxException, InvalidPageRangeException, InvalidIssnException,
+        throws URISyntaxException, InvalidPageRangeException, InvalidIssnException,
                JsonProcessingException {
         DoiTransformService doiTransformService = new DoiTransformService();
         String crossrefBody = IoUtils.stringFromResources(DATACITE_JSON_PATH);
