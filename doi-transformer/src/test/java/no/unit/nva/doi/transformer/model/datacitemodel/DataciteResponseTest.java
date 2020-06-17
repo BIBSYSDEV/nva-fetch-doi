@@ -1,23 +1,28 @@
 package no.unit.nva.doi.transformer.model.datacitemodel;
 
+import static no.unit.nva.hamcrest.DoesNotHaveNullOrEmptyFields.doesNotHaveNullOrEmptyFields;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import nva.commons.utils.IoUtils;
 import nva.commons.utils.JsonUtils;
 import org.junit.jupiter.api.Test;
 
 public class DataciteResponseTest {
 
     private ObjectMapper objectMapper = JsonUtils.objectMapper;
+    private static final Path DATACITE_RESPONSE = Path.of("datacite_response.json");
 
     @Test
-    public void test() throws IOException {
+    void testSettersAndGetters() throws IOException {
 
         DataciteResponse dataciteResponse = objectMapper.readValue(
-            new File("src/test/resources/datacite_response.json"), DataciteResponse.class);
+            IoUtils.stringFromResources(DATACITE_RESPONSE), DataciteResponse.class);
 
         assertNotNull(dataciteResponse);
+        assertThat(dataciteResponse, doesNotHaveNullOrEmptyFields());
     }
 }
