@@ -1,13 +1,8 @@
 package no.unit.nva.doi.transformer.language;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -16,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import no.unit.nva.doi.transformer.language.exceptions.LanguageUriNotFoundException;
+import nva.commons.utils.IoUtils;
 
 public final class LanguageMapper {
 
@@ -64,7 +60,7 @@ public final class LanguageMapper {
     @SuppressWarnings("PMD.UseConcurrentHashMap")
     private static Map<String, URI> isoToUri(Path path) {
 
-        List<String> lines = linesfromResource(path);
+        List<String> lines = IoUtils.linesfromResource(path);
         Map<String, URI> isoToUri = lines
             .stream()
             .map(LanguageMapper::splitLineToArray)
@@ -87,27 +83,4 @@ public final class LanguageMapper {
         return line.split(FIELD_DELIMITER);
     }
 
-    private static InputStream inputStreamFromResources(Path path) {
-        String pathString = path.toString();
-        return Thread.currentThread().getContextClassLoader().getResourceAsStream(pathString);
-    }
-
-    private static InputStreamReader newInputStreamReader(InputStream stream) {
-        return new InputStreamReader(stream, StandardCharsets.UTF_8);
-    }
-
-    @SuppressWarnings("PMD.AvoidProtectedMethodInFinalClassNotExtending")
-    protected static List<String> linesfromResource(Path path) {
-        try (BufferedReader reader = new BufferedReader(newInputStreamReader(inputStreamFromResources(path)))) {
-            List<String> lines = new ArrayList<>();
-            String line = reader.readLine();
-            while (line != null) {
-                lines.add(line);
-                line = reader.readLine();
-            }
-            return lines;
-        } catch (Exception e) {
-            throw new RuntimeException(ERROR_READING_FILE + path.toString());
-        }
-    }
 }

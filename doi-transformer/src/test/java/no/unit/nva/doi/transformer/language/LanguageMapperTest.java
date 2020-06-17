@@ -34,15 +34,6 @@ class LanguageMapperTest {
     }
 
     @Test
-    public void linesfromResourceThrowsExceptionOnGarbageInput() {
-        RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> LanguageMapper.linesfromResource(Path.of(GARBAGE_INPUT)));
-
-        Assertions.assertEquals(LanguageMapper.ERROR_READING_FILE + GARBAGE_INPUT,
-            exception.getMessage());
-    }
-
-    @Test
     public void getUriFromIsoThrowsLanguageUriNotFoundExceptionOnGarbageInput() throws LanguageUriNotFoundException {
         LanguageUriNotFoundException exception = assertThrows(LanguageUriNotFoundException.class,
             () -> LanguageMapper.getUriFromIso(GARBAGE_INPUT));
