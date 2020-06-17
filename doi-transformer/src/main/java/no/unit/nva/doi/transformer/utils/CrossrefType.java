@@ -28,6 +28,10 @@ public enum CrossrefType {
             return NON_EXISTING_TYPE;
         }
 
+        return collectSingleNonEmptyCrossrefType(type);
+    }
+
+    private static CrossrefType collectSingleNonEmptyCrossrefType(String type) {
         return Arrays.stream(values())
                 .filter(crossrefType -> !crossrefType.equals(NON_EXISTING_TYPE))
                 .filter(crossrefType -> crossrefType.getType().equalsIgnoreCase(type))
