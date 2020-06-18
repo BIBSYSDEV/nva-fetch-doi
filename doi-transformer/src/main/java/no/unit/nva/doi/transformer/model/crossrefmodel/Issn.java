@@ -43,6 +43,11 @@ public class Issn {
             this.name = name;
         }
 
+        /**
+         * Get IssnType from String. case insensitive.
+         * @param name The string representation of the type
+         * @return an IssnType if the string has a valid value or throw a RuntimeException if not.
+         */
         public static IssnType getType(String name) {
             return Arrays.stream(values())
                 .filter(issnType -> issnType.name.equalsIgnoreCase(name)).findFirst()
