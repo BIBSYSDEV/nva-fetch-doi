@@ -44,7 +44,7 @@ public class Issn {
         }
 
         /**
-         * Get IssnType from String. case insensitive.
+         * Get IssnType from String. Case-insensitive.
          * @param name The string representation of the type
          * @return an IssnType if the string has a valid value or throw a RuntimeException if not.
          */
