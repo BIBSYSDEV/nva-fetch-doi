@@ -35,9 +35,15 @@ Parameters:
     Description: Base path mapping in CustomDomain
 
 Resources:
+  ApiAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+
   NvaFetchDoiFunctionApi:
     Type: AWS::Serverless::Api
     Properties:
+      AccessLogSetting:
+        DestinationArn: !GetAtt ApiAccessLogGroup.Arn
+        Format: '{ "apiId": "$context.apiId", "requestId": "$context.requestId", "requestTime": "$context.requestTime", "requestTimeEpoch": "$context.requestTimeEpoch", "httpMethod": "$context.httpMethod", "path": "$context.path", "status": "$context.status",  "error.message": "$context.error.message" }'
       StageName: Prod
       EndpointConfiguration: REGIONAL
       DefinitionBody:
@@ -116,7 +122,7 @@ Resources:
       CodeUri: create-publication-from-doi
       Handler: no.unit.nva.doi.fetch.MainHandler::handleRequest
       Runtime: java11
-      MemorySize: 1400
+      MemorySize: 1408
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
