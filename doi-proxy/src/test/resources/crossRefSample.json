@@ -1,0 +1,1033 @@
+{
+  "status": "ok",
+  "message-type": "work",
+  "message-version": "1.0.0",
+  "message": {
+    "indexed": {
+      "date-parts": [
+        [
+          2019,
+          11,
+          19
+        ]
+      ],
+      "date-time": "2019-11-19T06:20:05Z",
+      "timestamp": 1574144405661
+    },
+    "reference-count": 91,
+    "publisher": "Springer Science and Business Media LLC",
+    "issue": "5",
+    "license": [
+      {
+        "URL": "http:\/\/www.springer.com\/tdm",
+        "start": {
+          "date-parts": [
+            [
+              2005,
+              5,
+              1
+            ]
+          ],
+          "date-time": "2005-05-01T00:00:00Z",
+          "timestamp": 1114905600000
+        },
+        "delay-in-days": 0,
+        "content-version": "tdm"
+      }
+    ],
+    "content-domain": {
+      "domain": [],
+      "crossmark-restriction": false
+    },
+    "short-container-title": [
+      "Nervenarzt"
+    ],
+    "published-print": {
+      "date-parts": [
+        [
+          2005,
+          5
+        ]
+      ]
+    },
+    "DOI": "10.1007\/s00115-004-1822-4",
+    "type": "journal-article",
+    "created": {
+      "date-parts": [
+        [
+          2004,
+          11,
+          4
+        ]
+      ],
+      "date-time": "2004-11-04T18:12:38Z",
+      "timestamp": 1099591958000
+    },
+    "page": "569-580",
+    "source": "Crossref",
+    "is-referenced-by-count": 9,
+    "title": [
+      "Das Syndrom der genitalen Retraktion aus Sicht der transkulturellen Psychiatrie"
+    ],
+    "prefix": "10.1007",
+    "volume": "76",
+    "author": [
+      {
+        "given": "R. W.",
+        "family": "Freudenmann",
+        "sequence": "first",
+        "affiliation": []
+      },
+      {
+        "given": "C.",
+        "family": "Sch\u00f6nfeldt-Lecuona",
+        "sequence": "additional",
+        "affiliation": []
+      }
+    ],
+    "member": "297",
+    "reference": [
+      {
+        "key": "1822_CR1",
+        "doi-asserted-by": "crossref",
+        "first-page": "559",
+        "DOI": "10.1192\/bjp.164.4.559",
+        "volume": "164",
+        "author": "Adeniran",
+        "year": "1994",
+        "unstructured": "Adeniran RA, Jones JR (1994) Koro: culture-bound disorder or universal symptom? Br J Psychiatry 164:559\u2013561",
+        "journal-title": "Br J Psychiatry"
+      },
+      {
+        "key": "1822_CR2",
+        "first-page": "611",
+        "volume": "5",
+        "author": "al-Hmoud",
+        "year": "1999",
+        "unstructured": "al-Hmoud N (1999) Koro-like syndrome in a Jordanian male. East Mediterr Health J 5:611\u2013613",
+        "journal-title": "East Mediterr Health J"
+      },
+      {
+        "key": "1822_CR3",
+        "unstructured": "American Psychiatric Association (1994) Diagnostic and statistical manual of mental disorders, 4th ed. (DSM-IV): Appendix 1, Outline for cultural formulation and glossary of culture-bound syndromes. APA, Washington, pp\u00a0843\u2013849"
+      },
+      {
+        "key": "1822_CR4",
+        "doi-asserted-by": "crossref",
+        "first-page": "142",
+        "DOI": "10.1192\/bjp.157.1.142",
+        "volume": "157",
+        "author": "Anderson",
+        "year": "1990",
+        "unstructured": "Anderson DN (1990) Koro: the genital retraction symptom after stroke. Br J Psychiatry 157:142\u2013144",
+        "journal-title": "Br J Psychiatry"
+      },
+      {
+        "key": "1822_CR5",
+        "doi-asserted-by": "crossref",
+        "first-page": "335",
+        "DOI": "10.1192\/bjp.145.3.335",
+        "volume": "145",
+        "author": "Ang",
+        "year": "1984",
+        "unstructured": "Ang PC, Weller MP (1984) Koro and psychosis. Br J Psychiatry 145:335",
+        "journal-title": "Br J Psychiatry"
+      },
+      {
+        "key": "1822_CR6",
+        "first-page": "102",
+        "volume": "146",
+        "author": "Anonymous",
+        "year": "1985",
+        "unstructured": "Anonymous (1985) Koro in non-Chinese subjects. Br J Psychiatry 146:102\u2013103",
+        "journal-title": "Br J Psychiatry"
+      },
+      {
+        "key": "1822_CR7",
+        "doi-asserted-by": "crossref",
+        "first-page": "1319",
+        "DOI": "10.1016\/S0140-6736(78)92093-7",
+        "volume": "2",
+        "author": "Barrett",
+        "year": "1978",
+        "unstructured": "Barrett K (1978) Koro in a Londoner. Lancet 2:1319",
+        "journal-title": "Lancet"
+      },
+      {
+        "key": "1822_CR8",
+        "doi-asserted-by": "crossref",
+        "first-page": "1670",
+        "DOI": "10.1176\/ajp.147.12.1670",
+        "volume": "147",
+        "author": "Bernstein",
+        "year": "1990",
+        "unstructured": "Bernstein RL, Gaw AC (1990) Koro: proposed classification for DSM-IV. Am J Psychiatry 147:1670\u20131674",
+        "journal-title": "Am J Psychiatry"
+      },
+      {
+        "key": "1822_CR9",
+        "doi-asserted-by": "crossref",
+        "first-page": "331",
+        "DOI": "10.1192\/bjp.145.3.331",
+        "volume": "145",
+        "author": "Berrios",
+        "year": "1984",
+        "unstructured": "Berrios GE, Morley SJ (1984) Koro-like symptom in a non-Chinese subject. Br J Psychiatry 145:331\u2013334",
+        "journal-title": "Br J Psychiatry"
+      },
+      {
+        "key": "1822_CR10",
+        "unstructured": "Blonk JC (1895) Koro. Geneeskundig Tijdschrift voor Nederlandsch-Indie 35:562\u2013563"
+      },
+      {
+        "key": "1822_CR11",
+        "first-page": "749",
+        "volume": "126",
+        "author": "Bourgeois",
+        "year": "1968",
+        "unstructured": "Bourgeois M (1968) A case of Koro in Charente (ethnopsychiatric transposition). Ann Med Psychol (Paris) 126:749\u2013751",
+        "journal-title": "Ann Med Psychol (Paris)"
+      },
+      {
+        "key": "1822_CR12",
+        "first-page": "569",
+        "volume": "53",
+        "author": "van Brero",
+        "year": "1897",
+        "unstructured": "van Brero PCJ (1897) Koro, eine eigenth\u00fcmliche Zwangsvorstellung. Allg Z Psychiat 53:569\u2013573",
+        "journal-title": "Allg Z Psychiat"
+      },
+      {
+        "key": "1822_CR13",
+        "doi-asserted-by": "crossref",
+        "first-page": "243",
+        "DOI": "10.1016\/S0022-5347(05)68022-6",
+        "volume": "163",
+        "author": "Caballero",
+        "year": "2000",
+        "unstructured": "Caballero JM, Avila A, Cardona X et al. (2000) Genital pain without urogenital pathology: the koro-like syndrome. J Urol 163:243",
+        "journal-title": "J Urol"
+      },
+      {
+        "key": "1822_CR14",
+        "first-page": "519",
+        "volume": "Clin",
+        "author": "Caballero",
+        "year": "1990",
+        "unstructured": "Caballero L, Iruela L, Munoz PE et al. (1990) Apropos the Koro syndrome reported in Spain. Med Clin (Barc) 95:519",
+        "journal-title": "Med"
+      },
+      {
+        "key": "1822_CR15",
+        "first-page": "1765",
+        "volume": "148",
+        "author": "Chadda",
+        "year": "1991",
+        "unstructured": "Chadda RK, Shome S (1991) Koro: classification and case reports. Am J Psychiatry 148:1765\u20131767",
+        "journal-title": "Am J Psychiatry"
+      },
+      {
+        "key": "1822_CR16",
+        "first-page": "150",
+        "volume": "20",
+        "author": "Chakraborty",
+        "year": "1983",
+        "unstructured": "Chakraborty A, Das S, Mukherji A (1983) Koro epidemic in India. Transcult Psychiatr Res Rev 20:150\u2013151",
+        "journal-title": "Transcult Psychiatr Res Rev"
+      },
+      {
+        "key": "1822_CR17",
+        "first-page": "192",
+        "volume": "24",
+        "author": "Chakraborty",
+        "year": "1982",
+        "unstructured": "Chakraborty PK (1982) Koro: a peculiar anxiety neurosis (a case report). Indian J Psychiatry 24:192\u2013193",
+        "journal-title": "Indian J Psychiatry"
+      },
+      {
+        "key": "1822_CR18",
+        "doi-asserted-by": "crossref",
+        "first-page": "721",
+        "DOI": "10.1192\/bjp.158.5.721",
+        "volume": "158",
+        "author": "Chen",
+        "year": "1991",
+        "unstructured": "Chen E (1991) Drug-induced koro in a non-Chinese man. Br J Psychiatry 158:721",
+        "journal-title": "Br J Psychiatry"
+      },
+      {
+        "key": "1822_CR19",
+        "doi-asserted-by": "crossref",
+        "first-page": "736",
+        "DOI": "10.1176\/ajp.153.5.736",
+        "volume": "153",
+        "author": "Chiniwala",
+        "year": "1996",
+        "unstructured": "Chiniwala M, Alfonso CA, Torres JR et al. (1996) Koro in an immigrant from Guinea with brief psychotic disorder. Am J Psychiatry 153:736",
+        "journal-title": "Am J Psychiatry"
+      },
+      {
+        "key": "1822_CR20",
+        "doi-asserted-by": "crossref",
+        "first-page": "257",
+        "DOI": "10.1080\/02791072.1993.10472278",
+        "volume": "25",
+        "author": "Chowdhury",
+        "year": "1993",
+        "unstructured": "Chowdhury AN, Bagchi DJ (1993) Koro in heroin withdrawal. J Psychoactive Drugs 25:257\u2013258",
+        "journal-title": "J Psychoactive Drugs"
+      },
+      {
+        "key": "1822_CR21",
+        "first-page": "145",
+        "volume": "90",
+        "author": "Chowdhury",
+        "year": "1995",
+        "unstructured": "Chowdhury AN, Banerjee G (1995) Recurrent Koro in repeated withdrawal of i.\u00a0v. buprenorphine. Addiction 90:145\u2013146",
+        "journal-title": "Addiction"
+      },
+      {
+        "key": "1822_CR22",
+        "doi-asserted-by": "crossref",
+        "first-page": "1017",
+        "DOI": "10.1111\/j.1360-0443.1994.tb03361.x",
+        "volume": "89",
+        "author": "Chowdhury",
+        "year": "1994",
+        "unstructured": "Chowdhury AN, Bera NK (1994) Koro following cannabis smoking: two case reports. Addiction 89:1017\u20131020",
+        "journal-title": "Addiction"
+      },
+      {
+        "key": "1822_CR23",
+        "doi-asserted-by": "crossref",
+        "first-page": "163",
+        "DOI": "10.1016\/S0140-6736(79)90560-9",
+        "volume": "1",
+        "author": "Constable",
+        "year": "1979",
+        "unstructured": "Constable PJ (1979) Koro in Hertfordshire. Lancet 1:163",
+        "journal-title": "Lancet"
+      },
+      {
+        "key": "1822_CR24",
+        "first-page": "358",
+        "volume": "95",
+        "author": "Cortell",
+        "year": "1990",
+        "unstructured": "Cortell Alcocer M (1990) Apropos the first case of koro syndrome in Spain. Med Clin (Barc) 95:358\u2013359",
+        "journal-title": "Med Clin (Barc)"
+      },
+      {
+        "key": "1822_CR25",
+        "doi-asserted-by": "crossref",
+        "first-page": "180",
+        "DOI": "10.1192\/bjp.138.2.180",
+        "volume": "138",
+        "author": "Cremona",
+        "year": "1981",
+        "unstructured": "Cremona A (1981) Another case of koro in a Briton. Br J Psychiatry 138:180\u2013181",
+        "journal-title": "Br J Psychiatry"
+      },
+      {
+        "key": "1822_CR26",
+        "doi-asserted-by": "crossref",
+        "first-page": "53",
+        "DOI": "10.1002\/(SICI)1522-7154(1996)2:1<53::AID-ANXI9>3.0.CO;2-E",
+        "volume": "2",
+        "author": "Dantendorfer",
+        "year": "1996",
+        "unstructured": "Dantendorfer K, Amering M, Prayer D et al. (1996) Treatment of Koro and panic attacks after stroke. Anxiety 2:53\u201355",
+        "journal-title": "Anxiety"
+      },
+      {
+        "key": "1822_CR27",
+        "first-page": "32",
+        "volume": "60",
+        "author": "Dow",
+        "year": "1973",
+        "unstructured": "Dow TW, Silver DA (1973) A drug induced koro syndrome. J Fla Med Assoc 60:32\u201333",
+        "journal-title": "J Fla Med Assoc"
+      },
+      {
+        "key": "1822_CR28",
+        "doi-asserted-by": "crossref",
+        "first-page": "251",
+        "DOI": "10.1192\/bjp.153.2.251",
+        "volume": "153",
+        "author": "Durst",
+        "year": "1988",
+        "unstructured": "Durst R, Rosca-Rebaudengo P (1988) Koro secondary to a tumour of the corpus callosum. Br J Psychiatry 153:251\u2013254",
+        "journal-title": "Br J Psychiatry"
+      },
+      {
+        "key": "1822_CR29",
+        "first-page": "309",
+        "volume": "143",
+        "author": "Dutta",
+        "year": "1983",
+        "unstructured": "Dutta D (1983) Koro epidemic in Assam. Br J Psychiatry 143:309\u2013310",
+        "journal-title": "Br J Psychiatry"
+      },
+      {
+        "key": "1822_CR30",
+        "first-page": "370",
+        "volume": "24",
+        "author": "Dutta",
+        "year": "1982",
+        "unstructured": "Dutta D, Phookan HR, Das PD (1982) The koro epidemic in Lower Assam. Indian J Psychiatry 24:370\u2013374",
+        "journal-title": "Indian J Psychiatry"
+      },
+      {
+        "key": "1822_CR31",
+        "doi-asserted-by": "crossref",
+        "first-page": "1663",
+        "DOI": "10.1046\/j.1360-0443.2001.9611166312.x",
+        "volume": "96",
+        "author": "Earleywine",
+        "year": "2001",
+        "unstructured": "Earleywine M (2001) Cannabis-induced Koro in Americans. Addiction 96:1663\u20131666",
+        "journal-title": "Addiction"
+      },
+      {
+        "key": "1822_CR32",
+        "doi-asserted-by": "crossref",
+        "first-page": "389",
+        "DOI": "10.1177\/070674377602100605",
+        "volume": "21",
+        "author": "Ede",
+        "year": "1976",
+        "unstructured": "Ede A (1976) Koro in an Anglo-Saxon Canadian. Can Psychiatr Assoc J 21:389\u2013392",
+        "journal-title": "Can Psychiatr Assoc J"
+      },
+      {
+        "key": "1822_CR33",
+        "doi-asserted-by": "crossref",
+        "first-page": "1171",
+        "DOI": "10.1176\/ajp.126.8.1171",
+        "volume": "126",
+        "author": "Edwards",
+        "year": "1970",
+        "unstructured": "Edwards JG (1970) The koro pattern of depersonalization in an American schizophrenic patient. Am J Psychiatry 126:1171\u20131173",
+        "journal-title": "Am J Psychiatry"
+      },
+      {
+        "key": "1822_CR34",
+        "unstructured": "Edwards JW (1985) Indigenous koro, a genital retraction syndrome of insular Southeast Asia: a critical review. In: Simons RC, Hughes CC (eds) The culture-bound syndromes: folk illnesses of psychiatric and anthropological interest. Reidel, Dordrecht, pp\u00a0169\u2013192"
+      },
+      {
+        "key": "1822_CR35",
+        "doi-asserted-by": "crossref",
+        "first-page": "1",
+        "DOI": "10.1007\/BF00053099",
+        "volume": "8",
+        "author": "Edwards",
+        "year": "1984",
+        "unstructured": "Edwards JW (1984) Indigenous Koro, a genital retraction syndrome of insular Southeast Asia: a critical review. Cult Med Psychiatry 8:1\u201324",
+        "journal-title": "Cult Med Psychiatry"
+      },
+      {
+        "key": "1822_CR36",
+        "doi-asserted-by": "crossref",
+        "first-page": "945",
+        "DOI": "10.1192\/bjp.114.513.945",
+        "volume": "114",
+        "author": "Elsarrag",
+        "year": "1968",
+        "unstructured": "Elsarrag ME (1968) Psychiatry in the Northern Sudan: a study in comparative psychiatry. Br J Psychiatry 114:945\u2013948",
+        "journal-title": "Br J Psychiatry"
+      },
+      {
+        "key": "1822_CR37",
+        "doi-asserted-by": "crossref",
+        "first-page": "175",
+        "DOI": "10.1258\/0956462981921828",
+        "volume": "9",
+        "author": "Estcourt",
+        "year": "1998",
+        "unstructured": "Estcourt CS, Goh BT (1998) Koro presenting to genitourinary medicine services. Int J STD AIDS 9:175\u2013176",
+        "journal-title": "Int J STD AIDS"
+      },
+      {
+        "key": "1822_CR38",
+        "doi-asserted-by": "crossref",
+        "first-page": "851",
+        "DOI": "10.1192\/bjp.152.6.851",
+        "volume": "152",
+        "author": "Fernando",
+        "year": "1988",
+        "unstructured": "Fernando N (1988) Monosymptomatic hypochondriasis treated with a tricyclic antidepressant. Br J Psychiatry 152:851\u2013852",
+        "journal-title": "Br J Psychiatry"
+      },
+      {
+        "key": "1822_CR39",
+        "doi-asserted-by": "crossref",
+        "first-page": "87",
+        "DOI": "10.1176\/appi.psychotherapy.1989.43.1.87",
+        "volume": "43",
+        "author": "Fishbain",
+        "year": "1989",
+        "unstructured": "Fishbain DA, Barsky S, Goldberg M (1989) \u201cKoro\u201d (genital retraction syndrome): psychotherapeutic interventions. Am J Psychother 43:87\u201391",
+        "journal-title": "Am J Psychother"
+      },
+      {
+        "key": "1822_CR40",
+        "unstructured": "Freudenmann RW, Sch\u00f6nfeldt-Lecuona C (2003) Koro-\u00e4hnliche Symptome bei rezidivierender depressiver St\u00f6rung. Nervenarzt 74 [Suppl\u00a02]:219"
+      },
+      {
+        "key": "1822_CR41",
+        "unstructured": "Freudenmann RW, Sch\u00f6nfeldt-Lecuona C (2004) Koro-\u00e4hnliche Symptome bei rezidivierender depressiver St\u00f6rung. Nervenarzt (im Druck) DOI10.1007\/s00115-004-1821-5",
+        "DOI": "10.1007\/s00115-004-1821-5",
+        "doi-asserted-by": "crossref"
+      },
+      {
+        "key": "1822_CR42",
+        "doi-asserted-by": "crossref",
+        "first-page": "103",
+        "DOI": "10.1055\/s-2003-37214",
+        "volume": "71",
+        "author": "Garlipp",
+        "year": "2003",
+        "unstructured": "Garlipp P, Machleidt W (2003) Koro\u2014Er\u00f6rterung eines transkulturell psychopathologischen Ph\u00e4nomens. Fortschr Neurol Psychiatr 71:103\u2013107",
+        "journal-title": "Fortschr Neurol Psychiatr"
+      },
+      {
+        "key": "1822_CR43",
+        "doi-asserted-by": "crossref",
+        "first-page": "590",
+        "DOI": "10.1097\/00005053-199410000-00016",
+        "volume": "182",
+        "author": "Goetz",
+        "year": "1994",
+        "unstructured": "Goetz KL, Price TR (1994) A case of Koro: treatment response and implications for diagnostic classification. J Nerv Ment Dis 182:590\u2013591",
+        "journal-title": "J Nerv Ment Dis"
+      },
+      {
+        "key": "1822_CR44",
+        "unstructured": "Gross G, Huber G, Klosterk\u00f6tter J et al. (1987) BSABS. Bonner Skala f\u00fcr die Beurteilung von Basissymptomen. Springer, Berlin Heidelberg New York, S\u00a0103"
+      },
+      {
+        "key": "1822_CR45",
+        "doi-asserted-by": "crossref",
+        "first-page": "951",
+        "DOI": "10.4088\/JCP.v61n1210f",
+        "volume": "61",
+        "author": "Hallak",
+        "year": "2000",
+        "unstructured": "Hallak JE, Crippa JA, Zuardi AW (2000) Treatment of of koro with citalopram. J Clin Psychiatry 61:951",
+        "journal-title": "J Clin Psychiatry"
+      },
+      {
+        "key": "1822_CR46",
+        "first-page": "180",
+        "volume": "20",
+        "author": "Hes",
+        "year": "1977",
+        "unstructured": "Hes JP, Nassi G (1977) Koro in a Yemenite and a Georgian Jewish Immigrant. Confin Psychiatr 20:180\u2013184",
+        "journal-title": "Confin Psychiatr"
+      },
+      {
+        "key": "1822_CR47",
+        "doi-asserted-by": "crossref",
+        "first-page": "119",
+        "DOI": "10.1192\/bjp.160.1.119",
+        "volume": "160",
+        "author": "Heyman",
+        "year": "1992",
+        "unstructured": "Heyman I, Fahy TA (1992) Koro-like symptoms in a man infected with the human immunodeficiency virus. Br J Psychiatry 160:119\u2013121",
+        "journal-title": "Br J Psychiatry"
+      },
+      {
+        "key": "1822_CR48",
+        "doi-asserted-by": "crossref",
+        "first-page": "695",
+        "DOI": "10.1192\/bjp.151.5.695",
+        "volume": "151",
+        "author": "Holden",
+        "year": "1987",
+        "unstructured": "Holden TJ (1987) Koro syndrome associated with alcohol-induced systemic disease in a Zulu. Br J Psychiatry 151:695\u2013697",
+        "journal-title": "Br J Psychiatry"
+      },
+      {
+        "key": "1822_CR49",
+        "unstructured": "Hughes CC (1985) The genital retraction taxon: commentary. In: Simons RC, Hughes CC (eds) The culture-bound syndromes: folk illnesses and anthropological interest. Reidel, Dordrecht, pp\u00a0193\u2013194"
+      },
+      {
+        "key": "1822_CR50",
+        "first-page": "91",
+        "volume": "29",
+        "author": "Ilechukwu",
+        "year": "1992",
+        "unstructured": "Ilechukwu STC (1992) Magical penis loss in Nigeria: report of a recent epidemic of a koro-like syndrome. Transcult Psychiatr Res Rev 29:91\u2013108",
+        "journal-title": "Transcult Psychiatr Res Rev"
+      },
+      {
+        "key": "1822_CR51",
+        "first-page": "257",
+        "volume": "120",
+        "author": "Jilek",
+        "year": "1977",
+        "unstructured": "Jilek W, Jilek-Aall L (1977) Mass-hysteria with Koro-symptoms in Thailand. Schweiz Arch Neurol Neurochir Psychiatr 120:257\u2013259",
+        "journal-title": "Schweiz Arch Neurol Neurochir Psychiatr"
+      },
+      {
+        "key": "1822_CR52",
+        "first-page": "269",
+        "volume": "9",
+        "author": "Jilek",
+        "year": "1986",
+        "unstructured": "Jilek WG (1986) Epidemic of \u201cgenital shrinking\u201d (Koro): historical review and report of the recent outbreak in south China. Curare 9:269\u2013282",
+        "journal-title": "Curare"
+      },
+      {
+        "key": "1822_CR53",
+        "first-page": "1621",
+        "volume": "144",
+        "author": "Kendall",
+        "year": "1987",
+        "unstructured": "Kendall EM, Jenkins PL (1987) Koro in an American man. Am J Psychiatry 144:1621",
+        "journal-title": "Am J Psychiatry"
+      },
+      {
+        "key": "1822_CR54",
+        "doi-asserted-by": "crossref",
+        "first-page": "123",
+        "DOI": "10.1016\/S0022-5347(05)67465-4",
+        "volume": "164",
+        "author": "Kim",
+        "year": "2000",
+        "unstructured": "Kim J, Kim M, Lee N et al. (2000) A case of urethrocutaneous fistula with the koro syndrome. J Urol 164:123",
+        "journal-title": "J Urol"
+      },
+      {
+        "key": "1822_CR55",
+        "first-page": "285",
+        "volume": "35",
+        "author": "Kobler",
+        "year": "1948",
+        "unstructured": "Kobler F (1948) Description of an acute castration fear, based on superstition. Psychoanal Rev 35:285\u2013289",
+        "journal-title": "Psychoanal Rev"
+      },
+      {
+        "key": "1822_CR56",
+        "first-page": "234",
+        "volume": "10",
+        "author": "Koro",
+        "year": "1969",
+        "unstructured": "Koro Study Team (1969) The Koro \u201cepidemic\u201d in Singapore. Singapore Med J 10:234\u2013242",
+        "journal-title": "Singapore Med J"
+      },
+      {
+        "key": "1822_CR57",
+        "unstructured": "Kraepelin E (1913) Psychiatrie. Ein Lehrbuch f\u00fcr Studierende und \u00c4rzte, Bd\u00a03. Barth, Leipzig"
+      },
+      {
+        "key": "1822_CR58",
+        "first-page": "433",
+        "volume": "27",
+        "author": "Kraepelin",
+        "year": "1904",
+        "unstructured": "Kraepelin E (1904) Vergleichende Psychiatrie. Cbl Nervenheilkd Psychiat 27:433\u2013437",
+        "journal-title": "Cbl Nervenheilk Psychiat"
+      },
+      {
+        "key": "1822_CR59",
+        "doi-asserted-by": "crossref",
+        "first-page": "133",
+        "DOI": "10.1192\/bjp.150.1.133b",
+        "volume": "150",
+        "author": "Kumar",
+        "year": "1987",
+        "unstructured": "Kumar HV (1987) Koro in an Israeli man. Br J Psychiatry 150:133",
+        "journal-title": "Br J Psychiatry"
+      },
+      {
+        "key": "1822_CR60",
+        "doi-asserted-by": "crossref",
+        "first-page": "711",
+        "DOI": "10.1192\/bjp.153.5.711",
+        "volume": "153",
+        "author": "Kumar",
+        "year": "1988",
+        "unstructured": "Kumar HV, Moloney E (1988) Koro secondary to a tumour of the corpus callosum. Br J Psychiatry 153:711\u2013712",
+        "journal-title": "Br J Psychiatry"
+      },
+      {
+        "key": "1822_CR61",
+        "doi-asserted-by": "crossref",
+        "first-page": "333",
+        "DOI": "10.1177\/070674377201700414",
+        "volume": "17",
+        "author": "Lapierre",
+        "year": "1972",
+        "unstructured": "Lapierre YD (1972) Koro in a French Canadian. Can Psychiatr Assoc J 17:333\u2013334",
+        "journal-title": "Can Psychiatr Assoc J"
+      },
+      {
+        "key": "1822_CR62",
+        "unstructured": "Leng GA (1985) Koro\u2014a cultural disease. In: Simons RC, Hughes CC (eds) The culture-bound syndromes. Folk illnesses and anthropological interest. Reidel, Dordrecht, pp\u00a0155\u2013160"
+      },
+      {
+        "key": "1822_CR63",
+        "first-page": "119",
+        "volume": "143",
+        "author": "Leng",
+        "year": "1963",
+        "unstructured": "Leng GA (1963) Koro\u2014a cultural disease. Singapore Med J 143:119\u2013122",
+        "journal-title": "Singapore Med J"
+      },
+      {
+        "key": "1822_CR64",
+        "unstructured": "Machleidt W (2000) Transkulturelle Aspekte psychiatrischer Erkrankungen. In: Psychiatrie und Psychotherapie. Springer, Berlin Heidelberg New York, S\u00a0271\u2013291"
+      },
+      {
+        "key": "1822_CR65",
+        "doi-asserted-by": "crossref",
+        "first-page": "67",
+        "DOI": "10.1177\/002076408503100109",
+        "volume": "31",
+        "author": "Malinick",
+        "year": "1985",
+        "unstructured": "Malinick C, Flaherty JA, Jobe T (1985) Koro: how culturally specific? Int J Soc Psychiatry 31:67\u201373",
+        "journal-title": "Int J Soc Psychiatry"
+      },
+      {
+        "key": "1822_CR66",
+        "first-page": "108",
+        "volume": "39",
+        "author": "Maslowski",
+        "year": "1988",
+        "unstructured": "Maslowski J (1988) Koro-like syndrome in Maltese subject on the basis of chronic schizophrenia. Bull Inst Marit Trop Med Gdynia 39:108\u2013110",
+        "journal-title": "Bull Inst Marit Trop Med Gdynia"
+      },
+      {
+        "key": "1822_CR67",
+        "first-page": "232",
+        "volume": "20",
+        "author": "Mo",
+        "year": "1987",
+        "unstructured": "Mo GM (1987) Koro epidemic in Hainan Island and Leizhou Peninsula (a preliminary report). Zhonghua Shen Jing Jing Shen Ke Za Zhi 20:232\u2013234",
+        "journal-title": "Zhonghua Shen Jing Jing Shen Ke Za Zhi"
+      },
+      {
+        "key": "1822_CR68",
+        "doi-asserted-by": "crossref",
+        "first-page": "503",
+        "DOI": "10.1192\/bjp.149.4.503",
+        "volume": "149",
+        "author": "Modai",
+        "year": "1986",
+        "unstructured": "Modai I, Munitz H, Aizenberg D (1986) Koro in an Israeli male. Br J Psychiatry 149:503\u2013505",
+        "journal-title": "Br J Psychiatry"
+      },
+      {
+        "key": "1822_CR69",
+        "first-page": "56",
+        "volume": "1",
+        "author": "Montaser",
+        "year": "1992",
+        "unstructured": "Montaser H (1992) Koro-like symptom in a Saudi patient. Arab J Psychiatry 1:56",
+        "journal-title": "Arab J Psychiatry"
+      },
+      {
+        "key": "1822_CR70",
+        "first-page": "640",
+        "volume": "1",
+        "author": "Mun",
+        "year": "1968",
+        "unstructured": "Mun CT (1968) Epidemic koro in Singapore. Br Med J 1:640\u2013641",
+        "journal-title": "Br Med J"
+      },
+      {
+        "key": "1822_CR71",
+        "doi-asserted-by": "crossref",
+        "first-page": "1182",
+        "DOI": "10.4088\/JCP.v63n1214f",
+        "volume": "63",
+        "author": "Nakaya",
+        "year": "2002",
+        "unstructured": "Nakaya M (2002) Fluvoxamine treatment of a Japanese patient with koro. J Clin Psychiatry 63:1182\u20131183",
+        "journal-title": "J Clin Psychiatry"
+      },
+      {
+        "key": "1822_CR72",
+        "doi-asserted-by": "crossref",
+        "first-page": "265",
+        "DOI": "10.1177\/002076408302900405",
+        "volume": "29",
+        "author": "Nandi",
+        "year": "1983",
+        "unstructured": "Nandi DN, Banerjee G, Saha H et al. (1983) Epidemic koro in West Bengal, India. Int J Soc Psychiatry 29:265\u2013268",
+        "journal-title": "Int J Soc Psychiatry"
+      },
+      {
+        "key": "1822_CR73",
+        "first-page": "263",
+        "volume": "3",
+        "author": "Ngui",
+        "year": "1969",
+        "unstructured": "Ngui PW (1969) The koro epidemic in Singapore. Aust New Zeal J Psychiatry 3:263\u2013266",
+        "journal-title": "Aust New Zeal J Psychiatry"
+      },
+      {
+        "key": "1822_CR74",
+        "unstructured": "Pfeiffer WM (1971) Transkulturelle Psychiatrie. Thieme, Stuttgart"
+      },
+      {
+        "key": "1822_CR75",
+        "unstructured": "Pfeiffer WM (1994) Transkulturelle Psychiatrie. Ergebnisse und Probleme, 2. Aufl. Thieme, Stuttgart"
+      },
+      {
+        "key": "1822_CR76",
+        "first-page": "75",
+        "volume": "89",
+        "author": "Phelan",
+        "year": "1996",
+        "unstructured": "Phelan D, Daly RJ (1996) Koro-like syndrome associated with brief reactive psychosis in an Irish male. Ir Med J 89:75\u201376",
+        "journal-title": "Ir Med J"
+      },
+      {
+        "key": "1822_CR77",
+        "doi-asserted-by": "crossref",
+        "first-page": "108",
+        "DOI": "10.1111\/j.1464-410X.1995.tb07253.x",
+        "volume": "75",
+        "author": "Puranik",
+        "year": "1995",
+        "unstructured": "Puranik A, Dunn J (1995) Koro presenting after prostatectomy in an elderly man. Br J Urol 75:108\u2013109",
+        "journal-title": "Br J Urol"
+      },
+      {
+        "key": "1822_CR78",
+        "doi-asserted-by": "crossref",
+        "first-page": "86",
+        "DOI": "10.4088\/JCP.v59n0207g",
+        "volume": "59",
+        "author": "Ramos",
+        "year": "1998",
+        "unstructured": "Ramos RH, Budman CL (1998) Emergence of koro after abrupt cessation of olanzapine. J Clin Psychiatry 59:86\u201387",
+        "journal-title": "J Clin Psychiatry"
+      },
+      {
+        "key": "1822_CR79",
+        "doi-asserted-by": "crossref",
+        "first-page": "7",
+        "DOI": "10.1177\/002076406501100101",
+        "volume": "11",
+        "author": "Rin",
+        "year": "1965",
+        "unstructured": "Rin H (1965) A study of the aetiology of koro in respect to the Chinese concept of illness. Int J Soc Psychiatry 11:7\u201313",
+        "journal-title": "Int J Soc Psychiatry"
+      },
+      {
+        "key": "1822_CR80",
+        "doi-asserted-by": "crossref",
+        "first-page": "433",
+        "DOI": "10.1080\/00048678509158852",
+        "volume": "19",
+        "author": "Sachdev",
+        "year": "1985",
+        "unstructured": "Sachdev PS (1985) Koro epidemic in north-east India. Aust N Z J Psychiatry 19:433\u2013438",
+        "journal-title": "Aust N Z J Psychiatry"
+      },
+      {
+        "key": "1822_CR81",
+        "doi-asserted-by": "crossref",
+        "first-page": "1161",
+        "DOI": "10.1016\/S0140-6736(82)92815-X",
+        "volume": "2",
+        "author": "Sachdev",
+        "year": "1982",
+        "unstructured": "Sachdev PS, Shukla A (1982) Epidemic koro syndrome in India. Lancet 2:1161",
+        "journal-title": "Lancet"
+      },
+      {
+        "key": "1822_CR82",
+        "doi-asserted-by": "crossref",
+        "first-page": "42",
+        "DOI": "10.1177\/002076408703300106",
+        "volume": "33",
+        "author": "Scher",
+        "year": "1987",
+        "unstructured": "Scher M (1987) Koro in a native born citizen of the U.S. Int J Soc Psychiatry 33:42\u201345",
+        "journal-title": "Int J Soc Psychiatry"
+      },
+      {
+        "key": "1822_CR83",
+        "first-page": "64",
+        "volume": "16",
+        "author": "Suwanlert",
+        "year": "1979",
+        "unstructured": "Suwanlert S, Coates D (1979) Epidemic koro in Thailand\u2014clinical and social aspects. Transcult Psychiatr Res Rev 16:64\u201366",
+        "journal-title": "Transcult Psychiatr Res Rev"
+      },
+      {
+        "key": "1822_CR84",
+        "doi-asserted-by": "crossref",
+        "first-page": "1538",
+        "DOI": "10.1176\/ajp.145.12.1538",
+        "volume": "145",
+        "author": "Tseng",
+        "year": "1988",
+        "unstructured": "Tseng WS, Mo KM, Hsu J et al. (1988) A sociocultural study of koro epidemics in Guangdong, China. Am J Psychiatry 145:1538\u20131543",
+        "journal-title": "Am J Psychiatry"
+      },
+      {
+        "key": "1822_CR85",
+        "doi-asserted-by": "crossref",
+        "first-page": "117",
+        "DOI": "10.1097\/00005053-199202000-00009",
+        "volume": "180",
+        "author": "Tseng",
+        "year": "1992",
+        "unstructured": "Tseng WS, Mo KM, Li LS et al. (1992) Koro epidemics in Guangdong, China. A questionnaire survey. J Nerv Ment Dis 180:117\u2013123",
+        "journal-title": "J Nerv Ment Dis"
+      },
+      {
+        "key": "1822_CR86",
+        "doi-asserted-by": "crossref",
+        "first-page": "883",
+        "DOI": "10.1016\/0090-4295(94)90160-0",
+        "volume": "43",
+        "author": "Ungvari",
+        "year": "1994",
+        "unstructured": "Ungvari GS, Mullen RS (1994) Koro: the delusion of penile retraction. Urology 43:883\u2013885",
+        "journal-title": "Urology"
+      },
+      {
+        "key": "1822_CR87",
+        "doi-asserted-by": "crossref",
+        "first-page": "140",
+        "DOI": "10.1177\/070674378102600228",
+        "volume": "26",
+        "author": "Waldenberg",
+        "year": "1981",
+        "unstructured": "Waldenberg SS (1981) Koro. Can J Psychiatry 26:140\u2013141",
+        "journal-title": "Can J Psychiatry"
+      },
+      {
+        "key": "1822_CR88",
+        "doi-asserted-by": "crossref",
+        "first-page": "174",
+        "DOI": "10.1159\/000029037",
+        "volume": "31",
+        "author": "Witztum",
+        "year": "1998",
+        "unstructured": "Witztum E, Bersudsky Y, Mayodovnik H et al. (1998) Koro-like syndrome in a Bedouin man. Psychopathology 31:174\u2013177",
+        "journal-title": "Psychopathology"
+      },
+      {
+        "key": "1822_CR89",
+        "first-page": "26",
+        "volume": "4",
+        "author": "Wong",
+        "year": "1918",
+        "unstructured": "Wong KC (1918) An inquiry into some Chinese \u201csexual diseases\u201d. National Med J China 4:26\u201331",
+        "journal-title": "National Med J China"
+      },
+      {
+        "key": "1822_CR90",
+        "doi-asserted-by": "crossref",
+        "first-page": "774",
+        "DOI": "10.1192\/bjp.111.477.774-a",
+        "volume": "111",
+        "author": "Yap",
+        "year": "1965",
+        "unstructured": "Yap PM (1965) Koro in a Briton. Br J Psychiatry 111:774\u2013775",
+        "journal-title": "Br J Psychiatry"
+      },
+      {
+        "key": "1822_CR91",
+        "doi-asserted-by": "crossref",
+        "first-page": "43",
+        "DOI": "10.1192\/bjp.111.470.43",
+        "volume": "111",
+        "author": "Yap",
+        "year": "1965",
+        "unstructured": "Yap PM (1965) Koro, a culture-bound depersonalization syndrome. Br J Psychiatry 111:43\u201350",
+        "journal-title": "Br J Psychiatry"
+      }
+    ],
+    "container-title": [
+      "Der Nervenarzt"
+    ],
+    "original-title": [],
+    "language": "de",
+    "link": [
+      {
+        "URL": "http:\/\/link.springer.com\/content\/pdf\/10.1007\/s00115-004-1822-4.pdf",
+        "content-type": "application\/pdf",
+        "content-version": "vor",
+        "intended-application": "text-mining"
+      },
+      {
+        "URL": "http:\/\/link.springer.com\/article\/10.1007\/s00115-004-1822-4\/fulltext.html",
+        "content-type": "text\/html",
+        "content-version": "vor",
+        "intended-application": "text-mining"
+      },
+      {
+        "URL": "http:\/\/link.springer.com\/content\/pdf\/10.1007\/s00115-004-1822-4",
+        "content-type": "unspecified",
+        "content-version": "vor",
+        "intended-application": "similarity-checking"
+      }
+    ],
+    "deposited": {
+      "date-parts": [
+        [
+          2019,
+          5,
+          23
+        ]
+      ],
+      "date-time": "2019-05-23T05:00:44Z",
+      "timestamp": 1558587644000
+    },
+    "score": 1.0,
+    "subtitle": [
+      "Chinesisches Suo yang, indonesisches Koro und nichtasiatische Formen (Koro-\u00e4hnliche Symptome)"
+    ],
+    "short-title": [],
+    "issued": {
+      "date-parts": [
+        [
+          2005,
+          5
+        ]
+      ]
+    },
+    "references-count": 91,
+    "journal-issue": {
+      "published-print": {
+        "date-parts": [
+          [
+            2005,
+            5
+          ]
+        ]
+      },
+      "issue": "5"
+    },
+    "alternative-id": [
+      "1822"
+    ],
+    "URL": "http:\/\/dx.doi.org\/10.1007\/s00115-004-1822-4",
+    "relation": {
+      "cites": []
+    },
+    "ISSN": [
+      "0028-2804",
+      "1433-0407"
+    ],
+    "issn-type": [
+      {
+        "value": "0028-2804",
+        "type": "print"
+      },
+      {
+        "value": "1433-0407",
+        "type": "electronic"
+      }
+    ]
+  }
+}

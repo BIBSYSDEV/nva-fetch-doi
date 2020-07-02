@@ -1,0 +1,220 @@
+{
+  "status": "ok",
+  "message-type": "work",
+  "message-version": "1.0.0",
+  "message": {
+    "indexed": {
+      "date-parts": [
+        [
+          2019,
+          11,
+          18
+        ]
+      ],
+      "date-time": "2019-11-18T20:07:37Z",
+      "timestamp": 1574107657919
+    },
+    "reference-count": 9,
+    "publisher": "World Scientific Pub Co Pte Lt",
+    "issue": "04",
+    "content-domain": {
+      "domain": [],
+      "crossmark-restriction": false
+    },
+    "short-container-title": [
+      "Int. J. Rel. Qual. Saf. Eng."
+    ],
+    "published-print": {
+      "date-parts": [
+        [
+          2003,
+          12
+        ]
+      ]
+    },
+    "abstract": "<jats:p> The basic multistate reliability theory was developed in the eighties and the beginning of the nineties, replacing traditional reliability theory where the system and the components are always described as functioning or failed. In Natvig et al.<jats:sup>10<\/jats:sup> the theory was applied to an electrical power generation system for two nearby oilrigs, where the amounts of power that may possibly be supplied to the two oilrigs are considered as system states. However, there is still a need for several convincing case studies demonstrating the practicability of the generalizations introduced. In the present paper the theory is applied to the Norwegian offshore gas pipeline network in the North Sea, as of the end of the eighties, transporting gas to Emden in Germany. The system state depends on the amount of gas actually delivered, but also to some extent on the amount of gas compressed mainly by the compressor component closest to Emden. <\/jats:p>",
+    "DOI": "10.1142\/s0218539303001214",
+    "type": "journal-article",
+    "created": {
+      "date-parts": [
+        [
+          2003,
+          12,
+          5
+        ]
+      ],
+      "date-time": "2003-12-05T09:20:48Z",
+      "timestamp": 1070616048000
+    },
+    "page": "361-381",
+    "source": "Crossref",
+    "is-referenced-by-count": 12,
+    "title": [
+      "AN APPLICATION OF MULTISTATE RELIABILITY THEORY TO AN OFFSHORE GAS PIPELINE NETWORK"
+    ],
+    "prefix": "10.1142",
+    "volume": "10",
+    "author": [
+      {
+        "given": "BENT",
+        "family": "NATVIG",
+        "sequence": "first",
+        "affiliation": [
+          {
+            "name": "Department of Mathematics, University of Oslo, P. O. Box 1053 Blindern, N-0316 Oslo, Norway"
+          }
+        ]
+      },
+      {
+        "given": "HANS W. H.",
+        "family": "M\u00d8RCH",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "Faculty of Education, Oslo University College, Pilestredet 52, N-0167 Oslo, Norway"
+          }
+        ]
+      }
+    ],
+    "member": "219",
+    "published-online": {
+      "date-parts": [
+        [
+          2012,
+          4,
+          30
+        ]
+      ]
+    },
+    "reference": [
+      {
+        "key": "rf1",
+        "author": "Barlow R. E.",
+        "year": "1975",
+        "volume-title": "Statistical Theory of Reliability and Life Testing. Probability Models"
+      },
+      {
+        "key": "rf2",
+        "DOI": "10.1080\/01621459.1970.10481083",
+        "doi-asserted-by": "publisher"
+      },
+      {
+        "key": "rf3",
+        "DOI": "10.2307\/1427124",
+        "doi-asserted-by": "publisher"
+      },
+      {
+        "key": "rf5",
+        "author": "Karlin S.",
+        "year": "1975",
+        "volume-title": "A First Course in Stochastic Processes"
+      },
+      {
+        "key": "rf7",
+        "DOI": "10.2307\/1426502",
+        "doi-asserted-by": "publisher"
+      },
+      {
+        "key": "rf8",
+        "author": "Natvig B.",
+        "volume": "5",
+        "first-page": "732",
+        "journal-title": "Encyclopedia of Statistical Sciences"
+      },
+      {
+        "key": "rf9",
+        "DOI": "10.2307\/1427314",
+        "doi-asserted-by": "publisher"
+      },
+      {
+        "key": "rf10",
+        "DOI": "10.2307\/1427256",
+        "doi-asserted-by": "publisher"
+      },
+      {
+        "key": "rf11",
+        "author": "Natvig B.",
+        "volume": "20",
+        "first-page": "171",
+        "journal-title": "Scand. J. Statist."
+      }
+    ],
+    "container-title": [
+      "International Journal of Reliability, Quality and Safety Engineering"
+    ],
+    "original-title": [],
+    "language": "en",
+    "link": [
+      {
+        "URL": "https:\/\/www.worldscientific.com\/doi\/pdf\/10.1142\/S0218539303001214",
+        "content-type": "unspecified",
+        "content-version": "vor",
+        "intended-application": "similarity-checking"
+      }
+    ],
+    "deposited": {
+      "date-parts": [
+        [
+          2019,
+          8,
+          6
+        ]
+      ],
+      "date-time": "2019-08-06T15:56:27Z",
+      "timestamp": 1565106987000
+    },
+    "score": 1.0,
+    "subtitle": [],
+    "short-title": [],
+    "issued": {
+      "date-parts": [
+        [
+          2003,
+          12
+        ]
+      ]
+    },
+    "references-count": 9,
+    "journal-issue": {
+      "published-online": {
+        "date-parts": [
+          [
+            2012,
+            4,
+            30
+          ]
+        ]
+      },
+      "published-print": {
+        "date-parts": [
+          [
+            2003,
+            12
+          ]
+        ]
+      },
+      "issue": "04"
+    },
+    "alternative-id": [
+      "10.1142\/S0218539303001214"
+    ],
+    "URL": "http:\/\/dx.doi.org\/10.1142\/s0218539303001214",
+    "relation": {
+      "cites": []
+    },
+    "ISSN": [
+      "0218-5393",
+      "1793-6446"
+    ],
+    "issn-type": [
+      {
+        "value": "02185393",
+        "type": "print"
+      },
+      {
+        "value": "1793-6446",
+        "type": "electronic"
+      }
+    ]
+  }
+}
