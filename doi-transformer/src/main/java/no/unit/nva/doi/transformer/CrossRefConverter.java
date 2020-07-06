@@ -190,7 +190,8 @@ public class CrossRefConverter extends AbstractConverter {
             .orElse(null);
     }
 
-    private PublicationInstance<?> extractPublicationInstance(CrossRefDocument document) throws InvalidPageRangeException {
+    private PublicationInstance<?> extractPublicationInstance(CrossRefDocument document) throws
+            InvalidPageRangeException {
         return new JournalArticle.Builder()
             .withVolume(document.getVolume())
             .withIssue(document.getIssue())
