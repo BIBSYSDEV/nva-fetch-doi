@@ -41,6 +41,8 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import com.fasterxml.jackson.databind.JavaType;
 import no.unit.nva.doi.CrossRefClient;
 import no.unit.nva.doi.DataciteClient;
 import no.unit.nva.doi.DoiProxyService;
@@ -52,7 +54,6 @@ import no.unit.nva.doi.fetch.model.Summary;
 import no.unit.nva.doi.fetch.service.PublicationConverter;
 import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
 import no.unit.nva.doi.transformer.DoiTransformService;
-import no.unit.nva.doi.transformer.exception.MissingClaimException;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -107,17 +108,17 @@ public class MainHandlerTest {
 
         mainHandler.handleRequest(mainHandlerInputStream(), output, context);
 
-        GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
+        GatewayResponse<?> gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
-        assertTrue(gatewayResponse.getHeaders().keySet().contains(CONTENT_TYPE));
-        assertTrue(gatewayResponse.getHeaders().keySet().contains(MainHandler.ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertTrue(gatewayResponse.getHeaders().containsKey(CONTENT_TYPE));
+        assertTrue(gatewayResponse.getHeaders().containsKey(MainHandler.ACCESS_CONTROL_ALLOW_ORIGIN));
         Summary summary = objectMapper.readValue(gatewayResponse.getBody(), Summary.class);
         assertNotNull(summary.getIdentifier());
     }
 
     @Test
     public void processInputThrowsIllegalStateExceptionWithInternalCauseWhenUrlToPublicationProxyDoesIsNotValid()
-        throws MissingClaimException, IOException, InvalidPageRangeException, InvalidIssnException, URISyntaxException,
+        throws IOException, InvalidPageRangeException, InvalidIssnException, URISyntaxException,
                MetadataNotFoundException {
         Environment environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(ALL_ORIGINS);
@@ -147,7 +148,7 @@ public class MainHandlerTest {
 
         mainHandler.handleRequest(malformedInputStream(), output, context);
 
-        GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
+        GatewayResponse<?> gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
         assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
     }
 
@@ -173,7 +174,6 @@ public class MainHandlerTest {
 
     @Test
     @DisplayName("handler returns BadGateway error when DoiProxyService returns failed response")
-    @SuppressWarnings("unchecked")
     public void handlerReturnsBadGatewayErrorWhenDoiProxyServiceReturnsFailedResponse()
         throws Exception {
 
@@ -193,7 +193,6 @@ public class MainHandlerTest {
 
     @Test
     @DisplayName("handler returns BadGateway when ResourcePersistenceService returns failed response")
-    @SuppressWarnings("unchecked")
     public void handlerReturnsBadGatewayErrorWhenResourcePersistenceServiceReturnsFailedResponse()
         throws Exception {
 
@@ -220,7 +219,7 @@ public class MainHandlerTest {
     }
 
     private MainHandler createMainHandler(Environment environment)
-        throws URISyntaxException, IOException, InvalidPageRangeException, MissingClaimException, InvalidIssnException,
+        throws URISyntaxException, IOException, InvalidPageRangeException, InvalidIssnException,
                MetadataNotFoundException {
         PublicationConverter publicationConverter = mockPublicationConverter();
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
@@ -283,7 +282,7 @@ public class MainHandlerTest {
     @SuppressWarnings("unchecked")
     private HttpClient mockHttpClientReceivingFailure() throws IOException, InterruptedException {
         HttpClient client = mock(HttpClient.class);
-        HttpResponse failedResponse = mockFailedHttpResponse();
+        HttpResponse<Object> failedResponse = mockFailedHttpResponse();
         when(client.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(failedResponse);
         return client;
     }
@@ -335,8 +334,9 @@ public class MainHandlerTest {
         return new ByteArrayOutputStream();
     }
 
-    private GatewayResponse gatewayResponse(OutputStream outputStream) throws JsonProcessingException {
-        return objectMapper.readValue(outputStream.toString(), GatewayResponse.class);
+    private GatewayResponse<String> gatewayResponse(OutputStream outputStream) throws JsonProcessingException {
+        JavaType type = objectMapper.getTypeFactory().constructParametricType(GatewayResponse.class, String.class);
+        return objectMapper.readValue(outputStream.toString(), type);
     }
 
     private Map<String, Object> getRequestContext() {
