@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.CognitoIdentity;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JavaType;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,8 +42,6 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-
-import com.fasterxml.jackson.databind.JavaType;
 import no.unit.nva.doi.CrossRefClient;
 import no.unit.nva.doi.DataciteClient;
 import no.unit.nva.doi.DoiProxyService;
@@ -69,13 +68,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.zalando.problem.Problem;
 import org.zalando.problem.Status;
 
 public class MainHandlerTest {
 
-    private static final String SOME_ERROR_MESSAGE = "SomeErrorMessage";
     public static final String VALID_DOI = "https://doi.org/10.1109/5.771073";
-
     public static final String AUTHORIZER = "authorizer";
     public static final String CLAIMS = "claims";
     public static final String CUSTOM_FEIDE_ID = "custom:feideId";
@@ -84,7 +82,7 @@ public class MainHandlerTest {
     public static final String ALL_ORIGINS = "*";
     public static final String INVALID_HOST_STRING = "https://\\.)_";
     public static final String HTTP = "http";
-
+    private static final String SOME_ERROR_MESSAGE = "SomeErrorMessage";
     private Environment environment;
 
     /**
@@ -103,33 +101,26 @@ public class MainHandlerTest {
         throws Exception {
 
         MainHandler mainHandler = createMainHandler(environment);
-        Context context = getMockContext();
-        OutputStream output = new ByteArrayOutputStream();
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        mainHandler.handleRequest(mainHandlerInputStream(), output, getMockContext());
 
-        mainHandler.handleRequest(mainHandlerInputStream(), output, context);
-
-        GatewayResponse<?> gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
+        GatewayResponse<Summary> gatewayResponse = parseSuccessResponse(output.toString());
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertTrue(gatewayResponse.getHeaders().containsKey(CONTENT_TYPE));
         assertTrue(gatewayResponse.getHeaders().containsKey(MainHandler.ACCESS_CONTROL_ALLOW_ORIGIN));
-        Summary summary = objectMapper.readValue(gatewayResponse.getBody(), Summary.class);
+
+        Summary summary = gatewayResponse.getBodyObject(Summary.class);
         assertNotNull(summary.getIdentifier());
     }
 
     @Test
-    public void processInputThrowsIllegalStateExceptionWithInternalCauseWhenUrlToPublicationProxyDoesIsNotValid()
+    public void processInputThrowsIllegalStateExceptionWithInternalCauseWhenUrlToPublicationProxyIsNotValid()
         throws IOException, InvalidPageRangeException, InvalidIssnException, URISyntaxException,
                MetadataNotFoundException {
-        Environment environment = mock(Environment.class);
-        when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(ALL_ORIGINS);
-        when(environment.readEnv(PUBLICATION_API_HOST_ENV)).thenReturn(INVALID_HOST_STRING);
-        when(environment.readEnv(PUBLICATION_API_SCHEME_ENV)).thenReturn(HTTP);
-
-        MainHandler mainHandler = createMainHandler(environment);
-        RequestBody requestBody = new RequestBody();
-        requestBody.setDoiUrl(new URL(VALID_DOI));
-        Executable action = () -> mainHandler.processInput(requestBody, null,
-            getMockContext());
+        Environment environmentWithInvalidHost = createEnvironmentWithInvalidHost();
+        MainHandler mainHandler = createMainHandler(environmentWithInvalidHost);
+        RequestBody requestBody = createSampleRequest();
+        Executable action = () -> mainHandler.processInput(requestBody, null, getMockContext());
 
         IllegalStateException exception = assertThrows(IllegalStateException.class, action);
         assertThat(exception.getCause().getClass(), is(equalTo(URISyntaxException.class)));
@@ -144,11 +135,11 @@ public class MainHandlerTest {
         Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
             doiProxyService, publicationPersistenceService, environment);
-        OutputStream output = new ByteArrayOutputStream();
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
 
         mainHandler.handleRequest(malformedInputStream(), output, context);
 
-        GatewayResponse<?> gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
+        GatewayResponse<Problem> gatewayResponse = parseFailureResponse(output.toString());
         assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
     }
 
@@ -184,11 +175,12 @@ public class MainHandlerTest {
 
         MainHandler handler = new MainHandler(objectMapper, publicationConverter, doiTransformService, doiProxyService,
             publicationPersistenceService, environment);
-        OutputStream outputStream = outputStream();
+        ByteArrayOutputStream outputStream = outputStream();
         handler.handleRequest(mainHandlerInputStream(), outputStream, getMockContext());
-        GatewayResponse<String> response = gatewayResponse(outputStream);
+        GatewayResponse<Problem> response = parseFailureResponse(outputStream.toString());
+        String problemDetails = response.getBodyObject(Problem.class).getDetail();
         assertThat(response.getStatusCode(), is(equalTo(Status.BAD_GATEWAY.getStatusCode())));
-        assertThat(response.getBody(), containsString(DoiProxyService.ERROR_READING_METADATA));
+        assertThat(problemDetails, containsString(DoiProxyService.ERROR_READING_METADATA));
     }
 
     @Test
@@ -205,11 +197,41 @@ public class MainHandlerTest {
 
         MainHandler handler = new MainHandler(objectMapper, publicationConverter, doiTransformService, doiProxyService,
             publicationPersistenceService, environment);
-        OutputStream outputStream = outputStream();
+        ByteArrayOutputStream outputStream = outputStream();
         handler.handleRequest(mainHandlerInputStream(), outputStream, getMockContext());
-        GatewayResponse<String> response = gatewayResponse(outputStream);
+        GatewayResponse<Problem> response = parseFailureResponse(outputStream.toString());
+        String problemDetails = response.getBodyObject(Problem.class).getDetail();
         assertThat(response.getStatusCode(), is(equalTo(Status.BAD_GATEWAY.getStatusCode())));
-        assertThat(response.getBody(), containsString(PublicationPersistenceService.WARNING_MESSAGE));
+        assertThat(problemDetails, containsString(PublicationPersistenceService.WARNING_MESSAGE));
+    }
+
+    private RequestBody createSampleRequest() throws MalformedURLException {
+        RequestBody requestBody = new RequestBody();
+        requestBody.setDoiUrl(new URL(VALID_DOI));
+        return requestBody;
+    }
+
+    private Environment createEnvironmentWithInvalidHost() {
+        Environment environment = mock(Environment.class);
+        when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(ALL_ORIGINS);
+        when(environment.readEnv(PUBLICATION_API_HOST_ENV)).thenReturn(INVALID_HOST_STRING);
+        when(environment.readEnv(PUBLICATION_API_SCHEME_ENV)).thenReturn(HTTP);
+        return environment;
+    }
+
+    private GatewayResponse<Summary> parseSuccessResponse(String output) throws JsonProcessingException {
+        return parseGatewayResponse(output, Summary.class);
+    }
+
+    private GatewayResponse<Problem> parseFailureResponse(String output) throws JsonProcessingException {
+        return parseGatewayResponse(output, Problem.class);
+    }
+
+    private <T> GatewayResponse<T> parseGatewayResponse(String output, Class<T> responseObjectClass)
+        throws JsonProcessingException {
+        JavaType typeRef = objectMapper.getTypeFactory()
+            .constructParametricType(GatewayResponse.class, responseObjectClass);
+        return objectMapper.readValue(output, typeRef);
     }
 
     private DoiProxyService mockDoiProxyReceivingFailedResult() {
@@ -304,8 +326,7 @@ public class MainHandlerTest {
 
     private InputStream mainHandlerInputStream() throws MalformedURLException, JsonProcessingException {
 
-        RequestBody requestBody = new RequestBody();
-        requestBody.setDoiUrl(new URL(VALID_DOI));
+        RequestBody requestBody = createSampleRequest();
 
         Map<String, String> requestHeaders = new HashMap<>();
         requestHeaders.put(AUTHORIZATION, "some api key");
@@ -330,13 +351,8 @@ public class MainHandlerTest {
             .build();
     }
 
-    private OutputStream outputStream() {
+    private ByteArrayOutputStream outputStream() {
         return new ByteArrayOutputStream();
-    }
-
-    private GatewayResponse<String> gatewayResponse(OutputStream outputStream) throws JsonProcessingException {
-        JavaType type = objectMapper.getTypeFactory().constructParametricType(GatewayResponse.class, String.class);
-        return objectMapper.readValue(outputStream.toString(), type);
     }
 
     private Map<String, Object> getRequestContext() {
