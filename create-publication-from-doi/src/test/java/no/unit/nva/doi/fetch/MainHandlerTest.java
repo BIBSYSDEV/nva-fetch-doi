@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.CognitoIdentity;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JavaType;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,8 +43,6 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-
-import com.fasterxml.jackson.databind.JavaType;
 import no.unit.nva.doi.CrossRefClient;
 import no.unit.nva.doi.DataciteClient;
 import no.unit.nva.doi.DoiProxyService;
@@ -75,9 +74,7 @@ import org.zalando.problem.Status;
 
 public class MainHandlerTest {
 
-    private static final String SOME_ERROR_MESSAGE = "SomeErrorMessage";
     public static final String VALID_DOI = "https://doi.org/10.1109/5.771073";
-
     public static final String AUTHORIZER = "authorizer";
     public static final String CLAIMS = "claims";
     public static final String CUSTOM_FEIDE_ID = "custom:feideId";
@@ -86,7 +83,7 @@ public class MainHandlerTest {
     public static final String ALL_ORIGINS = "*";
     public static final String INVALID_HOST_STRING = "https://\\.)_";
     public static final String HTTP = "http";
-
+    private static final String SOME_ERROR_MESSAGE = "SomeErrorMessage";
     private Environment environment;
 
     /**
@@ -135,7 +132,7 @@ public class MainHandlerTest {
         Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
             doiProxyService, publicationPersistenceService, environment);
-        OutputStream output = new ByteArrayOutputStream();
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
 
         mainHandler.handleRequest(malformedInputStream(), output, context);
 
@@ -179,7 +176,7 @@ public class MainHandlerTest {
 
         MainHandler handler = new MainHandler(objectMapper, publicationConverter, doiTransformService, doiProxyService,
             publicationPersistenceService, environment);
-        OutputStream outputStream = outputStream();
+        ByteArrayOutputStream outputStream = outputStream();
         handler.handleRequest(mainHandlerInputStream(), outputStream, getMockContext());
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse(outputStream);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(Status.BAD_GATEWAY.getStatusCode())));
@@ -200,7 +197,7 @@ public class MainHandlerTest {
 
         MainHandler handler = new MainHandler(objectMapper, publicationConverter, doiTransformService, doiProxyService,
             publicationPersistenceService, environment);
-        OutputStream outputStream = outputStream();
+        ByteArrayOutputStream outputStream = outputStream();
         handler.handleRequest(mainHandlerInputStream(), outputStream, getMockContext());
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse(outputStream);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(Status.BAD_GATEWAY.getStatusCode())));
@@ -299,8 +296,7 @@ public class MainHandlerTest {
 
     private InputStream mainHandlerInputStream() throws MalformedURLException, JsonProcessingException {
 
-        RequestBody requestBody = new RequestBody();
-        requestBody.setDoiUrl(new URL(VALID_DOI));
+        RequestBody requestBody = createSampleRequest();
 
         Map<String, String> requestHeaders = new HashMap<>();
         requestHeaders.put(AUTHORIZATION, "some api key");
@@ -325,7 +321,7 @@ public class MainHandlerTest {
             .build();
     }
 
-    private OutputStream outputStream() {
+    private ByteArrayOutputStream outputStream() {
         return new ByteArrayOutputStream();
     }
 
