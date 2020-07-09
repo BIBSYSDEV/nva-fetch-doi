@@ -1,48 +1,9 @@
 package no.unit.nva.doi.fetch;
 
-import static no.unit.nva.doi.fetch.MainHandler.ALLOWED_ORIGIN_ENV;
-import static no.unit.nva.doi.fetch.MainHandler.NULL_DOI_URL_ERROR;
-import static no.unit.nva.doi.fetch.MainHandler.PUBLICATION_API_HOST_ENV;
-import static no.unit.nva.doi.fetch.MainHandler.PUBLICATION_API_SCHEME_ENV;
-import static nva.commons.utils.JsonUtils.objectMapper;
-import static org.apache.http.HttpHeaders.AUTHORIZATION;
-import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
-import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
-import static org.apache.http.HttpStatus.SC_OK;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.amazonaws.services.lambda.runtime.CognitoIdentity;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.http.HttpResponse.BodyHandler;
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 import no.unit.nva.doi.CrossRefClient;
 import no.unit.nva.doi.DataciteClient;
 import no.unit.nva.doi.DoiProxyService;
@@ -71,6 +32,46 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.zalando.problem.Problem;
 import org.zalando.problem.Status;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandler;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import static no.unit.nva.doi.fetch.MainHandler.ALLOWED_ORIGIN_ENV;
+import static no.unit.nva.doi.fetch.MainHandler.NULL_DOI_URL_ERROR;
+import static no.unit.nva.doi.fetch.MainHandler.PUBLICATION_API_HOST_ENV;
+import static no.unit.nva.doi.fetch.MainHandler.PUBLICATION_API_SCHEME_ENV;
+import static nva.commons.utils.JsonUtils.objectMapper;
+import static org.apache.http.HttpHeaders.AUTHORIZATION;
+import static org.apache.http.HttpHeaders.CONTENT_TYPE;
+import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
+import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
+import static org.apache.http.HttpStatus.SC_OK;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class MainHandlerTest {
 
@@ -105,8 +106,8 @@ public class MainHandlerTest {
         mainHandler.handleRequest(mainHandlerInputStream(), output, getMockContext());
         GatewayResponse<Summary> gatewayResponse = parseSuccessResponse(output.toString());
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
-        assertTrue(gatewayResponse.getHeaders().containsKey(CONTENT_TYPE));
-        assertTrue(gatewayResponse.getHeaders().containsKey(MainHandler.ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
+        assertThat(gatewayResponse.getHeaders(), hasKey(MainHandler.ACCESS_CONTROL_ALLOW_ORIGIN));
         Summary summary = gatewayResponse.getBodyObject(Summary.class);
         assertNotNull(summary.getIdentifier());
     }
@@ -133,9 +134,7 @@ public class MainHandlerTest {
         MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
             doiProxyService, publicationPersistenceService, environment);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-
         mainHandler.handleRequest(malformedInputStream(), output, context);
-
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse(output);
         assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
         assertThat(getProblemDetail(gatewayResponse), containsString(NULL_DOI_URL_ERROR));
@@ -155,10 +154,8 @@ public class MainHandlerTest {
         Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
             doiProxyService, publicationPersistenceService, environment);
-        OutputStream output = new ByteArrayOutputStream();
-
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
         mainHandler.handleRequest(mainHandlerInputStream(), output, context);
-
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse(output);
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
         assertThat(getProblemDetail(gatewayResponse), containsString(SOME_ERROR_MESSAGE));
