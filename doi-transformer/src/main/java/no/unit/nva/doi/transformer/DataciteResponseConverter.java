@@ -43,8 +43,8 @@ import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidPageRangeException;
 import no.unit.nva.model.exceptions.MalformedContributorException;
-import no.unit.nva.model.instancetypes.JournalArticle;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.Range;
 import nva.commons.utils.doi.DoiConverterImpl;
 
@@ -126,9 +126,9 @@ public class DataciteResponseConverter extends AbstractConverter {
             .build();
     }
 
-    private PublicationInstance extractPublicationInstance(DataciteResponse dataciteResponse)
+    private PublicationInstance<?> extractPublicationInstance(DataciteResponse dataciteResponse)
         throws InvalidPageRangeException {
-        PublicationInstance publicationInstance = null;
+        PublicationInstance<?> publicationInstance = null;
         if (PublicationType.JOURNAL_CONTENT.equals(extractPublicationType(dataciteResponse))) {
             DataciteContainer container = dataciteResponse.getContainer();
             String issue = Optional.ofNullable(container.getIssue()).orElse(null);

@@ -41,8 +41,8 @@ import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidPageRangeException;
 import no.unit.nva.model.exceptions.MalformedContributorException;
-import no.unit.nva.model.instancetypes.JournalArticle;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.Range;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.attempt.Try;
@@ -138,7 +138,7 @@ public class CrossRefConverter extends AbstractConverter {
 
     private Reference extractReference(CrossRefDocument document) throws InvalidIssnException,
                                                                          InvalidPageRangeException {
-        PublicationInstance instance = extractPublicationInstance(document);
+        PublicationInstance<?> instance = extractPublicationInstance(document);
         BasicContext context = extractPublicationContext(document);
         return new Reference.Builder()
             .withDoi(doiConverter.toUri(document.getDoi()))
@@ -190,7 +190,8 @@ public class CrossRefConverter extends AbstractConverter {
             .orElse(null);
     }
 
-    private PublicationInstance extractPublicationInstance(CrossRefDocument document) throws InvalidPageRangeException {
+    private PublicationInstance<?> extractPublicationInstance(CrossRefDocument document) throws
+            InvalidPageRangeException {
         return new JournalArticle.Builder()
             .withVolume(document.getVolume())
             .withIssue(document.getIssue())
