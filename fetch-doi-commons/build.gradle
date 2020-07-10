@@ -17,7 +17,7 @@ dependencies {
         because 'Used by org.apache.logging.log4j:log4j-slf4j18-impl:2.13.2 in nva-commons'
     }
     api 'com.github.BIBSYSDEV:aws-build-tools:v1.5.5'
-    api group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: '0.10.0'
+    api group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: '0.10.1'
     api group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: '0.3.5'
 
 }
