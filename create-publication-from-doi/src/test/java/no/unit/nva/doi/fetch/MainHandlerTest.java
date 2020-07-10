@@ -20,7 +20,6 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.exceptions.InvalidPageRangeException;
 import no.unit.nva.model.util.OrgNumberMapper;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.TestHeaders;
@@ -114,7 +113,7 @@ public class MainHandlerTest {
 
     @Test
     public void processInputThrowsIllegalStateExceptionWithInternalCauseWhenUrlToPublicationProxyIsNotValid()
-            throws IOException, InvalidPageRangeException, InvalidIssnException, URISyntaxException,
+            throws IOException, InvalidIssnException, URISyntaxException,
             MetadataNotFoundException {
         Environment environmentWithInvalidHost = createEnvironmentWithInvalidHost();
         MainHandler mainHandler = createMainHandler(environmentWithInvalidHost);
@@ -208,7 +207,7 @@ public class MainHandlerTest {
     }
 
     private MainHandler createMainHandler(Environment environment)
-        throws URISyntaxException, IOException, InvalidPageRangeException, InvalidIssnException,
+        throws URISyntaxException, IOException, InvalidIssnException,
                MetadataNotFoundException {
         PublicationConverter publicationConverter = mockPublicationConverter();
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
@@ -225,8 +224,7 @@ public class MainHandlerTest {
     }
 
     private DoiTransformService mockDoiTransformServiceReturningSuccessfulResult()
-        throws URISyntaxException, IOException,
-               InvalidPageRangeException, InvalidIssnException {
+        throws URISyntaxException, IOException, InvalidIssnException {
         DoiTransformService service = mock(DoiTransformService.class);
         when(service.transformPublication(anyString(), anyString(), anyString(), anyString()))
             .thenReturn(getPublication());

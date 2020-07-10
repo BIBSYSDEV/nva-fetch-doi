@@ -41,7 +41,6 @@ import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.contexttypes.BasicContext;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.exceptions.InvalidPageRangeException;
 import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
@@ -66,12 +65,10 @@ public class DataciteResponseConverter extends AbstractConverter {
      * @param owner            owner
      * @return publication
      * @throws URISyntaxException       when dataciteResponse contains invalid URIs
-     * @throws InvalidPageRangeException when the mapping uses an incorrect page type related to the PublicationContext
      * @throws InvalidIssnException     when the ISSN is invalid
      */
     public Publication toPublication(DataciteResponse dataciteResponse, Instant now, UUID identifier, String owner,
-                                     URI publisherId) throws URISyntaxException, InvalidPageRangeException,
-                                                             InvalidIssnException {
+                                     URI publisherId) throws URISyntaxException, InvalidIssnException {
 
         return new Publication.Builder()
             .withCreatedDate(now)
@@ -117,8 +114,7 @@ public class DataciteResponseConverter extends AbstractConverter {
         return null;
     }
 
-    private Reference createReference(DataciteResponse dataciteResponse) throws InvalidPageRangeException,
-                                                                                InvalidIssnException {
+    private Reference createReference(DataciteResponse dataciteResponse) throws InvalidIssnException {
         return new Reference.Builder()
             .withDoi(doiConverter.toUri(dataciteResponse.getDoi()))
             .withPublishingContext(extractPublicationContext(dataciteResponse))
@@ -126,8 +122,7 @@ public class DataciteResponseConverter extends AbstractConverter {
             .build();
     }
 
-    private PublicationInstance<?> extractPublicationInstance(DataciteResponse dataciteResponse)
-        throws InvalidPageRangeException {
+    private PublicationInstance<?> extractPublicationInstance(DataciteResponse dataciteResponse) {
         PublicationInstance<?> publicationInstance = null;
         if (PublicationType.JOURNAL_CONTENT.equals(extractPublicationType(dataciteResponse))) {
             DataciteContainer container = dataciteResponse.getContainer();
@@ -144,7 +139,7 @@ public class DataciteResponseConverter extends AbstractConverter {
         return publicationInstance;
     }
 
-    private Range extractPages(DataciteContainer container) throws InvalidPageRangeException {
+    private Range extractPages(DataciteContainer container) {
         return new Range.Builder()
             .withBegin(container.getFirstPage())
             .withEnd(container.getLastPage())

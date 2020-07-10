@@ -14,7 +14,6 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import no.unit.nva.model.exceptions.InvalidPageRangeException;
 import no.unit.nva.model.pages.Range;
 import nva.commons.utils.JacocoGenerated;
 import org.w3c.dom.Document;
@@ -103,9 +102,8 @@ public final class StringUtils {
      *
      * @param pages A "pages" string
      * @return A {@link Range} object with the respective pages.
-     * @throws InvalidPageRangeException when page range is invalid.
      */
-    public static Range parsePage(String pages) throws InvalidPageRangeException {
+    public static Range parsePage(String pages) {
         if (pages == null) {
             return null;
         }
