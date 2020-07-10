@@ -39,7 +39,6 @@ import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.contexttypes.BasicContext;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.exceptions.InvalidPageRangeException;
 import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
@@ -72,14 +71,13 @@ public class CrossRefConverter extends AbstractConverter {
      * @param publisherId the id for a publisher.
      * @return an internal representation of the publication.
      * @throws InvalidIssnException     thrown if a provided ISSN is invalid.
-     * @throws InvalidPageRangeException thrown if the provided page type is incompatible with the publication instance
      *                                  type.
      */
     public Publication toPublication(CrossRefDocument document,
                                      Instant now,
                                      String owner,
                                      UUID identifier,
-                                     URI publisherId) throws InvalidIssnException, InvalidPageRangeException {
+                                     URI publisherId) throws InvalidIssnException {
 
         if (document != null && hasTitle(document)) {
             return new Publication.Builder()
@@ -136,8 +134,7 @@ public class CrossRefConverter extends AbstractConverter {
         }
     }
 
-    private Reference extractReference(CrossRefDocument document) throws InvalidIssnException,
-                                                                         InvalidPageRangeException {
+    private Reference extractReference(CrossRefDocument document) throws InvalidIssnException {
         PublicationInstance<?> instance = extractPublicationInstance(document);
         BasicContext context = extractPublicationContext(document);
         return new Reference.Builder()
@@ -147,7 +144,7 @@ public class CrossRefConverter extends AbstractConverter {
             .build();
     }
 
-    private Range extractPages(CrossRefDocument document) throws InvalidPageRangeException {
+    private Range extractPages(CrossRefDocument document) {
         return StringUtils.parsePage(document.getPage());
     }
 
@@ -190,8 +187,7 @@ public class CrossRefConverter extends AbstractConverter {
             .orElse(null);
     }
 
-    private PublicationInstance<?> extractPublicationInstance(CrossRefDocument document) throws
-            InvalidPageRangeException {
+    private PublicationInstance<?> extractPublicationInstance(CrossRefDocument document) {
         return new JournalArticle.Builder()
             .withVolume(document.getVolume())
             .withIssue(document.getIssue())
