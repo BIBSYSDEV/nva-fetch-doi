@@ -95,7 +95,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         String owner = RequestUtils.getRequestContextParameter(requestInfo, FEIDE_ID);
         String orgNumber = RequestUtils.getRequestContextParameter(requestInfo, ORG_NUMBER);
         String authorization = RequestUtils.getHeader(requestInfo, HttpHeaders.AUTHORIZATION);
-
+        boolean interrupted = false;
         try {
             Publication publication = getPublicationMetadata(input, owner, orgNumber);
             PublicationResponse publicationResponse = tryInsertPublication(authorization, apiUrl, publication);
@@ -103,9 +103,15 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
                 .toSummary(objectMapper.convertValue(publicationResponse, JsonNode.class));
         } catch (URISyntaxException
             | IOException
-            | InvalidIssnException
-            | InterruptedException e) {
+            | InvalidIssnException e) {
             throw new TransformFailedException(e.getMessage());
+        } catch (InterruptedException e) {
+            interrupted = true;
+            throw new TransformFailedException(e.getMessage());
+        } finally {
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
