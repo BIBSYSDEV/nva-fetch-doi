@@ -44,7 +44,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     public static final String PUBLICATION_API_SCHEME_ENV = "PUBLICATION_API_SCHEME";
 
     public static final JsonPointer FEIDE_ID = JsonPointer.compile("/authorizer/claims/custom:feideId");
-    public static final JsonPointer ORG_NUMBER = JsonPointer.compile("/authorizer/claims/custom:orgNumber");
+    public static final JsonPointer CUSTOMER_ID = JsonPointer.compile("/authorizer/claims/custom:customerId");
     public static final String NULL_DOI_URL_ERROR = "doiUrl can not be null";
 
     private final ObjectMapper objectMapper;
@@ -93,11 +93,11 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         validate(input);
 
         String owner = RequestUtils.getRequestContextParameter(requestInfo, FEIDE_ID);
-        String orgNumber = RequestUtils.getRequestContextParameter(requestInfo, ORG_NUMBER);
+        String customerId = RequestUtils.getRequestContextParameter(requestInfo, CUSTOMER_ID);
         String authorization = RequestUtils.getHeader(requestInfo, HttpHeaders.AUTHORIZATION);
         boolean interrupted = false;
         try {
-            Publication publication = getPublicationMetadata(input, owner, orgNumber);
+            Publication publication = getPublicationMetadata(input, owner, URI.create(customerId));
             PublicationResponse publicationResponse = tryInsertPublication(authorization, apiUrl, publication);
             return publicationConverter
                 .toSummary(objectMapper.convertValue(publicationResponse, JsonNode.class));
@@ -132,14 +132,14 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     }
 
     private Publication getPublicationMetadata(RequestBody requestBody,
-                                               String owner, String orgNumber)
+                                               String owner, URI customerId)
         throws URISyntaxException, IOException, InvalidIssnException, MetadataNotFoundException {
         MetadataAndContentLocation metadataAndContentLocation = doiProxyService.lookupDoiMetadata(
             requestBody.getDoiUrl().toString(), DataciteContentType.DATACITE_JSON);
 
         return doiTransformService.transformPublication(
             metadataAndContentLocation.getJson(),
-            metadataAndContentLocation.getContentHeader(), owner, orgNumber);
+            metadataAndContentLocation.getContentHeader(), owner, customerId);
     }
 
     private PublicationResponse tryInsertPublication(String authorization, URI apiUrl, Publication publication)

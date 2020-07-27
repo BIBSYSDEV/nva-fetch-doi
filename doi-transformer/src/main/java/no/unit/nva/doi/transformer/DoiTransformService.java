@@ -12,7 +12,6 @@ import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefApiResponse;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteResponse;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.util.OrgNumberMapper;
 
 public class DoiTransformService {
 
@@ -43,19 +42,18 @@ public class DoiTransformService {
      * @param body            the request body as extracted from the event.
      * @param contentLocation crossref or datacite.
      * @param owner           the owner.
-     * @param orgNumber       the orgNumber.
+     * @param customerId       the customerId.
      * @return a Publication.
      * @throws JsonProcessingException  when cannot process json.
      * @throws URISyntaxException       when the input contains invalid URIs
      * @throws InvalidIssnException     thrown if a provided ISSN is invalid.
      *                                  the publication instance type.
      */
-    public Publication transformPublication(String body, String contentLocation, String owner, String orgNumber)
+    public Publication transformPublication(String body, String contentLocation, String owner, URI customerId)
             throws JsonProcessingException, URISyntaxException, InvalidIssnException {
         UUID uuid = UUID.randomUUID();
-        URI publisherID = toPublisherId(orgNumber);
         Instant now = Instant.now();
-        return convertInputToPublication(body, contentLocation, now, owner, uuid, publisherID);
+        return convertInputToPublication(body, contentLocation, now, owner, uuid, customerId);
     }
 
     protected Publication convertInputToPublication(String body, String contentLocation, Instant now, String owner,
@@ -81,9 +79,5 @@ public class DoiTransformService {
 
         CrossRefDocument document = objectMapper.readValue(body, CrossrefApiResponse.class).getMessage();
         return crossRefConverter.toPublication(document, now, owner, identifier, publisherId);
-    }
-
-    private URI toPublisherId(String orgNumber) {
-        return OrgNumberMapper.toCristinId(orgNumber);
     }
 }

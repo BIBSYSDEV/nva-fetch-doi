@@ -18,6 +18,6 @@ dependencies {
     }
     api 'com.github.BIBSYSDEV:aws-build-tools:v1.5.5'
     api group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: '0.10.1'
-    api group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: '0.3.5'
+    api group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: '0.3.8'
 
 }

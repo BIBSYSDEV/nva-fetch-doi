@@ -20,7 +20,6 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.util.OrgNumberMapper;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.TestHeaders;
 import nva.commons.handlers.GatewayResponse;
@@ -75,10 +74,11 @@ import static org.mockito.Mockito.when;
 public class MainHandlerTest {
 
     public static final String VALID_DOI = "https://doi.org/10.1109/5.771073";
+    public static final String SAMPLE_CUSTOMER_ID = "http://example.org/publisher/123";
     public static final String AUTHORIZER = "authorizer";
     public static final String CLAIMS = "claims";
     public static final String CUSTOM_FEIDE_ID = "custom:feideId";
-    public static final String CUSTOM_ORG_NUMBER = "custom:orgNumber";
+    public static final String CUSTOM_CUSTOMER_ID = "custom:customerId";
     public static final String JUNIT = "junit";
     public static final String ALL_ORIGINS = "*";
     public static final String INVALID_HOST_STRING = "https://\\.)_";
@@ -226,7 +226,7 @@ public class MainHandlerTest {
     private DoiTransformService mockDoiTransformServiceReturningSuccessfulResult()
         throws URISyntaxException, IOException, InvalidIssnException {
         DoiTransformService service = mock(DoiTransformService.class);
-        when(service.transformPublication(anyString(), anyString(), anyString(), anyString()))
+        when(service.transformPublication(anyString(), anyString(), anyString(), any()))
             .thenReturn(getPublication());
         return service;
     }
@@ -324,7 +324,7 @@ public class MainHandlerTest {
         return Map.of(AUTHORIZER, Map.of(
             CLAIMS, Map.of(
                 CUSTOM_FEIDE_ID, JUNIT,
-                CUSTOM_ORG_NUMBER, OrgNumberMapper.UNIT_ORG_NUMBER
+                CUSTOM_CUSTOMER_ID, SAMPLE_CUSTOMER_ID
             ))
         );
     }
