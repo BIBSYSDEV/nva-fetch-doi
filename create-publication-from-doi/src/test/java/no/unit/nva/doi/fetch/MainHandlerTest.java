@@ -1,30 +1,36 @@
 package no.unit.nva.doi.fetch;
 
-import static no.unit.nva.doi.fetch.MainHandler.ALLOWED_ORIGIN_ENV;
-import static no.unit.nva.doi.fetch.MainHandler.PUBLICATION_API_HOST_ENV;
-import static no.unit.nva.doi.fetch.MainHandler.PUBLICATION_API_SCHEME_ENV;
-import static nva.commons.utils.JsonUtils.objectMapper;
-import static org.apache.http.HttpHeaders.AUTHORIZATION;
-import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
-import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
-import static org.apache.http.HttpStatus.SC_OK;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.amazonaws.services.lambda.runtime.CognitoIdentity;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JavaType;
+import no.unit.nva.doi.CrossRefClient;
+import no.unit.nva.doi.DataciteClient;
+import no.unit.nva.doi.DoiProxyService;
+import no.unit.nva.doi.MetadataAndContentLocation;
+import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
+import no.unit.nva.doi.fetch.model.PublicationDate;
+import no.unit.nva.doi.fetch.model.RequestBody;
+import no.unit.nva.doi.fetch.model.Summary;
+import no.unit.nva.doi.fetch.service.PublicationConverter;
+import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
+import no.unit.nva.doi.transformer.DoiTransformService;
+import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Organization;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.exceptions.InvalidIssnException;
+import no.unit.nva.testutils.HandlerRequestBuilder;
+import no.unit.nva.testutils.TestHeaders;
+import nva.commons.handlers.GatewayResponse;
+import nva.commons.utils.Environment;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
+import org.zalando.problem.Problem;
+import org.zalando.problem.Status;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,49 +47,43 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import no.unit.nva.doi.CrossRefClient;
-import no.unit.nva.doi.DataciteClient;
-import no.unit.nva.doi.DoiProxyService;
-import no.unit.nva.doi.MetadataAndContentLocation;
-import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
-import no.unit.nva.doi.fetch.model.PublicationDate;
-import no.unit.nva.doi.fetch.model.RequestBody;
-import no.unit.nva.doi.fetch.model.Summary;
-import no.unit.nva.doi.fetch.service.PublicationConverter;
-import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
-import no.unit.nva.doi.transformer.DoiTransformService;
-import no.unit.nva.doi.transformer.exception.MissingClaimException;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.exceptions.InvalidPageRangeException;
-import no.unit.nva.model.util.OrgNumberMapper;
-import no.unit.nva.testutils.HandlerRequestBuilder;
-import no.unit.nva.testutils.TestHeaders;
-import nva.commons.handlers.GatewayResponse;
-import nva.commons.utils.Environment;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
-import org.zalando.problem.Status;
+
+import static no.unit.nva.doi.fetch.MainHandler.ALLOWED_ORIGIN_ENV;
+import static no.unit.nva.doi.fetch.MainHandler.NULL_DOI_URL_ERROR;
+import static no.unit.nva.doi.fetch.MainHandler.PUBLICATION_API_HOST_ENV;
+import static no.unit.nva.doi.fetch.MainHandler.PUBLICATION_API_SCHEME_ENV;
+import static nva.commons.utils.JsonUtils.objectMapper;
+import static org.apache.http.HttpHeaders.AUTHORIZATION;
+import static org.apache.http.HttpHeaders.CONTENT_TYPE;
+import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
+import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
+import static org.apache.http.HttpStatus.SC_OK;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class MainHandlerTest {
 
-    private static final String SOME_ERROR_MESSAGE = "SomeErrorMessage";
     public static final String VALID_DOI = "https://doi.org/10.1109/5.771073";
-
+    public static final String SAMPLE_CUSTOMER_ID = "http://example.org/publisher/123";
     public static final String AUTHORIZER = "authorizer";
     public static final String CLAIMS = "claims";
     public static final String CUSTOM_FEIDE_ID = "custom:feideId";
-    public static final String CUSTOM_ORG_NUMBER = "custom:orgNumber";
+    public static final String CUSTOM_CUSTOMER_ID = "custom:customerId";
     public static final String JUNIT = "junit";
     public static final String ALL_ORIGINS = "*";
     public static final String INVALID_HOST_STRING = "https://\\.)_";
     public static final String HTTP = "http";
-
+    private static final String SOME_ERROR_MESSAGE = "SomeErrorMessage";
     private Environment environment;
 
     /**
@@ -99,37 +99,26 @@ public class MainHandlerTest {
 
     @Test
     public void testOkResponse()
-        throws Exception {
-
+            throws Exception {
         MainHandler mainHandler = createMainHandler(environment);
-        Context context = getMockContext();
-        OutputStream output = new ByteArrayOutputStream();
-
-        mainHandler.handleRequest(mainHandlerInputStream(), output, context);
-
-        GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        mainHandler.handleRequest(mainHandlerInputStream(), output, getMockContext());
+        GatewayResponse<Summary> gatewayResponse = parseSuccessResponse(output.toString());
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
-        assertTrue(gatewayResponse.getHeaders().keySet().contains(CONTENT_TYPE));
-        assertTrue(gatewayResponse.getHeaders().keySet().contains(MainHandler.ACCESS_CONTROL_ALLOW_ORIGIN));
-        Summary summary = objectMapper.readValue(gatewayResponse.getBody(), Summary.class);
+        assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
+        assertThat(gatewayResponse.getHeaders(), hasKey(MainHandler.ACCESS_CONTROL_ALLOW_ORIGIN));
+        Summary summary = gatewayResponse.getBodyObject(Summary.class);
         assertNotNull(summary.getIdentifier());
     }
 
     @Test
-    public void processInputThrowsIllegalStateExceptionWithInternalCauseWhenUrlToPublicationProxyDoesIsNotValid()
-        throws MissingClaimException, IOException, InvalidPageRangeException, InvalidIssnException, URISyntaxException,
-               MetadataNotFoundException {
-        Environment environment = mock(Environment.class);
-        when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(ALL_ORIGINS);
-        when(environment.readEnv(PUBLICATION_API_HOST_ENV)).thenReturn(INVALID_HOST_STRING);
-        when(environment.readEnv(PUBLICATION_API_SCHEME_ENV)).thenReturn(HTTP);
-
-        MainHandler mainHandler = createMainHandler(environment);
-        RequestBody requestBody = new RequestBody();
-        requestBody.setDoiUrl(new URL(VALID_DOI));
-        Executable action = () -> mainHandler.processInput(requestBody, null,
-            getMockContext());
-
+    public void processInputThrowsIllegalStateExceptionWithInternalCauseWhenUrlToPublicationProxyIsNotValid()
+            throws IOException, InvalidIssnException, URISyntaxException,
+            MetadataNotFoundException {
+        Environment environmentWithInvalidHost = createEnvironmentWithInvalidHost();
+        MainHandler mainHandler = createMainHandler(environmentWithInvalidHost);
+        RequestBody requestBody = createSampleRequest();
+        Executable action = () -> mainHandler.processInput(requestBody, null, getMockContext());
         IllegalStateException exception = assertThrows(IllegalStateException.class, action);
         assertThat(exception.getCause().getClass(), is(equalTo(URISyntaxException.class)));
     }
@@ -143,16 +132,18 @@ public class MainHandlerTest {
         Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
             doiProxyService, publicationPersistenceService, environment);
-        OutputStream output = new ByteArrayOutputStream();
-
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
         mainHandler.handleRequest(malformedInputStream(), output, context);
-
-        GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
+        GatewayResponse<Problem> gatewayResponse = parseFailureResponse(output);
         assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
+        assertThat(getProblemDetail(gatewayResponse), containsString(NULL_DOI_URL_ERROR));
+    }
+
+    private String getProblemDetail(GatewayResponse<Problem> gatewayResponse) throws JsonProcessingException {
+        return gatewayResponse.getBodyObject(Problem.class).getDetail();
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void testInternalServerErrorResponse() throws Exception {
         PublicationConverter publicationConverter = mock(PublicationConverter.class);
         when(publicationConverter.toSummary(any())).thenThrow(new RuntimeException(SOME_ERROR_MESSAGE));
@@ -162,18 +153,15 @@ public class MainHandlerTest {
         Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
             doiProxyService, publicationPersistenceService, environment);
-        OutputStream output = new ByteArrayOutputStream();
-
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
         mainHandler.handleRequest(mainHandlerInputStream(), output, context);
-
-        GatewayResponse<String> gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
+        GatewayResponse<Problem> gatewayResponse = parseFailureResponse(output);
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
-        assertThat(gatewayResponse.getBody(), containsString(SOME_ERROR_MESSAGE));
+        assertThat(getProblemDetail(gatewayResponse), containsString(SOME_ERROR_MESSAGE));
     }
 
     @Test
     @DisplayName("handler returns BadGateway error when DoiProxyService returns failed response")
-    @SuppressWarnings("unchecked")
     public void handlerReturnsBadGatewayErrorWhenDoiProxyServiceReturnsFailedResponse()
         throws Exception {
 
@@ -184,16 +172,15 @@ public class MainHandlerTest {
 
         MainHandler handler = new MainHandler(objectMapper, publicationConverter, doiTransformService, doiProxyService,
             publicationPersistenceService, environment);
-        OutputStream outputStream = outputStream();
+        ByteArrayOutputStream outputStream = outputStream();
         handler.handleRequest(mainHandlerInputStream(), outputStream, getMockContext());
-        GatewayResponse<String> response = gatewayResponse(outputStream);
-        assertThat(response.getStatusCode(), is(equalTo(Status.BAD_GATEWAY.getStatusCode())));
-        assertThat(response.getBody(), containsString(DoiProxyService.ERROR_READING_METADATA));
+        GatewayResponse<Problem> gatewayResponse = parseFailureResponse(outputStream);
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(Status.BAD_GATEWAY.getStatusCode())));
+        assertThat(getProblemDetail(gatewayResponse), containsString(DoiProxyService.ERROR_READING_METADATA));
     }
 
     @Test
     @DisplayName("handler returns BadGateway when ResourcePersistenceService returns failed response")
-    @SuppressWarnings("unchecked")
     public void handlerReturnsBadGatewayErrorWhenResourcePersistenceServiceReturnsFailedResponse()
         throws Exception {
 
@@ -206,11 +193,11 @@ public class MainHandlerTest {
 
         MainHandler handler = new MainHandler(objectMapper, publicationConverter, doiTransformService, doiProxyService,
             publicationPersistenceService, environment);
-        OutputStream outputStream = outputStream();
+        ByteArrayOutputStream outputStream = outputStream();
         handler.handleRequest(mainHandlerInputStream(), outputStream, getMockContext());
-        GatewayResponse<String> response = gatewayResponse(outputStream);
-        assertThat(response.getStatusCode(), is(equalTo(Status.BAD_GATEWAY.getStatusCode())));
-        assertThat(response.getBody(), containsString(PublicationPersistenceService.WARNING_MESSAGE));
+        GatewayResponse<Problem> gatewayResponse = parseFailureResponse(outputStream);
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(Status.BAD_GATEWAY.getStatusCode())));
+        assertThat(getProblemDetail(gatewayResponse), containsString(PublicationPersistenceService.WARNING_MESSAGE));
     }
 
     private DoiProxyService mockDoiProxyReceivingFailedResult() {
@@ -220,7 +207,7 @@ public class MainHandlerTest {
     }
 
     private MainHandler createMainHandler(Environment environment)
-        throws URISyntaxException, IOException, InvalidPageRangeException, MissingClaimException, InvalidIssnException,
+        throws URISyntaxException, IOException, InvalidIssnException,
                MetadataNotFoundException {
         PublicationConverter publicationConverter = mockPublicationConverter();
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
@@ -237,10 +224,9 @@ public class MainHandlerTest {
     }
 
     private DoiTransformService mockDoiTransformServiceReturningSuccessfulResult()
-        throws URISyntaxException, IOException,
-               InvalidPageRangeException, InvalidIssnException {
+        throws URISyntaxException, IOException, InvalidIssnException {
         DoiTransformService service = mock(DoiTransformService.class);
-        when(service.transformPublication(anyString(), anyString(), anyString(), anyString()))
+        when(service.transformPublication(anyString(), anyString(), anyString(), any()))
             .thenReturn(getPublication());
         return service;
     }
@@ -283,7 +269,7 @@ public class MainHandlerTest {
     @SuppressWarnings("unchecked")
     private HttpClient mockHttpClientReceivingFailure() throws IOException, InterruptedException {
         HttpClient client = mock(HttpClient.class);
-        HttpResponse failedResponse = mockFailedHttpResponse();
+        HttpResponse<Object> failedResponse = mockFailedHttpResponse();
         when(client.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(failedResponse);
         return client;
     }
@@ -305,8 +291,7 @@ public class MainHandlerTest {
 
     private InputStream mainHandlerInputStream() throws MalformedURLException, JsonProcessingException {
 
-        RequestBody requestBody = new RequestBody();
-        requestBody.setDoiUrl(new URL(VALID_DOI));
+        RequestBody requestBody = createSampleRequest();
 
         Map<String, String> requestHeaders = new HashMap<>();
         requestHeaders.put(AUTHORIZATION, "some api key");
@@ -331,20 +316,45 @@ public class MainHandlerTest {
             .build();
     }
 
-    private OutputStream outputStream() {
+    private ByteArrayOutputStream outputStream() {
         return new ByteArrayOutputStream();
-    }
-
-    private GatewayResponse gatewayResponse(OutputStream outputStream) throws JsonProcessingException {
-        return objectMapper.readValue(outputStream.toString(), GatewayResponse.class);
     }
 
     private Map<String, Object> getRequestContext() {
         return Map.of(AUTHORIZER, Map.of(
             CLAIMS, Map.of(
                 CUSTOM_FEIDE_ID, JUNIT,
-                CUSTOM_ORG_NUMBER, OrgNumberMapper.UNIT_ORG_NUMBER
+                CUSTOM_CUSTOMER_ID, SAMPLE_CUSTOMER_ID
             ))
         );
+    }
+
+    private GatewayResponse<Summary> parseSuccessResponse(String output) throws JsonProcessingException {
+        return parseGatewayResponse(output, Summary.class);
+    }
+
+    private GatewayResponse<Problem> parseFailureResponse(OutputStream output) throws JsonProcessingException {
+        return parseGatewayResponse(output.toString(), Problem.class);
+    }
+
+    private <T> GatewayResponse<T> parseGatewayResponse(String output, Class<T> responseObjectClass)
+            throws JsonProcessingException {
+        JavaType typeRef = objectMapper.getTypeFactory()
+                .constructParametricType(GatewayResponse.class, responseObjectClass);
+        return objectMapper.readValue(output, typeRef);
+    }
+
+    private RequestBody createSampleRequest() throws MalformedURLException {
+        RequestBody requestBody = new RequestBody();
+        requestBody.setDoiUrl(new URL(VALID_DOI));
+        return requestBody;
+    }
+
+    private Environment createEnvironmentWithInvalidHost() {
+        Environment environment = mock(Environment.class);
+        when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(ALL_ORIGINS);
+        when(environment.readEnv(PUBLICATION_API_HOST_ENV)).thenReturn(INVALID_HOST_STRING);
+        when(environment.readEnv(PUBLICATION_API_SCHEME_ENV)).thenReturn(HTTP);
+        return environment;
     }
 }
