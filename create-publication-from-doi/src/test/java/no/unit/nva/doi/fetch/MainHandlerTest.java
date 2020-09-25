@@ -22,6 +22,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.TestHeaders;
+import nva.commons.handlers.ApiGatewayHandler;
 import nva.commons.handlers.GatewayResponse;
 import nva.commons.utils.Environment;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,6 +53,7 @@ import static no.unit.nva.doi.fetch.MainHandler.ALLOWED_ORIGIN_ENV;
 import static no.unit.nva.doi.fetch.MainHandler.NULL_DOI_URL_ERROR;
 import static no.unit.nva.doi.fetch.MainHandler.PUBLICATION_API_HOST_ENV;
 import static no.unit.nva.doi.fetch.MainHandler.PUBLICATION_API_SCHEME_ENV;
+import static nva.commons.handlers.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.apache.http.HttpHeaders.AUTHORIZATION;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
@@ -157,7 +159,8 @@ public class MainHandlerTest {
         mainHandler.handleRequest(mainHandlerInputStream(), output, context);
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse(output);
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
-        assertThat(getProblemDetail(gatewayResponse), containsString(SOME_ERROR_MESSAGE));
+        assertThat(getProblemDetail(gatewayResponse), containsString(
+            MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS));
     }
 
     @Test
