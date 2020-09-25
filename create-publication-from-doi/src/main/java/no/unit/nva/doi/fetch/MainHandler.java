@@ -32,7 +32,6 @@ import nva.commons.handlers.RequestInfo;
 import nva.commons.utils.Environment;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
-import nva.commons.utils.RequestUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
@@ -92,9 +91,9 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         URI apiUrl = urlToPublicationProxy();
         validate(input);
 
-        String owner = RequestUtils.getRequestContextParameter(requestInfo, FEIDE_ID);
-        String customerId = RequestUtils.getRequestContextParameter(requestInfo, CUSTOMER_ID);
-        String authorization = RequestUtils.getHeader(requestInfo, HttpHeaders.AUTHORIZATION);
+        String owner = requestInfo.getRequestContextParameter(FEIDE_ID);
+        String customerId = requestInfo.getRequestContextParameter(CUSTOMER_ID);
+        String authorization = requestInfo.getHeader(HttpHeaders.AUTHORIZATION);
         boolean interrupted = false;
         try {
             Publication publication = getPublicationMetadata(input, owner, URI.create(customerId));
