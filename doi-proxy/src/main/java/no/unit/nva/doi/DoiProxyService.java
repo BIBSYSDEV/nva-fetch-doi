@@ -5,7 +5,6 @@ import static java.util.Objects.isNull;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
-import java.time.Instant;
 import java.util.Optional;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
 import nva.commons.utils.JacocoGenerated;
