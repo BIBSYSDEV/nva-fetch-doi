@@ -97,7 +97,10 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         boolean interrupted = false;
         try {
             Publication publication = getPublicationMetadata(input, owner, URI.create(customerId));
+            long insertStartTime = System.nanoTime();
             PublicationResponse publicationResponse = tryInsertPublication(authorization, apiUrl, publication);
+            long insertEndTime = System.nanoTime();
+            logger.info("Publication inserted after {} ms", (insertEndTime - insertStartTime) / 1000);
             return publicationConverter
                 .toSummary(objectMapper.convertValue(publicationResponse, JsonNode.class));
         } catch (URISyntaxException

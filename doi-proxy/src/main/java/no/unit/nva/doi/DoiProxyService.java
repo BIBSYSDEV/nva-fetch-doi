@@ -5,6 +5,7 @@ import static java.util.Objects.isNull;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
+import java.time.Instant;
 import java.util.Optional;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
 import nva.commons.utils.JacocoGenerated;
@@ -55,9 +56,15 @@ public class DoiProxyService {
         throws MetadataNotFoundException, IOException, URISyntaxException {
         logger.info(GETING_DOI_METADATA_INFO_MESSAGE + doiUrl);
         MetadataAndContentLocation metadataAndContentLocation;
+        long crossRefStartTime = System.nanoTime();
         Optional<MetadataAndContentLocation> crossRefResult = crossRefClient.fetchDataForDoi(doiUrl);
+        long crossRefEndTime = System.nanoTime();
+        logger.info("Received response from Crossref after {} ms", (crossRefEndTime - crossRefStartTime) / 1000);
         if (crossRefResult.isEmpty()) {
+            long dataciteStartTime = System.nanoTime();
             metadataAndContentLocation = dataciteClient.fetchMetadata(doiUrl, dataciteContentType);
+            long dataciteEndTime = System.nanoTime();
+            logger.info("Received response from Datacite after {} ms", (dataciteEndTime - dataciteStartTime) / 1000);
         } else {
             metadataAndContentLocation = crossRefResult.get();
         }
