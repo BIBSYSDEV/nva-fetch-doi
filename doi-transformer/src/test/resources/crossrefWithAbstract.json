@@ -5,216 +5,95 @@
   "message": {
     "indexed": {
       "date-parts": [
-        [
-          2019,
-          11,
-          18
-        ]
+        [2020, 6, 22]
       ],
-      "date-time": "2019-11-18T20:07:37Z",
-      "timestamp": 1574107657919
+      "date-time": "2020-06-22T02:40:19Z",
+      "timestamp": 1592793619233
     },
-    "reference-count": 9,
-    "publisher": "World Scientific Pub Co Pte Lt",
-    "issue": "04",
+    "reference-count": 0,
+    "publisher": "Brill",
+    "issue": "2",
     "content-domain": {
       "domain": [],
       "crossmark-restriction": false
     },
-    "short-container-title": [
-      "Int. J. Rel. Qual. Saf. Eng."
-    ],
+    "short-container-title": ["Mission Stud."],
     "published-print": {
       "date-parts": [
-        [
-          2003,
-          12
-        ]
+        [2020, 6, 19]
       ]
     },
-    "abstract": "<jats:p> The basic multistate reliability theory was developed in the eighties and the beginning of the nineties, replacing traditional reliability theory where the system and the components are always described as functioning or failed. In Natvig et al.<jats:sup>10<\/jats:sup> the theory was applied to an electrical power generation system for two nearby oilrigs, where the amounts of power that may possibly be supplied to the two oilrigs are considered as system states. However, there is still a need for several convincing case studies demonstrating the practicability of the generalizations introduced. In the present paper the theory is applied to the Norwegian offshore gas pipeline network in the North Sea, as of the end of the eighties, transporting gas to Emden in Germany. The system state depends on the amount of gas actually delivered, but also to some extent on the amount of gas compressed mainly by the compressor component closest to Emden. <\/jats:p>",
-    "DOI": "10.1142\/s0218539303001214",
+    "abstract": "<jats:title>Abstract<\/jats:title><jats:p>The following article focuses the attention on how participants in Short Term Mission (<jats:sc>STM<\/jats:sc>) from Norway understand the practice they have been part of. In the first part the article investigates what motivates participation in <jats:sc>STM<\/jats:sc>, and how <jats:sc>STM<\/jats:sc> is understood to be influential in life-choices. The second part of the article introduces \u201cformation\u201d as a theoretical lens. In this part the article investigates the working hypothesis suggesting that <jats:sc>STM<\/jats:sc> from Norway is best understood as a formative trip. The material is constructed from a survey with 153 respondents.<\/jats:p>",
+    "DOI": "10.1163\/15733831-12341717",
     "type": "journal-article",
     "created": {
       "date-parts": [
-        [
-          2003,
-          12,
-          5
-        ]
+        [2020, 6, 22]
       ],
-      "date-time": "2003-12-05T09:20:48Z",
-      "timestamp": 1070616048000
+      "date-time": "2020-06-22T02:00:27Z",
+      "timestamp": 1592791227000
     },
-    "page": "361-381",
+    "page": "242-264",
     "source": "Crossref",
-    "is-referenced-by-count": 12,
-    "title": [
-      "AN APPLICATION OF MULTISTATE RELIABILITY THEORY TO AN OFFSHORE GAS PIPELINE NETWORK"
-    ],
-    "prefix": "10.1142",
-    "volume": "10",
-    "author": [
-      {
-        "given": "BENT",
-        "family": "NATVIG",
-        "sequence": "first",
-        "affiliation": [
-          {
-            "name": "Department of Mathematics, University of Oslo, P. O. Box 1053 Blindern, N-0316 Oslo, Norway"
-          }
-        ]
-      },
-      {
-        "given": "HANS W. H.",
-        "family": "M\u00d8RCH",
-        "sequence": "additional",
-        "affiliation": [
-          {
-            "name": "Faculty of Education, Oslo University College, Pilestredet 52, N-0167 Oslo, Norway"
-          }
-        ]
-      }
-    ],
-    "member": "219",
-    "published-online": {
-      "date-parts": [
-        [
-          2012,
-          4,
-          30
-        ]
-      ]
-    },
-    "reference": [
-      {
-        "key": "rf1",
-        "author": "Barlow R. E.",
-        "year": "1975",
-        "volume-title": "Statistical Theory of Reliability and Life Testing. Probability Models"
-      },
-      {
-        "key": "rf2",
-        "DOI": "10.1080\/01621459.1970.10481083",
-        "doi-asserted-by": "publisher"
-      },
-      {
-        "key": "rf3",
-        "DOI": "10.2307\/1427124",
-        "doi-asserted-by": "publisher"
-      },
-      {
-        "key": "rf5",
-        "author": "Karlin S.",
-        "year": "1975",
-        "volume-title": "A First Course in Stochastic Processes"
-      },
-      {
-        "key": "rf7",
-        "DOI": "10.2307\/1426502",
-        "doi-asserted-by": "publisher"
-      },
-      {
-        "key": "rf8",
-        "author": "Natvig B.",
-        "volume": "5",
-        "first-page": "732",
-        "journal-title": "Encyclopedia of Statistical Sciences"
-      },
-      {
-        "key": "rf9",
-        "DOI": "10.2307\/1427314",
-        "doi-asserted-by": "publisher"
-      },
-      {
-        "key": "rf10",
-        "DOI": "10.2307\/1427256",
-        "doi-asserted-by": "publisher"
-      },
-      {
-        "key": "rf11",
-        "author": "Natvig B.",
-        "volume": "20",
-        "first-page": "171",
-        "journal-title": "Scand. J. Statist."
-      }
-    ],
-    "container-title": [
-      "International Journal of Reliability, Quality and Safety Engineering"
-    ],
+    "is-referenced-by-count": 0,
+    "title": ["Short Term Mission and Formation \u2013 A Norwegian Perspective"],
+    "prefix": "10.1163",
+    "volume": "37",
+    "author": [{
+      "given": "Robert",
+      "family": "Lilleaasen",
+      "sequence": "first",
+      "affiliation": [{
+        "name": "Associate Professor, Fjellhaug International University College Oslo Norway"
+      }]
+    }, {
+      "given": "Ingebj\u00f8rg",
+      "family": "Nandrup",
+      "sequence": "additional",
+      "affiliation": [{
+        "name": "Assistant Professor, Fjellhaug International University College Oslo Norway"
+      }]
+    }],
+    "member": "50",
+    "container-title": ["Mission Studies"],
     "original-title": [],
-    "language": "en",
-    "link": [
-      {
-        "URL": "https:\/\/www.worldscientific.com\/doi\/pdf\/10.1142\/S0218539303001214",
-        "content-type": "unspecified",
-        "content-version": "vor",
-        "intended-application": "similarity-checking"
-      }
-    ],
+    "link": [{
+      "URL": "https:\/\/brill.com\/view\/journals\/mist\/37\/2\/article-p242_6.xml",
+      "content-type": "text\/html",
+      "content-version": "vor",
+      "intended-application": "text-mining"
+    }, {
+      "URL": "https:\/\/brill.com\/downloadpdf\/journals\/mist\/37\/2\/article-p242_6.xml",
+      "content-type": "unspecified",
+      "content-version": "vor",
+      "intended-application": "similarity-checking"
+    }],
     "deposited": {
       "date-parts": [
-        [
-          2019,
-          8,
-          6
-        ]
+        [2020, 6, 22]
       ],
-      "date-time": "2019-08-06T15:56:27Z",
-      "timestamp": 1565106987000
+      "date-time": "2020-06-22T02:00:47Z",
+      "timestamp": 1592791247000
     },
     "score": 1.0,
     "subtitle": [],
     "short-title": [],
     "issued": {
       "date-parts": [
-        [
-          2003,
-          12
-        ]
+        [2020, 6, 19]
       ]
     },
-    "references-count": 9,
+    "references-count": 0,
     "journal-issue": {
-      "published-online": {
-        "date-parts": [
-          [
-            2012,
-            4,
-            30
-          ]
-        ]
-      },
-      "published-print": {
-        "date-parts": [
-          [
-            2003,
-            12
-          ]
-        ]
-      },
-      "issue": "04"
+      "issue": "2"
     },
-    "alternative-id": [
-      "10.1142\/S0218539303001214"
-    ],
-    "URL": "http:\/\/dx.doi.org\/10.1142\/s0218539303001214",
-    "relation": {
-      "cites": []
-    },
-    "ISSN": [
-      "0218-5393",
-      "1793-6446"
-    ],
-    "issn-type": [
-      {
-        "value": "02185393",
-        "type": "print"
-      },
-      {
-        "value": "1793-6446",
-        "type": "electronic"
-      }
-    ]
+    "URL": "http:\/\/dx.doi.org\/10.1163\/15733831-12341717",
+    "relation": {},
+    "ISSN": ["0168-9789", "1573-3831"],
+    "issn-type": [{
+      "value": "1573-3831",
+      "type": "electronic"
+    }],
+    "subject": ["Religious studies", "History"]
   }
 }
