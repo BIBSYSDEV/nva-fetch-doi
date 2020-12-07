@@ -55,9 +55,15 @@ public class DoiProxyService {
         throws MetadataNotFoundException, IOException, URISyntaxException {
         logger.info(GETING_DOI_METADATA_INFO_MESSAGE + doiUrl);
         MetadataAndContentLocation metadataAndContentLocation;
+        long crossRefStartTime = System.nanoTime();
         Optional<MetadataAndContentLocation> crossRefResult = crossRefClient.fetchDataForDoi(doiUrl);
+        long crossRefEndTime = System.nanoTime();
+        logger.info("Received response from Crossref after {} ms", (crossRefEndTime - crossRefStartTime) / 1000);
         if (crossRefResult.isEmpty()) {
+            long dataciteStartTime = System.nanoTime();
             metadataAndContentLocation = dataciteClient.fetchMetadata(doiUrl, dataciteContentType);
+            long dataciteEndTime = System.nanoTime();
+            logger.info("Received response from Datacite after {} ms", (dataciteEndTime - dataciteStartTime) / 1000);
         } else {
             metadataAndContentLocation = crossRefResult.get();
         }

@@ -91,7 +91,7 @@ public class CrossRefConverter extends AbstractConverter {
                 .withIndexedDate(createIndexedDate())
                 .withHandle(createHandle())
                 .withLink(createLink())
-                .withProject(createProject())
+                .withProjects(createProjects())
                 .withFileSet(createFilseSet())
                 .withEntityDescription(new EntityDescription.Builder()
                     .withContributors(toContributors(document.getAuthor()))
@@ -320,8 +320,8 @@ public class CrossRefConverter extends AbstractConverter {
         return null;
     }
 
-    private ResearchProject createProject() {
-        return null;
+    private List<ResearchProject> createProjects() {
+        return Collections.emptyList();
     }
 
     private URI createLink() {
