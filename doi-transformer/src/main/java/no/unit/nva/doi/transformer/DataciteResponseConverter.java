@@ -8,6 +8,7 @@ import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -81,7 +82,7 @@ public class DataciteResponseConverter extends AbstractConverter {
             .withHandle(extractHandle())
             .withLink(extractLink(dataciteResponse))
             .withIndexedDate(extractIndexedDate())
-            .withProject(extractProject())
+            .withProjects(extractProjects())
             .withEntityDescription(
                 new EntityDescription.Builder()
                     .withContributors(toContributors(dataciteResponse.getCreators()))
@@ -233,8 +234,8 @@ public class DataciteResponseConverter extends AbstractConverter {
         return null;
     }
 
-    private ResearchProject extractProject() {
-        return null;
+    private List<ResearchProject> extractProjects() {
+        return Collections.emptyList();
     }
 
     private Instant extractIndexedDate() {
