@@ -27,6 +27,7 @@ public final class StringUtils {
     public static final String NOT_DIGIT = "\\D";
     public static final String DOUBLE_WHITESPACE = "\\s\\s";
     public static final String PATH_TO_TEXT = "//text()";
+    public static final String BASIC_OUTER_XML_TAGS_TEMPLATE = "<naive>%s</naive>";
 
     private StringUtils() {
     }
@@ -72,13 +73,17 @@ public final class StringUtils {
     private static Document createXmlDocumentFromInput(String input, DocumentBuilderFactory documentBuilderFactory)
         throws ParserConfigurationException, SAXException, IOException {
         DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
-        try (Reader reader = new StringReader(input)) {
+        try (Reader reader = new StringReader(wrapInXml(input))) {
             InputSource inputSource = new InputSource(reader);
             inputSource.setEncoding(StandardCharsets.UTF_8.name());
             Document document = documentBuilder.parse(inputSource);
             document.getDocumentElement().normalize();
             return document;
         }
+    }
+
+    private static String wrapInXml(String input) {
+        return String.format(BASIC_OUTER_XML_TAGS_TEMPLATE, input);
     }
 
     /**
