@@ -35,6 +35,8 @@ public class CrossRefClient {
     private static final String DOI_EXAMPLES = "10.1000/182, https://doi.org/10.1000/182";
     public static final String ILLEGAL_DOI_MESSAGE = "Illegal DOI:%s. Valid examples:" + DOI_EXAMPLES;
     public static final String FETCH_ERROR = "CrossRefClient failed while trying to fetch:";
+    public static final String CROSSREF_USER_AGENT =
+            "nva-fetch-doi/1.0 (https://github.com/BIBSYSDEV/nva-fetch-doi; mailto:support@unit.no)";
 
     private final transient HttpClient httpClient;
     private static final Logger logger = LoggerFactory.getLogger(CrossRefClient.class);
@@ -80,6 +82,7 @@ public class CrossRefClient {
     private HttpRequest createRequest(URI doiUri) {
         return HttpRequest.newBuilder(doiUri)
             .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+            .header(HttpHeaders.USER_AGENT, CROSSREF_USER_AGENT)
             .timeout(Duration.ofSeconds(TIMEOUT_DURATION))
             .GET()
             .build();
