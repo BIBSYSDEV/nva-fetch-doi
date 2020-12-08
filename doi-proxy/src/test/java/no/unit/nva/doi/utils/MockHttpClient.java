@@ -4,6 +4,7 @@ import java.net.Authenticator;
 import java.net.CookieHandler;
 import java.net.ProxySelector;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
@@ -17,10 +18,15 @@ import javax.net.ssl.SSLParameters;
 
 public class MockHttpClient<R> extends HttpClient {
 
+    protected HttpRequest httpRequest;
     protected final AbstractHttpResponse<R> response;
 
     public MockHttpClient(AbstractHttpResponse<R> response) {
         this.response = response;
+    }
+
+    public HttpRequest getHttpRequest() {
+        return httpRequest;
     }
 
     // T must be the same with R
@@ -29,6 +35,7 @@ public class MockHttpClient<R> extends HttpClient {
     public <T> CompletableFuture<HttpResponse<T>> sendAsync(HttpRequest request,
                                                             BodyHandler<T> responseBodyHandler) {
 
+        this.httpRequest = request;
         return CompletableFuture.completedFuture(((HttpResponse<T>) response));
     }
 
@@ -36,6 +43,7 @@ public class MockHttpClient<R> extends HttpClient {
     public <T> CompletableFuture<HttpResponse<T>> sendAsync(HttpRequest request,
                                                             BodyHandler<T> responseBodyHandler,
                                                             PushPromiseHandler<T> pushPromiseHandler) {
+        this.httpRequest = request;
         return null;
     }
 
@@ -86,6 +94,7 @@ public class MockHttpClient<R> extends HttpClient {
 
     @Override
     public <T> HttpResponse<T> send(HttpRequest request, BodyHandler<T> responseBodyHandler) {
+        this.httpRequest = request;
         return null;
     }
 }
