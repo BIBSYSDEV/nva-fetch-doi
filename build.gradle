@@ -14,6 +14,7 @@ version '1.0-SNAPSHOT'
 allprojects {
     apply plugin: 'nebula.lint'
     apply plugin: 'base'
+    apply plugin: 'jacoco'
 
     gradleLint.rules = ['unused-dependency']
 
@@ -25,7 +26,6 @@ allprojects {
 
 subprojects {
     apply plugin: 'java-library'
-    apply plugin: 'jacoco'
     apply plugin: 'checkstyle'
     apply plugin: 'pmd'
 
