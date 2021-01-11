@@ -1,8 +1,14 @@
 package no.unit.nva.doi.transformer.utils;
 
+
+
+import no.unit.nva.model.contexttypes.utils.IssnUtil;
+import no.unit.nva.model.exceptions.InvalidIssnException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import static java.util.Objects.isNull;
 
-import no.unit.nva.model.validator.IssnValidator;
 
 public final class IssnCleaner {
 
@@ -13,6 +19,9 @@ public final class IssnCleaner {
     public static final int BEGIN_FIRST_PART = 0;
     public static final int END_FIRST_PART = 4;
     public static final int BEGIN_SECOND_PART = 4;
+
+    private static final Logger logger = LoggerFactory.getLogger(IssnCleaner.class);
+    public static final String ERROR_WHEN_TRYING_TO_CLEAN_ISSN = "Error when trying to clean ISSN: ";
 
     private IssnCleaner() {
     }
@@ -30,7 +39,13 @@ public final class IssnCleaner {
             return null;
         }
 
-        return IssnValidator.validate(issnCandidate) ? issnCandidate : null;
+        try {
+            IssnUtil.checkIssn(issnCandidate);
+            return issnCandidate;
+        } catch (InvalidIssnException e) {
+            logger.warn(ERROR_WHEN_TRYING_TO_CLEAN_ISSN + e.getMessage());
+            return null;
+        }
     }
 
     /**
