@@ -101,7 +101,7 @@ public class CrossRefConverter extends AbstractConverter {
                     .withAbstract(extractAbstract(document))
                     .withLanguage(extractLanguage(document))
                     .withNpiSubjectHeading(extractNpiSubjectHeading())
-                    .withTags(extractTags())
+                    .withTags(extractSubject(document))
                     .withDescription(extractDescription())
                     .withReference(extractReference(document))
                     .withMetadataSource(extractMetadataSource(document))
@@ -308,8 +308,8 @@ public class CrossRefConverter extends AbstractConverter {
         }
     }
 
-    private List<String> extractTags() {
-        return null;
+    private List<String> extractSubject(CrossRefDocument document) {
+        return Optional.ofNullable(document.getSubject()).orElse(Collections.emptyList());
     }
 
     private String extractNpiSubjectHeading() {
