@@ -12,6 +12,7 @@ import static org.hamcrest.core.StringContains.containsString;
 import static org.hamcrest.text.IsEmptyString.emptyString;
 import static org.hamcrest.text.MatchesPattern.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -361,6 +362,30 @@ public class CrossRefConverterTest extends ConversionTest {
         List<String> poolOfExpectedValues = issns.stream().map(Issn::getValue).collect(Collectors.toList());
         assertThat(poolOfExpectedValues, hasItem(actualPrintIssn));
     }
+
+    @Test
+    @DisplayName("toPublication sets tags when subject are available")
+    public void toPublicationSetsTagsWhenSubjectAreAvailable() throws InvalidIssnException {
+        final String expectedTag = "subject1";
+        List<String> subject = List.of(expectedTag);
+        sampleInputDocument.setSubject(subject);
+        Publication actualDocument = toPublication(sampleInputDocument);
+        List<String> actualTags = actualDocument.getEntityDescription().getTags();
+
+        assertThat(actualTags, hasItem(expectedTag));
+    }
+
+    @Test
+    @DisplayName("toPublication sets tags to empty list when subject are not available")
+    public void toPublicationSetsTagsToEmptyListWhenSubjectAreNotAvailable() throws InvalidIssnException {
+        sampleInputDocument.setSubject(null);
+        Publication actualDocument = toPublication(sampleInputDocument);
+        List<String> actualTags = actualDocument.getEntityDescription().getTags();
+
+        assertTrue(actualTags.isEmpty());
+    }
+
+
 
     private Issn sampleIssn(IssnType type, String value) {
         Issn issn = new Issn();
