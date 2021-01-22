@@ -11,6 +11,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.hamcrest.text.IsEmptyString.emptyString;
 import static org.hamcrest.text.MatchesPattern.matchesPattern;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -75,6 +76,8 @@ public class CrossRefConverterTest extends ConversionTest {
     public static final String SOME_DOI = "10.1000/182";
     public static final String VALID_ISSN_A = "0306-4379";
     public static final String VALID_ISSN_B = "1066-8888";
+    public static final int EXPECTED_MONTH = 2;
+    public static final int EXPECTED_DAY = 20;
 
     private CrossRefDocument sampleInputDocument = createSampleDocument();
     private final CrossRefConverter converter = new CrossRefConverter();
@@ -384,6 +387,26 @@ public class CrossRefConverterTest extends ConversionTest {
 
         assertTrue(actualTags.isEmpty());
     }
+
+    @Test
+    @DisplayName("toPublication preserves all date parts when they are available")
+    public void toPublicationPreservesAllDatepartsWhenTheyAreAvailable() throws InvalidIssnException {
+        int[][] dateParts = new int[1][DATE_SIZE];
+        dateParts[0] = new int[]{EXPECTED_YEAR, EXPECTED_MONTH, EXPECTED_DAY};
+        CrossrefDate crossrefDate = new CrossrefDate();
+        crossrefDate.setDateParts(dateParts);
+
+        sampleInputDocument.setPublishedPrint(crossrefDate);
+        Publication actualDocument = toPublication(sampleInputDocument);
+        PublicationDate publicationDate = actualDocument.getEntityDescription().getDate();
+
+        assertEquals(""+EXPECTED_YEAR, publicationDate.getYear());
+        assertEquals(""+EXPECTED_MONTH, publicationDate.getMonth());
+        assertEquals(""+EXPECTED_DAY, publicationDate.getDay());
+
+    }
+
+
 
 
 
