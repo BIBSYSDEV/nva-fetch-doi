@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -58,11 +59,11 @@ public class CrossRefConverter extends AbstractConverter {
     public static final URI CROSSEF_URI = URI.create("https://www.crossref.org/");
     public static final String CROSSREF = "crossref";
     public static final String UNRECOGNIZED_TYPE_MESSAGE = "The publication type \"%s\" was not recognized";
-    private static final Logger logger = LoggerFactory.getLogger(CrossRefConverter.class);
     public static final int YEAR_INDEX = 0;
     public static final int MONTH_INDEX = 1;
     public static final int DAY_INDEX = 2;
     public static final int FULL_DATE_IN_DATEPARTS_LENGTH = 3;
+    private static final Logger logger = LoggerFactory.getLogger(CrossRefConverter.class);
 
     public CrossRefConverter() {
         super(new SimpleLanguageDetector(), new DoiConverterImpl());
@@ -102,7 +103,7 @@ public class CrossRefConverter extends AbstractConverter {
                     .withFileSet(createFilseSet())
                     .withEntityDescription(new EntityDescription.Builder()
                             .withContributors(toContributors(document.getAuthor()))
-                            .withDate(extractFirstMatchingPublishedDate(document).orElse(null))
+                            .withDate(extractFirstMatchingPublishedDate(document))
                             .withMainTitle(extractTitle(document))
                             .withAlternativeTitles(extractAlternativeTitles(document))
                             .withAbstract(extractAbstract(document))
@@ -247,20 +248,24 @@ public class CrossRefConverter extends AbstractConverter {
      * @param document A crossref JSON document
      * @return The earliest year found in publication dates
      */
-    private Optional<PublicationDate> extractFirstMatchingPublishedDate(CrossRefDocument document) {
+    private PublicationDate extractFirstMatchingPublishedDate(CrossRefDocument document) {
         CrossrefDate publishedPrint = document.getPublishedPrint();
-        return Arrays.stream(publishedPrint.getDateParts())
-                .filter(this::containsFullDate)
-                .map(this::toPublicationDate)
-                .findFirst();
+        if (isNull(publishedPrint)) {
+            return null;
+        } else {
+            return Arrays.stream(publishedPrint.getDateParts())
+                    .filter(this::containsFullDate)
+                    .map(this::toPublicationDate)
+                    .findFirst().orElse(null);
+        }
     }
 
     private PublicationDate toPublicationDate(int[] dateParts) {
         return new PublicationDate.Builder()
-                        .withYear(String.valueOf(dateParts[YEAR_INDEX]))
-                        .withMonth(String.valueOf(dateParts[MONTH_INDEX]))
-                        .withDay(String.valueOf(dateParts[DAY_INDEX]))
-                        .build();
+                .withYear(String.valueOf(dateParts[YEAR_INDEX]))
+                .withMonth(String.valueOf(dateParts[MONTH_INDEX]))
+                .withDay(String.valueOf(dateParts[DAY_INDEX]))
+                .build();
     }
 
     private boolean containsFullDate(int[] dateParts) {
