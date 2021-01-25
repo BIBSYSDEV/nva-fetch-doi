@@ -3,19 +3,21 @@ package no.unit.nva.doi.transformer;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.function.Predicate.not;
+import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.DAY_INDEX;
+import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.FROM_DATE_INDEX_IN_DATE_ARRAY;
+import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.MONTH_INDEX;
+import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.YEAR_INDEX;
 import static nva.commons.utils.attempt.Try.attempt;
 
 import com.ibm.icu.text.RuleBasedNumberFormat;
 
 import java.net.URI;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -53,17 +55,18 @@ import nva.commons.utils.doi.DoiConverterImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("PMD.GodClass")
 public class CrossRefConverter extends AbstractConverter {
 
     public static final String INVALID_ENTRY_ERROR = "The entry is empty or has no title";
     public static final URI CROSSEF_URI = URI.create("https://www.crossref.org/");
     public static final String CROSSREF = "crossref";
     public static final String UNRECOGNIZED_TYPE_MESSAGE = "The publication type \"%s\" was not recognized";
-    public static final int YEAR_INDEX = 0;
-    public static final int MONTH_INDEX = 1;
-    public static final int DAY_INDEX = 2;
-    public static final int FULL_DATE_IN_DATEPARTS_LENGTH = 3;
     private static final Logger logger = LoggerFactory.getLogger(CrossRefConverter.class);
+    public static final String MISSING_DATE_FIELD_ISSUED =
+            "CrossRef document does not contain required date field 'issued'";
+    public static final int FIRST_MONTH_IN_YEAR = 1;
+    public static final int FIRST_DAY_IN_MONTH = 1;
 
     public CrossRefConverter() {
         super(new SimpleLanguageDetector(), new DoiConverterImpl());
@@ -103,7 +106,7 @@ public class CrossRefConverter extends AbstractConverter {
                     .withFileSet(createFilseSet())
                     .withEntityDescription(new EntityDescription.Builder()
                             .withContributors(toContributors(document.getAuthor()))
-                            .withDate(extractFirstMatchingPublishedDate(document))
+                            .withDate(extractIssuedDate(document))
                             .withMainTitle(extractTitle(document))
                             .withAlternativeTitles(extractAlternativeTitles(document))
                             .withAbstract(extractAbstract(document))
@@ -248,37 +251,37 @@ public class CrossRefConverter extends AbstractConverter {
      * @param document A crossref JSON document
      * @return The earliest year found in publication dates
      */
-    private PublicationDate extractFirstMatchingPublishedDate(CrossRefDocument document) {
-        CrossrefDate publishedPrint = document.getPublishedPrint();
-        if (isNull(publishedPrint)) {
-            return null;
+    private PublicationDate extractIssuedDate(CrossRefDocument document) {
+        final CrossrefDate issued = document.getIssued();
+        if (hasValue(issued))  {
+            return partialDateToPublicationDate(issued.getDateParts()[FROM_DATE_INDEX_IN_DATE_ARRAY]);
         } else {
-            return Arrays.stream(publishedPrint.getDateParts())
-                    .filter(this::containsFullDate)
-                    .map(this::toPublicationDate)
-                    .findFirst().orElse(null);
+            logger.warn(MISSING_DATE_FIELD_ISSUED);
+            return null;
         }
     }
 
-    private PublicationDate toPublicationDate(int[] dateParts) {
+    private boolean hasValue(CrossrefDate crossrefDate) {
+        return !isNull(crossrefDate)
+                && crossrefDate.hasYear(crossrefDate.getDateParts()[FROM_DATE_INDEX_IN_DATE_ARRAY]);
+    }
+
+    /**
+     * Convert this date given in date-parts to a PublicationDate.
+     * For a partial-date data-parts is the only data set, not timestamp or date-time.
+     * Only year is mandatory, the rest defaults to 1 it not set.
+     * @return PublicationDate containing data from this crossref date
+     */
+    private PublicationDate partialDateToPublicationDate(int... fromDatePart) {
+        final int year = fromDatePart[YEAR_INDEX];
+        final int month = fromDatePart.length > MONTH_INDEX ? fromDatePart[MONTH_INDEX] : FIRST_MONTH_IN_YEAR;
+        final int day = fromDatePart.length > DAY_INDEX ? fromDatePart[DAY_INDEX] : FIRST_DAY_IN_MONTH;
         return new PublicationDate.Builder()
-                .withYear(String.valueOf(dateParts[YEAR_INDEX]))
-                .withMonth(String.valueOf(dateParts[MONTH_INDEX]))
-                .withDay(String.valueOf(dateParts[DAY_INDEX]))
+                .withYear(String.valueOf(year))
+                .withMonth(String.valueOf(month))
+                .withDay(String.valueOf(day))
                 .build();
     }
-
-    private boolean containsFullDate(int[] dateParts) {
-        return dateParts.length == FULL_DATE_IN_DATEPARTS_LENGTH;
-    }
-
-    private Optional<PublicationDate> extractPublishedDate(CrossRefDocument document) {
-        Optional<Integer> earliestYear = Optional.ofNullable(document.getPublishedPrint())
-                .flatMap(CrossrefDate::extractEarliestYear);
-
-        return earliestYear.map(this::toDate);
-    }
-
 
     protected List<Contributor> toContributors(List<CrossrefAuthor> authors) {
         List<Contributor> contributors = Collections.emptyList();

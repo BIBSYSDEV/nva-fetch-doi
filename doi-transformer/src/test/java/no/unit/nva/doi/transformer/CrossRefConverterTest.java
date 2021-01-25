@@ -126,9 +126,9 @@ public class CrossRefConverterTest extends ConversionTest {
     }
 
     @Test
-    @DisplayName("toPublication sets null EntityDescription date when input has no \"published-print\" date")
+    @DisplayName("toPublication sets null EntityDescription date when input has no \"issued\" date")
     public void entityDescriptionDateIsNullWhenInputDataHasNoPublicationDate() throws InvalidIssnException {
-        sampleInputDocument.setPublishedPrint(null);
+        sampleInputDocument.setIssued(null);
         Publication publicationWithoutDate = toPublication(sampleInputDocument);
         PublicationDate actualDate = publicationWithoutDate.getEntityDescription().getDate();
         assertThat(actualDate, is(nullValue()));
@@ -396,13 +396,13 @@ public class CrossRefConverterTest extends ConversionTest {
         CrossrefDate crossrefDate = new CrossrefDate();
         crossrefDate.setDateParts(dateParts);
 
-        sampleInputDocument.setPublishedPrint(crossrefDate);
+        sampleInputDocument.setIssued(crossrefDate);
         Publication actualDocument = toPublication(sampleInputDocument);
         PublicationDate publicationDate = actualDocument.getEntityDescription().getDate();
 
-        assertEquals(""+EXPECTED_YEAR, publicationDate.getYear());
-        assertEquals(""+EXPECTED_MONTH, publicationDate.getMonth());
-        assertEquals(""+EXPECTED_DAY, publicationDate.getDay());
+        assertEquals("" + EXPECTED_YEAR, publicationDate.getYear());
+        assertEquals("" + EXPECTED_MONTH, publicationDate.getMonth());
+        assertEquals("" + EXPECTED_DAY, publicationDate.getDay());
 
     }
 
@@ -425,6 +425,7 @@ public class CrossRefConverterTest extends ConversionTest {
         CrossRefDocument document = new CrossRefDocument();
         setAuthor(document);
         setPublicationDate(document);
+        setIssuedDate(document);    // Issued is required from CrossRef, is either printed-date or
         setTitle(document);
         setPublicationType(document);
         return document;
@@ -447,6 +448,15 @@ public class CrossRefConverterTest extends ConversionTest {
         date.setDateParts(dateParts);
         document.setPublishedPrint(date);
     }
+
+    private void setIssuedDate(CrossRefDocument document) {
+        int[][] dateParts = new int[1][DATE_SIZE];
+        dateParts[0] = new int[]{EXPECTED_YEAR, 2, 20};
+        CrossrefDate date = new CrossrefDate();
+        date.setDateParts(dateParts);
+        document.setIssued(date);
+    }
+
 
     private CrossRefDocument setAuthor(CrossRefDocument document) {
         CrossrefAuthor author = new CrossrefAuthor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
