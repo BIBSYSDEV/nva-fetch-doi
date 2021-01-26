@@ -1,11 +1,15 @@
 package no.unit.nva.doi.transformer.model.crossrefmodel;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.List;
 import nva.commons.utils.JacocoGenerated;
+
+import java.net.URI;
+import java.util.List;
 
 public class CrossrefAuthor {
 
+    @JsonProperty("ORCID")
+    private URI orcid;
     @JsonProperty("given")
     private String givenName;
     @JsonProperty("family")
@@ -48,8 +52,17 @@ public class CrossrefAuthor {
         this.affiliation = affiliation;
     }
 
+    public URI getOrcid() {
+        return orcid;
+    }
+
+    public void setOrcid(URI orcid) {
+        this.orcid = orcid;
+    }
+
     public static final class Builder {
 
+        private URI orcid;
         private String givenName;
         private String familyName;
         private String sequence;
@@ -79,6 +92,11 @@ public class CrossrefAuthor {
             return this;
         }
 
+        public Builder withOrcid(URI orcid) {
+            this.orcid = orcid;
+            return this;
+        }
+
         /**
          * Creates an CrossrefAuthor object.
          *
@@ -90,6 +108,7 @@ public class CrossrefAuthor {
             author.setFamilyName(familyName);
             author.setSequence(sequence);
             author.setAffiliation(affiliation);
+            author.setOrcid(orcid);
             return author;
         }
     }
