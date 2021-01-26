@@ -38,6 +38,7 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
@@ -67,6 +68,7 @@ public class CrossRefConverter extends AbstractConverter {
             "CrossRef document does not contain required date field 'issued'";
     public static final int FIRST_MONTH_IN_YEAR = 1;
     public static final int FIRST_DAY_IN_MONTH = 1;
+    private static final String DEFAULT_LANGUAGE_ENGLISH = "en";
 
     public CrossRefConverter() {
         super(new SimpleLanguageDetector(), new DoiConverterImpl());
@@ -324,7 +326,16 @@ public class CrossRefConverter extends AbstractConverter {
             MalformedContributorException {
         Identity identity =
                 new Identity.Builder().withName(toName(author.getFamilyName(), author.getGivenName())).build();
-        return new Contributor.Builder().withIdentity(identity)
+        final Contributor.Builder contributorBuilder = new Contributor.Builder();
+        if (nonNull(author.getAffiliation())) {
+            Map<String, String> organizations =
+                    Map.of(DEFAULT_LANGUAGE_ENGLISH, author.getAffiliation().stream().findFirst().get().getName());
+            Organization organisation = new Organization();
+            organisation.setLabels(organizations);
+            List<Organization> affiliation = List.of(organisation);
+            contributorBuilder.withAffiliations(affiliation);
+        }
+        return contributorBuilder.withIdentity(identity)
                 .withSequence(parseSequence(author.getSequence(), alternativeSequence)).build();
     }
 

@@ -12,6 +12,7 @@ import static org.hamcrest.core.StringContains.containsString;
 import static org.hamcrest.text.IsEmptyString.emptyString;
 import static org.hamcrest.text.MatchesPattern.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -24,12 +25,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import no.unit.nva.doi.transformer.language.LanguageMapper;
 import no.unit.nva.doi.transformer.language.exceptions.LanguageUriNotFoundException;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossRefDocument;
+import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefAffiliation;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefApiResponse;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefAuthor;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate;
@@ -37,6 +40,7 @@ import no.unit.nva.doi.transformer.model.crossrefmodel.Issn;
 import no.unit.nva.doi.transformer.model.crossrefmodel.Issn.IssnType;
 import no.unit.nva.doi.transformer.utils.CrossrefType;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.contexttypes.Journal;
@@ -406,9 +410,34 @@ public class CrossRefConverterTest extends ConversionTest {
 
     }
 
+    @Test
+    @DisplayName("toPublication sets affiliation labels when author.affiliation.name is available")
+    public void toPublicationSetsAffiliationLabelWhenAuthorHasAffiliationName() throws InvalidIssnException {
+        setAuthorWithAffiliation(sampleInputDocument);
+        Publication actualDocument = toPublication(sampleInputDocument);
 
+        List<Contributor> contributors = actualDocument.getEntityDescription().getContributors();
+        List<List<Organization>> organisations =  contributors.stream()
+                .map(Contributor::getAffiliations)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
 
+        assertFalse(organisations.isEmpty());
+    }
 
+    @Test
+    @DisplayName("toPublication sets affiliation to empty list when author has no affiliation")
+    public void toPublicationSetsAffiliationToEmptyListWhenAuthorHasNoAffiliatio() throws InvalidIssnException {
+        Publication actualDocument = toPublication(sampleInputDocument);
+
+        List<Contributor> contributors = actualDocument.getEntityDescription().getContributors();
+        List<List<Organization>> organisations =  contributors.stream()
+                .map(Contributor::getAffiliations)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        assertTrue(organisations.isEmpty());
+    }
 
     private Issn sampleIssn(IssnType type, String value) {
         Issn issn = new Issn();
@@ -468,6 +497,27 @@ public class CrossRefConverterTest extends ConversionTest {
         List<CrossrefAuthor> authors = Arrays.asList(author, secondAuthor);
         document.setAuthor(authors);
         return document;
+    }
+
+    private CrossRefDocument setAuthorWithAffiliation(CrossRefDocument document) {
+        CrossrefAuthor author = new CrossrefAuthor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
+                .withFamilyName(AUTHOR_FAMILY_NAME)
+                .withSequence(FIRST_AUTHOR).build();
+        CrossrefAuthor secondAuthor = new CrossrefAuthor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
+                .withFamilyName(AUTHOR_FAMILY_NAME)
+                .withAffiliation(createCrossRefAffiliations())
+                .withSequence(SECOND_AUTHOR).build();
+        List<CrossrefAuthor> authors = Arrays.asList(author, secondAuthor);
+        document.setAuthor(authors);
+        return document;
+    }
+
+
+    private List<CrossrefAffiliation> createCrossRefAffiliations() {
+        CrossrefAffiliation affiliation = new CrossrefAffiliation();
+        affiliation.setName("affiliationName");
+        List<CrossrefAffiliation> affiliations = List.of(affiliation);
+        return affiliations;
     }
 
     private int startCountingFromOne(int i) {
