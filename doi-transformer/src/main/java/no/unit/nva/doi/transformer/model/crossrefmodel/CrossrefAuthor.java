@@ -9,7 +9,9 @@ import java.util.List;
 public class CrossrefAuthor {
 
     @JsonProperty("ORCID")
-    private URI orcid;
+    private String orcid;
+    @JsonProperty("authenticated-orcid")
+    private boolean authenticatedOrcid;
     @JsonProperty("given")
     private String givenName;
     @JsonProperty("family")
@@ -52,17 +54,26 @@ public class CrossrefAuthor {
         this.affiliation = affiliation;
     }
 
-    public URI getOrcid() {
+    public String getOrcid() {
         return orcid;
     }
 
-    public void setOrcid(URI orcid) {
+    public void setOrcid(String orcid) {
         this.orcid = orcid;
+    }
+
+    public boolean isAuthenticatedOrcid() {
+        return authenticatedOrcid;
+    }
+
+    public void setAuthenticatedOrcid(boolean authenticatedOrcid) {
+        this.authenticatedOrcid = authenticatedOrcid;
     }
 
     public static final class Builder {
 
-        private URI orcid;
+        private String orcid;
+        private boolean authenticatedOrcid;
         private String givenName;
         private String familyName;
         private String sequence;
@@ -92,8 +103,13 @@ public class CrossrefAuthor {
             return this;
         }
 
-        public Builder withOrcid(URI orcid) {
+        public Builder withOrcid(String orcid) {
             this.orcid = orcid;
+            return this;
+        }
+
+        public Builder withAuthenticatedOrcid(boolean authenticatedOrcid) {
+            this.authenticatedOrcid = authenticatedOrcid;
             return this;
         }
 
@@ -109,6 +125,7 @@ public class CrossrefAuthor {
             author.setSequence(sequence);
             author.setAffiliation(affiliation);
             author.setOrcid(orcid);
+            author.setAuthenticatedOrcid(authenticatedOrcid);
             return author;
         }
     }

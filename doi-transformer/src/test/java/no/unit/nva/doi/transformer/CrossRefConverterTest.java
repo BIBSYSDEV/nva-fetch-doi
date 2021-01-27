@@ -37,6 +37,7 @@ import no.unit.nva.doi.transformer.model.crossrefmodel.Issn;
 import no.unit.nva.doi.transformer.model.crossrefmodel.Issn.IssnType;
 import no.unit.nva.doi.transformer.utils.CrossrefType;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.contexttypes.Journal;
@@ -72,6 +73,8 @@ public class CrossRefConverterTest extends ConversionTest {
     public static final String SECOND_AUTHOR = "second";
     public static final String CROSSREF_WITH_ABSTRACT_JSON = "crossrefWithAbstract.json";
     private static final String PROCESSED_ABSTRACT = "processedAbstract.txt";
+    private static final String SAMPLE_ORCID = "http://orcid.org/0000-1111-2222-3333";
+
     public static final String ENG_ISO_639_3 = "eng";
     public static final String SOME_DOI = "10.1000/182";
     public static final String VALID_ISSN_A = "0306-4379";
@@ -406,9 +409,17 @@ public class CrossRefConverterTest extends ConversionTest {
 
     }
 
-
-
-
+    @Test
+    @DisplayName("toPublication preserves Orcid when Author has orcid")
+    public void toPublicationPreservesOrcidWhenAuthorHasOrcid() throws InvalidIssnException {
+        setAuthorWithUnauthenticatedOrcid(sampleInputDocument);
+        Publication actualDocument = toPublication(sampleInputDocument);
+        var orcids = actualDocument.getEntityDescription().getContributors().stream()
+                .map(Contributor::getIdentity)
+                .map(Identity::getOrcId)
+                .collect(Collectors.toList());
+        assertThat(orcids, hasItem(SAMPLE_ORCID));
+    }
 
     private Issn sampleIssn(IssnType type, String value) {
         Issn issn = new Issn();
@@ -469,6 +480,23 @@ public class CrossRefConverterTest extends ConversionTest {
         document.setAuthor(authors);
         return document;
     }
+
+    private CrossRefDocument setAuthorWithUnauthenticatedOrcid(CrossRefDocument document) {
+        CrossrefAuthor author = new CrossrefAuthor.Builder()
+                .withGivenName(AUTHOR_GIVEN_NAME)
+                .withFamilyName(AUTHOR_FAMILY_NAME)
+                .withSequence(FIRST_AUTHOR)
+                .withOrcid(SAMPLE_ORCID)
+                .withAuthenticatedOrcid(false)
+                .build();
+        CrossrefAuthor secondAuthor = new CrossrefAuthor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
+                .withFamilyName(AUTHOR_FAMILY_NAME)
+                .withSequence(SECOND_AUTHOR).build();
+        List<CrossrefAuthor> authors = Arrays.asList(author, secondAuthor);
+        document.setAuthor(authors);
+        return document;
+    }
+
 
     private int startCountingFromOne(int i) {
         return i + 1;
