@@ -26,7 +26,7 @@ import java.util.stream.IntStream;
 import no.unit.nva.doi.transformer.language.LanguageMapper;
 import no.unit.nva.doi.transformer.language.SimpleLanguageDetector;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossRefDocument;
-REfactored import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefAffiliation;
+import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefAffiliation;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefAuthor;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate;
 import no.unit.nva.doi.transformer.model.crossrefmodel.Issn;
