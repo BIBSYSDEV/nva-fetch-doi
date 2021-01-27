@@ -21,10 +21,13 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -426,6 +429,23 @@ public class CrossRefConverterTest extends ConversionTest {
     }
 
     @Test
+    @DisplayName("toPublication sets multiple affiliation labels when author has more affiliations name")
+    public void toPublicationSetsMultipleAffiliationLabelWhenAuthorHasMultipleAffiliationName() throws InvalidIssnException {
+        setAuthorWithMultipleAffiliations(sampleInputDocument);
+        Publication actualDocument = toPublication(sampleInputDocument);
+
+        List<Contributor> contributors = actualDocument.getEntityDescription().getContributors();
+        List<Organization> organisations =
+                contributors.stream()
+                .map(Contributor::getAffiliations)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+
+        assertTrue(organisations.size() > 1);
+    }
+
+    @Test
     @DisplayName("toPublication sets affiliation to empty list when author has no affiliation")
     public void toPublicationSetsAffiliationToEmptyListWhenAuthorHasNoAffiliatio() throws InvalidIssnException {
         Publication actualDocument = toPublication(sampleInputDocument);
@@ -505,20 +525,43 @@ public class CrossRefConverterTest extends ConversionTest {
                 .withSequence(FIRST_AUTHOR).build();
         CrossrefAuthor secondAuthor = new CrossrefAuthor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
                 .withFamilyName(AUTHOR_FAMILY_NAME)
-                .withAffiliation(createCrossRefAffiliations())
+                .withAffiliation(createCrossRefAffiliation())
                 .withSequence(SECOND_AUTHOR).build();
         List<CrossrefAuthor> authors = Arrays.asList(author, secondAuthor);
         document.setAuthor(authors);
         return document;
     }
 
+    private CrossRefDocument setAuthorWithMultipleAffiliations(CrossRefDocument document) {
+        CrossrefAuthor author = new CrossrefAuthor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
+                .withFamilyName(AUTHOR_FAMILY_NAME)
+                .withSequence(FIRST_AUTHOR).build();
+        CrossrefAuthor secondAuthor = new CrossrefAuthor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
+                .withFamilyName(AUTHOR_FAMILY_NAME)
+                .withAffiliation(createCrossRefMultipleAffiliations())
+                .withSequence(SECOND_AUTHOR).build();
+        List<CrossrefAuthor> authors = Arrays.asList(author, secondAuthor);
+        document.setAuthor(authors);
+        return document;
+    }
+    
 
-    private List<CrossrefAffiliation> createCrossRefAffiliations() {
+    private List<CrossrefAffiliation> createCrossRefAffiliation() {
         CrossrefAffiliation affiliation = new CrossrefAffiliation();
         affiliation.setName("affiliationName");
         List<CrossrefAffiliation> affiliations = List.of(affiliation);
         return affiliations;
     }
+
+    private List<CrossrefAffiliation> createCrossRefMultipleAffiliations() {
+        CrossrefAffiliation firstAffiliation = new CrossrefAffiliation();
+        firstAffiliation.setName("firstAffiliationName");
+        CrossrefAffiliation secondAffiliation = new CrossrefAffiliation();
+        secondAffiliation.setName("secondAffiliationName");
+        List<CrossrefAffiliation> affiliations = List.of(firstAffiliation, secondAffiliation);
+        return affiliations;
+    }
+
 
     private int startCountingFromOne(int i) {
         return i + 1;

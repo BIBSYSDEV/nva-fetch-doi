@@ -337,12 +337,18 @@ public class CrossRefConverter extends AbstractConverter {
     }
 
     private List<Organization> getAffiliations(List<CrossrefAffiliation> crossrefAffiliations) {
-        Map<String, String> organizations =
-                Map.of(DEFAULT_LANGUAGE_ENGLISH, crossrefAffiliations.stream().findFirst().get().getName());
-        Organization organisation = new Organization();
-        organisation.setLabels(organizations);
-        List<Organization> affiliations = List.of(organisation);
+        final List<Organization> affiliations = crossrefAffiliations.stream()
+                .map(CrossrefAffiliation::getName)
+                .map(this::createOrganization)
+                .collect(Collectors.toList());
         return affiliations;
+    }
+
+    private Organization createOrganization(String name) {
+        Organization organization = new Organization();
+        Map<String, String> labels = Map.of(DEFAULT_LANGUAGE_ENGLISH, name);
+        organization.setLabels(labels);
+        return organization;
     }
 
     /**
