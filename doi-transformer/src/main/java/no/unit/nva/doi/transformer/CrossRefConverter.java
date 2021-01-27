@@ -26,6 +26,7 @@ import java.util.stream.IntStream;
 import no.unit.nva.doi.transformer.language.LanguageMapper;
 import no.unit.nva.doi.transformer.language.SimpleLanguageDetector;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossRefDocument;
+import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefAffiliation;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefAuthor;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate;
 import no.unit.nva.doi.transformer.model.crossrefmodel.Issn;
@@ -38,6 +39,7 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
@@ -62,11 +64,12 @@ public class CrossRefConverter extends AbstractConverter {
     public static final URI CROSSEF_URI = URI.create("https://www.crossref.org/");
     public static final String CROSSREF = "crossref";
     public static final String UNRECOGNIZED_TYPE_MESSAGE = "The publication type \"%s\" was not recognized";
-    private static final Logger logger = LoggerFactory.getLogger(CrossRefConverter.class);
     public static final String MISSING_DATE_FIELD_ISSUED =
             "CrossRef document does not contain required date field 'issued'";
     public static final int FIRST_MONTH_IN_YEAR = 1;
     public static final int FIRST_DAY_IN_MONTH = 1;
+    private static final Logger logger = LoggerFactory.getLogger(CrossRefConverter.class);
+    private static final String DEFAULT_LANGUAGE_ENGLISH = "en";
 
     public CrossRefConverter() {
         super(new SimpleLanguageDetector(), new DoiConverterImpl());
@@ -253,7 +256,7 @@ public class CrossRefConverter extends AbstractConverter {
      */
     private PublicationDate extractIssuedDate(CrossRefDocument document) {
         final CrossrefDate issued = document.getIssued();
-        if (hasValue(issued))  {
+        if (hasValue(issued)) {
             return partialDateToPublicationDate(issued.getDateParts()[FROM_DATE_INDEX_IN_DATE_ARRAY]);
         } else {
             logger.warn(MISSING_DATE_FIELD_ISSUED);
@@ -270,6 +273,7 @@ public class CrossRefConverter extends AbstractConverter {
      * Convert this date given in date-parts to a PublicationDate.
      * For a partial-date data-parts is the only data set, not timestamp or date-time.
      * Only year is mandatory, the rest defaults to 1 it not set.
+     *
      * @return PublicationDate containing data from this crossref date
      */
     private PublicationDate partialDateToPublicationDate(int... fromDatePart) {
@@ -324,8 +328,27 @@ public class CrossRefConverter extends AbstractConverter {
             MalformedContributorException {
         Identity identity =
                 new Identity.Builder().withName(toName(author.getFamilyName(), author.getGivenName())).build();
-        return new Contributor.Builder().withIdentity(identity)
+        final Contributor.Builder contributorBuilder = new Contributor.Builder();
+        if (nonNull(author.getAffiliation())) {
+            contributorBuilder.withAffiliations(getAffiliations(author.getAffiliation()));
+        }
+        return contributorBuilder.withIdentity(identity)
                 .withSequence(parseSequence(author.getSequence(), alternativeSequence)).build();
+    }
+
+    private List<Organization> getAffiliations(List<CrossrefAffiliation> crossrefAffiliations) {
+        final List<Organization> affiliations = crossrefAffiliations.stream()
+                .map(CrossrefAffiliation::getName)
+                .map(this::createOrganization)
+                .collect(Collectors.toList());
+        return affiliations;
+    }
+
+    private Organization createOrganization(String name) {
+        Organization organization = new Organization();
+        Map<String, String> labels = Map.of(DEFAULT_LANGUAGE_ENGLISH, name);
+        organization.setLabels(labels);
+        return organization;
     }
 
     /**
