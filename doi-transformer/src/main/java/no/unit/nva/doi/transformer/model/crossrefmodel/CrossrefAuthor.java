@@ -3,7 +3,6 @@ package no.unit.nva.doi.transformer.model.crossrefmodel;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import nva.commons.utils.JacocoGenerated;
 
-import java.net.URI;
 import java.util.List;
 
 public class CrossrefAuthor {
