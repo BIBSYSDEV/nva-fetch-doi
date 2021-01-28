@@ -7,6 +7,7 @@ import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.DAY_I
 import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.FROM_DATE_INDEX_IN_DATE_ARRAY;
 import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.MONTH_INDEX;
 import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.YEAR_INDEX;
+import static nva.commons.utils.StringUtils.isNotEmpty;
 import static nva.commons.utils.attempt.Try.attempt;
 
 import com.ibm.icu.text.RuleBasedNumberFormat;
@@ -329,6 +330,7 @@ public class CrossRefConverter extends AbstractConverter {
         Identity identity = new Identity.Builder()
                 .withName(toName(author.getFamilyName(), author.getGivenName()))
                 .withOrcId(author.getOrcid())
+                .withArpId(lookupArpidFromOrcid(author.getOrcid()))
                 .build();
         final Contributor.Builder contributorBuilder = new Contributor.Builder();
         if (nonNull(author.getAffiliation())) {
@@ -336,6 +338,13 @@ public class CrossRefConverter extends AbstractConverter {
         }
         return contributorBuilder.withIdentity(identity)
                 .withSequence(parseSequence(author.getSequence(), alternativeSequence)).build();
+    }
+
+    private String lookupArpidFromOrcid(String orcid) {
+        if (isNotEmpty(orcid) && orcid.contains("0000-0003-4902-0240")) {
+            return "https://api.dev.nva.aws.unit.no/person/97034820";
+        }
+        return null;
     }
 
     private List<Organization> getAffiliations(List<CrossrefAffiliation> crossrefAffiliations) {
