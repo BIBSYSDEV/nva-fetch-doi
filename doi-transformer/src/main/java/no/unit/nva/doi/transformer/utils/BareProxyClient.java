@@ -35,10 +35,11 @@ public class BareProxyClient {
     public static final String COULD_NOT_FIND_ENTRY_WITH_DOI = "Could not find authority entry with DOI:";
     public static final String UNKNOWN_ERROR_MESSAGE = "Something went wrong. StatusCode:";
     public static final String FETCH_ERROR = "BareProxyClient failed while trying to fetch:";
-
-    private final transient HttpClient httpClient;
+    private static final String ORCID_EXAMPLE = "https://orcid.org/0000-0003-4902-0240";
+    public static final String ILLEGAL_ORCID_MESSAGE = "Illegal Orcid:%s. Valid examples:" + ORCID_EXAMPLE;
     private static final ObjectMapper mapper = JsonUtils.objectMapper;
     private static final Logger logger = LoggerFactory.getLogger(BareProxyClient.class);
+    private final transient HttpClient httpClient;
 
     @JacocoGenerated
     public BareProxyClient() {
@@ -49,13 +50,21 @@ public class BareProxyClient {
         this.httpClient = httpClient;
     }
 
-    public Optional<String> lookupArpidForOrcid(String orcid) {
+    /**
+     * Get en (optional) arp-identifier for an orcid.
+     *
+     * @param orcid given orcid from metadata
+     * @return a string with arpid for the given orcid
+     * @throws IllegalArgumentException when there is something wrong with the orcid
+     * @throws URISyntaxException       error creating URI to access BareProxyService
+     */
+    public Optional<String> lookupArpidForOrcid(String orcid) throws URISyntaxException {
         try {
             Optional<String> authorityDataForOrcid = fetchAuthorityDataForOrcid(orcid);
             if (authorityDataForOrcid.isPresent()) {
                 return extractArpid(authorityDataForOrcid);
             }
-        } catch (URISyntaxException | JsonProcessingException e) {
+        } catch (JsonProcessingException e) {
             logger.warn(e.getMessage());
         }
         return Optional.empty();
@@ -76,9 +85,9 @@ public class BareProxyClient {
         try {
             return Optional.ofNullable(getFromWeb(request));
         } catch (InterruptedException
-            | ExecutionException
-            | NotFoundException
-            | BadRequestException e) {
+                | ExecutionException
+                | NotFoundException
+                | BadRequestException e) {
             String details = FETCH_ERROR + bareProxyUri;
             logger.warn(details);
             logger.warn(e.getMessage());
@@ -88,14 +97,13 @@ public class BareProxyClient {
 
     private HttpRequest createRequest(URI doiUri) {
         return HttpRequest.newBuilder(doiUri)
-            .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
-            .timeout(Duration.ofSeconds(TIMEOUT_DURATION))
-            .GET()
-            .build();
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                .timeout(Duration.ofSeconds(TIMEOUT_DURATION))
+                .GET()
+                .build();
     }
 
-    private String getFromWeb(HttpRequest request)
-        throws InterruptedException, ExecutionException {
+    private String getFromWeb(HttpRequest request) throws InterruptedException, ExecutionException {
         HttpResponse<String> response = httpClient.sendAsync(request, BodyHandlers.ofString()).get();
         if (responseIsSuccessful(response)) {
             return response.body();
@@ -117,10 +125,14 @@ public class BareProxyClient {
     }
 
     protected URI createUrlToBareProxy(String orcid) throws URISyntaxException {
-        String strippetOrcid = orcid.substring(orcid.lastIndexOf("/")+1);
-        return new URIBuilder(BARE_PROXY_API_LINK)
-                .setPathSegments(PERSON)
-                .setParameter(ORCID, strippetOrcid)
-                .build();
+        try {
+            String strippetOrcid = new URI(orcid).toString().substring(orcid.lastIndexOf('/') + 1);
+            return new URIBuilder(BARE_PROXY_API_LINK)
+                    .setPathSegments(PERSON)
+                    .setParameter(ORCID, strippetOrcid)
+                    .build();
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException(ILLEGAL_ORCID_MESSAGE);
+        }
     }
 }
