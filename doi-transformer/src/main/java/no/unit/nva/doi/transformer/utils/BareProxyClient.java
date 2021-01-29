@@ -26,7 +26,6 @@ import java.util.concurrent.ExecutionException;
 
 public class BareProxyClient {
 
-    public static final String BARE_PROXY_API_LINK = "https://api.dev.nva.aws.unit.no";
     public static final String AUTHORITY_ID_JSON_POINTER = "/0/id";
     public static final String PERSON = "person";
     public static final String ORCID = "orcid";
@@ -58,9 +57,9 @@ public class BareProxyClient {
      * @throws IllegalArgumentException when there is something wrong with the orcid
      * @throws URISyntaxException       error creating URI to access BareProxyService
      */
-    public Optional<String> lookupArpidForOrcid(String orcid) throws URISyntaxException {
+    public Optional<String> lookupArpidForOrcid(URI apiUrl, String orcid) throws URISyntaxException {
         try {
-            Optional<String> authorityDataForOrcid = fetchAuthorityDataForOrcid(orcid);
+            Optional<String> authorityDataForOrcid = fetchAuthorityDataForOrcid(apiUrl, orcid);
             if (authorityDataForOrcid.isPresent()) {
                 return extractArpid(authorityDataForOrcid);
             }
@@ -75,8 +74,8 @@ public class BareProxyClient {
         return Optional.of(node.at(AUTHORITY_ID_JSON_POINTER).asText());
     }
 
-    private Optional<String> fetchAuthorityDataForOrcid(String orcid) throws URISyntaxException {
-        URI targetUri = createUrlToBareProxy(orcid);
+    private Optional<String> fetchAuthorityDataForOrcid(URI apiUrl, String orcid) throws URISyntaxException {
+        URI targetUri = createUrlToBareProxy(apiUrl, orcid);
         return fetchJson(targetUri);
     }
 
@@ -124,10 +123,10 @@ public class BareProxyClient {
         return statusCode >= HttpStatus.SC_OK && statusCode < HttpStatus.SC_MULTIPLE_CHOICES;
     }
 
-    protected URI createUrlToBareProxy(String orcid) throws URISyntaxException {
+    protected URI createUrlToBareProxy(URI apiUrl, String orcid) throws URISyntaxException {
         try {
             String strippetOrcid = new URI(orcid).toString().substring(orcid.lastIndexOf('/') + 1);
-            return new URIBuilder(BARE_PROXY_API_LINK)
+            return new URIBuilder(apiUrl)
                     .setPathSegments(PERSON)
                     .setParameter(ORCID, strippetOrcid)
                     .build();

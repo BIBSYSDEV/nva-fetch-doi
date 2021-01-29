@@ -341,6 +341,7 @@ public class CrossRefConverter extends AbstractConverter {
     }
 
     private String lookupArpidFromOrcid(String orcid) {
+
         if (isNotEmpty(orcid) && orcid.contains("0000-0003-4902-0240")) {
             return "https://api.dev.nva.aws.unit.no/person/97034820";
         }

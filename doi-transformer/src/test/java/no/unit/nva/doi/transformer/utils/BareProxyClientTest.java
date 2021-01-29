@@ -6,13 +6,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 
-import static no.unit.nva.doi.transformer.utils.BareProxyClient.PERSON;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -21,13 +21,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BareProxyClientTest {
 
+    public static final String ERROR_MESSAGE = "404 error message";
+    private static final URI BARE_PROXY_API_LINK = URI.create("https://api.dev.nva.aws.unit.no");
     private static final Path BARE_PROXY_SAMPLE_PATH = Paths.get("bareproxysample.json");
-    private  static final Path BARE_PROXY_ERRONEOUS_JSON_SAMPLE_PATH = Paths.get("bareproxyerroneoussample.json");
+    private static final Path BARE_PROXY_ERRONEOUS_JSON_SAMPLE_PATH = Paths.get("bareproxyerroneoussample.json");
     private static final String SAMPLE_ARPID = "https://api.dev.nva.aws.unit.no/person/1600776277420";
     private static final String SAMPLE_ORCID = "https://sandbox.orcid.org/0000-0002-8617-3281";
     private static final String ILLEGAL_ORCID = "hptts:??sandbox.orkid.org\"42";
-    public static final String ERROR_MESSAGE = "404 error message";
-
     private BareProxyClient bareProxyClient;
 
     @BeforeEach
@@ -52,10 +52,9 @@ class BareProxyClientTest {
     @Test
     @DisplayName("fetchAuthorityDataForOrcid returns an Optional apr identifier for an existing Orcid (URL)")
     public void fetchAuthorityDataForOrcidReturnAnOptionalIdentifierForAnExistingOrcid() throws URISyntaxException {
-        Optional<String> result = bareProxyClient.lookupArpidForOrcid(SAMPLE_ORCID);
-        String expected = SAMPLE_ARPID;
+        Optional<String> result = bareProxyClient.lookupArpidForOrcid(BARE_PROXY_API_LINK, SAMPLE_ORCID);
         assertThat(result.isPresent(), is(true));
-        assertThat(result.get(), is(equalTo(expected)));
+        assertThat(result.get(), is(equalTo(SAMPLE_ARPID)));
     }
 
     @Test
@@ -64,7 +63,7 @@ class BareProxyClientTest {
 
         BareProxyClient bareProxyClient = bareProxyClientReceives404();
 
-        Optional<String> result = bareProxyClient.lookupArpidForOrcid(SAMPLE_ORCID);
+        Optional<String> result = bareProxyClient.lookupArpidForOrcid(BARE_PROXY_API_LINK, SAMPLE_ORCID);
         assertThat(result.isEmpty(), is(true));
     }
 
@@ -72,7 +71,7 @@ class BareProxyClientTest {
     @DisplayName("fetchDataForDoi returns an empty Optional for an unknown error")
     public void fetchDataForDoiReturnAnEmptyOptionalForAnUnknownError() throws URISyntaxException {
         BareProxyClient bareProxyClient = bareProxyClientReceives500();
-        Optional<String> result = bareProxyClient.lookupArpidForOrcid(SAMPLE_ORCID);
+        Optional<String> result = bareProxyClient.lookupArpidForOrcid(BARE_PROXY_API_LINK, SAMPLE_ORCID);
         assertTrue(result.isEmpty());
     }
 
@@ -81,15 +80,14 @@ class BareProxyClientTest {
     public void fetchDataForDoiReturnAnEmptyOptionalForAnBareJsonSyntaxError() throws URISyntaxException, IOException {
         HttpClient httpClient = mockHttpClientWithNonEmptyResponseWithJsonErrors();
         bareProxyClient = new BareProxyClient(httpClient);
-        Optional<String> result = bareProxyClient.lookupArpidForOrcid(SAMPLE_ORCID);
+        Optional<String> result = bareProxyClient.lookupArpidForOrcid(BARE_PROXY_API_LINK, SAMPLE_ORCID);
         assertTrue(result.isEmpty());
     }
 
-
-
     @Test
     public void fetchDataForDoiThrowsExceptionWhenDoiHasInvalidFormat() {
-        assertThrows(IllegalArgumentException.class, () -> bareProxyClient.lookupArpidForOrcid(ILLEGAL_ORCID));
+        assertThrows(IllegalArgumentException.class,
+            () -> bareProxyClient.lookupArpidForOrcid(BARE_PROXY_API_LINK, ILLEGAL_ORCID));
     }
 
     private BareProxyClient bareProxyClientReceives404() {
@@ -103,7 +101,6 @@ class BareProxyClientTest {
         MockHttpClient<String> mockHttpClient = new MockHttpClient<>(errorResponse);
         return new BareProxyClient(mockHttpClient);
     }
-
 
 
 }
