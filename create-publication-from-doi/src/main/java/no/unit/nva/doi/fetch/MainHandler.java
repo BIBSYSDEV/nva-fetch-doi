@@ -14,12 +14,10 @@ import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
 import no.unit.nva.doi.fetch.exceptions.TransformFailedException;
 import no.unit.nva.doi.fetch.model.RequestBody;
 import no.unit.nva.doi.fetch.model.Summary;
+import no.unit.nva.doi.fetch.service.IdentityUpdater;
 import no.unit.nva.doi.fetch.service.PublicationConverter;
 import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
 import no.unit.nva.doi.transformer.DoiTransformService;
-import no.unit.nva.doi.transformer.utils.BareProxyClient;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import nva.commons.exceptions.ApiGatewayException;
@@ -36,10 +34,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Optional;
 
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 import static nva.commons.utils.attempt.Try.attempt;
 import static org.apache.http.HttpStatus.SC_OK;
 
@@ -51,7 +47,6 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     public static final JsonPointer FEIDE_ID = JsonPointer.compile("/authorizer/claims/custom:feideId");
     public static final JsonPointer CUSTOMER_ID = JsonPointer.compile("/authorizer/claims/custom:customerId");
     public static final String NULL_DOI_URL_ERROR = "doiUrl can not be null";
-    public static final String PROBLEM_UPDATING_IDENTITY_MESSAGE = "Problem updating Identity";
 
     private final ObjectMapper objectMapper;
     private final transient PublicationConverter publicationConverter;
@@ -60,14 +55,13 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     private final transient PublicationPersistenceService publicationPersistenceService;
     private final transient String publicationApiHost;
     private final transient String publicationApiScheme;
-    private final transient BareProxyClient bareProxyClient;
 
     private static final Logger logger = LoggerFactory.getLogger(MainHandler.class);
 
     @JacocoGenerated
     public MainHandler() {
         this(JsonUtils.objectMapper, new PublicationConverter(), new DoiTransformService(),
-            new DoiProxyService(), new PublicationPersistenceService(), new BareProxyClient(), new Environment());
+            new DoiProxyService(), new PublicationPersistenceService(), new Environment());
     }
 
     /**
@@ -81,7 +75,6 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
                        DoiTransformService doiTransformService,
                        DoiProxyService doiProxyService,
                        PublicationPersistenceService publicationPersistenceService,
-                       BareProxyClient bareProxyClient,
                        Environment environment) {
         super(RequestBody.class, environment, logger);
         this.objectMapper = objectMapper;
@@ -91,7 +84,6 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         this.publicationPersistenceService = publicationPersistenceService;
         this.publicationApiHost = environment.readEnv(PUBLICATION_API_HOST_ENV);
         this.publicationApiScheme = environment.readEnv(PUBLICATION_API_SCHEME_ENV);
-        this.bareProxyClient = bareProxyClient;
     }
 
     @Override
@@ -106,8 +98,8 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         String authorization = requestInfo.getHeader(HttpHeaders.AUTHORIZATION);
         boolean interrupted = false;
         try {
-            Publication publication =
-                    enrichPublicationCreators(apiUrl, getPublicationMetadata(input, owner, URI.create(customerId)));
+            Publication publication = IdentityUpdater.enrichPublicationCreators(apiUrl,
+                    getPublicationMetadata(input, owner, URI.create(customerId)));
             long insertStartTime = System.nanoTime();
             PublicationResponse publicationResponse = tryInsertPublication(authorization, apiUrl, publication);
             long insertEndTime = System.nanoTime();
@@ -164,36 +156,4 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         throws InterruptedException, InsertPublicationException, IOException, URISyntaxException {
         return publicationPersistenceService.insertPublication(publication, apiUrl, authorization);
     }
-
-
-    @JacocoGenerated
-    private Publication enrichPublicationCreators(URI apiUrl, Publication publication) {
-        try {
-            for (Contributor contributor : publication.getEntityDescription().getContributors()) {
-                final Identity identity = contributor.getIdentity();
-                if (possibleArpCandidate(identity)) {
-                    updateIdentity(apiUrl, identity);
-                }
-            }
-        } catch (Exception e) {
-            logger.info("Ignoring exception: ",e);
-        }
-        return publication;
-    }
-
-    @JacocoGenerated
-    private boolean possibleArpCandidate(Identity  identity) {
-        return isNull(identity.getArpId()) && nonNull(identity.getOrcId());
-    }
-
-    @JacocoGenerated
-    private void updateIdentity(URI apiUrl, Identity identity) {
-        try {
-            Optional<String> arpId = bareProxyClient.lookupArpidForOrcid(apiUrl, identity.getOrcId());
-            arpId.ifPresent(identity::setArpId);
-        } catch (URISyntaxException e) {
-            logger.info(PROBLEM_UPDATING_IDENTITY_MESSAGE, e);
-        }
-    }
-
 }
