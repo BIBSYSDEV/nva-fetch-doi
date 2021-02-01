@@ -18,6 +18,7 @@ import no.unit.nva.doi.fetch.service.IdentityUpdater;
 import no.unit.nva.doi.fetch.service.PublicationConverter;
 import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
 import no.unit.nva.doi.transformer.DoiTransformService;
+import no.unit.nva.doi.transformer.utils.BareProxyClient;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import nva.commons.exceptions.ApiGatewayException;
@@ -53,6 +54,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     private final transient DoiTransformService doiTransformService;
     private final transient DoiProxyService doiProxyService;
     private final transient PublicationPersistenceService publicationPersistenceService;
+    private final transient BareProxyClient bareProxyClient;
     private final transient String publicationApiHost;
     private final transient String publicationApiScheme;
 
@@ -61,7 +63,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     @JacocoGenerated
     public MainHandler() {
         this(JsonUtils.objectMapper, new PublicationConverter(), new DoiTransformService(),
-            new DoiProxyService(), new PublicationPersistenceService(), new Environment());
+            new DoiProxyService(), new PublicationPersistenceService(), new BareProxyClient(), new Environment());
     }
 
     /**
@@ -75,6 +77,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
                        DoiTransformService doiTransformService,
                        DoiProxyService doiProxyService,
                        PublicationPersistenceService publicationPersistenceService,
+                       BareProxyClient bareProxyClient,
                        Environment environment) {
         super(RequestBody.class, environment, logger);
         this.objectMapper = objectMapper;
@@ -82,8 +85,10 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         this.doiTransformService = doiTransformService;
         this.doiProxyService = doiProxyService;
         this.publicationPersistenceService = publicationPersistenceService;
+        this.bareProxyClient = bareProxyClient;
         this.publicationApiHost = environment.readEnv(PUBLICATION_API_HOST_ENV);
         this.publicationApiScheme = environment.readEnv(PUBLICATION_API_SCHEME_ENV);
+
     }
 
     @Override
@@ -98,7 +103,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         String authorization = requestInfo.getHeader(HttpHeaders.AUTHORIZATION);
         boolean interrupted = false;
         try {
-            Publication publication = IdentityUpdater.enrichPublicationCreators(apiUrl,
+            Publication publication = IdentityUpdater.enrichPublicationCreators(bareProxyClient,
                     getPublicationMetadata(input, owner, URI.create(customerId)));
             long insertStartTime = System.nanoTime();
             PublicationResponse publicationResponse = tryInsertPublication(authorization, apiUrl, publication);
