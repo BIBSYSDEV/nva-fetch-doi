@@ -7,8 +7,8 @@ import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.DAY_I
 import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.FROM_DATE_INDEX_IN_DATE_ARRAY;
 import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.MONTH_INDEX;
 import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.YEAR_INDEX;
-import static nva.commons.utils.StringUtils.isNotEmpty;
-import static nva.commons.utils.attempt.Try.attempt;
+import static nva.commons.core.StringUtils.isNotEmpty;
+import static nva.commons.core.attempt.Try.attempt;
 
 import com.ibm.icu.text.RuleBasedNumberFormat;
 
@@ -54,7 +54,6 @@ import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
-import nva.commons.doi.DoiConverterImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

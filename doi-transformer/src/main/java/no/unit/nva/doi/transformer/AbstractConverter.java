@@ -7,6 +7,7 @@ import no.unit.nva.doi.transformer.utils.TextLang;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
+import nva.commons.doi.DoiConverter;
 
 
 public class AbstractConverter {
