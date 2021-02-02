@@ -1,5 +1,6 @@
 package no.unit.nva.doi;
 
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -14,10 +15,9 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import nva.commons.utils.JacocoGenerated;
-import org.apache.http.HttpHeaders;
-import org.apache.http.HttpStatus;
+import nva.commons.core.JacocoGenerated;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.slf4j.Logger;
@@ -99,7 +99,7 @@ public class CrossRefClient {
     }
 
     private String handleError(HttpRequest request, HttpResponse<String> response) {
-        if (response.statusCode() == HttpStatus.SC_NOT_FOUND) {
+        if (response.statusCode() == HttpURLConnection.HTTP_NOT_FOUND) {
             throw new NotFoundException(COULD_NOT_FIND_ENTRY_WITH_DOI + request.uri().toString());
         }
         throw new BadRequestException(UNKNOWN_ERROR_MESSAGE + response.statusCode());
@@ -107,7 +107,7 @@ public class CrossRefClient {
 
     private boolean responseIsSuccessful(HttpResponse<String> response) {
         int statusCode = response.statusCode();
-        return statusCode >= HttpStatus.SC_OK && statusCode < HttpStatus.SC_MULTIPLE_CHOICES;
+        return statusCode >= HttpURLConnection.HTTP_OK && statusCode < HttpURLConnection.HTTP_MULT_CHOICE;
     }
 
     protected URI createUrlToCrossRef(String doi)

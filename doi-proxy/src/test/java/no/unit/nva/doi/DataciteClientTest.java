@@ -13,7 +13,7 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
-import nva.commons.utils.IoUtils;
+import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.Test;
 
 public class DataciteClientTest {

@@ -1,7 +1,7 @@
 package no.unit.nva.doi.transformer.utils;
 
-import no.bibsys.aws.tools.IoUtils;
 import nva.commons.utils.Environment;
+import nva.commons.utils.IoUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -47,13 +47,13 @@ class BareProxyClientTest {
     }
 
     private HttpClient mockHttpClientWithNonEmptyResponse() throws IOException {
-        String responseBody = IoUtils.resourceAsString(BARE_PROXY_SAMPLE_PATH);
+        String responseBody = IoUtils.stringFromResources(BARE_PROXY_SAMPLE_PATH);
         HttpResponseStatus200<String> response = new HttpResponseStatus200<>(responseBody);
         return new MockHttpClient<>(response);
     }
 
     private HttpClient mockHttpClientWithNonEmptyResponseWithJsonErrors() throws IOException {
-        String responseBody = IoUtils.resourceAsString(BARE_PROXY_ERRONEOUS_JSON_SAMPLE_PATH);
+        String responseBody = IoUtils.stringFromResources(BARE_PROXY_ERRONEOUS_JSON_SAMPLE_PATH);
         HttpResponseStatus200<String> response = new HttpResponseStatus200<>(responseBody);
         return new MockHttpClient<>(response);
     }

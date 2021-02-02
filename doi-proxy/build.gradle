@@ -1,8 +1,9 @@
 dependencies {
     implementation project(":fetch-doi-commons")
 
-    implementation group: 'org.glassfish.jersey.core', name: 'jersey-common', version: project.ext.jerseyVersion
-    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.9'
+    runtimeOnly group: 'org.glassfish.jersey.core', name: 'jersey-common', version: project.ext.jerseyVersion
     implementation group: 'jakarta.ws.rs', name: 'jakarta.ws.rs-api', version: project.ext.jakartaVersion
+
+    api group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.9'
 
 }

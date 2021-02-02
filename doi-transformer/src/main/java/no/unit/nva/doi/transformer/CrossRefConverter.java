@@ -52,9 +52,9 @@ import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.Range;
-import nva.commons.utils.JacocoGenerated;
-import nva.commons.utils.attempt.Try;
-import nva.commons.utils.doi.DoiConverterImpl;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.core.attempt.Try;
+import nva.commons.doi.DoiConverterImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,5 +1,7 @@
-dependencies {
+def var = dependencies {
     implementation project(":fetch-doi-commons")
+
+    implementation group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: project.ext.nvaCommonsVersion
 
     runtimeOnly group: 'org.glassfish.jersey.core', name: 'jersey-common', version: project.ext.jerseyVersion
     implementation(group: 'com.ibm.icu', name: 'icu4j', version: '66.1') {
@@ -7,3 +9,4 @@ dependencies {
     }
     implementation group: 'jakarta.ws.rs', name: 'jakarta.ws.rs-api', version: project.ext.jakartaVersion
 }
+var

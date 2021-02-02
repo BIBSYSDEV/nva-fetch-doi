@@ -1,6 +1,7 @@
 package no.unit.nva.doi.transformer.utils;
 
-import org.apache.http.HttpStatus;
+
+import java.net.HttpURLConnection;
 
 public class HttpResponseStatus404<S> extends AbstractHttpResponse<S> {
 
@@ -10,7 +11,7 @@ public class HttpResponseStatus404<S> extends AbstractHttpResponse<S> {
 
     @Override
     public int statusCode() {
-        return HttpStatus.SC_NOT_FOUND;
+        return HttpURLConnection.HTTP_NOT_FOUND;
     }
 
     @Override

@@ -21,12 +21,15 @@ import no.unit.nva.doi.transformer.DoiTransformService;
 import no.unit.nva.doi.transformer.utils.BareProxyClient;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIssnException;
-import nva.commons.exceptions.ApiGatewayException;
-import nva.commons.handlers.ApiGatewayHandler;
-import nva.commons.handlers.RequestInfo;
-import nva.commons.utils.Environment;
-import nva.commons.utils.JacocoGenerated;
-import nva.commons.utils.JsonUtils;
+import nva.commons.apigateway.ApiGatewayHandler;
+import nva.commons.apigateway.RequestInfo;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.apigateway.ApiGatewayHandler;
+import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
+
+
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
@@ -36,8 +39,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import nva.commons.core.JsonUtils;
 import static java.util.Objects.isNull;
-import static nva.commons.utils.attempt.Try.attempt;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.apache.http.HttpStatus.SC_OK;
 
 public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
@@ -111,7 +115,8 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
             logger.info("Publication inserted after {} ms", (insertEndTime - insertStartTime) / 1000);
             return publicationConverter
                 .toSummary(objectMapper.convertValue(publicationResponse, JsonNode.class));
-        } catch (URISyntaxException
+        } catch (IllegalArgumentException
+            | URISyntaxException
             | IOException
             | InvalidIssnException e) {
             throw new TransformFailedException(e.getMessage());

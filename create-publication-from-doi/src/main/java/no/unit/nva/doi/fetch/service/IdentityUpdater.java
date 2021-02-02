@@ -31,24 +31,36 @@ public final class IdentityUpdater {
      * @throws URISyntaxException thrown when error in orcid
      */
     @SuppressWarnings("PMD.AvoidRethrowingException")
-    public static Publication enrichPublicationCreators(BareProxyClient bareProxyClient, Publication publication)
-            throws URISyntaxException {
+    public static Publication enrichPublicationCreators(BareProxyClient bareProxyClient, Publication publication) {
         try {
-            if (nonNull(publication) && nonNull(publication.getEntityDescription())) {
-                for (Contributor contributor : publication.getEntityDescription().getContributors()) {
-                    final Identity identity = contributor.getIdentity();
-                    if (possibleArpCandidate(identity)) {
-                        updateIdentity(bareProxyClient, identity);
-                    }
-                }
+            if (publicationHasData(publication)) {
+                updateContributors(bareProxyClient, publication);
             }
         } catch (IllegalArgumentException | URISyntaxException e) {
-            logger.info(PROBLEM_UPDATING_IDENTITY_MESSAGE, e);
-            throw e;
+            logErrorAndThrowIllegalArgumentException(new IllegalArgumentException(e));
         } catch (Exception e) {
             logger.info(IGNORING_EXCEPTION, e);
         }
         return publication;
+    }
+
+    private static void logErrorAndThrowIllegalArgumentException(IllegalArgumentException e) {
+        logger.info(PROBLEM_UPDATING_IDENTITY_MESSAGE, e);
+        throw e;
+    }
+
+    private static void updateContributors(BareProxyClient bareProxyClient, Publication publication)
+            throws URISyntaxException {
+        for (Contributor contributor : publication.getEntityDescription().getContributors()) {
+            final Identity identity = contributor.getIdentity();
+            if (possibleArpCandidate(identity)) {
+                updateIdentity(bareProxyClient, identity);
+            }
+        }
+    }
+
+    private static boolean publicationHasData(Publication publication) {
+        return nonNull(publication) && nonNull(publication.getEntityDescription());
     }
 
     private static boolean possibleArpCandidate(Identity identity) {
@@ -61,8 +73,7 @@ public final class IdentityUpdater {
             Optional<String> arpId = bareProxyClient.lookupArpidForOrcid(identity.getOrcId());
             arpId.ifPresent(identity::setArpId);
         } catch (IllegalArgumentException e) {
-            logger.info(PROBLEM_UPDATING_IDENTITY_MESSAGE, e);
-            throw e;
+            logErrorAndThrowIllegalArgumentException(e);
         }
         return identity;
     }

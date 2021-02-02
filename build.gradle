@@ -17,8 +17,11 @@ allprojects {
     apply plugin: 'jacoco'
 
     project.ext {
-        nvaCommonsVersion = '0.7.4'
-        nvaDatamodelVersion = '0.11.5'
+        nvaCommonsVersion = '1.0.0'
+        nvaDatamodelVersion = 'eda02301f3a1fc1a98dc5782c14fc8335df2f133'
+//        nvaCommonsVersion = '0.8.2'
+//        nvaCommonsVersion = '0.7.4'
+//        nvaDatamodelVersion = '0.11.5'
         nvaTestUtilsVersion = "0.1.18"
         junit5Version = '5.6.2'
         jacksonVersion = '2.10.3'
@@ -32,6 +35,7 @@ allprojects {
     repositories {
         jcenter()
         maven { url "https://jitpack.io" }
+        maven { url  "https://dl.bintray.com/unit-nva/nva-commons" }
     }
 }
 
@@ -45,7 +49,11 @@ subprojects {
     targetCompatibility = JavaVersion.VERSION_11 // bytecode target version
 
     dependencies {
+
+        compileOnly group: 'no.unit.nva', name: 'core', version: project.ext.nvaCommonsVersion
+        testImplementation group: 'no.unit.nva', name: 'core', version: project.ext.nvaCommonsVersion
         testImplementation group: 'com.github.BIBSYSDEV', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
+
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: project.ext.junit5Version
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: project.ext.junit5Version
         testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: project.ext.junit5Version

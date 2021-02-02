@@ -7,15 +7,15 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import nva.commons.utils.Environment;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
-import org.apache.http.HttpHeaders;
-import org.apache.http.HttpStatus;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -123,7 +123,7 @@ public class BareProxyClient {
     }
 
     private String handleError(HttpRequest request, HttpResponse<String> response) {
-        if (response.statusCode() == HttpStatus.SC_NOT_FOUND) {
+        if (response.statusCode() == HttpURLConnection.HTTP_NOT_FOUND) {
             throw new NotFoundException(COULD_NOT_FIND_ENTRY_WITH_DOI + request.uri().toString());
         }
         throw new BadRequestException(UNKNOWN_ERROR_MESSAGE + response.statusCode());
@@ -131,7 +131,7 @@ public class BareProxyClient {
 
     private boolean responseIsSuccessful(HttpResponse<String> response) {
         int statusCode = response.statusCode();
-        return statusCode >= HttpStatus.SC_OK && statusCode < HttpStatus.SC_MULTIPLE_CHOICES;
+        return statusCode >= HttpURLConnection.HTTP_OK && statusCode < HttpURLConnection.HTTP_MULT_CHOICE;
     }
 
     protected URI createUrlToBareProxy(URI apiUrl, String orcid) {

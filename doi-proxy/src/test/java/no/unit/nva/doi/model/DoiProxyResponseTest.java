@@ -1,6 +1,6 @@
 package no.unit.nva.doi.model;
 
-import static nva.commons.utils.JsonUtils.objectMapper;
+import static nva.commons.core.JsonUtils.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;

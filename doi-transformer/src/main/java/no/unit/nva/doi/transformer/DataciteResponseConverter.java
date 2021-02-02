@@ -46,7 +46,6 @@ import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.Range;
-import nva.commons.utils.doi.DoiConverterImpl;
 
 public class DataciteResponseConverter extends AbstractConverter {
 
