@@ -1,15 +1,15 @@
-def jacksonVersion = '2.10.3'
+
 def problemVersion = '0.24.0'
 
 dependencies {
 
-    api group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.2.1'
-    api group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion
-    api group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
-    api group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
-    api group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: jacksonVersion
+    runtimeOnly group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.2.1'
+    api group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
+    api group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
+    api group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
+    api group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: project.ext.jacksonVersion
 
-    api group: 'org.zalando', name: 'jackson-datatype-problem', version: problemVersion
+    testImplementation group: 'org.zalando', name: 'jackson-datatype-problem', version: problemVersion
 
     api group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.9'
     api group: 'org.apache.httpcomponents', name: 'httpcore', version: '4.4.11'
@@ -17,7 +17,7 @@ dependencies {
         because 'Used by org.apache.logging.log4j:log4j-slf4j18-impl:2.13.2 in nva-commons'
     }
     api 'com.github.BIBSYSDEV:aws-build-tools:v1.5.5'
-    api group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: '0.11.5'
-    api group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: '0.7.4'
+    api group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion
+    api group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: project.ext.nvaCommonsVersion
 
 }

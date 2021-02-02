@@ -1,12 +1,9 @@
 dependencies {
     implementation project(":fetch-doi-commons")
 
-    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.9'
-    implementation group: 'org.glassfish.jersey.core', name: 'jersey-common', version: '2.30.1'
-
+    runtimeOnly group: 'org.glassfish.jersey.core', name: 'jersey-common', version: project.ext.jerseyVersion
     implementation(group: 'com.ibm.icu', name: 'icu4j', version: '66.1') {
         because 'We use this to map ordinals to numbers'
     }
-    implementation 'jakarta.ws.rs:jakarta.ws.rs-api:2.1.6'
-
+    implementation group: 'jakarta.ws.rs', name: 'jakarta.ws.rs-api', version: project.ext.jakartaVersion
 }
