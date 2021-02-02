@@ -1,6 +1,6 @@
 package no.unit.nva.doi.transformer;
 
-import static nva.commons.utils.JsonUtils.objectMapper;
+import static nva.commons.core.JsonUtils.objectMapper;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;

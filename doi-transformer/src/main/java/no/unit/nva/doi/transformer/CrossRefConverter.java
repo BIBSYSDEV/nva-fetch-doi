@@ -36,6 +36,7 @@ import no.unit.nva.doi.transformer.utils.IssnCleaner;
 import no.unit.nva.doi.transformer.utils.PublicationType;
 import no.unit.nva.doi.transformer.utils.StringUtils;
 import no.unit.nva.doi.transformer.utils.TextLang;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.FileSet;
@@ -56,6 +57,8 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import nva.commons.doi.DoiConverter;
+
 
 @SuppressWarnings("PMD.GodClass")
 public class CrossRefConverter extends AbstractConverter {
@@ -72,7 +75,7 @@ public class CrossRefConverter extends AbstractConverter {
     private static final String DEFAULT_LANGUAGE_ENGLISH = "en";
 
     public CrossRefConverter() {
-        super(new SimpleLanguageDetector(), new DoiConverterImpl());
+        super(new SimpleLanguageDetector(), new DoiConverter());
     }
 
     /**
@@ -99,7 +102,7 @@ public class CrossRefConverter extends AbstractConverter {
                     .withModifiedDate(now)
                     .withPublishedDate(createPublishedDate())
                     .withOwner(owner)
-                    .withIdentifier(identifier)
+                    .withIdentifier(new SortableIdentifier(identifier.toString()))
                     .withPublisher(toPublisher(publisherId))
                     .withStatus(DEFAULT_NEW_PUBLICATION_STATUS)
                     .withIndexedDate(createIndexedDate())

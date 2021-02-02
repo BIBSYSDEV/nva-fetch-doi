@@ -30,6 +30,7 @@ import no.unit.nva.doi.transformer.utils.DataciteTypesUtil;
 import no.unit.nva.doi.transformer.utils.IssnCleaner;
 import no.unit.nva.doi.transformer.utils.LicensingIndicator;
 import no.unit.nva.doi.transformer.utils.PublicationType;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
@@ -46,6 +47,7 @@ import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.Range;
+import nva.commons.doi.DoiConverter;
 
 public class DataciteResponseConverter extends AbstractConverter {
 
@@ -54,7 +56,7 @@ public class DataciteResponseConverter extends AbstractConverter {
     }
 
     public DataciteResponseConverter(LanguageDetector languageDetector) {
-        super(languageDetector, new DoiConverterImpl());
+        super(languageDetector, new DoiConverter());
     }
 
     /**
@@ -76,7 +78,7 @@ public class DataciteResponseConverter extends AbstractConverter {
             .withPublishedDate(extractPublishedDate())
             .withOwner(owner)
             .withPublisher(toPublisher(publisherId))
-            .withIdentifier(identifier)
+            .withIdentifier(new SortableIdentifier(identifier.toString()))
             .withStatus(DEFAULT_NEW_PUBLICATION_STATUS)
             .withHandle(extractHandle())
             .withLink(extractLink(dataciteResponse))

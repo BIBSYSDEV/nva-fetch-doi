@@ -52,10 +52,9 @@ import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
-import nva.commons.utils.IoUtils;
-import nva.commons.utils.JsonUtils;
-import nva.commons.utils.doi.DoiConverter;
-import nva.commons.utils.doi.DoiConverterImpl;
+import nva.commons.core.ioutils.IoUtils;
+import nva.commons.core.JsonUtils;
+import nva.commons.doi.DoiConverter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -216,7 +215,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @Test
     @DisplayName("toPublication sets the doi of the Reference when the Crossref document has a \"DOI\" value ")
     public void toPublicationSetsTheDoiOfTheReferenceWhenTheCrossrefDocHasADoiValue() throws InvalidIssnException {
-        DoiConverter doiConverter = new DoiConverterImpl();
+        DoiConverter doiConverter = new DoiConverter();
         sampleInputDocument.setDoi(SOME_DOI);
         URI actualDoi = toPublication(sampleInputDocument).getEntityDescription().getReference().getDoi();
         assertThat(actualDoi, is(equalTo(doiConverter.toUri(SOME_DOI))));

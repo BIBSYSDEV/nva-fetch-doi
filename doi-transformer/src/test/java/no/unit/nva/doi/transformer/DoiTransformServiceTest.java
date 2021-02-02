@@ -13,7 +13,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Path;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIssnException;
-import nva.commons.utils.IoUtils;
+import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.Test;
 
 public class DoiTransformServiceTest {

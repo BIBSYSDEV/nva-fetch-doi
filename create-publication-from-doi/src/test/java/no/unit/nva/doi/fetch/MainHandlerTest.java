@@ -16,6 +16,7 @@ import no.unit.nva.doi.fetch.service.PublicationConverter;
 import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
 import no.unit.nva.doi.transformer.DoiTransformService;
 import no.unit.nva.doi.transformer.utils.BareProxyClient;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -23,9 +24,9 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.TestHeaders;
-import nva.commons.handlers.ApiGatewayHandler;
-import nva.commons.handlers.GatewayResponse;
-import nva.commons.utils.Environment;
+import nva.commons.apigateway.ApiGatewayHandler;
+import nva.commons.apigateway.GatewayResponse;
+import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -54,8 +55,8 @@ import static no.unit.nva.doi.fetch.MainHandler.ALLOWED_ORIGIN_ENV;
 import static no.unit.nva.doi.fetch.MainHandler.NULL_DOI_URL_ERROR;
 import static no.unit.nva.doi.fetch.MainHandler.PUBLICATION_API_HOST_ENV;
 import static no.unit.nva.doi.fetch.MainHandler.PUBLICATION_API_SCHEME_ENV;
-import static nva.commons.handlers.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
-import static nva.commons.utils.JsonUtils.objectMapper;
+import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
+import static nva.commons.core.JsonUtils.objectMapper;
 import static org.apache.http.HttpHeaders.AUTHORIZATION;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -244,7 +245,7 @@ public class MainHandlerTest {
 
     private Publication getPublication() {
         return new Publication.Builder()
-            .withIdentifier(UUID.randomUUID())
+            .withIdentifier(new SortableIdentifier(UUID.randomUUID().toString()))
             .withCreatedDate(Instant.now())
             .withModifiedDate(Instant.now())
             .withStatus(PublicationStatus.DRAFT)

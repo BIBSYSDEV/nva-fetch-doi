@@ -6,7 +6,7 @@ import no.unit.nva.doi.transformer.utils.BibTexType;
 import no.unit.nva.doi.transformer.utils.CiteProcType;
 import no.unit.nva.doi.transformer.utils.RisType;
 import no.unit.nva.doi.transformer.utils.SchemaOrgType;
-import nva.commons.utils.JacocoGenerated;
+import nva.commons.core.JacocoGenerated;
 
 public class DataciteTypes {
 

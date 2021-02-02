@@ -3,7 +3,7 @@ package no.unit.nva.doi.transformer.model.datacitemodel;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.net.URL;
 import java.util.List;
-import nva.commons.utils.JacocoGenerated;
+import nva.commons.core.JacocoGenerated;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @SuppressWarnings({"PMD.TooManyFields", "PMD.ExcessivePublicCount"})

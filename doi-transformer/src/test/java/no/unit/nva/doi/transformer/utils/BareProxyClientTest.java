@@ -1,7 +1,7 @@
 package no.unit.nva.doi.transformer.utils;
 
-import nva.commons.utils.Environment;
-import nva.commons.utils.IoUtils;
+import nva.commons.core.Environment;
+import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

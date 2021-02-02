@@ -3,18 +3,7 @@ def problemVersion = '0.24.0'
 
 dependencies {
 
-    api group: 'no.unit.nva', name: 'core', version: project.ext.nvaCommonsVersion
-    api group: 'no.unit.nva', name: 'identifiers', version: project.ext.nvaCommonsVersion
     api group: 'no.unit.nva', name: 'apigateway', version: project.ext.nvaCommonsVersion
-    api group: 'no.unit.nva', name: 'logutils', version: project.ext.nvaCommonsVersion
-
-    api(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
-        exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
-    }
-
-//    api group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion
-//    api group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: project.ext.nvaCommonsVersion
-    
 
     runtimeOnly group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.2.1'
     api group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion

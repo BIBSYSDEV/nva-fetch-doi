@@ -1,6 +1,7 @@
 package no.unit.nva.doi.fetch.service;
 
 import no.unit.nva.doi.transformer.utils.BareProxyClient;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
@@ -117,7 +118,7 @@ class IdentityUpdaterTest {
                 .withIdentity(identity)
                 .build();
         return new Publication.Builder()
-                .withIdentifier(UUID.randomUUID())
+                .withIdentifier(new SortableIdentifier(UUID.randomUUID().toString()))
                 .withModifiedDate(Instant.now())
                 .withOwner("owner")
                 .withPublisher(new Organization.Builder()

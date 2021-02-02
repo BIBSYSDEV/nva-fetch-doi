@@ -3,8 +3,8 @@ package no.unit.nva.doi.transformer.utils;
 import static java.util.Objects.isNull;
 
 import java.util.Arrays;
-import nva.commons.utils.JacocoGenerated;
-import nva.commons.utils.SingletonCollector;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.core.SingletonCollector;
 
 public enum RisType {
     ABST("Abstract", null),
