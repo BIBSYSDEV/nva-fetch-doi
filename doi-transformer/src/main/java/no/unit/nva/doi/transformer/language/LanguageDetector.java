@@ -4,7 +4,7 @@ import java.net.URI;
 import java.util.Locale;
 import java.util.Optional;
 import no.unit.nva.doi.transformer.language.exceptions.LanguageUriNotFoundException;
-import nva.commons.utils.JacocoGenerated;
+import nva.commons.core.JacocoGenerated;
 
 public interface LanguageDetector {
 

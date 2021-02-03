@@ -1,13 +1,15 @@
 package no.unit.nva.doi.transformer;
 
-import java.net.URI;
-import java.util.stream.Stream;
 import no.unit.nva.doi.transformer.language.LanguageDetector;
 import no.unit.nva.doi.transformer.utils.TextLang;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
-import nva.commons.utils.doi.DoiConverter;
+import nva.commons.doi.DoiConverter;
+
+import java.net.URI;
+import java.util.stream.Stream;
+
 
 public class AbstractConverter {
 

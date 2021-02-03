@@ -10,8 +10,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteResponse;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteTypes;
-import nva.commons.utils.JacocoGenerated;
-import nva.commons.utils.SingletonCollector;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.core.SingletonCollector;
 
 public final class DataciteTypesUtil {
 

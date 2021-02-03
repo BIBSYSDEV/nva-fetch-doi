@@ -3,7 +3,7 @@ package no.unit.nva.doi.transformer.utils;
 import static java.util.Objects.isNull;
 
 import java.util.Arrays;
-import nva.commons.utils.SingletonCollector;
+import nva.commons.core.SingletonCollector;
 
 /**
  * Provides constants and mappings to PublicationType for the various BibTeX types.

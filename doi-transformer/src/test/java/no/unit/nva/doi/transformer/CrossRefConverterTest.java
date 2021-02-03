@@ -43,6 +43,7 @@ import no.unit.nva.doi.transformer.model.crossrefmodel.Issn;
 import no.unit.nva.doi.transformer.model.crossrefmodel.Issn.IssnType;
 import no.unit.nva.doi.transformer.utils.CrossrefType;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
@@ -51,10 +52,9 @@ import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
-import nva.commons.utils.IoUtils;
-import nva.commons.utils.JsonUtils;
-import nva.commons.utils.doi.DoiConverter;
-import nva.commons.utils.doi.DoiConverterImpl;
+import nva.commons.core.ioutils.IoUtils;
+import nva.commons.core.JsonUtils;
+import nva.commons.doi.DoiConverter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -79,6 +79,8 @@ public class CrossRefConverterTest extends ConversionTest {
     public static final String SECOND_AUTHOR = "second";
     public static final String CROSSREF_WITH_ABSTRACT_JSON = "crossrefWithAbstract.json";
     private static final String PROCESSED_ABSTRACT = "processedAbstract.txt";
+    private static final String SAMPLE_ORCID = "http://orcid.org/0000-1111-2222-3333";
+
     public static final String ENG_ISO_639_3 = "eng";
     public static final String SOME_DOI = "10.1000/182";
     public static final String VALID_ISSN_A = "0306-4379";
@@ -213,7 +215,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @Test
     @DisplayName("toPublication sets the doi of the Reference when the Crossref document has a \"DOI\" value ")
     public void toPublicationSetsTheDoiOfTheReferenceWhenTheCrossrefDocHasADoiValue() throws InvalidIssnException {
-        DoiConverter doiConverter = new DoiConverterImpl();
+        DoiConverter doiConverter = new DoiConverter();
         sampleInputDocument.setDoi(SOME_DOI);
         URI actualDoi = toPublication(sampleInputDocument).getEntityDescription().getReference().getDoi();
         assertThat(actualDoi, is(equalTo(doiConverter.toUri(SOME_DOI))));
@@ -418,7 +420,6 @@ public class CrossRefConverterTest extends ConversionTest {
     public void toPublicationSetsAffiliationLabelWhenAuthorHasAffiliationName() throws InvalidIssnException {
         setAuthorWithAffiliation(sampleInputDocument);
         Publication actualDocument = toPublication(sampleInputDocument);
-
         List<Contributor> contributors = actualDocument.getEntityDescription().getContributors();
         List<List<Organization>> organisations =  contributors.stream()
                 .map(Contributor::getAffiliations)
@@ -449,6 +450,50 @@ public class CrossRefConverterTest extends ConversionTest {
     @Test
     @DisplayName("toPublication sets affiliation to empty list when author has no affiliation")
     public void toPublicationSetsAffiliationToEmptyListWhenAuthorHasNoAffiliatio() throws InvalidIssnException {
+        Publication actualDocument = toPublication(sampleInputDocument);
+
+        List<Contributor> contributors = actualDocument.getEntityDescription().getContributors();
+        List<List<Organization>> organisations =  contributors.stream()
+                .map(Contributor::getAffiliations)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        assertTrue(organisations.isEmpty());
+    }
+
+    @Test
+    @DisplayName("toPublication preserves Orcid when Author has orcid")
+    public void toPublicationPreservesOrcidWhenAuthorHasOrcid() throws InvalidIssnException {
+        setAuthorWithUnauthenticatedOrcid(sampleInputDocument);
+        Publication actualDocument = toPublication(sampleInputDocument);
+        var orcids = actualDocument.getEntityDescription().getContributors().stream()
+                .map(Contributor::getIdentity)
+                .map(Identity::getOrcId)
+                .collect(Collectors.toList());
+        assertThat(orcids, hasItem(SAMPLE_ORCID));
+    }
+
+    @Test
+    @DisplayName("toPublication sets multiple affiliation labels when author has more affiliations name")
+    public void toPublicationSetsMultipleAffiliationLabelWhenAuthorHasMultipleAffiliationNameDuplicate()
+            throws InvalidIssnException {
+        setAuthorWithMultipleAffiliations(sampleInputDocument);
+        Publication actualDocument = toPublication(sampleInputDocument);
+
+        List<Contributor> contributors = actualDocument.getEntityDescription().getContributors();
+        List<Organization> organisations =
+                contributors.stream()
+                .map(Contributor::getAffiliations)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+
+        assertTrue(organisations.size() > 1);
+    }
+
+    @Test
+    @DisplayName("toPublication sets affiliation to empty list when author has no affiliation")
+    public void toPublicationSetsAffiliationToEmptyListWhenAuthorHasNoAffiliatioDuplicate() throws InvalidIssnException {
         Publication actualDocument = toPublication(sampleInputDocument);
 
         List<Contributor> contributors = actualDocument.getEntityDescription().getContributors();
@@ -545,7 +590,23 @@ public class CrossRefConverterTest extends ConversionTest {
         document.setAuthor(authors);
         return document;
     }
-    
+
+    private CrossRefDocument setAuthorWithUnauthenticatedOrcid(CrossRefDocument document) {
+        CrossrefAuthor author = new CrossrefAuthor.Builder()
+                .withGivenName(AUTHOR_GIVEN_NAME)
+                .withFamilyName(AUTHOR_FAMILY_NAME)
+                .withSequence(FIRST_AUTHOR)
+                .withOrcid(SAMPLE_ORCID)
+                .withAuthenticatedOrcid(false)
+                .build();
+        CrossrefAuthor secondAuthor = new CrossrefAuthor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
+                .withFamilyName(AUTHOR_FAMILY_NAME)
+                .withSequence(SECOND_AUTHOR).build();
+        List<CrossrefAuthor> authors = Arrays.asList(author, secondAuthor);
+        document.setAuthor(authors);
+        return document;
+    }
+
 
     private List<CrossrefAffiliation> createCrossRefAffiliation() {
         CrossrefAffiliation affiliation = new CrossrefAffiliation();

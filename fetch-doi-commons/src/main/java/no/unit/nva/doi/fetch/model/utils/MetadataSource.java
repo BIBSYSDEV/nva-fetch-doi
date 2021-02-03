@@ -1,6 +1,6 @@
 package no.unit.nva.doi.fetch.model.utils;
 
-import nva.commons.utils.JacocoGenerated;
+import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
 public enum MetadataSource {

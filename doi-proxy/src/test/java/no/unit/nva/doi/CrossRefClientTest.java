@@ -15,12 +15,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 
-import no.bibsys.aws.tools.IoUtils;
-
 import no.unit.nva.doi.utils.HttpResponseStatus200;
 import no.unit.nva.doi.utils.HttpResponseStatus404;
 import no.unit.nva.doi.utils.HttpResponseStatus500;
 import no.unit.nva.doi.utils.MockHttpClient;
+import nva.commons.core.ioutils.IoUtils;
 import org.apache.http.HttpHeaders;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -67,7 +66,7 @@ public class CrossRefClientTest {
     @DisplayName("Requests to Crossref are made politely with user agent")
     @Test
     public void crossRefHttpClientIsConfiguredToUseUserAgent() throws URISyntaxException, IOException {
-        var responseBody = IoUtils.resourceAsString(CROSS_REF_SAMPLE_PATH);
+        var responseBody = IoUtils.stringFromResources(CROSS_REF_SAMPLE_PATH);
         var httpClient = new MockHttpClient<>(new HttpResponseStatus200<>(responseBody));
         var crossRefClient = new CrossRefClient(httpClient);
         crossRefClient.fetchDataForDoi(DOI_STRING);
@@ -96,7 +95,7 @@ public class CrossRefClientTest {
     public void fetchDataForDoiReturnAnOptionalWithAJsonObjectForAnExistingUrl()
             throws IOException, URISyntaxException {
         Optional<String> result = crossRefClient.fetchDataForDoi(DOI_STRING).map(MetadataAndContentLocation::getJson);
-        String expected = IoUtils.resourceAsString(CROSS_REF_SAMPLE_PATH);
+        String expected = IoUtils.stringFromResources(CROSS_REF_SAMPLE_PATH);
         assertThat(result.isPresent(), is(true));
         assertThat(result.get(), is(equalTo(expected)));
     }
@@ -136,7 +135,7 @@ public class CrossRefClientTest {
     }
 
     private HttpClient mockHttpClientWithNonEmptyResponse() throws IOException {
-        String responseBody = IoUtils.resourceAsString(CROSS_REF_SAMPLE_PATH);
+        String responseBody = IoUtils.stringFromResources(CROSS_REF_SAMPLE_PATH);
         HttpResponseStatus200<String> response = new HttpResponseStatus200<>(responseBody);
         return new MockHttpClient<>(response);
     }

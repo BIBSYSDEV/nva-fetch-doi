@@ -1,7 +1,7 @@
 package no.unit.nva.doi.transformer.model.datacitemodel;
 
 import java.util.List;
-import nva.commons.utils.JacocoGenerated;
+import nva.commons.core.JacocoGenerated;
 
 public class DataciteContributor {
     private String nameType;

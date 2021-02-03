@@ -7,7 +7,8 @@ import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.DAY_I
 import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.FROM_DATE_INDEX_IN_DATE_ARRAY;
 import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.MONTH_INDEX;
 import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.YEAR_INDEX;
-import static nva.commons.utils.attempt.Try.attempt;
+import static nva.commons.core.StringUtils.isNotEmpty;
+import static nva.commons.core.attempt.Try.attempt;
 
 import com.ibm.icu.text.RuleBasedNumberFormat;
 
@@ -35,6 +36,7 @@ import no.unit.nva.doi.transformer.utils.IssnCleaner;
 import no.unit.nva.doi.transformer.utils.PublicationType;
 import no.unit.nva.doi.transformer.utils.StringUtils;
 import no.unit.nva.doi.transformer.utils.TextLang;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.FileSet;
@@ -51,11 +53,12 @@ import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.Range;
-import nva.commons.utils.JacocoGenerated;
-import nva.commons.utils.attempt.Try;
-import nva.commons.utils.doi.DoiConverterImpl;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.core.attempt.Try;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import nva.commons.doi.DoiConverter;
+
 
 @SuppressWarnings("PMD.GodClass")
 public class CrossRefConverter extends AbstractConverter {
@@ -72,7 +75,7 @@ public class CrossRefConverter extends AbstractConverter {
     private static final String DEFAULT_LANGUAGE_ENGLISH = "en";
 
     public CrossRefConverter() {
-        super(new SimpleLanguageDetector(), new DoiConverterImpl());
+        super(new SimpleLanguageDetector(), new DoiConverter());
     }
 
     /**
@@ -99,7 +102,7 @@ public class CrossRefConverter extends AbstractConverter {
                     .withModifiedDate(now)
                     .withPublishedDate(createPublishedDate())
                     .withOwner(owner)
-                    .withIdentifier(identifier)
+                    .withIdentifier(new SortableIdentifier(identifier.toString()))
                     .withPublisher(toPublisher(publisherId))
                     .withStatus(DEFAULT_NEW_PUBLICATION_STATUS)
                     .withIndexedDate(createIndexedDate())
@@ -326,14 +329,25 @@ public class CrossRefConverter extends AbstractConverter {
      */
     private Contributor toContributor(CrossrefAuthor author, int alternativeSequence) throws
             MalformedContributorException {
-        Identity identity =
-                new Identity.Builder().withName(toName(author.getFamilyName(), author.getGivenName())).build();
+        Identity identity = new Identity.Builder()
+                .withName(toName(author.getFamilyName(), author.getGivenName()))
+                .withOrcId(author.getOrcid())
+                .withArpId(lookupArpidFromOrcid(author.getOrcid()))
+                .build();
         final Contributor.Builder contributorBuilder = new Contributor.Builder();
         if (nonNull(author.getAffiliation())) {
             contributorBuilder.withAffiliations(getAffiliations(author.getAffiliation()));
         }
         return contributorBuilder.withIdentity(identity)
                 .withSequence(parseSequence(author.getSequence(), alternativeSequence)).build();
+    }
+
+    private String lookupArpidFromOrcid(String orcid) {
+
+        if (isNotEmpty(orcid) && orcid.contains("0000-0003-4902-0240")) {
+            return "https://api.dev.nva.aws.unit.no/person/97034820";
+        }
+        return null;
     }
 
     private List<Organization> getAffiliations(List<CrossrefAffiliation> crossrefAffiliations) {
