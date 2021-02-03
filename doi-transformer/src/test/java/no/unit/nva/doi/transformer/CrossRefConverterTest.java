@@ -493,7 +493,7 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("toPublication sets affiliation to empty list when author has no affiliation")
-    public void toPublicationSetsAffiliationToEmptyListWhenAuthorHasNoAffiliatio() throws InvalidIssnException {
+    public void toPublicationSetsAffiliationToEmptyListWhenAuthorHasNoAffiliatioDuplicate() throws InvalidIssnException {
         Publication actualDocument = toPublication(sampleInputDocument);
 
         List<Contributor> contributors = actualDocument.getEntityDescription().getContributors();
