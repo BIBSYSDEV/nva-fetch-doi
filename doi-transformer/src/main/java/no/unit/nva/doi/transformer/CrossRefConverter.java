@@ -31,6 +31,7 @@ import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefAffiliation;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefAuthor;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate;
 import no.unit.nva.doi.transformer.model.crossrefmodel.Issn;
+import no.unit.nva.doi.transformer.model.crossrefmodel.Link;
 import no.unit.nva.doi.transformer.utils.CrossrefType;
 import no.unit.nva.doi.transformer.utils.IssnCleaner;
 import no.unit.nva.doi.transformer.utils.PublicationType;
@@ -107,7 +108,7 @@ public class CrossRefConverter extends AbstractConverter {
                     .withStatus(DEFAULT_NEW_PUBLICATION_STATUS)
                     .withIndexedDate(createIndexedDate())
                     .withHandle(createHandle())
-                    .withLink(createLink())
+                    .withLink(createLink(document.getLink()))
                     .withProjects(createProjects())
                     .withFileSet(createFilseSet())
                     .withEntityDescription(new EntityDescription.Builder()
@@ -397,7 +398,10 @@ public class CrossRefConverter extends AbstractConverter {
         return Collections.emptyList();
     }
 
-    private URI createLink() {
+    private URI createLink(List<Link> link) {
+        if (!isNull(link) && !link.isEmpty()) {
+            return URI.create(link.get(0).getUrl());
+        }
         return null;
     }
 

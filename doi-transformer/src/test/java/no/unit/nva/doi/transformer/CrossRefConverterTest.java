@@ -506,7 +506,7 @@ public class CrossRefConverterTest extends ConversionTest {
 
 
     private List<URI> getPublicationLinks(Publication actualDocument) {
-        return List.of(actualDocument.getLink());
+        return Objects.isNull(actualDocument.getLink()) ? Collections.emptyList() : List.of(actualDocument.getLink());
     }
 
     private List<Link> createSampleLinks() {
