@@ -19,9 +19,6 @@ allprojects {
     project.ext {
         nvaCommonsVersion = '1.0.0'
         nvaDatamodelVersion = 'eda02301f3a1fc1a98dc5782c14fc8335df2f133'
-//        nvaCommonsVersion = '0.8.1'
-//        nvaCommonsVersion = '0.7.4'
-//        nvaDatamodelVersion = '0.11.5'
         nvaTestUtilsVersion = "0.1.18"
         junit5Version = '5.6.2'
         jacksonVersion = '2.10.3'

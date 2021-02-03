@@ -13,4 +13,3 @@ def var = dependencies {
     }
     implementation group: 'jakarta.ws.rs', name: 'jakarta.ws.rs-api', version: project.ext.jakartaVersion
 }
-var
