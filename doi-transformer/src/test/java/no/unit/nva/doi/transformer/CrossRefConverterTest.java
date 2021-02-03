@@ -420,7 +420,6 @@ public class CrossRefConverterTest extends ConversionTest {
     public void toPublicationSetsAffiliationLabelWhenAuthorHasAffiliationName() throws InvalidIssnException {
         setAuthorWithAffiliation(sampleInputDocument);
         Publication actualDocument = toPublication(sampleInputDocument);
-
         List<Contributor> contributors = actualDocument.getEntityDescription().getContributors();
         List<List<Organization>> organisations =  contributors.stream()
                 .map(Contributor::getAffiliations)
@@ -474,6 +473,37 @@ public class CrossRefConverterTest extends ConversionTest {
         assertThat(orcids, hasItem(SAMPLE_ORCID));
     }
 
+    @Test
+    @DisplayName("toPublication sets multiple affiliation labels when author has more affiliations name")
+    public void toPublicationSetsMultipleAffiliationLabelWhenAuthorHasMultipleAffiliationName()
+            throws InvalidIssnException {
+        setAuthorWithMultipleAffiliations(sampleInputDocument);
+        Publication actualDocument = toPublication(sampleInputDocument);
+
+        List<Contributor> contributors = actualDocument.getEntityDescription().getContributors();
+        List<Organization> organisations =
+                contributors.stream()
+                .map(Contributor::getAffiliations)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+
+        assertTrue(organisations.size() > 1);
+    }
+
+    @Test
+    @DisplayName("toPublication sets affiliation to empty list when author has no affiliation")
+    public void toPublicationSetsAffiliationToEmptyListWhenAuthorHasNoAffiliatio() throws InvalidIssnException {
+        Publication actualDocument = toPublication(sampleInputDocument);
+
+        List<Contributor> contributors = actualDocument.getEntityDescription().getContributors();
+        List<List<Organization>> organisations =  contributors.stream()
+                .map(Contributor::getAffiliations)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        assertTrue(organisations.isEmpty());
+    }
 
     private Issn sampleIssn(IssnType type, String value) {
         Issn issn = new Issn();
