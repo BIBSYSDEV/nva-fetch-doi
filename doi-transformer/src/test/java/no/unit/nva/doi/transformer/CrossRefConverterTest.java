@@ -475,7 +475,7 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("toPublication sets multiple affiliation labels when author has more affiliations name")
-    public void toPublicationSetsMultipleAffiliationLabelWhenAuthorHasMultipleAffiliationName()
+    public void toPublicationSetsMultipleAffiliationLabelWhenAuthorHasMultipleAffiliationNameDuplicate()
             throws InvalidIssnException {
         setAuthorWithMultipleAffiliations(sampleInputDocument);
         Publication actualDocument = toPublication(sampleInputDocument);
