@@ -2,6 +2,7 @@ package no.unit.nva.doi.transformer;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -21,17 +22,16 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
 import no.unit.nva.doi.transformer.language.LanguageMapper;
 import no.unit.nva.doi.transformer.language.exceptions.LanguageUriNotFoundException;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossRefDocument;
@@ -41,6 +41,7 @@ import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefAuthor;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate;
 import no.unit.nva.doi.transformer.model.crossrefmodel.Issn;
 import no.unit.nva.doi.transformer.model.crossrefmodel.Issn.IssnType;
+import no.unit.nva.doi.transformer.model.crossrefmodel.Link;
 import no.unit.nva.doi.transformer.utils.CrossrefType;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
@@ -87,7 +88,10 @@ public class CrossRefConverterTest extends ConversionTest {
     public static final String VALID_ISSN_B = "1066-8888";
     public static final int EXPECTED_MONTH = 2;
     public static final int EXPECTED_DAY = 20;
-
+    public static final String SAMPLE_FULLTEXT_URL_STRING =  "https://localhost/fulltext";
+    public static final String SAMPLE_FULLTEXT_CONTENT_TYPE = "application/pdf";
+    public static final String SAMPLE_FULLTEXT_CONTENT_VERSION = "vor";
+    public static final String SAMPLE_FULLTEXT_INTENDED_APPLICATION = "text-mining";
     private CrossRefDocument sampleInputDocument = createSampleDocument();
     private final CrossRefConverter converter = new CrossRefConverter();
     private Publication samplePublication;
@@ -420,6 +424,7 @@ public class CrossRefConverterTest extends ConversionTest {
     public void toPublicationSetsAffiliationLabelWhenAuthorHasAffiliationName() throws InvalidIssnException {
         setAuthorWithAffiliation(sampleInputDocument);
         Publication actualDocument = toPublication(sampleInputDocument);
+
         List<Contributor> contributors = actualDocument.getEntityDescription().getContributors();
         List<List<Organization>> organisations =  contributors.stream()
                 .map(Contributor::getAffiliations)
@@ -474,36 +479,45 @@ public class CrossRefConverterTest extends ConversionTest {
     }
 
     @Test
-    @DisplayName("toPublication sets multiple affiliation labels when author has more affiliations name")
-    public void toPublicationSetsMultipleAffiliationLabelWhenAuthorHasMultipleAffiliationNameDuplicate()
-            throws InvalidIssnException {
-        setAuthorWithMultipleAffiliations(sampleInputDocument);
+    @DisplayName("toPublication preserves fulltext links when links are available")
+    public void toPublicationPreservesFulltextLinks() throws InvalidIssnException {
+        final List<Link> sampleLinks = createSampleLinks();
+        sampleInputDocument.setLink(sampleLinks);
         Publication actualDocument = toPublication(sampleInputDocument);
-
-        List<Contributor> contributors = actualDocument.getEntityDescription().getContributors();
-        List<Organization> organisations =
-                contributors.stream()
-                .map(Contributor::getAffiliations)
-                .filter(Objects::nonNull)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList());
-
-        assertTrue(organisations.size() > 1);
+        List<URI> expectedLinks = getCrossrefLinks(sampleLinks);
+        List<URI> actualLinks = getPublicationLinks(actualDocument);
+        assertTrue(actualLinks.containsAll(expectedLinks));
     }
 
     @Test
-    @DisplayName("toPublication sets affiliation to empty list when author has no affiliation")
-    public void toPublicationSetsAffiliationToEmptyListWhenAuthorHasNoAffiliatioDuplicate() throws InvalidIssnException {
+    @DisplayName("toPublication does not add fulltext links when there is none")
+    public void toPublicationDoesNotAddFulltextLinksWhenThereIsNone() throws InvalidIssnException {
+        final List<Link> sampleLinks = Collections.emptyList();
+        sampleInputDocument.setLink(sampleLinks);
         Publication actualDocument = toPublication(sampleInputDocument);
-
-        List<Contributor> contributors = actualDocument.getEntityDescription().getContributors();
-        List<List<Organization>> organisations =  contributors.stream()
-                .map(Contributor::getAffiliations)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-
-        assertTrue(organisations.isEmpty());
+        List<URI> expectedLinks = getCrossrefLinks(sampleLinks);
+        List<URI> actualLinks = getPublicationLinks(actualDocument);
+        assertTrue(actualLinks.containsAll(expectedLinks));
     }
+
+    private List<URI> getCrossrefLinks(List<Link> sampleLinks) {
+        return sampleLinks.stream().map(Link::getUrl).map(URI::create).collect(Collectors.toList());
+    }
+
+
+    private List<URI> getPublicationLinks(Publication actualDocument) {
+        return List.of(actualDocument.getLink());
+    }
+
+    private List<Link> createSampleLinks() {
+        Link fulltextLink = new Link();
+        fulltextLink.setUrl(SAMPLE_FULLTEXT_URL_STRING);
+        fulltextLink.setContentType(SAMPLE_FULLTEXT_CONTENT_TYPE);
+        fulltextLink.setContentVersion(SAMPLE_FULLTEXT_CONTENT_VERSION);
+        fulltextLink.setIntendedApplication(SAMPLE_FULLTEXT_INTENDED_APPLICATION);
+        return List.of(fulltextLink);
+    }
+
 
     private Issn sampleIssn(IssnType type, String value) {
         Issn issn = new Issn();
