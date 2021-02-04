@@ -128,7 +128,7 @@ Resources:
           ALLOWED_ORIGIN: '*'
           PUBLICATION_API_SCHEME: https
           PUBLICATION_API_HOST: !Ref CustomDomain
-          BARE_PROXY_API_URI: !Sub 'https://:${CustomDomain}'
+          BARE_PROXY_API_URI: !Sub 'https://${CustomDomain}'
       Events:
         NvaDoi:
           Type: Api
