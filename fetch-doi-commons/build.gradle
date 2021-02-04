@@ -3,7 +3,7 @@ def problemVersion = '0.24.0'
 
 dependencies {
 
-Added n    api group: 'no.unit.nva', name: 'core', version: project.ext.nvaCommonsVersion
+    api group: 'no.unit.nva', name: 'core', version: project.ext.nvaCommonsVersion
     api group: 'no.unit.nva', name: 'apigateway', version: project.ext.nvaCommonsVersion
     api group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
     api group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
