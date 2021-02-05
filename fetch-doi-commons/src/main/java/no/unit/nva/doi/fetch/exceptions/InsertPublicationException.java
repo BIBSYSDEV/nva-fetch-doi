@@ -1,7 +1,7 @@
 package no.unit.nva.doi.fetch.exceptions;
 
-import nva.commons.exceptions.ApiGatewayException;
-import org.apache.http.HttpStatus;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import java.net.HttpURLConnection;
 
 public class InsertPublicationException extends ApiGatewayException {
 
@@ -11,6 +11,6 @@ public class InsertPublicationException extends ApiGatewayException {
 
     @Override
     protected Integer statusCode() {
-        return HttpStatus.SC_BAD_GATEWAY;
+        return HttpURLConnection.HTTP_BAD_GATEWAY;
     }
 }

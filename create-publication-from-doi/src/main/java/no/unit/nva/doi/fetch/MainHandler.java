@@ -1,16 +1,9 @@
 package no.unit.nva.doi.fetch;
 
-import static java.util.Objects.isNull;
-import static nva.commons.utils.attempt.Try.attempt;
-import static org.apache.http.HttpStatus.SC_OK;
-
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.doi.DataciteContentType;
 import no.unit.nva.doi.DoiProxyService;
@@ -21,21 +14,31 @@ import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
 import no.unit.nva.doi.fetch.exceptions.TransformFailedException;
 import no.unit.nva.doi.fetch.model.RequestBody;
 import no.unit.nva.doi.fetch.model.Summary;
+import no.unit.nva.doi.fetch.service.IdentityUpdater;
 import no.unit.nva.doi.fetch.service.PublicationConverter;
 import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
 import no.unit.nva.doi.transformer.DoiTransformService;
+import no.unit.nva.doi.transformer.utils.BareProxyClient;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIssnException;
-import nva.commons.exceptions.ApiGatewayException;
-import nva.commons.handlers.ApiGatewayHandler;
-import nva.commons.handlers.RequestInfo;
-import nva.commons.utils.Environment;
-import nva.commons.utils.JacocoGenerated;
-import nva.commons.utils.JsonUtils;
+import nva.commons.apigateway.ApiGatewayHandler;
+import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.core.JsonUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+
+import static java.util.Objects.isNull;
+import static nva.commons.core.attempt.Try.attempt;
+import static org.apache.http.HttpStatus.SC_OK;
 
 public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
@@ -51,6 +54,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     private final transient DoiTransformService doiTransformService;
     private final transient DoiProxyService doiProxyService;
     private final transient PublicationPersistenceService publicationPersistenceService;
+    private final transient BareProxyClient bareProxyClient;
     private final transient String publicationApiHost;
     private final transient String publicationApiScheme;
 
@@ -59,7 +63,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     @JacocoGenerated
     public MainHandler() {
         this(JsonUtils.objectMapper, new PublicationConverter(), new DoiTransformService(),
-            new DoiProxyService(), new PublicationPersistenceService(), new Environment());
+            new DoiProxyService(), new PublicationPersistenceService(), new BareProxyClient(), new Environment());
     }
 
     /**
@@ -73,6 +77,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
                        DoiTransformService doiTransformService,
                        DoiProxyService doiProxyService,
                        PublicationPersistenceService publicationPersistenceService,
+                       BareProxyClient bareProxyClient,
                        Environment environment) {
         super(RequestBody.class, environment, logger);
         this.objectMapper = objectMapper;
@@ -80,8 +85,10 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         this.doiTransformService = doiTransformService;
         this.doiProxyService = doiProxyService;
         this.publicationPersistenceService = publicationPersistenceService;
+        this.bareProxyClient = bareProxyClient;
         this.publicationApiHost = environment.readEnv(PUBLICATION_API_HOST_ENV);
         this.publicationApiScheme = environment.readEnv(PUBLICATION_API_SCHEME_ENV);
+
     }
 
     @Override
@@ -96,14 +103,16 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         String authorization = requestInfo.getHeader(HttpHeaders.AUTHORIZATION);
         boolean interrupted = false;
         try {
-            Publication publication = getPublicationMetadata(input, owner, URI.create(customerId));
+            Publication publication = IdentityUpdater.enrichPublicationCreators(bareProxyClient,
+                    getPublicationMetadata(input, owner, URI.create(customerId)));
             long insertStartTime = System.nanoTime();
             PublicationResponse publicationResponse = tryInsertPublication(authorization, apiUrl, publication);
             long insertEndTime = System.nanoTime();
             logger.info("Publication inserted after {} ms", (insertEndTime - insertStartTime) / 1000);
             return publicationConverter
                 .toSummary(objectMapper.convertValue(publicationResponse, JsonNode.class));
-        } catch (URISyntaxException
+        } catch (IllegalArgumentException
+            | URISyntaxException
             | IOException
             | InvalidIssnException e) {
             throw new TransformFailedException(e.getMessage());

@@ -18,8 +18,8 @@ import no.unit.nva.api.CreatePublicationRequest;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.doi.fetch.exceptions.InsertPublicationException;
 import no.unit.nva.model.Publication;
-import nva.commons.utils.JacocoGenerated;
-import nva.commons.utils.JsonUtils;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.core.JsonUtils;
 
 public class PublicationPersistenceService extends RestClient {
 

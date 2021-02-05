@@ -1,6 +1,8 @@
 package no.unit.nva.doi.transformer.model.crossrefmodel;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import nva.commons.core.JacocoGenerated;
+
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -11,7 +13,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
-import nva.commons.utils.JacocoGenerated;
 
 /**
  * Parses dates in the following (JSON) format.
@@ -34,6 +35,12 @@ import nva.commons.utils.JacocoGenerated;
  */
 @SuppressWarnings("PMD.MethodReturnsInternalArray")
 public class CrossrefDate {
+
+
+    public static final int YEAR_INDEX = 0;
+    public static final int MONTH_INDEX = 1;
+    public static final int DAY_INDEX = 2;
+    public static final int FROM_DATE_INDEX_IN_DATE_ARRAY = 0;
 
     private static String SELECT_ZONE_OFFSET_BY_CONSTANT = "";
     @JsonProperty("date-parts")
@@ -92,7 +99,7 @@ public class CrossrefDate {
         return Stream.empty();
     }
 
-    private boolean hasYear(int... dateArray) {
+    public boolean hasYear(int... dateArray) {
         return dateArray != null && dateArray.length > 0;
     }
 

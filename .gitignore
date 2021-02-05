@@ -286,3 +286,4 @@ gradle-app.setting
 ### SAM build output files ###
 /packaged.yaml
 /sampackaged_raw.yaml
+/.aws-sam/build.toml

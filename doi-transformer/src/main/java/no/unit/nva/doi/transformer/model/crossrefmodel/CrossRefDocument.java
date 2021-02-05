@@ -1,8 +1,9 @@
 package no.unit.nva.doi.transformer.model.crossrefmodel;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import nva.commons.core.JacocoGenerated;
+
 import java.util.List;
-import nva.commons.utils.JacocoGenerated;
 
 @SuppressWarnings({"PMD.TooManyFields", "PMD.ExcessivePublicCount"})
 public class CrossRefDocument {
@@ -82,6 +83,8 @@ public class CrossRefDocument {
     private List<Issn> issnType;
     @JsonProperty("abstract")
     private String abstractText;
+    @JsonProperty("subject")
+    private List<String> subject;
 
     public void setIndexed(CrossrefDate indexed) {
         this.indexed = indexed;
@@ -379,6 +382,15 @@ public class CrossRefDocument {
     public void setAbstractText(String abstractText) {
         this.abstractText = abstractText;
     }
+
+    public List<String> getSubject() {
+        return subject;
+    }
+
+    public void setSubject(List<String> subject) {
+        this.subject = subject;
+    }
+
 }
 
 

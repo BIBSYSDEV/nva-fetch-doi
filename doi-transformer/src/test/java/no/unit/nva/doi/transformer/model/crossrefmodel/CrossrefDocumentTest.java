@@ -8,8 +8,8 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.file.Path;
-import nva.commons.utils.IoUtils;
-import nva.commons.utils.JsonUtils;
+import nva.commons.core.ioutils.IoUtils;
+import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.Test;
 
 public class CrossrefDocumentTest {

@@ -1,0 +1,21 @@
+[
+  {
+    "id": "https://api.dev.nva.aws.unit.no/person/1600776277420",
+    "name": "Hellesvik, Terje",
+    "feideids": [
+      "tehe@unit.no"
+    ],
+    "orcids": [
+      "0000-0002-8617-3281",
+      "https://sandbox.orcid.org/0000-0002-8617-3281"
+    ],
+    "orgunitids": [
+      "https://api.cristin.no/v2/institutions/20202",
+      "https://api.cristin.no/v2/units/194.60.0.0"
+    ],
+    "birthDate": "",
+    "handles": [
+      "http://hdl.handle.net/11250.1/38910719"
+    ]
+  }
+]

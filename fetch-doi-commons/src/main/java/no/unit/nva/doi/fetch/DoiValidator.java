@@ -3,7 +3,7 @@ package no.unit.nva.doi.fetch;
 import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import nva.commons.utils.JacocoGenerated;
+import nva.commons.core.JacocoGenerated;
 
 import static java.util.Objects.isNull;
 

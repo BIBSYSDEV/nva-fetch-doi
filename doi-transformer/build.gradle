@@ -1,7 +1,15 @@
-dependencies {
+def var = dependencies {
     implementation project(":fetch-doi-commons")
 
+    api(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
+        exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
+    }
+    api group: 'no.unit.nva', name: 'identifiers', version: project.ext.nvaCommonsVersion
+    api group: 'no.unit.nva', name: 'doi', version: project.ext.nvaCommonsVersion
+
+    runtimeOnly group: 'org.glassfish.jersey.core', name: 'jersey-common', version: project.ext.jerseyVersion
     implementation(group: 'com.ibm.icu', name: 'icu4j', version: '66.1') {
         because 'We use this to map ordinals to numbers'
     }
+    implementation group: 'jakarta.ws.rs', name: 'jakarta.ws.rs-api', version: project.ext.jakartaVersion
 }
