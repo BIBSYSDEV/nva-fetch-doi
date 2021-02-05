@@ -35,7 +35,7 @@ class IdentityUpdaterTest {
     public static final String ILLEGAL_ORCID = "hts:sdbox.orcid.org?0'0-1111-2222-3333";
 
     @Test
-    public void enrichPublicationCreatorsUpdatesPublicationWithCreatorHavinOrcidAndNoArpid() throws URISyntaxException,
+    public void enrichPublicationCreatorsUpdatesPublicationWithCreatorHavingOrcidAndNoArpid() throws URISyntaxException,
             MalformedContributorException {
         Identity identity = createIdentityWithOrcid();
         BareProxyClient bareProxyClient = mock(BareProxyClient.class);
@@ -46,14 +46,20 @@ class IdentityUpdaterTest {
         assertFalse(intialArpIds.contains(SAMPLE_ARPID));
 
         Publication updatedPublication = IdentityUpdater.enrichPublicationCreators(bareProxyClient, publication);
-        List<String> arpIds = getArpIds(updatedPublication);
-        assertTrue(arpIds.contains(SAMPLE_ARPID));
+        List<String> ids = getIdentifierIds(updatedPublication);
+        assertTrue(ids.contains(SAMPLE_ARPID));
     }
 
     private List<String> getArpIds(Publication updatedPublication) {
         return updatedPublication.getEntityDescription().getContributors().stream()
                 .map(Contributor::getIdentity).map(Identity::getArpId).collect(Collectors.toList());
     }
+
+    private List<String> getIdentifierIds(Publication updatedPublication) {
+        return updatedPublication.getEntityDescription().getContributors().stream()
+                .map(Contributor::getIdentity).map(Identity::getId).map(URI::toString).collect(Collectors.toList());
+    }
+
 
     @Test
     public void enrichPublicationCreatorsDoesNotAlterPublicationWithoutOrcid() throws URISyntaxException,

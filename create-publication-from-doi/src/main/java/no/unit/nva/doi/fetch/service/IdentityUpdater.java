@@ -7,6 +7,7 @@ import no.unit.nva.model.Publication;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
 
@@ -71,7 +72,9 @@ public final class IdentityUpdater {
             throws URISyntaxException {
         try {
             Optional<String> arpId = bareProxyClient.lookupArpidForOrcid(identity.getOrcId());
-            arpId.ifPresent(identity::setArpId);
+            if (arpId.isPresent()) {
+                identity.setId(URI.create(arpId.get()));
+            }
         } catch (IllegalArgumentException e) {
             logErrorAndThrowIllegalArgumentException(e);
         }
