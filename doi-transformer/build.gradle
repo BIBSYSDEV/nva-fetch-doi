@@ -4,8 +4,8 @@ def var = dependencies {
     api(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
         exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
     }
-    api group: 'no.unit.nva', name: 'identifiers', version: project.ext.nvaCommonsVersion
-    api group: 'no.unit.nva', name: 'doi', version: project.ext.nvaCommonsVersion
+    api group: 'no.unit.nva', name: 'identifiers', version: project.ext.nvaCoreVersion
+    api group: 'no.unit.nva', name: 'doi', version: project.ext.nvaCoreVersion
 
     runtimeOnly group: 'org.glassfish.jersey.core', name: 'jersey-common', version: project.ext.jerseyVersion
     implementation(group: 'com.ibm.icu', name: 'icu4j', version: '66.1') {
