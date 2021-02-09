@@ -20,6 +20,7 @@ import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
 import no.unit.nva.doi.transformer.DoiTransformService;
 import no.unit.nva.doi.transformer.utils.BareProxyClient;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -112,9 +113,10 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
             return publicationConverter
                 .toSummary(objectMapper.convertValue(publicationResponse, JsonNode.class));
         } catch (IllegalArgumentException
-            | URISyntaxException
-            | IOException
-            | InvalidIssnException e) {
+                | URISyntaxException
+                | IOException
+                | InvalidIssnException
+                | InvalidIsbnException e) {
             throw new TransformFailedException(e.getMessage());
         } catch (InterruptedException e) {
             interrupted = true;
@@ -144,7 +146,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     private Publication getPublicationMetadata(RequestBody requestBody,
                                                String owner, URI customerId)
-        throws URISyntaxException, IOException, InvalidIssnException, MetadataNotFoundException {
+            throws URISyntaxException, IOException, InvalidIssnException, MetadataNotFoundException, InvalidIsbnException {
         MetadataAndContentLocation metadataAndContentLocation = doiProxyService.lookupDoiMetadata(
             requestBody.getDoiUrl().toString(), DataciteContentType.DATACITE_JSON);
 

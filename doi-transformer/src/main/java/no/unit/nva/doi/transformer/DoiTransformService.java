@@ -11,6 +11,7 @@ import no.unit.nva.doi.transformer.model.crossrefmodel.CrossRefDocument;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefApiResponse;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteResponse;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 
 public class DoiTransformService {
@@ -50,7 +51,7 @@ public class DoiTransformService {
      *                                  the publication instance type.
      */
     public Publication transformPublication(String body, String contentLocation, String owner, URI customerId)
-            throws JsonProcessingException, URISyntaxException, InvalidIssnException {
+            throws JsonProcessingException, URISyntaxException, InvalidIssnException, InvalidIsbnException {
         UUID uuid = UUID.randomUUID();
         Instant now = Instant.now();
         return convertInputToPublication(body, contentLocation, now, owner, uuid, customerId);
@@ -58,7 +59,7 @@ public class DoiTransformService {
 
     protected Publication convertInputToPublication(String body, String contentLocation, Instant now, String owner,
                                                     UUID identifier, URI publisher)
-            throws JsonProcessingException, URISyntaxException, InvalidIssnException {
+            throws JsonProcessingException, URISyntaxException, InvalidIssnException, InvalidIsbnException {
 
         MetadataLocation metadataLocation = MetadataLocation.lookup(contentLocation);
         if (metadataLocation.equals(MetadataLocation.CROSSREF)) {
@@ -75,7 +76,7 @@ public class DoiTransformService {
     }
 
     private Publication convertFromCrossRef(String body, Instant now, String owner, UUID identifier, URI publisherId)
-            throws JsonProcessingException, InvalidIssnException {
+            throws JsonProcessingException, InvalidIssnException, InvalidIsbnException {
 
         CrossRefDocument document = objectMapper.readValue(body, CrossrefApiResponse.class).getMessage();
         return crossRefConverter.toPublication(document, now, owner, identifier, publisherId);

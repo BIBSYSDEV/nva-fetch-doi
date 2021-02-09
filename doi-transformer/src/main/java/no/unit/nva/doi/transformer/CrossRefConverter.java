@@ -47,7 +47,11 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.contexttypes.BasicContext;
+import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
@@ -73,6 +77,7 @@ public class CrossRefConverter extends AbstractConverter {
     public static final int FIRST_DAY_IN_MONTH = 1;
     private static final Logger logger = LoggerFactory.getLogger(CrossRefConverter.class);
     private static final String DEFAULT_LANGUAGE_ENGLISH = "en";
+    public static final String MISSING_CROSSREF_TYPE_IN_DOCUMENT = "Missing crossref type in document";
 
     public CrossRefConverter() {
         super(new SimpleLanguageDetector(), new DoiConverter());
@@ -94,7 +99,7 @@ public class CrossRefConverter extends AbstractConverter {
                                      Instant now,
                                      String owner,
                                      UUID identifier,
-                                     URI publisherId) throws InvalidIssnException {
+                                     URI publisherId) throws InvalidIssnException, InvalidIsbnException {
 
         if (document != null && hasTitle(document)) {
             return new Publication.Builder()
@@ -151,9 +156,9 @@ public class CrossRefConverter extends AbstractConverter {
         }
     }
 
-    private Reference extractReference(CrossRefDocument document) throws InvalidIssnException {
+    private Reference extractReference(CrossRefDocument document) throws InvalidIssnException, InvalidIsbnException {
         PublicationInstance<?> instance = extractPublicationInstance(document);
-        BasicContext context = extractPublicationContext(document);
+        PublicationContext context = extractPublicationContext(document);
         return new Reference.Builder()
                 .withDoi(doiConverter.toUri(document.getDoi()))
                 .withPublishingContext(context)
@@ -165,22 +170,38 @@ public class CrossRefConverter extends AbstractConverter {
         return StringUtils.parsePage(document.getPage());
     }
 
-    private BasicContext extractPublicationContext(CrossRefDocument document) throws InvalidIssnException {
+    private PublicationContext extractPublicationContext(CrossRefDocument document) throws InvalidIssnException, InvalidIsbnException {
         CrossrefType crossrefType = CrossrefType.getByType(document.getType());
         PublicationType publicationType = crossrefType.getPublicationType();
 
-        if (nonNull(publicationType) && publicationType.equals(PublicationType.JOURNAL_CONTENT)) {
-            // TODO actually call the Channel Register API and get the relevant details
-            return new Journal.Builder()
-                    .withLevel(null)
-                    .withTitle(extractJournalTitle(document))
-                    .withOnlineIssn(extractOnlineIssn(document))
-                    .withPrintIssn(extractPrintIssn(document))
-                    .withOpenAccess(false)
-                    .withPeerReviewed(false)
-                    .build();
+        if (nonNull(crossrefType)) {
+            if (publicationType.equals(PublicationType.JOURNAL_CONTENT)) {
+                // TODO actually call the Channel Register API and get the relevant details
+                return new Journal.Builder()
+                        .withLevel(null)
+                        .withTitle(extractJournalTitle(document))
+                        .withOnlineIssn(extractOnlineIssn(document))
+                        .withPrintIssn(extractPrintIssn(document))
+                        .withOpenAccess(false)
+                        .withPeerReviewed(false)
+                        .build();
+            } else if (publicationType.equals(PublicationType.BOOK)) {
+                // TODO actually call the Channel Register API and get the relevant details
+                return new Book.Builder()
+                        .withLevel(null)
+                        .withOpenAccess(false)
+                        .withPeerReviewed(false)
+                        .build();
+
+            } else if (publicationType.equals(PublicationType.BOOK_CHAPTER)) {
+                // TODO actually call the Channel Register API and get the relevant details
+                return new Chapter.Builder()
+                        .build();
+            } else {
+                throw new IllegalArgumentException(String.format(UNRECOGNIZED_TYPE_MESSAGE, document.getType()));
+            }
         } else {
-            throw new IllegalArgumentException(String.format(UNRECOGNIZED_TYPE_MESSAGE, document.getType()));
+            throw new IllegalArgumentException(MISSING_CROSSREF_TYPE_IN_DOCUMENT);
         }
     }
 
