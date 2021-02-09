@@ -48,6 +48,7 @@ public class DoiTransformService {
      * @throws JsonProcessingException  when cannot process json.
      * @throws URISyntaxException       when the input contains invalid URIs
      * @throws InvalidIssnException     thrown if a provided ISSN is invalid.
+     * @throws InvalidIsbnException     thrown if a provided ISBN is invalid.
      *                                  the publication instance type.
      */
     public Publication transformPublication(String body, String contentLocation, String owner, URI customerId)

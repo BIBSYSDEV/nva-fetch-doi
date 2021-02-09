@@ -146,7 +146,8 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     private Publication getPublicationMetadata(RequestBody requestBody,
                                                String owner, URI customerId)
-            throws URISyntaxException, IOException, InvalidIssnException, MetadataNotFoundException, InvalidIsbnException {
+            throws URISyntaxException, IOException, InvalidIssnException,
+            MetadataNotFoundException, InvalidIsbnException {
         MetadataAndContentLocation metadataAndContentLocation = doiProxyService.lookupDoiMetadata(
             requestBody.getDoiUrl().toString(), DataciteContentType.DATACITE_JSON);
 

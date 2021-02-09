@@ -73,7 +73,7 @@ public class CrossRefConverterTest extends ConversionTest {
     private static final String SAMPLE_DOCUMENT_TITLE = "Sample document title";
     private static final Integer NUMBER_OF_SAMPLE_AUTHORS = 2;
     public static final String SURNAME_COMMA_FIRSTNAME = "%s,.*%s";
-    public static final String NOT_JOURNAL_ARTICLE = "book";
+    public static final String NOT_JOURNAL_ARTICLE = "dissertation";
     private static final UUID DOC_ID = UUID.randomUUID();
     private static final String OWNER = "TheOwner";
     private static final String INVALID_ORDINAL = "invalid ordinal";
@@ -137,7 +137,8 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("toPublication sets null EntityDescription date when input has no \"issued\" date")
-    public void entityDescriptionDateIsNullWhenInputDataHasNoPublicationDate() throws InvalidIssnException, InvalidIsbnException {
+    public void entityDescriptionDateIsNullWhenInputDataHasNoPublicationDate()
+            throws InvalidIssnException, InvalidIsbnException {
         sampleInputDocument.setIssued(null);
         Publication publicationWithoutDate = toPublication(sampleInputDocument);
         PublicationDate actualDate = publicationWithoutDate.getEntityDescription().getDate();
@@ -163,7 +164,8 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("toPublication sets as sequence the position of the author in the list when ordinal is not numerical")
-    public void toPublicationSetsOrdinalAsSecondAuthorIfInputOrdinalIsNotAValidOrdinal() throws InvalidIssnException, InvalidIsbnException {
+    public void toPublicationSetsOrdinalAsSecondAuthorIfInputOrdinalIsNotAValidOrdinal()
+            throws InvalidIssnException, InvalidIsbnException {
         int numberOfAuthors = sampleInputDocument.getAuthor().size();
         sampleInputDocument.getAuthor().forEach(a -> {
             a.setSequence(INVALID_ORDINAL);
@@ -192,7 +194,8 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("toPublication sets abstract when input has non empty abstract")
-    public void toPublicationSetsAbstractWhenInputHasNonEmptyAbstract() throws IOException, InvalidIssnException, InvalidIsbnException {
+    public void toPublicationSetsAbstractWhenInputHasNonEmptyAbstract()
+            throws IOException, InvalidIssnException, InvalidIsbnException {
         String json = IoUtils.stringFromResources(Path.of(CROSSREF_WITH_ABSTRACT_JSON));
         CrossRefDocument docWithAbstract = objectMapper.readValue(json, CrossrefApiResponse.class).getMessage();
         String abstractText = toPublication(docWithAbstract).getEntityDescription().getAbstract();
@@ -215,7 +218,8 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("toPublication sets the doi of the Reference when the Crossref document has a \"DOI\" value ")
-    public void toPublicationSetsTheDoiOfTheReferenceWhenTheCrossrefDocHasADoiValue() throws InvalidIssnException, InvalidIsbnException {
+    public void toPublicationSetsTheDoiOfTheReferenceWhenTheCrossrefDocHasADoiValue()
+            throws InvalidIssnException, InvalidIsbnException {
         DoiConverter doiConverter = new DoiConverter();
         sampleInputDocument.setDoi(SOME_DOI);
         URI actualDoi = toPublication(sampleInputDocument).getEntityDescription().getReference().getDoi();
@@ -308,7 +312,8 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("toPublication sets null for online ISSN when only print ISSN is available")
-    public void toPublicationSetsNullOnlineIssnWhenOnlyPrintISSnIsAvailable() throws InvalidIssnException, InvalidIsbnException {
+    public void toPublicationSetsNullOnlineIssnWhenOnlyPrintISSnIsAvailable()
+            throws InvalidIssnException, InvalidIsbnException {
         IssnType type = IssnType.PRINT;
         Issn printIssn = sampleIssn(type,VALID_ISSN_A);
         sampleInputDocument.setIssnType(Collections.singletonList(printIssn));
@@ -323,7 +328,8 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("toPublication sets null for print ISSN when only online ISSN is available")
-    public void toPublicationSetsNullPrintIssnWhenOnlyOnlineISSnIsAvailable() throws InvalidIssnException, InvalidIsbnException {
+    public void toPublicationSetsNullPrintIssnWhenOnlyOnlineISSnIsAvailable()
+            throws InvalidIssnException, InvalidIsbnException {
         IssnType type = IssnType.ELECTRONIC;
         Issn onlineIssn = sampleIssn(type,VALID_ISSN_A);
         sampleInputDocument.setIssnType(Collections.singletonList(onlineIssn));
@@ -390,7 +396,8 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("toPublication sets tags to empty list when subject are not available")
-    public void toPublicationSetsTagsToEmptyListWhenSubjectAreNotAvailable() throws InvalidIssnException, InvalidIsbnException {
+    public void toPublicationSetsTagsToEmptyListWhenSubjectAreNotAvailable()
+            throws InvalidIssnException, InvalidIsbnException {
         sampleInputDocument.setSubject(null);
         Publication actualDocument = toPublication(sampleInputDocument);
         List<String> actualTags = actualDocument.getEntityDescription().getTags();
@@ -400,7 +407,8 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("toPublication preserves all date parts when they are available")
-    public void toPublicationPreservesAllDatepartsWhenTheyAreAvailable() throws InvalidIssnException, InvalidIsbnException {
+    public void toPublicationPreservesAllDatepartsWhenTheyAreAvailable()
+            throws InvalidIssnException, InvalidIsbnException {
         int[][] dateParts = new int[1][DATE_SIZE];
         dateParts[0] = new int[]{EXPECTED_YEAR, EXPECTED_MONTH, EXPECTED_DAY};
         CrossrefDate crossrefDate = new CrossrefDate();
@@ -418,7 +426,8 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("toPublication sets affiliation labels when author.affiliation.name is available")
-    public void toPublicationSetsAffiliationLabelWhenAuthorHasAffiliationName() throws InvalidIssnException, InvalidIsbnException {
+    public void toPublicationSetsAffiliationLabelWhenAuthorHasAffiliationName()
+            throws InvalidIssnException, InvalidIsbnException {
         setAuthorWithAffiliation(sampleInputDocument);
         Publication actualDocument = toPublication(sampleInputDocument);
         List<Contributor> contributors = actualDocument.getEntityDescription().getContributors();
@@ -450,7 +459,8 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("toPublication sets affiliation to empty list when author has no affiliation")
-    public void toPublicationSetsAffiliationToEmptyListWhenAuthorHasNoAffiliatio() throws InvalidIssnException, InvalidIsbnException {
+    public void toPublicationSetsAffiliationToEmptyListWhenAuthorHasNoAffiliatio()
+            throws InvalidIssnException, InvalidIsbnException {
         Publication actualDocument = toPublication(sampleInputDocument);
 
         List<Contributor> contributors = actualDocument.getEntityDescription().getContributors();
@@ -494,7 +504,8 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("toPublication sets affiliation to empty list when author has no affiliation")
-    public void toPublicationSetsAffiliationToEmptyListWhenAuthorHasNoAffiliatioDuplic() throws InvalidIssnException, InvalidIsbnException {
+    public void toPublicationSetsAffiliationToEmptyListWhenAuthorHasNoAffiliatioDuplic()
+            throws InvalidIssnException, InvalidIsbnException {
         Publication actualDocument = toPublication(sampleInputDocument);
 
         List<Contributor> contributors = actualDocument.getEntityDescription().getContributors();

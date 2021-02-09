@@ -1,29 +1,6 @@
 package no.unit.nva.doi.transformer;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
-import static java.util.function.Predicate.not;
-import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.DAY_INDEX;
-import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.FROM_DATE_INDEX_IN_DATE_ARRAY;
-import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.MONTH_INDEX;
-import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.YEAR_INDEX;
-import static nva.commons.core.StringUtils.isNotEmpty;
-import static nva.commons.core.attempt.Try.attempt;
-
 import com.ibm.icu.text.RuleBasedNumberFormat;
-
-import java.net.URI;
-import java.time.Instant;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
 import no.unit.nva.doi.transformer.language.LanguageMapper;
 import no.unit.nva.doi.transformer.language.SimpleLanguageDetector;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossRefDocument;
@@ -46,7 +23,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
-import no.unit.nva.model.contexttypes.BasicContext;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Journal;
@@ -59,9 +35,31 @@ import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
+import nva.commons.doi.DoiConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import nva.commons.doi.DoiConverter;
+
+import java.net.URI;
+import java.time.Instant;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+import static java.util.function.Predicate.not;
+import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.DAY_INDEX;
+import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.FROM_DATE_INDEX_IN_DATE_ARRAY;
+import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.MONTH_INDEX;
+import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.YEAR_INDEX;
+import static nva.commons.core.StringUtils.isNotEmpty;
+import static nva.commons.core.attempt.Try.attempt;
 
 
 @SuppressWarnings("PMD.GodClass")
@@ -75,9 +73,9 @@ public class CrossRefConverter extends AbstractConverter {
             "CrossRef document does not contain required date field 'issued'";
     public static final int FIRST_MONTH_IN_YEAR = 1;
     public static final int FIRST_DAY_IN_MONTH = 1;
+    public static final String MISSING_CROSSREF_TYPE_IN_DOCUMENT = "Missing crossref type in document";
     private static final Logger logger = LoggerFactory.getLogger(CrossRefConverter.class);
     private static final String DEFAULT_LANGUAGE_ENGLISH = "en";
-    public static final String MISSING_CROSSREF_TYPE_IN_DOCUMENT = "Missing crossref type in document";
 
     public CrossRefConverter() {
         super(new SimpleLanguageDetector(), new DoiConverter());
@@ -93,6 +91,7 @@ public class CrossRefConverter extends AbstractConverter {
      * @param publisherId the id for a publisher.
      * @return an internal representation of the publication.
      * @throws InvalidIssnException thrown if a provided ISSN is invalid.
+     * @throws InvalidIsbnException thrown if a provided ISBN is invalid.
      *                              type.
      */
     public Publication toPublication(CrossRefDocument document,
@@ -170,39 +169,41 @@ public class CrossRefConverter extends AbstractConverter {
         return StringUtils.parsePage(document.getPage());
     }
 
-    private PublicationContext extractPublicationContext(CrossRefDocument document) throws InvalidIssnException, InvalidIsbnException {
+    private PublicationContext extractPublicationContext(CrossRefDocument document)
+            throws InvalidIssnException, InvalidIsbnException {
         CrossrefType crossrefType = CrossrefType.getByType(document.getType());
-        PublicationType publicationType = crossrefType.getPublicationType();
 
         if (nonNull(crossrefType)) {
-            if (publicationType.equals(PublicationType.JOURNAL_CONTENT)) {
-                // TODO actually call the Channel Register API and get the relevant details
-                return new Journal.Builder()
-                        .withLevel(null)
-                        .withTitle(extractJournalTitle(document))
-                        .withOnlineIssn(extractOnlineIssn(document))
-                        .withPrintIssn(extractPrintIssn(document))
-                        .withOpenAccess(false)
-                        .withPeerReviewed(false)
-                        .build();
-            } else if (publicationType.equals(PublicationType.BOOK)) {
-                // TODO actually call the Channel Register API and get the relevant details
-                return new Book.Builder()
-                        .withLevel(null)
-                        .withOpenAccess(false)
-                        .withPeerReviewed(false)
-                        .build();
+            PublicationType publicationType = crossrefType.getPublicationType();
+            if (nonNull(publicationType)) {
+                if (publicationType.equals(PublicationType.JOURNAL_CONTENT)) {
+                    // TODO actually call the Channel Register API and get the relevant details
+                    return new Journal.Builder()
+                            .withLevel(null)
+                            .withTitle(extractJournalTitle(document))
+                            .withOnlineIssn(extractOnlineIssn(document))
+                            .withPrintIssn(extractPrintIssn(document))
+                            .withOpenAccess(false)
+                            .withPeerReviewed(false)
+                            .build();
+                } else if (publicationType.equals(PublicationType.BOOK)) {
+                    // TODO actually call the Channel Register API and get the relevant details
+                    return new Book.Builder()
+                            .withLevel(null)
+                            .withOpenAccess(false)
+                            .withPeerReviewed(false)
+                            .build();
 
-            } else if (publicationType.equals(PublicationType.BOOK_CHAPTER)) {
-                // TODO actually call the Channel Register API and get the relevant details
-                return new Chapter.Builder()
-                        .build();
+                } else if (publicationType.equals(PublicationType.BOOK_CHAPTER)) {
+                    // TODO actually call the Channel Register API and get the relevant details
+                    return new Chapter.Builder()
+                            .build();
+                }
             } else {
                 throw new IllegalArgumentException(String.format(UNRECOGNIZED_TYPE_MESSAGE, document.getType()));
             }
-        } else {
-            throw new IllegalArgumentException(MISSING_CROSSREF_TYPE_IN_DOCUMENT);
         }
+        throw new IllegalArgumentException(MISSING_CROSSREF_TYPE_IN_DOCUMENT);
     }
 
     private String extractPrintIssn(CrossRefDocument document) {
