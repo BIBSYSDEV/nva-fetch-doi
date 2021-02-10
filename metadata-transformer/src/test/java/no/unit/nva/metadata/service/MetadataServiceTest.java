@@ -28,13 +28,14 @@ public class MetadataServiceTest {
 
     public static final String URI_TEMPLATE = "http://localhost:%d/article/%s";
     public static final String VALUE = "value";
+    public static final String TEST_REVIEW_PAPER_HTML = "test_review_paper.html";
 
     private WireMockServer wireMockServer;
 
     @Test
     public void getMetadataReturnsSelectedMetadataFromURI()
             throws ExtractionException, IOException, URISyntaxException {
-        String filename = "test.html";
+        String filename = TEST_REVIEW_PAPER_HTML;
         startMock(filename);
         var uriString = String.format(URI_TEMPLATE, wireMockServer.port(), filename);
 
