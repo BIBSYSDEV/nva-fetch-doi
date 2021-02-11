@@ -16,6 +16,7 @@ public class CrossrefDocumentTest {
 
     private final ObjectMapper objectMapper = JsonUtils.objectMapper;
     private static final Path CROSSREF_RESOURCE = Path.of("crossref.json");
+    private static final Path CROSSREF_BOOK_RESOURCE = Path.of("crossref_sample_book.json");
 
     @Test
     public void testSettersAndGetters() throws IOException {
@@ -30,4 +31,20 @@ public class CrossrefDocumentTest {
         assertThat(crossRefResponse, doesNotHaveNullOrEmptyFields());
         assertThat(serializedAgain, is(equalTo(serializedObject)));
     }
+
+    @Test
+    public void testSettersAndGettersCrossrefBook() throws IOException {
+
+        String resourceString = IoUtils.stringFromResources(CROSSREF_BOOK_RESOURCE);
+        CrossrefApiResponse crossRefResponse = objectMapper.readValue(resourceString, CrossrefApiResponse.class);
+        String serializedObject = objectMapper.writeValueAsString(crossRefResponse);
+        CrossrefApiResponse deserializedObject = objectMapper.readValue(serializedObject, CrossrefApiResponse.class);
+        //cannot test deep equality on those classes. we compare therefore strings.
+        String serializedAgain = objectMapper.writeValueAsString(deserializedObject);
+
+        assertThat(crossRefResponse, doesNotHaveNullOrEmptyFields());
+        assertThat(serializedAgain, is(equalTo(serializedObject)));
+    }
+
+
 }

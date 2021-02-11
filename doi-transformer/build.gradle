@@ -12,4 +12,7 @@ def var = dependencies {
         because 'We use this to map ordinals to numbers'
     }
     implementation group: 'jakarta.ws.rs', name: 'jakarta.ws.rs-api', version: project.ext.jakartaVersion
+
+    implementation group: 'commons-validator', name: 'commons-validator', version: '1.6'
+
 }

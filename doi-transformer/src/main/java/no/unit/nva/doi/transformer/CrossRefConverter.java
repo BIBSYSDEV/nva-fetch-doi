@@ -5,9 +5,9 @@ import no.unit.nva.doi.transformer.language.LanguageMapper;
 import no.unit.nva.doi.transformer.language.SimpleLanguageDetector;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossRefDocument;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefAffiliation;
-import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefAuthor;
+import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefContributor;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate;
-import no.unit.nva.doi.transformer.model.crossrefmodel.Issn;
+import no.unit.nva.doi.transformer.model.crossrefmodel.Isxn;
 import no.unit.nva.doi.transformer.utils.CrossrefType;
 import no.unit.nva.doi.transformer.utils.IssnCleaner;
 import no.unit.nva.doi.transformer.utils.PublicationType;
@@ -192,6 +192,7 @@ public class CrossRefConverter extends AbstractConverter {
                             .withLevel(null)
                             .withOpenAccess(false)
                             .withPeerReviewed(false)
+                            .withIsbnList(extractIsbn(document))
                             .build();
 
                 } else if (publicationType.equals(PublicationType.BOOK_CHAPTER)) {
@@ -206,22 +207,33 @@ public class CrossRefConverter extends AbstractConverter {
         throw new IllegalArgumentException(MISSING_CROSSREF_TYPE_IN_DOCUMENT);
     }
 
+    private List<String> extractIsbn(CrossRefDocument document) {
+        List<Isxn> isbns = document.getIsbnType();
+        if (isNull(isbns) || isbns.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return isbns.stream()
+                .map(Isxn::getValue)
+                .collect(Collectors.toList());
+
+    }
+
     private String extractPrintIssn(CrossRefDocument document) {
-        return IssnCleaner.clean(filterIssnsByType(document, Issn.IssnType.PRINT));
+        return IssnCleaner.clean(filterIssnsByType(document, Isxn.IsxnType.PRINT));
     }
 
     private String extractOnlineIssn(CrossRefDocument document) {
-        return IssnCleaner.clean(filterIssnsByType(document, Issn.IssnType.ELECTRONIC));
+        return IssnCleaner.clean(filterIssnsByType(document, Isxn.IsxnType.ELECTRONIC));
     }
 
-    private String filterIssnsByType(CrossRefDocument crossRefDocument, Issn.IssnType type) {
-        List<Issn> issns = crossRefDocument.getIssnType();
+    private String filterIssnsByType(CrossRefDocument crossRefDocument, Isxn.IsxnType type) {
+        List<Isxn> issns = crossRefDocument.getIssnType();
         if (isNull(issns) || issns.isEmpty()) {
             return null;
         }
 
         return issns.stream().filter(issn -> issn.getType().equals(type))
-                .map(Issn::getValue)
+                .map(Isxn::getValue)
                 .findAny()
                 .orElse(null);
     }
@@ -312,7 +324,7 @@ public class CrossRefConverter extends AbstractConverter {
                 .build();
     }
 
-    protected List<Contributor> toContributors(List<CrossrefAuthor> authors) {
+    protected List<Contributor> toContributors(List<CrossrefContributor> authors) {
         List<Contributor> contributors = Collections.emptyList();
         if (authors != null) {
             List<Try<Contributor>> contributorMappings =
@@ -349,7 +361,7 @@ public class CrossRefConverter extends AbstractConverter {
      * @return a Contributor object.
      * @throws MalformedContributorException when the contributer cannot be built.
      */
-    private Contributor toContributor(CrossrefAuthor author, int alternativeSequence) throws
+    private Contributor toContributor(CrossrefContributor author, int alternativeSequence) throws
             MalformedContributorException {
         Identity identity = new Identity.Builder()
                 .withName(toName(author.getFamilyName(), author.getGivenName()))

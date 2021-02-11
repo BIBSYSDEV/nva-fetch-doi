@@ -3,18 +3,29 @@ package no.unit.nva.doi.transformer.model.crossrefmodel;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import nva.commons.core.JacocoGenerated;
 
+@SuppressWarnings("PMD.TooManyFields")
 public class CrossRefReference {
 
     @JsonProperty("key")
     private String key;
-    @JsonProperty("doi-asserted-by")
-    private String doiAssertedBy;
-    @JsonProperty("first-page")
-    private String firstPage;
     @JsonProperty("DOI")
     private String doi;
+    @JsonProperty("doi-asserted-by")
+    private String doiAssertedBy;
+    @JsonProperty("issue")
+    private String issue;
+    @JsonProperty("first-page")
+    private String firstPage;
     @JsonProperty("volume")
     private String volume;
+    @JsonProperty("edition")
+    private String edition;
+    @JsonProperty("component")
+    private String component;
+    @JsonProperty("standard-designator")
+    private String standardDesignator;
+    @JsonProperty("standard-body")
+    private String standardBody;
     @JsonProperty("author")
     private String author;
     @JsonProperty("year")
@@ -23,6 +34,21 @@ public class CrossRefReference {
     private String unstructuredReference;
     @JsonProperty("journal-title")
     private String journalTitle;
+    @JsonProperty("article-title")
+    private String articleTitle;
+    @JsonProperty("series-title")
+    private String seriesTitle;
+    @JsonProperty("volume-title")
+    private String volumeTitle;
+    @JsonProperty("ISSN")
+    private String issn;
+    @JsonProperty("issn-type")
+    private String issnType;
+    @JsonProperty("ISBN")
+    private String isbn;
+    @JsonProperty("isbn-type")
+    private String isbnType;
+
 
     @JacocoGenerated
     public String getKey() {
@@ -104,5 +130,111 @@ public class CrossRefReference {
 
     public void setJournalTitle(String journalTitle) {
         this.journalTitle = journalTitle;
+    }
+
+    public String getIssue() {
+        return issue;
+    }
+
+    public void setIssue(String issue) {
+        this.issue = issue;
+    }
+
+    public String getEdition() {
+        return edition;
+    }
+
+    public void setEdition(String edition) {
+        this.edition = edition;
+    }
+
+    public String getComponent() {
+        return component;
+    }
+
+    @JacocoGenerated
+    public void setComponent(String component) {
+        this.component = component;
+    }
+
+    public String getStandardDesignator() {
+        return standardDesignator;
+    }
+
+    @JacocoGenerated
+    public void setStandardDesignator(String standardDesignator) {
+        this.standardDesignator = standardDesignator;
+    }
+
+    public String getStandardBody() {
+        return standardBody;
+    }
+
+    @JacocoGenerated
+    public void setStandardBody(String standardBody) {
+        this.standardBody = standardBody;
+    }
+
+    public String getArticleTitle() {
+        return articleTitle;
+    }
+
+    @JacocoGenerated
+    public void setArticleTitle(String articleTitle) {
+        this.articleTitle = articleTitle;
+    }
+
+    public String getSeriesTitle() {
+        return seriesTitle;
+    }
+
+    @JacocoGenerated
+    public void setSeriesTitle(String seriesTitle) {
+        this.seriesTitle = seriesTitle;
+    }
+
+    public String getVolumeTitle() {
+        return volumeTitle;
+    }
+
+    @JacocoGenerated
+    public void setVolumeTitle(String volumeTitle) {
+        this.volumeTitle = volumeTitle;
+    }
+
+    public String getIssn() {
+        return issn;
+    }
+
+    @JacocoGenerated
+    public void setIssn(String issn) {
+        this.issn = issn;
+    }
+
+    public String getIssnType() {
+        return issnType;
+    }
+
+    @JacocoGenerated
+    public void setIssnType(String issnType) {
+        this.issnType = issnType;
+    }
+
+    public String getIsbn() {
+        return isbn;
+    }
+
+    @JacocoGenerated
+    public void setIsbn(String isbn) {
+        this.isbn = isbn;
+    }
+
+    public String getIsbnType() {
+        return isbnType;
+    }
+
+    @JacocoGenerated
+    public void setIsbnType(String isbnType) {
+        this.isbnType = isbnType;
     }
 }
