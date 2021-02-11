@@ -1,0 +1,8 @@
+{
+  "@vocab": "https://unit.no/ontology#",
+  "id": "@id",
+  "type": "@type",
+  "graph": "@graph",
+  "value": "@value",
+  "language": "@language"
+}
