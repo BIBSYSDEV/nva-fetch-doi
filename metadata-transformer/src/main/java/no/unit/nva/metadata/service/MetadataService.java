@@ -62,7 +62,7 @@ public class MetadataService {
     }
 
     private Model getMetadata(URI uri) throws ExtractionException, IOException, URISyntaxException {
-        translatorService.get(uri);
+        translatorService.loadMetadataFromUri(uri);
         try (RepositoryConnection repositoryConnection = db.getConnection()) {
             repositoryConnection.add(loadExtractedData(), EMPTY_BASE_URI, RDFFormat.JSONLD);
             var query = repositoryConnection.prepareGraphQuery(getQueryAsString(uri));

@@ -54,13 +54,17 @@ public class TranslatorService {
      * @throws IOException If the IO fails.
      * @throws ExtractionException If the extraction fails.
      */
-    public void get(URI uri) throws URISyntaxException, IOException, ExtractionException {
+    public void loadMetadataFromUri(URI uri) throws URISyntaxException, IOException, ExtractionException {
         DocumentSource source = new HTTPDocumentSource(httpClient, uri.toString());
-        try (TripleHandler handler = new ReportingTripleHandler(
-                new IgnoreAccidentalRDFa(new IgnoreTitlesOfEmptyDocuments(rdfWriterHandler), true))) {
+        try (TripleHandler handler = createTripleHandler()) {
             translator.extract(source, handler);
         } catch (TripleHandlerException e) {
             throw new RuntimeException(FAILED_TO_EXTRACT_TRIPLES_FROM_DATA_SOURCE);
         }
+    }
+
+    private ReportingTripleHandler createTripleHandler() {
+        return new ReportingTripleHandler(
+                new IgnoreAccidentalRDFa(new IgnoreTitlesOfEmptyDocuments(rdfWriterHandler), true));
     }
 }
