@@ -37,8 +37,10 @@ import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefAffiliation;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefApiResponse;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefContributor;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate;
+import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefReview;
 import no.unit.nva.doi.transformer.model.crossrefmodel.Isxn;
 import no.unit.nva.doi.transformer.model.crossrefmodel.Isxn.IsxnType;
+import no.unit.nva.doi.transformer.model.crossrefmodel.Link;
 import no.unit.nva.doi.transformer.utils.CrossrefType;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
@@ -94,6 +96,8 @@ public class CrossRefConverterTest extends ConversionTest {
     public static final ISBNValidator ISBN_VALIDATOR = new ISBNValidator();
     public static final String SAMPLE_CONTAINER_TITLE = "Container Title";
     public static final String SAMPLE_PUBLISHER = "Sample Publisher Inc";
+    public static final String SAMPLE_LINK = "https://localhost/some.link";
+    public static final String REVIEW_RECOMMENDATION = "GO";
 
     private CrossRefDocument sampleDocumentJournalArticle = createSampleDocumentJournalArticle();
     private final CrossRefConverter converter = new CrossRefConverter();
@@ -526,11 +530,6 @@ public class CrossRefConverterTest extends ConversionTest {
         assertTrue(actualIsbnList.containsAll(poolOfExpectedValues));
     }
 
-//    publisher -> book.poblisher
-//    openAccess
-//    Review -> book.peerReviewed
-//    link -> book.url
-
     @Test
     @DisplayName("toPublication sets seriesTitle in PublicationContext when CrossrefDocument has ContainerTitle")
     public void toPublicationSetsSeriesTitleInPublicationContextWhenCrossrefDocumentHasContainerTitle()
@@ -557,6 +556,33 @@ public class CrossRefConverterTest extends ConversionTest {
 
 
 
+
+    @Test
+    @DisplayName("toPublication sets PeerReviewed to True PublicationContext when CrossrefDocument has Reviewer")
+    public void toPublicationSetsPeerReviewedInPublicationContextWhenCrossrefDocumentHasReviewer()
+            throws InvalidIssnException, InvalidIsbnException {
+        CrossRefDocument crossRefDocument = createSampleDocumentBook();
+        CrossrefReview crossrefReview = new CrossrefReview();
+        crossrefReview.setRecommendation(REVIEW_RECOMMENDATION);
+        crossRefDocument.setReview(crossrefReview);
+        Publication actualDocument = toPublication(crossRefDocument);
+        var publicationContext =  actualDocument.getEntityDescription().getReference().getPublicationContext();
+        assertTrue(((Book)publicationContext).isPeerReviewed());
+    }
+
+    @Test
+    @DisplayName("toPublication sets Url in PublicationContext when CrossrefDocument has link")
+    public void toPublicationSetsUrlInPublicationContextWhenCrossrefDocumentHasLink()
+            throws InvalidIssnException, InvalidIsbnException {
+        CrossRefDocument crossRefDocument = createSampleDocumentBook();
+        Link link = new Link();
+        link.setUrl(SAMPLE_LINK);
+        crossRefDocument.setLink(List.of(link));
+        Publication actualDocument = toPublication(crossRefDocument);
+        var publicationContext =  actualDocument.getEntityDescription().getReference().getPublicationContext();
+        var actualLink = ((Book) publicationContext).getUrl();
+        assertThat(actualLink.toString(), is(equalTo(SAMPLE_LINK)));
+    }
 
     private Isxn sampleIsxn(IsxnType type, String value) {
         Isxn issn = new Isxn();

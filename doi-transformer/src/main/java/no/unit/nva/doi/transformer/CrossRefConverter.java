@@ -8,6 +8,7 @@ import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefAffiliation;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefContributor;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate;
 import no.unit.nva.doi.transformer.model.crossrefmodel.Isxn;
+import no.unit.nva.doi.transformer.model.crossrefmodel.Link;
 import no.unit.nva.doi.transformer.utils.CrossrefType;
 import no.unit.nva.doi.transformer.utils.IssnCleaner;
 import no.unit.nva.doi.transformer.utils.PublicationType;
@@ -39,7 +40,9 @@ import nva.commons.doi.DoiConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
@@ -111,7 +114,7 @@ public class CrossRefConverter extends AbstractConverter {
                     .withStatus(DEFAULT_NEW_PUBLICATION_STATUS)
                     .withIndexedDate(createIndexedDate())
                     .withHandle(createHandle())
-                    .withLink(createLink())
+//                    .withLink(createLink())
                     .withProjects(createProjects())
                     .withFileSet(createFilseSet())
                     .withEntityDescription(new EntityDescription.Builder()
@@ -191,9 +194,10 @@ public class CrossRefConverter extends AbstractConverter {
                     return new Book.Builder()
                             .withLevel(null)
                             .withOpenAccess(false)
-                            .withPeerReviewed(false)
+                            .withPeerReviewed(hasReviews(document))
                             .withSeriesTitle(extractSeriesTitle(document))
                             .withPublisher(extractPublisher(document))
+                            .withUrl(extractFulltextLink(document))
                             .withIsbnList(extractIsbn(document))
                             .build();
 
@@ -207,6 +211,10 @@ public class CrossRefConverter extends AbstractConverter {
             }
         }
         throw new IllegalArgumentException(MISSING_CROSSREF_TYPE_IN_DOCUMENT);
+    }
+
+    private boolean hasReviews(CrossRefDocument document) {
+        return nonNull(document.getReview());
     }
 
     private List<String> extractIsbn(CrossRefDocument document) {
@@ -447,7 +455,15 @@ public class CrossRefConverter extends AbstractConverter {
         return Collections.emptyList();
     }
 
-    private URI createLink() {
+    private URL extractFulltextLink(CrossRefDocument document) {
+        try {
+            List<Link> links = document.getLink();
+            String urlString = links.stream().findFirst().map(Link::getUrl).orElse(null);
+            return new URL(urlString);
+        } catch (MalformedURLException e) {
+            logger.warn("Malformed URL in CrossRef document");
+        } catch (Exception ignored) {
+        }
         return null;
     }
 
