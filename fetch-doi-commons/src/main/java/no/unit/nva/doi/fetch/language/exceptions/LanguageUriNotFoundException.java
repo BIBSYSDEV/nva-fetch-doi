@@ -1,4 +1,4 @@
-package no.unit.nva.doi.transformer.language.exceptions;
+package no.unit.nva.doi.fetch.language.exceptions;
 
 
 public class LanguageUriNotFoundException extends Exception {

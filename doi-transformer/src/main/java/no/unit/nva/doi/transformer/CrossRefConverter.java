@@ -24,8 +24,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import no.unit.nva.doi.transformer.language.LanguageMapper;
-import no.unit.nva.doi.transformer.language.SimpleLanguageDetector;
+import no.unit.nva.doi.fetch.language.LanguageMapper;
+import no.unit.nva.doi.fetch.language.SimpleLanguageDetector;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossRefDocument;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefAffiliation;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefAuthor;

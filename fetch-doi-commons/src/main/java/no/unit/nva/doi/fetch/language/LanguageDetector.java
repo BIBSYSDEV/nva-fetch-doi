@@ -1,9 +1,10 @@
-package no.unit.nva.doi.transformer.language;
+package no.unit.nva.doi.fetch.language;
 
 import java.net.URI;
 import java.util.Locale;
 import java.util.Optional;
-import no.unit.nva.doi.transformer.language.exceptions.LanguageUriNotFoundException;
+
+import no.unit.nva.doi.fetch.language.exceptions.LanguageUriNotFoundException;
 import nva.commons.core.JacocoGenerated;
 
 public interface LanguageDetector {
@@ -23,7 +24,7 @@ public interface LanguageDetector {
     default URI detectLangWithDefault(String input) {
         try {
             return detectLangOpt(detectLocale(input).getISO3Language())
-                .orElse(LanguageMapper.getUriFromIso(DEFAULT_LOCALE.getISO3Language()));
+                    .orElse(LanguageMapper.getUriFromIso(DEFAULT_LOCALE.getISO3Language()));
         } catch (LanguageUriNotFoundException e) {
             throw new IllegalStateException(UNEXPECTED_LANGUAGE_ERROR, e);
         }
