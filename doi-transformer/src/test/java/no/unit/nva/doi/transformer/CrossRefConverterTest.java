@@ -1,6 +1,5 @@
 package no.unit.nva.doi.transformer;
 
-import static no.unit.nva.model.contexttypes.Book.ISBN_VALIDATOR;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
@@ -93,6 +92,8 @@ public class CrossRefConverterTest extends ConversionTest {
     public static final int EXPECTED_MONTH = 2;
     public static final int EXPECTED_DAY = 20;
     public static final ISBNValidator ISBN_VALIDATOR = new ISBNValidator();
+    public static final String SAMPLE_CONTAINER_TITLE = "Container Title";
+    public static final String SAMPLE_PUBLISHER = "Sample Publisher Inc";
 
     private CrossRefDocument sampleDocumentJournalArticle = createSampleDocumentJournalArticle();
     private final CrossRefConverter converter = new CrossRefConverter();
@@ -524,6 +525,37 @@ public class CrossRefConverterTest extends ConversionTest {
                 .collect(Collectors.toList());
         assertTrue(actualIsbnList.containsAll(poolOfExpectedValues));
     }
+
+//    publisher -> book.poblisher
+//    openAccess
+//    Review -> book.peerReviewed
+//    link -> book.url
+
+    @Test
+    @DisplayName("toPublication sets seriesTitle in PublicationContext when CrossrefDocument has ContainerTitle")
+    public void toPublicationSetsSeriesTitleInPublicationContextWhenCrossrefDocumentHasContainerTitle()
+            throws InvalidIssnException, InvalidIsbnException {
+        CrossRefDocument crossRefDocument = createSampleDocumentBook();
+        crossRefDocument.setContainerTitle(List.of(SAMPLE_CONTAINER_TITLE));
+        Publication actualDocument = toPublication(crossRefDocument);
+        var publicationContext =  actualDocument.getEntityDescription().getReference().getPublicationContext();
+        String actualSeriesTitle = ((Book)publicationContext).getSeriesTitle();
+        assertThat(actualSeriesTitle, is(equalTo(SAMPLE_CONTAINER_TITLE)));
+    }
+
+    @Test
+    @DisplayName("toPublication sets Publisher in PublicationContext when CrossrefDocument has Publisher")
+    public void toPublicationSetsPublisherInPublicationContextWhenCrossrefDocumentHasPublisher()
+            throws InvalidIssnException, InvalidIsbnException {
+        CrossRefDocument crossRefDocument = createSampleDocumentBook();
+        crossRefDocument.setPublisher(SAMPLE_PUBLISHER);
+        Publication actualDocument = toPublication(crossRefDocument);
+        var publicationContext =  actualDocument.getEntityDescription().getReference().getPublicationContext();
+        String actualPublisher = ((Book)publicationContext).getPublisher();
+        assertThat(actualPublisher, is(equalTo(SAMPLE_PUBLISHER)));
+    }
+
+
 
 
     private Isxn sampleIsxn(IsxnType type, String value) {

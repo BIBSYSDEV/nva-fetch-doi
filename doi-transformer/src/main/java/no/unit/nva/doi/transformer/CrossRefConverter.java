@@ -192,6 +192,8 @@ public class CrossRefConverter extends AbstractConverter {
                             .withLevel(null)
                             .withOpenAccess(false)
                             .withPeerReviewed(false)
+                            .withSeriesTitle(extractSeriesTitle(document))
+                            .withPublisher(extractPublisher(document))
                             .withIsbnList(extractIsbn(document))
                             .build();
 
@@ -217,6 +219,20 @@ public class CrossRefConverter extends AbstractConverter {
                 .collect(Collectors.toList());
 
     }
+
+    private String extractSeriesTitle(CrossRefDocument document) {
+        if (isNull(document.getContainerTitle()) || document.getContainerTitle().isEmpty()) {
+            return null;
+        }
+        return document.getContainerTitle().stream()
+                .findFirst()
+                .orElse(null);
+    }
+
+    private String extractPublisher(CrossRefDocument document) {
+        return document.getPublisher();
+    }
+
 
     private String extractPrintIssn(CrossRefDocument document) {
         return IssnCleaner.clean(filterIssnsByType(document, Isxn.IsxnType.PRINT));
