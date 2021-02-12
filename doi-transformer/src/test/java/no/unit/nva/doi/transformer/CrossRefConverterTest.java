@@ -177,9 +177,7 @@ public class CrossRefConverterTest extends ConversionTest {
     public void toPublicationSetsOrdinalAsSecondAuthorIfInputOrdinalIsNotAValidOrdinal()
             throws InvalidIssnException, InvalidIsbnException {
         int numberOfAuthors = sampleDocumentJournalArticle.getAuthor().size();
-        sampleDocumentJournalArticle.getAuthor().forEach(a -> {
-            a.setSequence(INVALID_ORDINAL);
-        });
+        sampleDocumentJournalArticle.getAuthor().forEach(a -> a.setSequence(INVALID_ORDINAL));
         Publication publication = toPublication(sampleDocumentJournalArticle);
         List<Integer> ordinals = publication.getEntityDescription().getContributors().stream()
             .map(Contributor::getSequence).collect(Collectors.toList());
@@ -502,7 +500,7 @@ public class CrossRefConverterTest extends ConversionTest {
         Publication actualDocument = toPublication(sampleInputDocumentBook);
         var publicationContext =  actualDocument.getEntityDescription().getReference().getPublicationContext();
 
-        assertTrue(publicationContext instanceof  Book);
+        assertTrue(publicationContext instanceof Book);
     }
 
     @Test

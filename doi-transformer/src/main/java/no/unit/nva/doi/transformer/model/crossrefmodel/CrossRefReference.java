@@ -136,6 +136,7 @@ public class CrossRefReference {
         return issue;
     }
 
+    @JacocoGenerated
     public void setIssue(String issue) {
         this.issue = issue;
     }
@@ -144,6 +145,7 @@ public class CrossRefReference {
         return edition;
     }
 
+    @JacocoGenerated
     public void setEdition(String edition) {
         this.edition = edition;
     }

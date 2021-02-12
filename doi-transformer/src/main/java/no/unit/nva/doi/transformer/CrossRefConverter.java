@@ -25,7 +25,6 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.contexttypes.Book;
-import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
@@ -114,7 +113,6 @@ public class CrossRefConverter extends AbstractConverter {
                     .withStatus(DEFAULT_NEW_PUBLICATION_STATUS)
                     .withIndexedDate(createIndexedDate())
                     .withHandle(createHandle())
-//                    .withLink(createLink())
                     .withProjects(createProjects())
                     .withFileSet(createFilseSet())
                     .withEntityDescription(new EntityDescription.Builder()
@@ -190,7 +188,6 @@ public class CrossRefConverter extends AbstractConverter {
                             .withPeerReviewed(false)
                             .build();
                 } else if (publicationType.equals(PublicationType.BOOK)) {
-                    // TODO actually call the Channel Register API and get the relevant details
                     return new Book.Builder()
                             .withLevel(null)
                             .withOpenAccess(false)
@@ -199,11 +196,6 @@ public class CrossRefConverter extends AbstractConverter {
                             .withPublisher(extractPublisher(document))
                             .withUrl(extractFulltextLink(document))
                             .withIsbnList(extractIsbn(document))
-                            .build();
-
-                } else if (publicationType.equals(PublicationType.BOOK_CHAPTER)) {
-                    // TODO actually call the Channel Register API and get the relevant details
-                    return new Chapter.Builder()
                             .build();
                 }
             } else {
@@ -409,11 +401,10 @@ public class CrossRefConverter extends AbstractConverter {
     }
 
     private List<Organization> getAffiliations(List<CrossrefAffiliation> crossrefAffiliations) {
-        final List<Organization> affiliations = crossrefAffiliations.stream()
+        return crossrefAffiliations.stream()
                 .map(CrossrefAffiliation::getName)
                 .map(this::createOrganization)
                 .collect(Collectors.toList());
-        return affiliations;
     }
 
     private Organization createOrganization(String name) {
@@ -458,11 +449,11 @@ public class CrossRefConverter extends AbstractConverter {
     private URL extractFulltextLink(CrossRefDocument document) {
         try {
             List<Link> links = document.getLink();
-            String urlString = links.stream().findFirst().map(Link::getUrl).orElse(null);
-            return new URL(urlString);
+            if (nonNull(links) && !links.isEmpty()) {
+                return new URL(links.stream().findFirst().map(Link::getUrl).orElse(null));
+            }
         } catch (MalformedURLException e) {
             logger.warn("Malformed URL in CrossRef document");
-        } catch (Exception ignored) {
         }
         return null;
     }

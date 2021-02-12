@@ -503,6 +503,7 @@ public class CrossRefDocument {
         return assertion;
     }
 
+    @JacocoGenerated
     public void setAssertion(List<CrossrefAssertion> assertion) {
         this.assertion = assertion;
     }
@@ -546,6 +547,7 @@ public class CrossRefDocument {
         return updatePolicy;
     }
 
+    @JacocoGenerated
     public void setUpdatePolicy(String updatePolicy) {
         this.updatePolicy = updatePolicy;
     }
@@ -563,7 +565,7 @@ public class CrossRefDocument {
         return review;
     }
 
-    @JacocoGenerated
+//    @JacocoGenerated
     public void setReview(CrossrefReview review) {
         this.review = review;
     }
@@ -572,6 +574,7 @@ public class CrossRefDocument {
         return publisherLocation;
     }
 
+    @JacocoGenerated
     public void setPublisherLocation(String publisherLocation) {
         this.publisherLocation = publisherLocation;
     }
