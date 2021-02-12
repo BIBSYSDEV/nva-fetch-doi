@@ -1,6 +1,7 @@
 package no.unit.nva.doi.transformer;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.Is.is;
@@ -21,9 +22,12 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -43,6 +47,7 @@ import no.unit.nva.doi.transformer.model.crossrefmodel.Isxn.IsxnType;
 import no.unit.nva.doi.transformer.model.crossrefmodel.Link;
 import no.unit.nva.doi.transformer.utils.CrossrefType;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -417,10 +422,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @DisplayName("toPublication preserves all date parts when they are available")
     public void toPublicationPreservesAllDatepartsWhenTheyAreAvailable()
             throws InvalidIssnException, InvalidIsbnException {
-        int[][] dateParts = new int[1][DATE_SIZE];
-        dateParts[0] = new int[]{EXPECTED_YEAR, EXPECTED_MONTH, EXPECTED_DAY};
-        CrossrefDate crossrefDate = new CrossrefDate();
-        crossrefDate.setDateParts(dateParts);
+        CrossrefDate crossrefDate = createCrossrefDate();
 
         sampleDocumentJournalArticle.setIssued(crossrefDate);
         Publication actualDocument = toPublication(sampleDocumentJournalArticle);
@@ -552,9 +554,6 @@ public class CrossRefConverterTest extends ConversionTest {
         assertThat(actualPublisher, is(equalTo(SAMPLE_PUBLISHER)));
     }
 
-
-
-
     @Test
     @DisplayName("toPublication sets PeerReviewed to True PublicationContext when CrossrefDocument has Reviewer")
     public void toPublicationSetsPeerReviewedInPublicationContextWhenCrossrefDocumentHasReviewer()
@@ -573,14 +572,70 @@ public class CrossRefConverterTest extends ConversionTest {
     public void toPublicationSetsUrlInPublicationContextWhenCrossrefDocumentHasLink()
             throws InvalidIssnException, InvalidIsbnException {
         CrossRefDocument crossRefDocument = createSampleDocumentBook();
-        Link link = new Link();
-        link.setUrl(SAMPLE_LINK);
-        crossRefDocument.setLink(List.of(link));
+        crossRefDocument.setLink(List.of(createLink()));
         Publication actualDocument = toPublication(crossRefDocument);
         var publicationContext =  actualDocument.getEntityDescription().getReference().getPublicationContext();
         var actualLink = ((Book) publicationContext).getUrl();
         assertThat(actualLink.toString(), is(equalTo(SAMPLE_LINK)));
     }
+
+
+//    @Test
+    @DisplayName("toPublication handles all interesting and required fields in CrossrefDocument for book")
+    public void toPublicationHandlesAllInterestingAndRequiredFieldsInCrossrefDocumentForBook()
+            throws InvalidIssnException, InvalidIsbnException {
+        CrossRefDocument crossRefDocument = createSampleDocumentBook();
+        CrossrefDate crossrefDate = createCrossrefDate();
+
+
+        crossRefDocument.setPublisher(SAMPLE_PUBLISHER);
+        crossRefDocument.setTitle(List.of(SAMPLE_DOCUMENT_TITLE));
+        crossRefDocument.setDoi(SOME_DOI);
+        crossRefDocument.setLink(List.of(createLink()));
+        crossRefDocument.setCreated(crossrefDate);
+        crossRefDocument.setDeposited(crossrefDate);
+        crossRefDocument.setIssued(crossrefDate);
+
+        Publication actualDocument = toPublication(crossRefDocument);
+        final EntityDescription entityDescription = actualDocument.getEntityDescription();
+
+        assertTrue(actualDocument.getPublisher().getLabels().containsValue(SAMPLE_PUBLISHER));
+        assertThat(entityDescription.getMainTitle(), is(equalTo(SAMPLE_DOCUMENT_TITLE)));
+        assertThat(actualDocument.getDoi(), is(equalTo(SOME_DOI)));
+
+        // url
+        assertThat(actualDocument.getLink(), is(equalTo(SAMPLE_LINK)));
+
+        final Instant sampleCrossRefDateAsInstant = sampleCrossrefDateToInstant();
+
+        assertThat(actualDocument.getCreatedDate(), is(equalTo(sampleCrossRefDateAsInstant)));
+
+        // deposited
+        assertThat(actualDocument.getModifiedDate(), is(equalTo(sampleCrossRefDateAsInstant)));
+
+        // issued
+        assertThat(actualDocument.getPublishedDate(), is(equalTo(sampleCrossRefDateAsInstant)));
+    }
+
+    private Instant sampleCrossrefDateToInstant() {
+        LocalDate date  =  LocalDate.of(EXPECTED_YEAR, EXPECTED_MONTH, EXPECTED_DAY);
+        return  Instant.ofEpochSecond(date.toEpochDay() * 86400L);
+    }
+
+    private CrossrefDate createCrossrefDate() {
+        int[][] dateParts = new int[1][DATE_SIZE];
+        dateParts[0] = new int[]{EXPECTED_YEAR, EXPECTED_MONTH, EXPECTED_DAY};
+        CrossrefDate crossrefDate = new CrossrefDate();
+        crossrefDate.setDateParts(dateParts);
+        return crossrefDate;
+    }
+
+    private Link createLink() {
+        Link link = new Link();
+        link.setUrl(SAMPLE_LINK);
+        return link;
+    }
+
 
     private Isxn sampleIsxn(IsxnType type, String value) {
         Isxn issn = new Isxn();
