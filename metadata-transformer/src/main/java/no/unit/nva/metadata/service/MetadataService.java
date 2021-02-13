@@ -2,6 +2,7 @@ package no.unit.nva.metadata.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.jsonldjava.core.JsonLdConsts;
 import com.github.jsonldjava.core.JsonLdOptions;
 import com.github.jsonldjava.core.JsonLdProcessor;
 import com.github.jsonldjava.utils.JsonUtils;
@@ -76,8 +77,21 @@ public class MetadataService {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         Rio.write(resultModel, outputStream, RDFFormat.JSONLD);
         var jsonObject = JsonUtils.fromInputStream(new ByteArrayInputStream(outputStream.toByteArray()));
-        Object compacted = JsonLdProcessor.compact(jsonObject, loadContext(), new JsonLdOptions());
-        return JsonUtils.toPrettyString(compacted);
+        Object framed = JsonLdProcessor.frame(jsonObject, loadContext(), getJsonLdOptions());
+        return JsonUtils.toPrettyString(framed);
+    }
+
+    /**
+     * Configures JSON-LD processing. Uses JSON-LD 1.1 processing to avoid the inclusion of blank node identifiers,
+     * suppresses generation of a base graph node, omits default so nulls are removed.
+     * @return JsonLdOptions
+     */
+    private JsonLdOptions getJsonLdOptions() {
+        JsonLdOptions jsonLdOptions = new JsonLdOptions();
+        jsonLdOptions.setProcessingMode(JsonLdOptions.JSON_LD_1_1);
+        jsonLdOptions.setOmitGraph(true);
+        jsonLdOptions.setOmitDefault(true);
+        return jsonLdOptions;
     }
 
     private Map<String, Object> loadContext() {

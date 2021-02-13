@@ -1,8 +1,17 @@
 {
-  "@vocab": "https://unit.no/ontology#",
-  "id": "@id",
-  "type": "@type",
-  "graph": "@graph",
-  "value": "@value",
-  "language": "@language"
+  "@context": {
+    "@vocab": "https://unit.no/ontology#",
+    "id": "@id",
+    "type": "@type",
+    "graph": "@graph",
+    "value": "@value",
+    "language": "@language",
+    "tag": {
+      "@container": "@set"
+    },
+    "contributor": {
+      "@container": "@set"
+    }
+  },
+  "@type": "PublicationRequest"
 }
