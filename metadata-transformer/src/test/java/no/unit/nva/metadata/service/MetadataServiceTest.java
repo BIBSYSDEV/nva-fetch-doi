@@ -1,8 +1,11 @@
 package no.unit.nva.metadata.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
-import no.unit.nva.metadata.domain.Metadata;
+import no.unit.nva.api.CreatePublicationRequest;
+import no.unit.nva.metadata.MetadataConverter;
+import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationDate;
 import org.apache.any23.extractor.ExtractionException;
 import org.junit.jupiter.api.Test;
 
@@ -33,8 +36,7 @@ public class MetadataServiceTest {
     private WireMockServer wireMockServer;
 
     @Test
-    public void getMetadataReturnsSelectedMetadataFromURI()
-            throws ExtractionException, IOException, URISyntaxException {
+    public void getMetadataJsonReturnsCreatePublicationRequest() throws ExtractionException, IOException, URISyntaxException {
         String filename = TEST_REVIEW_PAPER_HTML;
         startMock(filename);
         var uriString = String.format(URI_TEMPLATE, wireMockServer.port(), filename);
@@ -44,25 +46,21 @@ public class MetadataServiceTest {
         MetadataService metadataService = new MetadataService();
         String json = metadataService.getMetadataJson(uri);
 
-        System.out.println(json);
-
-        /*
-
         assertThat(json, is(notNullValue()));
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        Metadata metadata = objectMapper.readValue(json, Metadata.class);
+        CreatePublicationRequest request = MetadataConverter.fromJsonLd(json);
 
-        assertThat(metadata.getTitle().get(VALUE), is(notNullValue()));
-        assertThat(metadata.getCreators(), hasSize(2));
-        assertThat(metadata.getSubjects(), hasSize(3));
-        assertThat(metadata.getDescription().get(VALUE), is(notNullValue()));
-        assertThat(metadata.getDate().get(VALUE), is(notNullValue()));
-        assertThat(metadata.getLanguage().get(VALUE), is(notNullValue()));
-        assertThat(metadata.getId(), is(notNullValue()));
-        assertThat(metadata.getType(), is(notNullValue()));
+        assertThat(request.getEntityDescription(), is(notNullValue()));
 
-        */
+        EntityDescription entityDescription = request.getEntityDescription();
+        assertThat(entityDescription.getMainTitle(), is(notNullValue()));
+        assertThat(entityDescription.getDescription(), is(notNullValue()));
+        assertThat(entityDescription.getTags(), hasSize(3));
+        assertThat(entityDescription.getContributors(), hasSize(2));
+        assertThat(entityDescription.getDate(), is(notNullValue()));
+
+        PublicationDate date = entityDescription.getDate();
+        assertThat(date.getYear(), is(notNullValue()));
 
         wireMockServer.stop();
     }

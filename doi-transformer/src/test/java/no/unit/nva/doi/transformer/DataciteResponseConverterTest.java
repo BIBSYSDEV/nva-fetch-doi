@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import no.unit.nva.doi.fetch.language.LanguageMapper;
+import no.unit.nva.doi.transformer.language.LanguageMapper;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteCreator;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteResponse;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteRights;

@@ -1,4 +1,4 @@
-package no.unit.nva.doi.fetch.language;
+package no.unit.nva.doi.transformer.language;
 
 import java.util.Locale;
 

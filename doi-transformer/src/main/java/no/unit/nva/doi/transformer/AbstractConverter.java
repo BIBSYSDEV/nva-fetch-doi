@@ -1,6 +1,6 @@
 package no.unit.nva.doi.transformer;
 
-import no.unit.nva.doi.fetch.language.LanguageDetector;
+import no.unit.nva.doi.transformer.language.LanguageDetector;
 import no.unit.nva.doi.transformer.utils.TextLang;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;

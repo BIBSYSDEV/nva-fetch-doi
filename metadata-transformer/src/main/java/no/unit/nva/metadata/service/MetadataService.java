@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 
 public class MetadataService {
 
-    public static final String QUERY_SPARQL = "/request.sparql";
+    public static final String QUERY_SPARQL = "/query.sparql";
     public static final String EMPTY_BASE_URI = "";
     public static final String CONTEXT_JSON = "/context.json";
     public static final String MISSING_CONTEXT_OBJECT_FILE = "Missing context object file";

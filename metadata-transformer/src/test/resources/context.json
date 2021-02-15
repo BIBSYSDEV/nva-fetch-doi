@@ -1,6 +1,6 @@
 {
   "@context": {
-    "@vocab": "https://unit.no/ontology#",
+    "@vocab": "https://nva.unit.no/publication#",
     "id": "@id",
     "type": "@type",
     "graph": "@graph",

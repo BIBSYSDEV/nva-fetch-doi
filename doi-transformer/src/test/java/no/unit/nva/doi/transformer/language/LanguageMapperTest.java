@@ -1,4 +1,4 @@
-package no.unit.nva.doi.fetch.language;
+package no.unit.nva.doi.transformer.language;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.net.URI;
 import java.util.Optional;
+
+import no.unit.nva.doi.transformer.language.exceptions.LanguageUriNotFoundException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

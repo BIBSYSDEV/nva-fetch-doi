@@ -1,4 +1,4 @@
-package no.unit.nva.doi.fetch.language;
+package no.unit.nva.doi.transformer.language;
 
 import java.net.URI;
 import java.nio.file.Path;
@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import no.unit.nva.doi.fetch.language.exceptions.LanguageUriNotFoundException;
+import no.unit.nva.doi.transformer.language.exceptions.LanguageUriNotFoundException;
 import nva.commons.core.ioutils.IoUtils;
 
 public final class LanguageMapper {
