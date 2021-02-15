@@ -9,11 +9,16 @@ CONSTRUCT {
     unit:mainTitle ?mainTitle ;
     unit:description ?description ;
     unit:tag ?tag ;
-    unit:contributor ?contributorNode .
+    unit:contributor ?contributorNode ;
+    unit:date ?dateNode .
   ?contributorNode a unit:Contributor ;
     unit:identity ?identityNode .
   ?identityNode a unit:Identity ;
     unit:name ?name .
+  ?dateNode a unit:PublicationDate ;
+    unit:year ?year ;
+    unit:month ?month ;
+    unit:day ?day .
 } WHERE {
   select DISTINCT (STR(?title) AS ?mainTitle)
                   ?entityNode
@@ -23,7 +28,11 @@ CONSTRUCT {
                   (STR(?subject) AS ?tag)
                   (STR(?rawDate) AS ?date)
                   (STR(?rawDescription) AS ?description)
-                  (STR(?rawLanguage) AS ?language) {
+                  (STR(?rawLanguage) AS ?language)
+                  ?dateNode
+                  ?year
+                  ?month
+                  ?day {
     BIND (BNODE() AS ?entityNode)
 
     {
@@ -39,7 +48,13 @@ CONSTRUCT {
       <__URI__> any23:dc.subject ?subject
     }
     UNION {
-      <__URI__> any23:dc.date ?rawDate
+      <__URI__> any23:dc.date ?rawDate .
+      BIND(BNODE() AS ?dateNode)
+      BIND(STR(?rawDate) AS ?stringDate)
+      BIND(SUBSTR(?stringDate, 0, 5) AS ?year)
+      BIND(SUBSTR(?stringDate, 6, 2) AS ?month)
+      BIND(SUBSTR(?stringDate, 9, 2) AS ?day)
+      FILTER (BOUND(?stringDate) && REGEX(?stringDate, "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"))
     }
     UNION {
       <__URI__> any23:dc.description ?rawDescription
