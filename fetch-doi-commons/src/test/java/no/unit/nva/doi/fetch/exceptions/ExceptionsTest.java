@@ -12,7 +12,7 @@ public class ExceptionsTest {
 
     @Test
     public void canCreateInsertPublicationException() {
-        InsertPublicationException exception = new InsertPublicationException(MESSAGE);
+        CreatePublicationException exception = new CreatePublicationException(MESSAGE);
         assertNotNull(exception);
         assertEquals(HttpStatus.SC_BAD_GATEWAY, exception.statusCode());
     }

@@ -77,7 +77,7 @@ import static org.mockito.Mockito.when;
 
 public class MainHandlerTest {
 
-    public static final String VALID_DOI = "https://doi.org/10.1109/5.771073";
+    public static final String VALID_DOI = "https://doix.org/10.1109/5.771073";
     public static final String SAMPLE_CUSTOMER_ID = "http://example.org/publisher/123";
     public static final String AUTHORIZER = "authorizer";
     public static final String CLAIMS = "claims";
