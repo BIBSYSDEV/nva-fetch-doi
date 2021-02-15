@@ -3,7 +3,6 @@ package no.unit.nva.metadata.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.jsonldjava.core.JsonLdOptions;
-import com.github.jsonldjava.core.JsonLdProcessor;
 import com.github.jsonldjava.utils.JsonUtils;
 import org.apache.any23.extractor.ExtractionException;
 import org.eclipse.rdf4j.model.Model;

@@ -4,7 +4,6 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import no.unit.nva.api.CreatePublicationRequest;
 import no.unit.nva.metadata.MetadataConverter;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import org.apache.any23.extractor.ExtractionException;
 import org.junit.jupiter.api.Test;
@@ -36,7 +35,8 @@ public class MetadataServiceTest {
     private WireMockServer wireMockServer;
 
     @Test
-    public void getMetadataJsonReturnsCreatePublicationRequest() throws ExtractionException, IOException, URISyntaxException {
+    public void getMetadataJsonReturnsCreatePublicationRequest()
+            throws ExtractionException, IOException, URISyntaxException {
         String json = createFramedPublicationJsonld();
         CreatePublicationRequest request = MetadataConverter.fromJsonLd(json);
 
