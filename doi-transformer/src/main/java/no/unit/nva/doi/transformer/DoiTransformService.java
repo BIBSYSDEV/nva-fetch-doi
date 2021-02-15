@@ -64,7 +64,7 @@ public class DoiTransformService {
 
         MetadataLocation metadataLocation = MetadataLocation.lookup(contentLocation);
         if (metadataLocation.equals(MetadataLocation.CROSSREF)) {
-            return convertFromCrossRef(body, now, owner, identifier, publisher);
+            return convertFromCrossRef(body, owner, identifier);
         } else {
             return convertFromDatacite(body, now, owner, identifier, publisher);
         }
@@ -76,10 +76,10 @@ public class DoiTransformService {
         return dataciteConverter.toPublication(dataciteResponse, now, uuid, owner, publisherId);
     }
 
-    private Publication convertFromCrossRef(String body, Instant now, String owner, UUID identifier, URI publisherId)
+    private Publication convertFromCrossRef(String body, String owner, UUID identifier)
             throws JsonProcessingException, InvalidIssnException, InvalidIsbnException {
 
         CrossRefDocument document = objectMapper.readValue(body, CrossrefApiResponse.class).getMessage();
-        return crossRefConverter.toPublication(document, now, owner, identifier, publisherId);
+        return crossRefConverter.toPublication(document, owner, identifier);
     }
 }

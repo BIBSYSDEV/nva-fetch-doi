@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import nva.commons.core.JacocoGenerated;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -93,8 +94,8 @@ public class CrossrefDate {
     private Stream<Integer> extractYearFromArray() {
         if (dateParts != null) {
             return Arrays.stream(dateParts)
-                         .filter(this::hasYear)
-                         .map(dateArray -> dateArray[0]);
+                    .filter(this::hasYear)
+                    .map(dateArray -> dateArray[0]);
         }
         return Stream.empty();
     }
@@ -109,16 +110,37 @@ public class CrossrefDate {
             return Optional.empty();
         }
         return Optional.of(timestamp)
-                       .map(Instant::ofEpochMilli)
-                       .map(inst -> inst.atOffset(ZoneOffset.UTC).getYear());
+                .map(Instant::ofEpochMilli)
+                .map(inst -> inst.atOffset(ZoneOffset.UTC).getYear());
     }
 
     private Optional<Integer> extractYearFromDateTime() {
 
         DateTimeFormatter formatter = DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.ofOffset(
-            SELECT_ZONE_OFFSET_BY_CONSTANT, ZoneOffset.UTC));
+                SELECT_ZONE_OFFSET_BY_CONSTANT, ZoneOffset.UTC));
         return Optional.ofNullable(this.dateTime)
-                       .map(d -> LocalDateTime.parse(this.dateTime, formatter))
-                       .map(LocalDateTime::getYear);
+                .map(d -> LocalDateTime.parse(this.dateTime, formatter))
+                .map(LocalDateTime::getYear);
     }
+
+    /**
+     * Converts crossrefDate to Instant if timestamp or needed dateparts are present.
+     * @return Instant of time given in either timestamp or dateparts[0]
+     */
+    public Instant toInstant() {
+        if (getTimestamp() != 0) {
+            return Instant.ofEpochMilli(getTimestamp());
+        } else {
+            if (dateParts.length > 0 && dateParts[FROM_DATE_INDEX_IN_DATE_ARRAY].length > 2) {
+                LocalDate date = LocalDate.of(
+                        dateParts[FROM_DATE_INDEX_IN_DATE_ARRAY][YEAR_INDEX],
+                        dateParts[FROM_DATE_INDEX_IN_DATE_ARRAY][MONTH_INDEX],
+                        dateParts[FROM_DATE_INDEX_IN_DATE_ARRAY][DAY_INDEX]);
+                return Instant.ofEpochSecond(date.toEpochDay() * 86_400L);
+            }
+        }
+        return null;
+    }
+
+
 }

@@ -565,7 +565,6 @@ public class CrossRefDocument {
         return review;
     }
 
-//    @JacocoGenerated
     public void setReview(CrossrefReview review) {
         this.review = review;
     }

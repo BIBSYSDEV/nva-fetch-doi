@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URL;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -92,6 +93,7 @@ public class CrossRefConverterTest extends ConversionTest {
 
     public static final String ENG_ISO_639_3 = "eng";
     public static final String SOME_DOI = "10.1000/182";
+    public static final URI SOME_DOI_AS_URL = URI.create("http://dx.doi.org/10.1007/978-3-030-22507-0_9");
     public static final String VALID_ISSN_A = "0306-4379";
     public static final String VALID_ISSN_B = "1066-8888";
     public static final String VALID_ISBN_A = "9788202529819";
@@ -580,7 +582,7 @@ public class CrossRefConverterTest extends ConversionTest {
     }
 
 
-//    @Test
+    @Test
     @DisplayName("toPublication handles all interesting and required fields in CrossrefDocument for book")
     public void toPublicationHandlesAllInterestingAndRequiredFieldsInCrossrefDocumentForBook()
             throws InvalidIssnException, InvalidIsbnException {
@@ -591,30 +593,32 @@ public class CrossRefConverterTest extends ConversionTest {
         crossRefDocument.setPublisher(SAMPLE_PUBLISHER);
         crossRefDocument.setTitle(List.of(SAMPLE_DOCUMENT_TITLE));
         crossRefDocument.setDoi(SOME_DOI);
+        crossRefDocument.setUrl(SOME_DOI_AS_URL.toString());
         crossRefDocument.setLink(List.of(createLink()));
         crossRefDocument.setCreated(crossrefDate);
         crossRefDocument.setDeposited(crossrefDate);
         crossRefDocument.setIssued(crossrefDate);
 
-        Publication actualDocument = toPublication(crossRefDocument);
-        final EntityDescription entityDescription = actualDocument.getEntityDescription();
+        Publication actualPublication = toPublication(crossRefDocument);
+        final EntityDescription entityDescription = actualPublication.getEntityDescription();
 
-        assertTrue(actualDocument.getPublisher().getLabels().containsValue(SAMPLE_PUBLISHER));
+        assertTrue(actualPublication.getPublisher().getLabels().containsValue(SAMPLE_PUBLISHER));
+
         assertThat(entityDescription.getMainTitle(), is(equalTo(SAMPLE_DOCUMENT_TITLE)));
-        assertThat(actualDocument.getDoi(), is(equalTo(SOME_DOI)));
+        assertThat(actualPublication.getDoi(), is(equalTo(SOME_DOI_AS_URL)));
 
         // url
-        assertThat(actualDocument.getLink(), is(equalTo(SAMPLE_LINK)));
+        assertThat(actualPublication.getLink(), is(equalTo(URI.create(SAMPLE_LINK))));
 
         final Instant sampleCrossRefDateAsInstant = sampleCrossrefDateToInstant();
 
-        assertThat(actualDocument.getCreatedDate(), is(equalTo(sampleCrossRefDateAsInstant)));
+        assertThat(actualPublication.getCreatedDate(), is(equalTo(sampleCrossRefDateAsInstant)));
 
         // deposited
-        assertThat(actualDocument.getModifiedDate(), is(equalTo(sampleCrossRefDateAsInstant)));
+        assertThat(actualPublication.getModifiedDate(), is(equalTo(sampleCrossRefDateAsInstant)));
 
         // issued
-        assertThat(actualDocument.getPublishedDate(), is(equalTo(sampleCrossRefDateAsInstant)));
+        assertThat(actualPublication.getPublishedDate(), is(equalTo(sampleCrossRefDateAsInstant)));
     }
 
     private Instant sampleCrossrefDateToInstant() {
@@ -645,7 +649,7 @@ public class CrossRefConverterTest extends ConversionTest {
     }
 
     private Publication toPublication(CrossRefDocument doc) throws InvalidIssnException, InvalidIsbnException {
-        return converter.toPublication(doc, NOW, OWNER, DOC_ID, SOME_PUBLISHER_URI);
+        return converter.toPublication(doc, OWNER, DOC_ID);
     }
 
     private CrossRefDocument createSampleDocumentJournalArticle() {
