@@ -1,6 +1,7 @@
 PREFIX any23: <http://vocab.sindice.net/any23#>
 PREFIX dcterms: <http://purl.org/dc/terms/>
 PREFIX unit: <https://unit.no/ontology#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 CONSTRUCT {
   <__URI__> a unit:PublicationRequest ;
@@ -52,9 +53,9 @@ CONSTRUCT {
       BIND(BNODE() AS ?dateNode)
       BIND(STR(?rawDate) AS ?stringDate)
       BIND(SUBSTR(?stringDate, 0, 5) AS ?year)
-      BIND(SUBSTR(?stringDate, 6, 2) AS ?month)
-      BIND(SUBSTR(?stringDate, 9, 2) AS ?day)
-      FILTER (BOUND(?stringDate) && REGEX(?stringDate, "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"))
+      BIND(IF(STRLEN(?stringDate) > 6, SUBSTR(?stringDate, 6, 2), "") AS ?month)
+      BIND(IF(STRLEN(?stringDate) > 8, SUBSTR(?stringDate, 9, 2), "") AS ?day)
+      FILTER (BOUND(?stringDate) && REGEX(?stringDate, "^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?$"))
     }
     UNION {
       <__URI__> any23:dc.description ?rawDescription
