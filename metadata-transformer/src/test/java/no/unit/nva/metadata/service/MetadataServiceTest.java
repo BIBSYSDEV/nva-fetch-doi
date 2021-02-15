@@ -1,8 +1,10 @@
 package no.unit.nva.metadata.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
-import no.unit.nva.metadata.domain.Metadata;
+import no.unit.nva.api.CreatePublicationRequest;
+import no.unit.nva.metadata.MetadataConverter;
+import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.PublicationDate;
 import org.apache.any23.extractor.ExtractionException;
 import org.junit.jupiter.api.Test;
 
@@ -33,8 +35,27 @@ public class MetadataServiceTest {
     private WireMockServer wireMockServer;
 
     @Test
-    public void getMetadataReturnsSelectedMetadataFromURI()
+    public void getMetadataJsonReturnsCreatePublicationRequest()
             throws ExtractionException, IOException, URISyntaxException {
+        String json = createFramedPublicationJsonld();
+        CreatePublicationRequest request = MetadataConverter.fromJsonLd(json);
+
+        assertThat(request.getEntityDescription(), is(notNullValue()));
+
+        EntityDescription entityDescription = request.getEntityDescription();
+        assertThat(entityDescription.getMainTitle(), is(notNullValue()));
+        assertThat(entityDescription.getDescription(), is(notNullValue()));
+        assertThat(entityDescription.getTags(), hasSize(3));
+        assertThat(entityDescription.getContributors(), hasSize(2));
+        assertThat(entityDescription.getDate(), is(notNullValue()));
+
+        PublicationDate date = entityDescription.getDate();
+        assertThat(date.getYear(), is(notNullValue()));
+
+        wireMockServer.stop();
+    }
+
+    private String createFramedPublicationJsonld() throws IOException, ExtractionException, URISyntaxException {
         String filename = TEST_REVIEW_PAPER_HTML;
         startMock(filename);
         var uriString = String.format(URI_TEMPLATE, wireMockServer.port(), filename);
@@ -45,20 +66,7 @@ public class MetadataServiceTest {
         String json = metadataService.getMetadataJson(uri);
 
         assertThat(json, is(notNullValue()));
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        Metadata metadata = objectMapper.readValue(json, Metadata.class);
-
-        assertThat(metadata.getTitle().get(VALUE), is(notNullValue()));
-        assertThat(metadata.getCreators(), hasSize(2));
-        assertThat(metadata.getSubjects(), hasSize(6));
-        assertThat(metadata.getDescription().get(VALUE), is(notNullValue()));
-        assertThat(metadata.getDate().get(VALUE), is(notNullValue()));
-        assertThat(metadata.getLanguage().get(VALUE), is(notNullValue()));
-        assertThat(metadata.getId(), is(notNullValue()));
-        assertThat(metadata.getType(), is(notNullValue()));
-
-        wireMockServer.stop();
+        return json;
     }
 
     private void startMock(String filename) {

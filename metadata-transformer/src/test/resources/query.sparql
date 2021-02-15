@@ -1,28 +1,74 @@
 PREFIX any23: <http://vocab.sindice.net/any23#>
 PREFIX dcterms: <http://purl.org/dc/terms/>
-PREFIX unit: <https://unit.no/ontology#>
+PREFIX unit: <https://nva.unit.no/publication#>
 
 CONSTRUCT {
-  ?uri a unit:Publication ;
-       unit:title ?title ;
-       unit:creator ?creator ;
-       unit:subject ?subject ;
-       unit:date ?date ;
-       unit:description ?description ;
-       unit:language ?language .
+  <__URI__> a unit:PublicationRequest ;
+    unit:entityDescription ?entityNode .
+  ?entityNode a unit:EntityDescription ;
+    unit:mainTitle ?mainTitle ;
+    unit:description ?description ;
+    unit:tags ?tag ;
+    unit:contributors ?contributorNode ;
+    unit:date ?dateNode .
+  ?contributorNode a unit:Contributor ;
+    unit:identity ?identityNode .
+  ?identityNode a unit:Identity ;
+    unit:name ?name .
+  ?dateNode a unit:PublicationDate ;
+    unit:year ?year ;
+    unit:month ?month ;
+    unit:day ?day .
 } WHERE {
-  # title
-  OPTIONAL { ?uri any23:dc.title ?title }
-  OPTIONAL { ?uri any23:citation_title ?title }
-  # creator
-  OPTIONAL { ?uri any23:dc.creator ?creator }
-  OPTIONAL { ?uri any23:citation_author ?creator }
-  # subject
-  OPTIONAL { ?uri any23:dc.subject ?subject }
-  # date
-  OPTIONAL { ?uri any23:dc.date ?date }
-  # description
-  OPTIONAL { ?uri any23:dc.description ?description }
-  # language
-  OPTIONAL { ?uri any23:dc.language ?language }
+  select DISTINCT (STR(?title) AS ?mainTitle)
+                  ?entityNode
+                  ?contributorNode
+                  ?identityNode
+                  (STR(?creator) AS ?name)
+                  (STR(?subject) AS ?tag)
+                  (STR(?rawDate) AS ?date)
+                  (STR(?rawDescription) AS ?description)
+                  (STR(?rawLanguage) AS ?language)
+                  ?dateNode
+                  ?year
+                  ?month
+                  ?day {
+    BIND (BNODE() AS ?entityNode)
+
+    {
+      <__URI__> any23:dc.title ?title
+    }
+    UNION {
+      <__URI__> any23:dc.creator ?creator
+      BIND(BNODE() AS ?contributorNode)
+      BIND(BNODE() AS ?identityNode)
+      FILTER (BOUND(?creator) && STRLEN(?creator)>0)
+    }
+    UNION {
+      <__URI__> any23:dc.subject ?subject
+    }
+    UNION {
+      <__URI__> any23:dc.date ?rawDate .
+      BIND(BNODE() AS ?dateNode)
+      BIND(STR(?rawDate) AS ?stringDate)
+      BIND(SUBSTR(?stringDate, 0, 5) AS ?year)
+      BIND(IF(STRLEN(?stringDate) > 6, SUBSTR(?stringDate, 6, 2), "") AS ?rawMonth)
+      BIND(IF(STRLEN(?stringDate) > 8, SUBSTR(?stringDate, 9, 2), "") AS ?rawDay)
+      OPTIONAL {
+        BIND(?rawMonth AS ?month)
+        FILTER(?rawMonth != "")
+      }
+      OPTIONAL {
+        BIND(?rawDay AS ?day)
+        FILTER(?rawDay != "")
+      }
+      FILTER (BOUND(?stringDate) && REGEX(?stringDate, "^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?$"))
+    }
+    UNION {
+      <__URI__> any23:dc.description ?rawDescription
+    }
+    UNION {
+      <__URI__> any23:dc.language ?rawLanguage
+    }
+  }
 }
