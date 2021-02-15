@@ -6,16 +6,24 @@ CONSTRUCT {
   <__URI__> a unit:PublicationRequest ;
     unit:entityDescription ?entityNode .
   ?entityNode a unit:EntityDescription ;
-    unit:mainTitle ?title ;
+    unit:mainTitle ?mainTitle ;
     unit:description ?description ;
-    unit:tag ?subject ;
+    unit:tag ?tag ;
     unit:contributor ?contributorNode .
   ?contributorNode a unit:Contributor ;
     unit:identity ?identityNode .
   ?identityNode a unit:Identity ;
-    unit:name ?creator .
+    unit:name ?name .
 } WHERE {
-  select DISTINCT ?title ?entityNode ?contributorNode ?identityNode ?creator ?subject ?date ?description ?language {
+  select DISTINCT (STR(?title) AS ?mainTitle)
+                  ?entityNode
+                  ?contributorNode
+                  ?identityNode
+                  (STR(?creator) AS ?name)
+                  (STR(?subject) AS ?tag)
+                  (STR(?rawDate) AS ?date)
+                  (STR(?rawDescription) AS ?description)
+                  (STR(?rawLanguage) AS ?language) {
     BIND (BNODE() AS ?entityNode)
 
     {
@@ -31,13 +39,13 @@ CONSTRUCT {
       <__URI__> any23:dc.subject ?subject
     }
     UNION {
-      <__URI__> any23:dc.date ?date
+      <__URI__> any23:dc.date ?rawDate
     }
     UNION {
-      <__URI__> any23:dc.description ?description
+      <__URI__> any23:dc.description ?rawDescription
     }
     UNION {
-      <__URI__> any23:dc.language ?language
+      <__URI__> any23:dc.language ?rawLanguage
     }
   }
 }
