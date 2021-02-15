@@ -26,6 +26,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.github.jsonldjava.core.JsonLdProcessor.frame;
+
 public class MetadataService {
 
     public static final String QUERY_SPARQL = "/query.sparql";
@@ -76,7 +78,7 @@ public class MetadataService {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         Rio.write(resultModel, outputStream, RDFFormat.JSONLD);
         var jsonObject = JsonUtils.fromInputStream(new ByteArrayInputStream(outputStream.toByteArray()));
-        Object framed = JsonLdProcessor.frame(jsonObject, loadContext(), getJsonLdOptions());
+        Object framed = frame(jsonObject, loadContext(), avoidBlankNodeIdentifiersAndOmitDefaultsConfig());
         return JsonUtils.toPrettyString(framed);
     }
 
@@ -85,7 +87,7 @@ public class MetadataService {
      * suppresses generation of a base graph node, omits default so nulls are removed.
      * @return JsonLdOptions
      */
-    private JsonLdOptions getJsonLdOptions() {
+    private JsonLdOptions avoidBlankNodeIdentifiersAndOmitDefaultsConfig() {
         JsonLdOptions jsonLdOptions = new JsonLdOptions();
         jsonLdOptions.setProcessingMode(JsonLdOptions.JSON_LD_1_1);
         jsonLdOptions.setOmitGraph(true);

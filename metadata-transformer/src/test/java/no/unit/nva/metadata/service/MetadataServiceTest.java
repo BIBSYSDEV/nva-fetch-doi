@@ -37,17 +37,7 @@ public class MetadataServiceTest {
 
     @Test
     public void getMetadataJsonReturnsCreatePublicationRequest() throws ExtractionException, IOException, URISyntaxException {
-        String filename = TEST_REVIEW_PAPER_HTML;
-        startMock(filename);
-        var uriString = String.format(URI_TEMPLATE, wireMockServer.port(), filename);
-
-        URI uri = URI.create(uriString);
-
-        MetadataService metadataService = new MetadataService();
-        String json = metadataService.getMetadataJson(uri);
-
-        assertThat(json, is(notNullValue()));
-
+        String json = createFramedPublicationJsonld();
         CreatePublicationRequest request = MetadataConverter.fromJsonLd(json);
 
         assertThat(request.getEntityDescription(), is(notNullValue()));
@@ -63,6 +53,20 @@ public class MetadataServiceTest {
         assertThat(date.getYear(), is(notNullValue()));
 
         wireMockServer.stop();
+    }
+
+    private String createFramedPublicationJsonld() throws IOException, ExtractionException, URISyntaxException {
+        String filename = TEST_REVIEW_PAPER_HTML;
+        startMock(filename);
+        var uriString = String.format(URI_TEMPLATE, wireMockServer.port(), filename);
+
+        URI uri = URI.create(uriString);
+
+        MetadataService metadataService = new MetadataService();
+        String json = metadataService.getMetadataJson(uri);
+
+        assertThat(json, is(notNullValue()));
+        return json;
     }
 
     private void startMock(String filename) {
