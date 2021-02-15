@@ -21,6 +21,7 @@ import no.unit.nva.doi.fetch.service.PublicationConverter;
 import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
 import no.unit.nva.doi.transformer.DoiTransformService;
 import no.unit.nva.doi.transformer.utils.BareProxyClient;
+import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -61,6 +62,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     private final transient BareProxyClient bareProxyClient;
     private final transient String publicationApiHost;
     private final transient String publicationApiScheme;
+    private final transient MetadataService metadataService;
 
     private static final Logger logger = LoggerFactory.getLogger(MainHandler.class);
 
@@ -90,9 +92,20 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         this.doiProxyService = doiProxyService;
         this.publicationPersistenceService = publicationPersistenceService;
         this.bareProxyClient = bareProxyClient;
+
+        this.metadataService = getMetadataService();
+
         this.publicationApiHost = environment.readEnv(PUBLICATION_API_HOST_ENV);
         this.publicationApiScheme = environment.readEnv(PUBLICATION_API_SCHEME_ENV);
 
+    }
+
+    private MetadataService getMetadataService() {
+        try {
+            return new MetadataService();
+        } catch (IOException e) {
+            throw new RuntimeException("Error creating handler", e);
+        }
     }
 
     @Override
@@ -145,8 +158,8 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         return request;
     }
 
-    private CreatePublicationRequest getPublicationFromOtherUrl(URL url) {
-        return null;
+    private CreatePublicationRequest getPublicationFromOtherUrl(URL url) throws URISyntaxException {
+        return metadataService.getCreatePublicationRequest(url.toURI()).orElseThrow();
     }
 
     private CreatePublicationRequest getPublicationFromDoi(String owner, String customerId, URL url) throws URISyntaxException, IOException, InvalidIssnException, MetadataNotFoundException {

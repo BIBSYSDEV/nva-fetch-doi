@@ -1,9 +1,12 @@
 package no.unit.nva.metadata.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.jsonldjava.core.JsonLdOptions;
 import com.github.jsonldjava.utils.JsonUtils;
+import no.unit.nva.api.CreatePublicationRequest;
+import no.unit.nva.metadata.MetadataConverter;
 import org.apache.any23.extractor.ExtractionException;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.query.QueryResults;
@@ -23,6 +26,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.github.jsonldjava.core.JsonLdProcessor.frame;
@@ -47,6 +51,16 @@ public class MetadataService {
 
     private ByteArrayInputStream loadExtractedData() {
         return new ByteArrayInputStream(translatorService.getOutputStream().toByteArray());
+    }
+
+    public Optional<CreatePublicationRequest> getCreatePublicationRequest(URI uri) {
+        try {
+            String jsonld = getMetadataJson(uri);
+            return Optional.ofNullable(MetadataConverter.fromJsonLd(jsonld));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Optional.empty();
+        }
     }
 
     /**
