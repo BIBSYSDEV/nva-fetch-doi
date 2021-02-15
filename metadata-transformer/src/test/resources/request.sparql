@@ -1,7 +1,6 @@
 PREFIX any23: <http://vocab.sindice.net/any23#>
 PREFIX dcterms: <http://purl.org/dc/terms/>
 PREFIX unit: <https://unit.no/ontology#>
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 CONSTRUCT {
   <__URI__> a unit:PublicationRequest ;
@@ -43,7 +42,7 @@ CONSTRUCT {
       <__URI__> any23:dc.creator ?creator
       BIND(BNODE() AS ?contributorNode)
       BIND(BNODE() AS ?identityNode)
-      FILTER (BOUND(?creator) && strlen(?creator)>0)
+      FILTER (BOUND(?creator) && STRLEN(?creator)>0)
     }
     UNION {
       <__URI__> any23:dc.subject ?subject
@@ -53,8 +52,16 @@ CONSTRUCT {
       BIND(BNODE() AS ?dateNode)
       BIND(STR(?rawDate) AS ?stringDate)
       BIND(SUBSTR(?stringDate, 0, 5) AS ?year)
-      BIND(IF(STRLEN(?stringDate) > 6, SUBSTR(?stringDate, 6, 2), "") AS ?month)
-      BIND(IF(STRLEN(?stringDate) > 8, SUBSTR(?stringDate, 9, 2), "") AS ?day)
+      BIND(IF(STRLEN(?stringDate) > 6, SUBSTR(?stringDate, 6, 2), "") AS ?rawMonth)
+      BIND(IF(STRLEN(?stringDate) > 8, SUBSTR(?stringDate, 9, 2), "") AS ?rawDay)
+      OPTIONAL {
+        BIND(?rawMonth AS ?month)
+        FILTER(?rawMonth != "")
+      }
+      OPTIONAL {
+        BIND(?rawDay AS ?day)
+        FILTER(?rawDay != "")
+      }
       FILTER (BOUND(?stringDate) && REGEX(?stringDate, "^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?$"))
     }
     UNION {
