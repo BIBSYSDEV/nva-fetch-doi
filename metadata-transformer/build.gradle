@@ -1,6 +1,4 @@
 dependencies {
-    implementation project(":fetch-doi-commons")
-
     implementation group: 'org.apache.any23', name: 'apache-any23-core', version: '2.4'
     implementation group: 'org.apache.any23', name: 'apache-any23-api', version: '2.4'
     implementation group: 'com.github.jsonld-java', name: 'jsonld-java', version: '0.13.1'
