@@ -58,8 +58,10 @@ import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEP
 import static nva.commons.core.JsonUtils.objectMapper;
 import static org.apache.http.HttpHeaders.AUTHORIZATION;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
+import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
+import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasKey;
@@ -126,6 +128,25 @@ public class MainHandlerTest {
         assertThat(gatewayResponse.getHeaders(), hasKey(MainHandler.ACCESS_CONTROL_ALLOW_ORIGIN));
         Summary summary = gatewayResponse.getBodyObject(Summary.class);
         assertNotNull(summary.getIdentifier());
+    }
+
+    @Test
+    public void testBadGatewayResponseWhenUrlIsInvalidNonDoi() throws Exception {
+        PublicationConverter publicationConverter = mock(PublicationConverter.class);
+        DoiTransformService doiTransformService = mock(DoiTransformService.class);
+        DoiProxyService doiProxyService = mock(DoiProxyService.class);
+        PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
+        BareProxyClient bareProxyClient  = mock(BareProxyClient.class);
+        MetadataService metadataService = mock(MetadataService.class);
+        when(metadataService.getCreatePublicationRequest(any())).thenReturn(Optional.empty());
+        Context context = getMockContext();
+        MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
+                doiProxyService, publicationPersistenceService, bareProxyClient, metadataService, environment);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        mainHandler.handleRequest(nonDoiUrlInputStream(), output, context);
+        GatewayResponse<Problem> gatewayResponse = parseFailureResponse(output);
+        assertEquals(SC_BAD_GATEWAY, gatewayResponse.getStatusCode());
+        assertThat(getProblemDetail(gatewayResponse), containsString(MainHandler.NO_METADATA_FOUND_FOR));
     }
 
     @Test
@@ -333,14 +354,6 @@ public class MainHandlerTest {
         return context;
     }
 
-    private InputStream mainHandlerInputStream() throws MalformedURLException, JsonProcessingException {
-        return mainHandlerInputStream(new URL(VALID_DOI));
-    }
-
-    private InputStream nonDoiUrlInputStream() throws MalformedURLException, JsonProcessingException {
-        return mainHandlerInputStream(new URL("http://example.org/metadata"));
-    }
-
     private InputStream mainHandlerInputStream(URL url) throws MalformedURLException, JsonProcessingException {
 
         RequestBody requestBody = createSampleRequest(url);
@@ -350,10 +363,18 @@ public class MainHandlerTest {
         requestHeaders.putAll(TestHeaders.getRequestHeaders());
 
         return new HandlerRequestBuilder<RequestBody>(objectMapper)
-            .withBody(requestBody)
-            .withHeaders(requestHeaders)
-            .withRequestContext(getRequestContext())
-            .build();
+                .withBody(requestBody)
+                .withHeaders(requestHeaders)
+                .withRequestContext(getRequestContext())
+                .build();
+    }
+
+    private InputStream mainHandlerInputStream() throws MalformedURLException, JsonProcessingException {
+        return mainHandlerInputStream(new URL(VALID_DOI));
+    }
+
+    private InputStream nonDoiUrlInputStream() throws MalformedURLException, JsonProcessingException {
+        return mainHandlerInputStream(new URL("http://example.org/metadata"));
     }
 
     private InputStream malformedInputStream() throws JsonProcessingException {

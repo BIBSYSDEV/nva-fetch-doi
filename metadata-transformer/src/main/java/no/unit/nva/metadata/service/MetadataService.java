@@ -44,7 +44,7 @@ public class MetadataService {
 
     private final TranslatorService translatorService;
     private final Repository db = new SailRepository(new MemoryStore());
-    private final static Logger logger = LoggerFactory.getLogger(MetadataService.class);
+    private static final Logger logger = LoggerFactory.getLogger(MetadataService.class);
 
 
     public MetadataService() throws IOException {

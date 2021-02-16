@@ -52,6 +52,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     public static final JsonPointer FEIDE_ID = JsonPointer.compile("/authorizer/claims/custom:feideId");
     public static final JsonPointer CUSTOMER_ID = JsonPointer.compile("/authorizer/claims/custom:customerId");
     public static final String NULL_DOI_URL_ERROR = "doiUrl can not be null";
+    public static final String NO_METADATA_FOUND_FOR = "No metadata found for: ";
 
     private final ObjectMapper objectMapper;
     private final transient PublicationConverter publicationConverter;
@@ -159,8 +160,10 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         return request;
     }
 
-    private CreatePublicationRequest getPublicationFromOtherUrl(URL url) throws URISyntaxException {
-        return metadataService.getCreatePublicationRequest(url.toURI()).orElseThrow();
+    private CreatePublicationRequest getPublicationFromOtherUrl(URL url)
+            throws URISyntaxException, MetadataNotFoundException {
+        return metadataService.getCreatePublicationRequest(url.toURI())
+                .orElseThrow(() -> new MetadataNotFoundException(NO_METADATA_FOUND_FOR + url));
     }
 
     private CreatePublicationRequest getPublicationFromDoi(String owner, String customerId, URL url)
