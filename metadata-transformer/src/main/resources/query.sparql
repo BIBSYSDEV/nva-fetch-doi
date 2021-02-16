@@ -8,8 +8,8 @@ CONSTRUCT {
   ?entityNode a unit:EntityDescription ;
     unit:mainTitle ?mainTitle ;
     unit:description ?description ;
-    unit:tags ?tag ;
-    unit:contributors ?contributorNode ;
+    unit:tag ?tag ;
+    unit:contributor ?contributorNode ;
     unit:date ?dateNode .
   ?contributorNode a unit:Contributor ;
     unit:identity ?identityNode .

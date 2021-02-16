@@ -6,10 +6,12 @@
     "graph": "@graph",
     "value": "@value",
     "language": "@language",
-    "tag": {
+    "tags": {
+      "@id": "tag",
       "@container": "@set"
     },
-    "contributor": {
+    "contributors": {
+      "@id": "contributor",
       "@container": "@set"
     }
   },
