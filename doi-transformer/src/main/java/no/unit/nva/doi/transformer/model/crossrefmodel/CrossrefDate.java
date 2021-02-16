@@ -43,7 +43,7 @@ public class CrossrefDate {
     public static final int DAY_INDEX = 2;
     public static final int FROM_DATE_INDEX_IN_DATE_ARRAY = 0;
 
-    private static String SELECT_ZONE_OFFSET_BY_CONSTANT = "";
+    private static final String SELECT_ZONE_OFFSET_BY_CONSTANT = "";
     @JsonProperty("date-parts")
     private int[][] dateParts; //
     @JsonProperty("date-time")
@@ -128,19 +128,29 @@ public class CrossrefDate {
      * @return Instant of time given in either timestamp or dateparts[0]
      */
     public Instant toInstant() {
-        if (getTimestamp() != 0) {
+        if (isaTimestamp()) {
             return Instant.ofEpochMilli(getTimestamp());
+        } else if (isaCompleteDate()) {
+            return createInstant();
         } else {
-            if (dateParts.length > 0 && dateParts[FROM_DATE_INDEX_IN_DATE_ARRAY].length > 2) {
-                LocalDate date = LocalDate.of(
-                        dateParts[FROM_DATE_INDEX_IN_DATE_ARRAY][YEAR_INDEX],
-                        dateParts[FROM_DATE_INDEX_IN_DATE_ARRAY][MONTH_INDEX],
-                        dateParts[FROM_DATE_INDEX_IN_DATE_ARRAY][DAY_INDEX]);
-                return Instant.ofEpochSecond(date.toEpochDay() * 86_400L);
-            }
+            return null;
         }
-        return null;
     }
 
+    private boolean isaTimestamp() {
+        return getTimestamp() != 0;
+    }
+
+    private Instant createInstant() {
+        LocalDate date = LocalDate.of(
+                dateParts[FROM_DATE_INDEX_IN_DATE_ARRAY][YEAR_INDEX],
+                dateParts[FROM_DATE_INDEX_IN_DATE_ARRAY][MONTH_INDEX],
+                dateParts[FROM_DATE_INDEX_IN_DATE_ARRAY][DAY_INDEX]);
+        return Instant.ofEpochSecond(date.toEpochDay() * 86_400L);
+    }
+
+    private boolean isaCompleteDate() {
+        return dateParts.length > 0 && dateParts[FROM_DATE_INDEX_IN_DATE_ARRAY].length > 2;
+    }
 
 }
