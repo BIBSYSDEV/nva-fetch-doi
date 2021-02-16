@@ -492,7 +492,7 @@ public class CrossRefConverter extends AbstractConverter {
 
     /**
      * Extract first valid link to fulltext/source document.
-     * @param document
+     * @param document CrossrefDocument containing data.
      * @return An optional containing first link in list, without filtering.
      */
     @JacocoGenerated
