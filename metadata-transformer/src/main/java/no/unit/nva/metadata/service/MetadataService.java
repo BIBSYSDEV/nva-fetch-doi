@@ -31,12 +31,13 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.github.jsonldjava.core.JsonLdProcessor.frame;
+import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 
 public class MetadataService {
 
-    public static final String QUERY_SPARQL = "/query.sparql";
+    public static final String QUERY_SPARQL = "query.sparql";
     public static final String EMPTY_BASE_URI = "";
-    public static final String CONTEXT_JSON = "/context.json";
+    public static final String CONTEXT_JSON = "context.json";
     public static final String MISSING_CONTEXT_OBJECT_FILE = "Missing context object file";
     private static final ObjectMapper objectMapper = new ObjectMapper();
     public static final String REPLACEMENT_MARKER = "__URI__";
@@ -119,14 +120,14 @@ public class MetadataService {
     private Map<String, Object> loadContext() {
         try {
             var type = new TypeReference<Map<String,Object>>() {};
-            return objectMapper.readValue(getClass().getResource(CONTEXT_JSON), type);
+            return objectMapper.readValue(inputStreamFromResources(CONTEXT_JSON), type);
         } catch (IOException e) {
             throw new RuntimeException(MISSING_CONTEXT_OBJECT_FILE);
         }
     }
 
     private String getQueryAsString(URI uri) {
-        var inputStream = getClass().getResourceAsStream(MetadataService.QUERY_SPARQL);
+        var inputStream = inputStreamFromResources(MetadataService.QUERY_SPARQL);
         return new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines()
                 .collect(Collectors.joining(NEWLINE_DELIMITER)).replaceAll(REPLACEMENT_MARKER, uri.toString());
     }
