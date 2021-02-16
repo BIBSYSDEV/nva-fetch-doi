@@ -55,6 +55,12 @@ public class MetadataService {
         return new ByteArrayInputStream(translatorService.getOutputStream().toByteArray());
     }
 
+    /**
+     * Construct a CreatePublicationRequest for metadata extracted from a supplied URI.
+     *
+     * @param uri   URI to dereference.
+     * @return  CreatePublicationRequest for selected set of metadata.
+     */
     public Optional<CreatePublicationRequest> getCreatePublicationRequest(URI uri) {
         try {
             String jsonld = getMetadataJson(uri);

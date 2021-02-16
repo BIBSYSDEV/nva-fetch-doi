@@ -66,6 +66,9 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     private static final Logger logger = LoggerFactory.getLogger(MainHandler.class);
 
+    /**
+     * Default constructor for MainHandler.
+     */
     @JacocoGenerated
     public MainHandler() {
         this(JsonUtils.objectMapper, new PublicationConverter(), new DoiTransformService(),
