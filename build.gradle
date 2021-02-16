@@ -101,7 +101,7 @@ subprojects {
                 limit {
                     counter = 'METHOD'
                     value = 'COVEREDRATIO'
-                    minimum = 0.99
+                    minimum = 0.98
                 }
             }
 

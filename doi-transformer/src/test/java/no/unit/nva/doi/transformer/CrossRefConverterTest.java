@@ -126,6 +126,38 @@ public class CrossRefConverterTest extends ConversionTest {
     }
 
     @Test
+    @DisplayName("An CrossRef document with unknown type throws IllegalArgument exception")
+    public void anCrossRefDocumentWithUnknownTypeThrowsIllegalArgumentException() throws IllegalArgumentException {
+        CrossRefDocument doc = new CrossRefDocument();
+        setAuthor(doc);
+        setPublicationDate(doc);
+        setIssuedDate(doc);    // Issued is required from CrossRef, is either printed-date or
+        setTitle(doc);
+
+        final String someStrangeCrossrefType = "SomeStrangeCrossrefType";
+        doc.setType(someStrangeCrossrefType);
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> toPublication(doc));
+        String expectedError = String.format(CrossRefConverter.UNRECOGNIZED_TYPE_MESSAGE, someStrangeCrossrefType);
+        assertThat(exception.getMessage(), is(equalTo(expectedError)));
+    }
+
+    @Test
+    @DisplayName("An CrossRef document without type throws IllegalArgument exception")
+    public void anCrossRefDocumentWithoutTypeThrowsIllegalArgumentException() throws IllegalArgumentException {
+        CrossRefDocument doc = new CrossRefDocument();
+        setAuthor(doc);
+        setPublicationDate(doc);
+        setIssuedDate(doc);    // Issued is required from CrossRef, is either printed-date or
+        setTitle(doc);
+        doc.setType(null);
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> toPublication(doc));
+        String expectedError = String.format(CrossRefConverter.UNRECOGNIZED_TYPE_MESSAGE, "null");
+        assertThat(exception.getMessage(), is(equalTo(expectedError)));
+    }
+
+
+    @Test
     @DisplayName("The creator's name in the publication contains first family and then given name")
     public void creatorsNameContainsFirstFamilyAndThenGivenName() throws IllegalArgumentException {
 
@@ -171,7 +203,7 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("toPublication throws Exception when the input does not have the tag \"journal-article\"")
-    public void toPublicationSetsThrowsExceptionWhenTheInputDoesNotHaveTheTagJournalArticle() {
+    public void toPublicationThrowsExceptionWhenTheInputDoesNotHaveTheTagJournalArticle() {
         sampleDocumentJournalArticle.setType(NOT_JOURNAL_ARTICLE);
         String expectedError = String.format(CrossRefConverter.UNRECOGNIZED_TYPE_MESSAGE, NOT_JOURNAL_ARTICLE);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
