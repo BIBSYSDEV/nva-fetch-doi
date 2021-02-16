@@ -1,6 +1,5 @@
 package no.unit.nva.metadata.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.jsonldjava.core.JsonLdOptions;
@@ -16,6 +15,8 @@ import org.eclipse.rdf4j.repository.sail.SailRepository;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.Rio;
 import org.eclipse.rdf4j.sail.memory.MemoryStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -43,6 +44,7 @@ public class MetadataService {
 
     private final TranslatorService translatorService;
     private final Repository db = new SailRepository(new MemoryStore());
+    private final static Logger logger = LoggerFactory.getLogger(MetadataService.class);
 
 
     public MetadataService() throws IOException {
@@ -58,7 +60,7 @@ public class MetadataService {
             String jsonld = getMetadataJson(uri);
             return Optional.ofNullable(MetadataConverter.fromJsonLd(jsonld));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.warn(e.getMessage());
             return Optional.empty();
         }
     }

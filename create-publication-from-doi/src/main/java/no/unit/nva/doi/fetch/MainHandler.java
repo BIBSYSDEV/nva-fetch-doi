@@ -4,7 +4,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.CreatePublicationRequest;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.doi.DataciteContentType;
@@ -69,7 +68,8 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     @JacocoGenerated
     public MainHandler() {
         this(JsonUtils.objectMapper, new PublicationConverter(), new DoiTransformService(),
-            new DoiProxyService(), new PublicationPersistenceService(), new BareProxyClient(), new Environment());
+            new DoiProxyService(), new PublicationPersistenceService(), new BareProxyClient(),
+                getMetadataService(), new Environment());
     }
 
     /**
@@ -84,6 +84,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
                        DoiProxyService doiProxyService,
                        PublicationPersistenceService publicationPersistenceService,
                        BareProxyClient bareProxyClient,
+                       MetadataService metadataService,
                        Environment environment) {
         super(RequestBody.class, environment, logger);
         this.objectMapper = objectMapper;
@@ -92,15 +93,15 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         this.doiProxyService = doiProxyService;
         this.publicationPersistenceService = publicationPersistenceService;
         this.bareProxyClient = bareProxyClient;
-
-        this.metadataService = getMetadataService();
+        this.metadataService = metadataService;
 
         this.publicationApiHost = environment.readEnv(PUBLICATION_API_HOST_ENV);
         this.publicationApiScheme = environment.readEnv(PUBLICATION_API_SCHEME_ENV);
 
     }
 
-    private MetadataService getMetadataService() {
+    @JacocoGenerated
+    private static MetadataService getMetadataService() {
         try {
             return new MetadataService();
         } catch (IOException e) {
@@ -152,7 +153,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
             logger.info("URL is a DOI");
             request = getPublicationFromDoi(owner, customerId, url);
         } else {
-            logger.info(("URL is NOT a DOI, falling back to metadata scraping"));
+            logger.info("URL is NOT a DOI, falling back to web metadata scraping");
             request = getPublicationFromOtherUrl(url);
         }
         return request;
@@ -162,7 +163,8 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         return metadataService.getCreatePublicationRequest(url.toURI()).orElseThrow();
     }
 
-    private CreatePublicationRequest getPublicationFromDoi(String owner, String customerId, URL url) throws URISyntaxException, IOException, InvalidIssnException, MetadataNotFoundException {
+    private CreatePublicationRequest getPublicationFromDoi(String owner, String customerId, URL url)
+            throws URISyntaxException, IOException, InvalidIssnException, MetadataNotFoundException {
         Publication publication = IdentityUpdater.enrichPublicationCreators(bareProxyClient,
                 getPublicationMetadataFromDoi(url, owner, URI.create(customerId)));
         return objectMapper.convertValue(publication, CreatePublicationRequest.class);
