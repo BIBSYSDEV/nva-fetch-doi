@@ -1,12 +1,15 @@
 dependencies {
-    implementation group: 'org.apache.any23', name: 'apache-any23-core', version: '2.4'
-    implementation group: 'org.apache.any23', name: 'apache-any23-api', version: '2.4'
-    implementation group: 'com.github.jsonld-java', name: 'jsonld-java', version: '0.13.1'
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.3'
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.11.3'
+    api group: 'org.apache.any23', name: 'apache-any23-core', version: '2.4'
+    api group: 'org.apache.any23', name: 'apache-any23-api', version: '2.4'
+    api group: 'com.github.jsonld-java', name: 'jsonld-java', version: '0.13.1'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
+    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: project.ext.jacksonVersion
 
-    implementation group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: '0.11.5'
-    implementation group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: '0.7.4'
+    implementation group: 'no.unit.nva', name: 'core', version: project.ext.nvaCommonsVersion
+    implementation(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
+        exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
+    }
 
     testImplementation group: 'com.github.tomakehurst', name: 'wiremock-jre8', version: '2.27.2'
 }

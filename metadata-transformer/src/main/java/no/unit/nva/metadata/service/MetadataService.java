@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.jsonldjava.core.JsonLdOptions;
 import com.github.jsonldjava.utils.JsonUtils;
+import no.unit.nva.api.CreatePublicationRequest;
+import no.unit.nva.metadata.MetadataConverter;
 import org.apache.any23.extractor.ExtractionException;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.query.QueryResults;
@@ -13,6 +15,8 @@ import org.eclipse.rdf4j.repository.sail.SailRepository;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.Rio;
 import org.eclipse.rdf4j.sail.memory.MemoryStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -23,6 +27,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.github.jsonldjava.core.JsonLdProcessor.frame;
@@ -39,6 +44,7 @@ public class MetadataService {
 
     private final TranslatorService translatorService;
     private final Repository db = new SailRepository(new MemoryStore());
+    private static final Logger logger = LoggerFactory.getLogger(MetadataService.class);
 
 
     public MetadataService() throws IOException {
@@ -47,6 +53,22 @@ public class MetadataService {
 
     private ByteArrayInputStream loadExtractedData() {
         return new ByteArrayInputStream(translatorService.getOutputStream().toByteArray());
+    }
+
+    /**
+     * Construct a CreatePublicationRequest for metadata extracted from a supplied URI.
+     *
+     * @param uri   URI to dereference.
+     * @return  CreatePublicationRequest for selected set of metadata.
+     */
+    public Optional<CreatePublicationRequest> getCreatePublicationRequest(URI uri) {
+        try {
+            String jsonld = getMetadataJson(uri);
+            return Optional.ofNullable(MetadataConverter.fromJsonLd(jsonld));
+        } catch (Exception e) {
+            logger.warn(e.getMessage());
+            return Optional.empty();
+        }
     }
 
     /**

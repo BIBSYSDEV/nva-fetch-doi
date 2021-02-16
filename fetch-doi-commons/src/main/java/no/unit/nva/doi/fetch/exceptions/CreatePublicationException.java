@@ -3,9 +3,9 @@ package no.unit.nva.doi.fetch.exceptions;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import java.net.HttpURLConnection;
 
-public class InsertPublicationException extends ApiGatewayException {
+public class CreatePublicationException extends ApiGatewayException {
 
-    public InsertPublicationException(String message) {
+    public CreatePublicationException(String message) {
         super(message);
     }
 

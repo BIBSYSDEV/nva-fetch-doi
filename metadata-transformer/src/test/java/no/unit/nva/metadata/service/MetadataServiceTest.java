@@ -2,18 +2,16 @@ package no.unit.nva.metadata.service;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import no.unit.nva.api.CreatePublicationRequest;
-import no.unit.nva.metadata.MetadataConverter;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.PublicationDate;
-import org.apache.any23.extractor.ExtractionException;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -29,20 +27,28 @@ import static org.hamcrest.Matchers.notNullValue;
 public class MetadataServiceTest {
 
     public static final String URI_TEMPLATE = "http://localhost:%d/article/%s";
-    public static final String VALUE = "value";
     public static final String TEST_REVIEW_PAPER_HTML = "test_review_paper.html";
 
     private WireMockServer wireMockServer;
 
     @Test
     public void getMetadataJsonReturnsCreatePublicationRequest()
-            throws ExtractionException, IOException, URISyntaxException {
-        String json = createFramedPublicationJsonld();
-        CreatePublicationRequest request = MetadataConverter.fromJsonLd(json);
+            throws IOException {
+        MetadataService metadataService = new MetadataService();
+        URI uri = prepareWebServerAndReturnUriToMetdata();
+        Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
 
-        assertThat(request.getEntityDescription(), is(notNullValue()));
+        assertThatRequestHasPublicationRequestWithAllNecessaryFieldsForSomeUnknownOperation(request);
 
-        EntityDescription entityDescription = request.getEntityDescription();
+        wireMockServer.stop();
+    }
+
+    private void assertThatRequestHasPublicationRequestWithAllNecessaryFieldsForSomeUnknownOperation(
+            Optional<CreatePublicationRequest> request) {
+        assertThat(request.isPresent(), is(true));
+        assertThat(request.get().getEntityDescription(), is(notNullValue()));
+
+        EntityDescription entityDescription = request.get().getEntityDescription();
         assertThat(entityDescription.getMainTitle(), is(notNullValue()));
         assertThat(entityDescription.getDescription(), is(notNullValue()));
         assertThat(entityDescription.getTags(), hasSize(3));
@@ -51,22 +57,14 @@ public class MetadataServiceTest {
 
         PublicationDate date = entityDescription.getDate();
         assertThat(date.getYear(), is(notNullValue()));
-
-        wireMockServer.stop();
     }
 
-    private String createFramedPublicationJsonld() throws IOException, ExtractionException, URISyntaxException {
+    private URI prepareWebServerAndReturnUriToMetdata() {
         String filename = TEST_REVIEW_PAPER_HTML;
         startMock(filename);
         var uriString = String.format(URI_TEMPLATE, wireMockServer.port(), filename);
 
-        URI uri = URI.create(uriString);
-
-        MetadataService metadataService = new MetadataService();
-        String json = metadataService.getMetadataJson(uri);
-
-        assertThat(json, is(notNullValue()));
-        return json;
+        return URI.create(uriString);
     }
 
     private void startMock(String filename) {
