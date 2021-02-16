@@ -90,6 +90,7 @@ public class MainHandlerTest {
     public static final String HTTP = "http";
     private static final String SOME_ERROR_MESSAGE = "SomeErrorMessage";
     private Environment environment;
+    private Context context;
 
     /**
      * Set up environment.
@@ -97,6 +98,7 @@ public class MainHandlerTest {
     @BeforeEach
     public void setUp() {
         environment = mock(Environment.class);
+        context = getMockContext();
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALL_ORIGINS);
         when(environment.readEnv(MainHandler.PUBLICATION_API_HOST_ENV)).thenReturn("localhost:3000");
         when(environment.readEnv(MainHandler.PUBLICATION_API_SCHEME_ENV)).thenReturn("http");
@@ -107,7 +109,7 @@ public class MainHandlerTest {
             throws Exception {
         MainHandler mainHandler = createMainHandler(environment);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        mainHandler.handleRequest(mainHandlerInputStream(), output, getMockContext());
+        mainHandler.handleRequest(mainHandlerInputStream(), output, context);
         GatewayResponse<Summary> gatewayResponse = parseSuccessResponse(output.toString());
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
@@ -117,11 +119,11 @@ public class MainHandlerTest {
     }
 
     @Test
-    public void testOkResponseWhenUrlIsValidNonDoi()
+    public void handleRequestReturnsSummaryWithIdentifierWhenUrlIsValidNonDoi()
             throws Exception {
         MainHandler mainHandler = createMainHandler(environment);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        mainHandler.handleRequest(nonDoiUrlInputStream(), output, getMockContext());
+        mainHandler.handleRequest(nonDoiUrlInputStream(), output, context);
         GatewayResponse<Summary> gatewayResponse = parseSuccessResponse(output.toString());
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
@@ -133,20 +135,26 @@ public class MainHandlerTest {
     @Test
     public void testBadGatewayResponseWhenUrlIsInvalidNonDoi() throws Exception {
         PublicationConverter publicationConverter = mock(PublicationConverter.class);
+
+        MainHandler mainHandler = handlerReceivingEmptyResponse(publicationConverter);
+
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        mainHandler.handleRequest(nonDoiUrlInputStream(), output, context);
+        GatewayResponse<Problem> gatewayResponse = parseFailureResponse(output);
+        assertEquals(SC_BAD_GATEWAY, gatewayResponse.getStatusCode());
+        assertThat(getProblemDetail(gatewayResponse), containsString(MainHandler.NO_METADATA_FOUND_FOR));
+    }
+
+    private MainHandler handlerReceivingEmptyResponse(PublicationConverter publicationConverter) {
         DoiTransformService doiTransformService = mock(DoiTransformService.class);
         DoiProxyService doiProxyService = mock(DoiProxyService.class);
         PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
         BareProxyClient bareProxyClient  = mock(BareProxyClient.class);
         MetadataService metadataService = mock(MetadataService.class);
         when(metadataService.getCreatePublicationRequest(any())).thenReturn(Optional.empty());
-        Context context = getMockContext();
-        MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
+
+        return new MainHandler(objectMapper, publicationConverter, doiTransformService,
                 doiProxyService, publicationPersistenceService, bareProxyClient, metadataService, environment);
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        mainHandler.handleRequest(nonDoiUrlInputStream(), output, context);
-        GatewayResponse<Problem> gatewayResponse = parseFailureResponse(output);
-        assertEquals(SC_BAD_GATEWAY, gatewayResponse.getStatusCode());
-        assertThat(getProblemDetail(gatewayResponse), containsString(MainHandler.NO_METADATA_FOUND_FOR));
     }
 
     @Test
@@ -156,7 +164,7 @@ public class MainHandlerTest {
         Environment environmentWithInvalidHost = createEnvironmentWithInvalidHost();
         MainHandler mainHandler = createMainHandler(environmentWithInvalidHost);
         RequestBody requestBody = createSampleRequest(new URL(VALID_DOI));
-        Executable action = () -> mainHandler.processInput(requestBody, null, getMockContext());
+        Executable action = () -> mainHandler.processInput(requestBody, null, context);
         IllegalStateException exception = assertThrows(IllegalStateException.class, action);
         assertThat(exception.getCause().getClass(), is(equalTo(URISyntaxException.class)));
     }
@@ -169,7 +177,6 @@ public class MainHandlerTest {
         PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
         BareProxyClient bareProxyClient  = mock(BareProxyClient.class);
         MetadataService metadataService = mock(MetadataService.class);
-        Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
             doiProxyService, publicationPersistenceService, bareProxyClient, metadataService, environment);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -193,7 +200,6 @@ public class MainHandlerTest {
         BareProxyClient bareProxyClient  = mock(BareProxyClient.class);
         MetadataService metadataService = mock(MetadataService.class);
 
-        Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
             doiProxyService, publicationPersistenceService, bareProxyClient, metadataService, environment);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -219,7 +225,7 @@ public class MainHandlerTest {
         MainHandler handler = new MainHandler(objectMapper, publicationConverter, doiTransformService, doiProxyService,
             publicationPersistenceService, bareProxyClient, metadataService, environment);
         ByteArrayOutputStream outputStream = outputStream();
-        handler.handleRequest(mainHandlerInputStream(), outputStream, getMockContext());
+        handler.handleRequest(mainHandlerInputStream(), outputStream, context);
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse(outputStream);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(Status.BAD_GATEWAY.getStatusCode())));
         assertThat(getProblemDetail(gatewayResponse), containsString(DoiProxyService.ERROR_READING_METADATA));
@@ -242,7 +248,7 @@ public class MainHandlerTest {
         MainHandler handler = new MainHandler(objectMapper, publicationConverter, doiTransformService, doiProxyService,
             publicationPersistenceService, bareProxyClient, metadataService, environment);
         ByteArrayOutputStream outputStream = outputStream();
-        handler.handleRequest(mainHandlerInputStream(), outputStream, getMockContext());
+        handler.handleRequest(mainHandlerInputStream(), outputStream, context);
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse(outputStream);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(Status.BAD_GATEWAY.getStatusCode())));
         assertThat(getProblemDetail(gatewayResponse), containsString(PublicationPersistenceService.WARNING_MESSAGE));
@@ -417,7 +423,7 @@ public class MainHandlerTest {
         return objectMapper.readValue(output, typeRef);
     }
 
-    private RequestBody createSampleRequest(URL url) throws MalformedURLException {
+    private RequestBody createSampleRequest(URL url) {
         RequestBody requestBody = new RequestBody();
         requestBody.setDoiUrl(url);
         return requestBody;

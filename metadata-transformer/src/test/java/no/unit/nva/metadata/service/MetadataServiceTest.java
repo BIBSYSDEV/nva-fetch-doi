@@ -35,15 +35,16 @@ public class MetadataServiceTest {
     public void getMetadataJsonReturnsCreatePublicationRequest()
             throws IOException {
         MetadataService metadataService = new MetadataService();
-        URI uri = prepareWebServerAndReturnUri();
+        URI uri = prepareWebServerAndReturnUriToMetdata();
         Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
 
-        assertRequest(request);
+        assertThatRequestHasPublicationRequestWithAllNecessaryFieldsForSomeUnknownOperation(request);
 
         wireMockServer.stop();
     }
 
-    private void assertRequest(Optional<CreatePublicationRequest> request) {
+    private void assertThatRequestHasPublicationRequestWithAllNecessaryFieldsForSomeUnknownOperation(
+            Optional<CreatePublicationRequest> request) {
         assertThat(request.isPresent(), is(true));
         assertThat(request.get().getEntityDescription(), is(notNullValue()));
 
@@ -58,7 +59,7 @@ public class MetadataServiceTest {
         assertThat(date.getYear(), is(notNullValue()));
     }
 
-    private URI prepareWebServerAndReturnUri() {
+    private URI prepareWebServerAndReturnUriToMetdata() {
         String filename = TEST_REVIEW_PAPER_HTML;
         startMock(filename);
         var uriString = String.format(URI_TEMPLATE, wireMockServer.port(), filename);
