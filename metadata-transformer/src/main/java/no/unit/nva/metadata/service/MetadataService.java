@@ -66,7 +66,7 @@ public class MetadataService {
             String jsonld = getMetadataJson(uri);
             return Optional.ofNullable(MetadataConverter.fromJsonLd(jsonld));
         } catch (Exception e) {
-            logger.warn(e.getMessage());
+            logger.error("Error mapping metadata to CreatePublicationRequest", e);
             return Optional.empty();
         }
     }
