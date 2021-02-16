@@ -4,7 +4,6 @@ import org.apache.any23.Any23;
 import org.apache.any23.extractor.ExtractionException;
 import org.apache.any23.filter.IgnoreAccidentalRDFa;
 import org.apache.any23.filter.IgnoreTitlesOfEmptyDocuments;
-import org.apache.any23.http.HTTPClient;
 import org.apache.any23.source.DocumentSource;
 import org.apache.any23.source.HTTPDocumentSource;
 import org.apache.any23.writer.JSONLDWriter;
@@ -22,21 +21,15 @@ public class TranslatorService {
     public static final String NVA_USER_AGENT = "NVA-user-agent";
     public static final String FAILED_TO_EXTRACT_TRIPLES_FROM_DATA_SOURCE =
             "Failed to extract triples from data source";
-    private final Any23 translator;
-    private final JSONLDWriter rdfWriterHandler;
-    private final HTTPClient httpClient;
-    private final ByteArrayOutputStream outputStream;
+
+    private ByteArrayOutputStream outputStream;
 
     /**
      * Creates a new translator for HTML metadata to RDF.
      * @throws IOException On IO exceptions.
      */
     public TranslatorService() throws IOException {
-        translator = new Any23();
-        outputStream = new ByteArrayOutputStream();
-        rdfWriterHandler = new JSONLDWriter(outputStream);
-        translator.setHTTPUserAgent(NVA_USER_AGENT);
-        httpClient = translator.getHTTPClient();
+
     }
 
     /**
@@ -55,15 +48,24 @@ public class TranslatorService {
      * @throws ExtractionException If the extraction fails.
      */
     public void loadMetadataFromUri(URI uri) throws URISyntaxException, IOException, ExtractionException {
-        DocumentSource source = new HTTPDocumentSource(httpClient, uri.toString());
         try (TripleHandler handler = createTripleHandler()) {
+            Any23 translator = createAny23();
+            DocumentSource source = new HTTPDocumentSource(translator.getHTTPClient(), uri.toString());
             translator.extract(source, handler);
         } catch (TripleHandlerException e) {
             throw new RuntimeException(FAILED_TO_EXTRACT_TRIPLES_FROM_DATA_SOURCE);
         }
     }
 
+    private Any23 createAny23() {
+        Any23 translator = new Any23();
+        translator.setHTTPUserAgent(NVA_USER_AGENT);
+        return translator;
+    }
+
     private ReportingTripleHandler createTripleHandler() {
+        outputStream = new ByteArrayOutputStream();
+        JSONLDWriter rdfWriterHandler = new JSONLDWriter(outputStream);
         return new ReportingTripleHandler(
                 new IgnoreAccidentalRDFa(new IgnoreTitlesOfEmptyDocuments(rdfWriterHandler), true));
     }
