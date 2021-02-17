@@ -45,6 +45,18 @@ public class MetadataServiceTest {
         wireMockServer.stop();
     }
 
+    @Test
+    public void getMetadataJsonFromUpperCaseTagMetadataReturnsCreatePublicationRequest()
+            throws IOException {
+        MetadataService metadataService = new MetadataService();
+        URI uri = prepareWebServerAndReturnUriToMetdata(UPPER_CASE_DC_HTML);
+        Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
+
+        assertKnownMetadataMappingsFromUpperCaseDcHtml(request.get());
+
+        wireMockServer.stop();
+    }
+
     private void assertKnownMetadataMappingsFromReviewPaperHtml(CreatePublicationRequest request) {
         assertThat(request.getEntityDescription(), is(notNullValue()));
 
@@ -57,18 +69,6 @@ public class MetadataServiceTest {
 
         PublicationDate date = entityDescription.getDate();
         assertThat(date.getYear(), is(notNullValue()));
-    }
-
-    @Test
-    public void getMetadataJsonFromUpperCaseTagMetadataReturnsCreatePublicationRequest()
-            throws IOException {
-        MetadataService metadataService = new MetadataService();
-        URI uri = prepareWebServerAndReturnUriToMetdata(UPPER_CASE_DC_HTML);
-        Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
-
-        assertKnownMetadataMappingsFromUpperCaseDcHtml(request.get());
-
-        wireMockServer.stop();
     }
 
     private void assertKnownMetadataMappingsFromUpperCaseDcHtml(CreatePublicationRequest request) {
