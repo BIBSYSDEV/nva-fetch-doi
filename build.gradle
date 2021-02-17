@@ -17,8 +17,8 @@ allprojects {
     apply plugin: 'jacoco'
 
     project.ext {
-        nvaCommonsVersion = '1.0.0'
-        nvaDatamodelVersion = 'eda02301f3a1fc1a98dc5782c14fc8335df2f133'
+        nvaCoreVersion = '1.0.4'
+        nvaDatamodelVersion = '0.11.6'
         nvaTestUtilsVersion = "0.1.18"
         junit5Version = '5.6.2'
         jacksonVersion = '2.10.3'
@@ -48,8 +48,8 @@ subprojects {
 
     dependencies {
 
-        compileOnly group: 'no.unit.nva', name: 'core', version: project.ext.nvaCommonsVersion
-        testImplementation group: 'no.unit.nva', name: 'core', version: project.ext.nvaCommonsVersion
+        compileOnly group: 'no.unit.nva', name: 'core', version: project.ext.nvaCoreVersion
+        testImplementation group: 'no.unit.nva', name: 'core', version: project.ext.nvaCoreVersion
         testImplementation group: 'com.github.BIBSYSDEV', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
 
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: project.ext.junit5Version
@@ -107,7 +107,7 @@ subprojects {
                 limit {
                     counter = 'METHOD'
                     value = 'COVEREDRATIO'
-                    minimum = 0.99
+                    minimum = 0.98
                 }
             }
 

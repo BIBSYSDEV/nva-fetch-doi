@@ -5,8 +5,12 @@ import static java.util.Objects.isNull;
 import java.util.Arrays;
 import nva.commons.core.SingletonCollector;
 
+/**
+ * Enumeration, one of the type ids from https://api.crossref.org/v1/types
+ */
 public enum CrossrefType {
     JOURNAL_ARTICLE("journal-article", PublicationType.JOURNAL_CONTENT),
+    BOOK("book", PublicationType.BOOK),
     NON_EXISTING_TYPE(null, null);
 
     private final String type;

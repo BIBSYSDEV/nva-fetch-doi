@@ -22,6 +22,7 @@ import no.unit.nva.doi.transformer.DoiTransformService;
 import no.unit.nva.doi.transformer.utils.BareProxyClient;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -133,9 +134,10 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
             return publicationConverter
                 .toSummary(objectMapper.convertValue(publicationResponse, JsonNode.class));
         } catch (IllegalArgumentException
-            | URISyntaxException
-            | IOException
-            | InvalidIssnException e) {
+                | URISyntaxException
+                | IOException
+                | InvalidIssnException
+                | InvalidIsbnException e) {
             throw new TransformFailedException(e.getMessage());
         } catch (InterruptedException e) {
             interrupted = true;
@@ -148,7 +150,8 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     }
 
     private CreatePublicationRequest getPublicationRequest(String owner, String customerId, URL url)
-            throws URISyntaxException, IOException, InvalidIssnException, MetadataNotFoundException {
+            throws URISyntaxException, IOException, InvalidIssnException,
+            MetadataNotFoundException, InvalidIsbnException {
         CreatePublicationRequest request;
         if (DoiValidator.validate(url)) {
             logger.info("URL is a DOI");
@@ -167,7 +170,8 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     }
 
     private CreatePublicationRequest getPublicationFromDoi(String owner, String customerId, URL url)
-            throws URISyntaxException, IOException, InvalidIssnException, MetadataNotFoundException {
+            throws URISyntaxException, IOException, InvalidIssnException,
+            MetadataNotFoundException, InvalidIsbnException {
         Publication publication = IdentityUpdater.enrichPublicationCreators(bareProxyClient,
                 getPublicationMetadataFromDoi(url, owner, URI.create(customerId)));
         return objectMapper.convertValue(publication, CreatePublicationRequest.class);
@@ -190,8 +194,10 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     }
 
     private Publication getPublicationMetadataFromDoi(URL doiUrl,
-                                                      String owner, URI customerId)
-        throws URISyntaxException, IOException, InvalidIssnException, MetadataNotFoundException {
+                                               String owner, URI customerId)
+            throws URISyntaxException, IOException, InvalidIssnException,
+            MetadataNotFoundException, InvalidIsbnException {
+
         MetadataAndContentLocation metadataAndContentLocation = doiProxyService.lookupDoiMetadata(
             doiUrl.toString(), DataciteContentType.DATACITE_JSON);
 
