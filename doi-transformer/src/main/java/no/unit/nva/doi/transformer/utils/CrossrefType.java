@@ -11,6 +11,7 @@ import nva.commons.core.SingletonCollector;
 public enum CrossrefType {
     JOURNAL_ARTICLE("journal-article", PublicationType.JOURNAL_CONTENT),
     BOOK("book", PublicationType.BOOK),
+    BOOK_CHAPTER("book-chapter", PublicationType.BOOK_CHAPTER),
     NON_EXISTING_TYPE(null, null);
 
     private final String type;

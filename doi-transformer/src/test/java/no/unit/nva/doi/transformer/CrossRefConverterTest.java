@@ -1,39 +1,6 @@
 package no.unit.nva.doi.transformer;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.IsNull.nullValue;
-import static org.hamcrest.core.StringContains.containsString;
-import static org.hamcrest.text.IsEmptyString.emptyString;
-import static org.hamcrest.text.MatchesPattern.matchesPattern;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Path;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import no.unit.nva.doi.transformer.language.LanguageMapper;
 import no.unit.nva.doi.transformer.language.exceptions.LanguageUriNotFoundException;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossRefDocument;
@@ -52,24 +19,59 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
+import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
-import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.JsonUtils;
+import nva.commons.core.ioutils.IoUtils;
 import nva.commons.doi.DoiConverter;
 import org.apache.commons.validator.routines.ISBNValidator;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Path;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.hamcrest.text.IsEmptyString.emptyString;
+import static org.hamcrest.text.MatchesPattern.matchesPattern;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class CrossRefConverterTest extends ConversionTest {
 
-    private static final Instant NOW = Instant.now();
     public static final String AUTHOR_GIVEN_NAME = "givenName";
     public static final String AUTHOR_FAMILY_NAME = "familyName";
     public static final String FIRST_AUTHOR = "first";
@@ -126,11 +128,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @Test
     @DisplayName("An CrossRef document with unknown type throws IllegalArgument exception")
     public void anCrossRefDocumentWithUnknownTypeThrowsIllegalArgumentException() throws IllegalArgumentException {
-        CrossRefDocument doc = new CrossRefDocument();
-        setAuthor(doc);
-        setPublicationDate(doc);
-        setIssuedDate(doc);    // Issued is required from CrossRef, is either printed-date or
-        setTitle(doc);
+        CrossRefDocument doc = createCrossRefDocumentBasicMetadata();
 
         final String someStrangeCrossrefType = "SomeStrangeCrossrefType";
         doc.setType(someStrangeCrossrefType);
@@ -143,11 +141,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @Test
     @DisplayName("An CrossRef document without type throws IllegalArgument exception")
     public void anCrossRefDocumentWithoutTypeThrowsIllegalArgumentException() throws IllegalArgumentException {
-        CrossRefDocument doc = new CrossRefDocument();
-        setAuthor(doc);
-        setPublicationDate(doc);
-        setIssuedDate(doc);    // Issued is required from CrossRef, is either printed-date or
-        setTitle(doc);
+        CrossRefDocument doc = createCrossRefDocumentBasicMetadata();
         doc.setType(null);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> toPublication(doc));
         String expectedError = String.format(CrossRefConverter.UNRECOGNIZED_TYPE_MESSAGE, "null");
@@ -624,6 +618,48 @@ public class CrossRefConverterTest extends ConversionTest {
         assertAssignedValuesAreConverted(actualPublication, sampleCrossrefDateToInstant());
     }
 
+    @Test
+    @DisplayName("toPublication set publicationContext when input Crossref document is BookChapter")
+    public void toPublicationSetsPublicationContextWhenInputCrossrefDocumentIsBookChapter()
+            throws InvalidIssnException, InvalidIsbnException {
+        CrossRefDocument crossRefDocument = createSampleDocumentBookChapter();
+
+        Publication actualPublication = toPublication(crossRefDocument);
+
+        assertThat(actualPublication.getEntityDescription().getReference().getPublicationContext().getClass(),
+                is(equalTo(Chapter.class)));
+
+    }
+
+    @Test
+    @DisplayName("toPublication set publicationInstance when input Crossref document is BookChapter")
+    public void toPublicationSetsPublicationInstanceWhenInputCrossrefDocumentIsBookChapter()
+            throws InvalidIssnException, InvalidIsbnException {
+        CrossRefDocument crossRefDocument = createSampleDocumentBookChapter();
+
+        Publication actualPublication = toPublication(crossRefDocument);
+
+        assertThat(actualPublication.getEntityDescription().getReference().getPublicationInstance().getClass(),
+                is(equalTo(BookAnthology.class)));
+
+    }
+
+
+
+    @Test
+    @DisplayName("toPublication set pages when input Crossref document is BookChapter")
+    public void toPublicationSetsPagesWhenInputCrossrefDocumentIsBookChapter()
+            throws InvalidIssnException, InvalidIsbnException {
+        CrossRefDocument crossRefDocument = createSampleDocumentBookChapter();
+
+        Publication actualPublication = toPublication(crossRefDocument);
+
+        assertNotNull(actualPublication);
+
+    }
+
+
+
     private CrossRefDocument createCompleteCrossRefDocument() {
         CrossRefDocument crossRefDocument = createSampleDocumentBook();
         CrossrefDate crossrefDate = createCrossrefDate();
@@ -689,22 +725,29 @@ public class CrossRefConverterTest extends ConversionTest {
     }
 
     private CrossRefDocument createSampleDocumentJournalArticle() {
-        CrossRefDocument document = new CrossRefDocument();
-        setAuthor(document);
-        setPublicationDate(document);
-        setIssuedDate(document);    // Issued is required from CrossRef, is either printed-date or
-        setTitle(document);
+        CrossRefDocument document = createCrossRefDocumentBasicMetadata();
         setPublicationTypeJournalArticle(document);
         return document;
     }
 
     private CrossRefDocument createSampleDocumentBook() {
+        CrossRefDocument document = createCrossRefDocumentBasicMetadata();
+        setPublicationTypeBook(document);
+        return document;
+    }
+
+    private CrossRefDocument createSampleDocumentBookChapter() {
+        CrossRefDocument document = createCrossRefDocumentBasicMetadata();
+        setPublicationTypeBookChapter(document);
+        return document;
+    }
+
+    private CrossRefDocument createCrossRefDocumentBasicMetadata() {
         CrossRefDocument document = new CrossRefDocument();
         setAuthor(document);
         setPublicationDate(document);
         setIssuedDate(document);    // Issued is required from CrossRef, is either printed-date or
         setTitle(document);
-        setPublicationTypeBook(document);
         return document;
     }
 
@@ -715,6 +758,10 @@ public class CrossRefConverterTest extends ConversionTest {
 
     private void setPublicationTypeBook(CrossRefDocument document) {
         document.setType(CrossrefType.BOOK.getType());
+    }
+
+    private void setPublicationTypeBookChapter(CrossRefDocument document) {
+        document.setType(CrossrefType.BOOK_CHAPTER.getType());
     }
 
 
