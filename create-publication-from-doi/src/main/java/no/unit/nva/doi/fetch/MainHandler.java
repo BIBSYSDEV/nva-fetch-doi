@@ -150,7 +150,8 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     }
 
     private CreatePublicationRequest getPublicationRequest(String owner, String customerId, URL url)
-            throws URISyntaxException, IOException, InvalidIssnException, MetadataNotFoundException {
+            throws URISyntaxException, IOException, InvalidIssnException,
+            MetadataNotFoundException, InvalidIsbnException {
         CreatePublicationRequest request;
         if (DoiValidator.validate(url)) {
             logger.info("URL is a DOI");
@@ -169,7 +170,8 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     }
 
     private CreatePublicationRequest getPublicationFromDoi(String owner, String customerId, URL url)
-            throws URISyntaxException, IOException, InvalidIssnException, MetadataNotFoundException {
+            throws URISyntaxException, IOException, InvalidIssnException,
+            MetadataNotFoundException, InvalidIsbnException {
         Publication publication = IdentityUpdater.enrichPublicationCreators(bareProxyClient,
                 getPublicationMetadataFromDoi(url, owner, URI.create(customerId)));
         return objectMapper.convertValue(publication, CreatePublicationRequest.class);
@@ -191,7 +193,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         return SC_OK;
     }
 
-    private Publication getPublicationMetadata(RequestBody requestBody,
+    private Publication getPublicationMetadataFromDoi(URL doiUrl,
                                                String owner, URI customerId)
             throws URISyntaxException, IOException, InvalidIssnException,
             MetadataNotFoundException, InvalidIsbnException {
