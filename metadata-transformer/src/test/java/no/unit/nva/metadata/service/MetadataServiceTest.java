@@ -40,10 +40,15 @@ public class MetadataServiceTest {
         URI uri = prepareWebServerAndReturnUriToMetdata(TEST_REVIEW_PAPER_HTML);
         Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
 
-        assertThat(request.isPresent(), is(true));
-        assertThat(request.get().getEntityDescription(), is(notNullValue()));
+        assertKnownMetadataMappingsFromReviewPaperHtml(request.get());
 
-        EntityDescription entityDescription = request.get().getEntityDescription();
+        wireMockServer.stop();
+    }
+
+    private void assertKnownMetadataMappingsFromReviewPaperHtml(CreatePublicationRequest request) {
+        assertThat(request.getEntityDescription(), is(notNullValue()));
+
+        EntityDescription entityDescription = request.getEntityDescription();
         assertThat(entityDescription.getMainTitle(), is(notNullValue()));
         assertThat(entityDescription.getDescription(), is(notNullValue()));
         assertThat(entityDescription.getTags(), hasSize(3));
@@ -52,7 +57,6 @@ public class MetadataServiceTest {
 
         PublicationDate date = entityDescription.getDate();
         assertThat(date.getYear(), is(notNullValue()));
-        wireMockServer.stop();
     }
 
     @Test
@@ -62,16 +66,19 @@ public class MetadataServiceTest {
         URI uri = prepareWebServerAndReturnUriToMetdata(UPPER_CASE_DC_HTML);
         Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
 
-        assertThat(request.isPresent(), is(true));
-        assertThat(request.get().getEntityDescription(), is(notNullValue()));
+        assertKnownMetadataMappingsFromUpperCaseDcHtml(request.get());
 
-        EntityDescription entityDescription = request.get().getEntityDescription();
+        wireMockServer.stop();
+    }
+
+    private void assertKnownMetadataMappingsFromUpperCaseDcHtml(CreatePublicationRequest request) {
+        assertThat(request.getEntityDescription(), is(notNullValue()));
+
+        EntityDescription entityDescription = request.getEntityDescription();
         assertThat(entityDescription.getMainTitle(), is(notNullValue()));
         assertThat(entityDescription.getDescription(), is(notNullValue()));
         assertThat(entityDescription.getTags(), hasSize(1));
         assertThat(entityDescription.getContributors(), hasSize(2));
-
-        wireMockServer.stop();
     }
 
     private URI prepareWebServerAndReturnUriToMetdata(String filename) {
