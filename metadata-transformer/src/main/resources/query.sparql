@@ -8,6 +8,7 @@ CONSTRUCT {
   ?entityNode a unit:EntityDescription ;
     unit:mainTitle ?mainTitle ;
     unit:description ?description ;
+    unit:description ?abstract ;
     unit:tag ?tag ;
     unit:contributor ?contributorNode ;
     unit:date ?dateNode .
@@ -28,6 +29,7 @@ CONSTRUCT {
                   (STR(?subject) AS ?tag)
                   (STR(?rawDate) AS ?date)
                   (STR(?rawDescription) AS ?description)
+                  (STR(?rawAbstract) AS ?abstract)
                   (STR(?rawLanguage) AS ?language)
                   ?dateNode
                   ?year
@@ -46,7 +48,11 @@ CONSTRUCT {
       {
         <__URI__> any23:dc.creator ?creator .
       } UNION {
-        <__URI__> any23:DC.creaator ?creator .
+        <__URI__> any23:DC.creator ?creator .
+      } UNION {
+        <__URI__> any23:dc.contributor ?creator .
+      } UNION {
+        <__URI__> any23:DC.contributor ?creator .
       }
       BIND(BNODE() AS ?contributorNode)
       BIND(BNODE() AS ?identityNode)
@@ -85,6 +91,13 @@ CONSTRUCT {
         <__URI__> any23:dc.description ?rawDescription .
       } UNION {
         <__URI__> any23:DC.description ?rawDescription .
+      }
+    }
+    UNION {
+      {
+        <__URI__> any23:dcterms.abstract ?rawAbstract .
+      } UNION {
+        <__URI__> any23:DCTERMS.abstract ?rawAbstract .
       }
     }
     UNION {

@@ -28,6 +28,8 @@ public class MetadataServiceTest {
 
     public static final String URI_TEMPLATE = "http://localhost:%d/article/%s";
     public static final String TEST_REVIEW_PAPER_HTML = "test_review_paper.html";
+    public static final String UPPER_CASE_DC_HTML = "upper_case_dc.html";
+
 
     private WireMockServer wireMockServer;
 
@@ -35,16 +37,9 @@ public class MetadataServiceTest {
     public void getMetadataJsonReturnsCreatePublicationRequest()
             throws IOException {
         MetadataService metadataService = new MetadataService();
-        URI uri = prepareWebServerAndReturnUriToMetdata();
+        URI uri = prepareWebServerAndReturnUriToMetdata(TEST_REVIEW_PAPER_HTML);
         Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
 
-        assertThatRequestHasPublicationRequestWithAllNecessaryFieldsForSomeUnknownOperation(request);
-
-        wireMockServer.stop();
-    }
-
-    private void assertThatRequestHasPublicationRequestWithAllNecessaryFieldsForSomeUnknownOperation(
-            Optional<CreatePublicationRequest> request) {
         assertThat(request.isPresent(), is(true));
         assertThat(request.get().getEntityDescription(), is(notNullValue()));
 
@@ -57,13 +52,31 @@ public class MetadataServiceTest {
 
         PublicationDate date = entityDescription.getDate();
         assertThat(date.getYear(), is(notNullValue()));
+        wireMockServer.stop();
     }
 
-    private URI prepareWebServerAndReturnUriToMetdata() {
-        String filename = TEST_REVIEW_PAPER_HTML;
+    @Test
+    public void getMetadataJsonFromUpperCaseTagMetadataReturnsCreatePublicationRequest()
+            throws IOException {
+        MetadataService metadataService = new MetadataService();
+        URI uri = prepareWebServerAndReturnUriToMetdata(UPPER_CASE_DC_HTML);
+        Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
+
+        assertThat(request.isPresent(), is(true));
+        assertThat(request.get().getEntityDescription(), is(notNullValue()));
+
+        EntityDescription entityDescription = request.get().getEntityDescription();
+        assertThat(entityDescription.getMainTitle(), is(notNullValue()));
+        assertThat(entityDescription.getDescription(), is(notNullValue()));
+        assertThat(entityDescription.getTags(), hasSize(1));
+        assertThat(entityDescription.getContributors(), hasSize(2));
+
+        wireMockServer.stop();
+    }
+
+    private URI prepareWebServerAndReturnUriToMetdata(String filename) {
         startMock(filename);
         var uriString = String.format(URI_TEMPLATE, wireMockServer.port(), filename);
-
         return URI.create(uriString);
     }
 
