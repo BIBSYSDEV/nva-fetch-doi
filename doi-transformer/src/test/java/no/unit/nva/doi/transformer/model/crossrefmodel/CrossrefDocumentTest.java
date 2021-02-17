@@ -41,11 +41,10 @@ public class CrossrefDocumentTest {
         CrossrefApiResponse crossRefResponse = objectMapper.readValue(resourceString, CrossrefApiResponse.class);
         String serializedObject = objectMapper.writeValueAsString(crossRefResponse);
         CrossrefApiResponse deserializedObject = objectMapper.readValue(serializedObject, CrossrefApiResponse.class);
-        //cannot test deep equality on those classes. we compare therefore jsonNodes.
-        String serializedAgain = objectMapper.writeValueAsString(deserializedObject);
 
         assertThat(crossRefResponse, doesNotHaveNullOrEmptyFields());
-        assertThat(objectMapper.readTree(serializedAgain), is(equalTo(objectMapper.readTree(serializedObject))));
+        assertThat(objectMapper.convertValue(deserializedObject,JsonNode.class),
+                is(equalTo(objectMapper.convertValue(crossRefResponse,JsonNode.class))));
 
     }
 
