@@ -20,18 +20,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URL;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -48,7 +47,6 @@ import no.unit.nva.doi.transformer.model.crossrefmodel.Isxn.IsxnType;
 import no.unit.nva.doi.transformer.model.crossrefmodel.Link;
 import no.unit.nva.doi.transformer.utils.CrossrefType;
 import no.unit.nva.model.Contributor;
-import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -185,8 +183,8 @@ public class CrossRefConverterTest extends ConversionTest {
     }
 
     @Test
-    @DisplayName("toPublication sets null EntityDescription date when input has no \"issued\" date")
-    public void entityDescriptionDateIsNullWhenInputDataHasNoPublicationDate()
+    @DisplayName("toPublication sets entityDescription.date to null when inputdata has no PublicationDate")
+    public void toPublicationSetsEntityDescriptionDateToNullWhenInputDataHasNoPublicationDate()
             throws InvalidIssnException, InvalidIsbnException {
         sampleDocumentJournalArticle.setIssued(null);
         Publication publicationWithoutDate = toPublication(sampleDocumentJournalArticle);
@@ -555,13 +553,14 @@ public class CrossRefConverterTest extends ConversionTest {
         Book actualPublicationContext = (Book) actualDocument.getEntityDescription()
                 .getReference()
                 .getPublicationContext();
-        var actualIsbnList = actualPublicationContext.getIsbnList();
 
-        List<String> poolOfExpectedValues = isbns.stream()
+        Set<String> actualValues = new HashSet<>(actualPublicationContext.getIsbnList());
+        Set<String> expectedValues = isbns.stream()
                 .map(Isxn::getValue)
                 .map(ISBN_VALIDATOR::validate)
-                .collect(Collectors.toList());
-        assertTrue(actualIsbnList.containsAll(poolOfExpectedValues));
+                .collect(Collectors.toSet());
+
+        assertEquals(actualValues, expectedValues);
     }
 
     @Test
@@ -618,6 +617,14 @@ public class CrossRefConverterTest extends ConversionTest {
     @DisplayName("toPublication handles all interesting and required fields in CrossrefDocument for book")
     public void toPublicationHandlesAllInterestingAndRequiredFieldsInCrossrefDocumentForBook()
             throws InvalidIssnException, InvalidIsbnException {
+        CrossRefDocument crossRefDocument = createCompleteCrossRefDocument();
+
+        Publication actualPublication = toPublication(crossRefDocument);
+
+        assertAssignedValuesAreConverted(actualPublication, sampleCrossrefDateToInstant());
+    }
+
+    private CrossRefDocument createCompleteCrossRefDocument() {
         CrossRefDocument crossRefDocument = createSampleDocumentBook();
         CrossrefDate crossrefDate = createCrossrefDate();
 
@@ -630,25 +637,22 @@ public class CrossRefConverterTest extends ConversionTest {
         crossRefDocument.setCreated(crossrefDate);
         crossRefDocument.setDeposited(crossrefDate);
         crossRefDocument.setIssued(crossrefDate);
+        return crossRefDocument;
+    }
 
-        Publication actualPublication = toPublication(crossRefDocument);
-        final EntityDescription entityDescription = actualPublication.getEntityDescription();
+    private void assertAssignedValuesAreConverted(Publication actualPublication, Instant sampleCrossRefDateAsInstant) {
 
         assertTrue(actualPublication.getPublisher().getLabels().containsValue(SAMPLE_PUBLISHER));
 
-        assertThat(entityDescription.getMainTitle(), is(equalTo(SAMPLE_DOCUMENT_TITLE)));
-        assertThat(actualPublication.getDoi(), is(equalTo(SOME_DOI_AS_URL)));
+        assertThat(actualPublication.getEntityDescription().getMainTitle(), is(equalTo(SAMPLE_DOCUMENT_TITLE)));
 
+        assertThat(actualPublication.getDoi(), is(equalTo(SOME_DOI_AS_URL)));
         // url
         assertThat(actualPublication.getLink(), is(equalTo(URI.create(SAMPLE_LINK))));
 
-        final Instant sampleCrossRefDateAsInstant = sampleCrossrefDateToInstant();
-
         assertThat(actualPublication.getCreatedDate(), is(equalTo(sampleCrossRefDateAsInstant)));
-
         // deposited
         assertThat(actualPublication.getModifiedDate(), is(equalTo(sampleCrossRefDateAsInstant)));
-
         // issued
         assertThat(actualPublication.getPublishedDate(), is(equalTo(sampleCrossRefDateAsInstant)));
     }
