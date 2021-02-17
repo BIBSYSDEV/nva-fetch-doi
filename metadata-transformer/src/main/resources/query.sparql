@@ -28,14 +28,23 @@ CONSTRUCT {
                   (STR(?creator) AS ?name)
                   (STR(?subject) AS ?tag)
                   (STR(?rawDate) AS ?date)
-                  (STR(?rawDescription) AS ?description)
-                  (STR(?rawAbstract) AS ?abstract)
+                  ?description
+                  ?abstract
                   (STR(?rawLanguage) AS ?language)
                   ?dateNode
                   ?year
                   ?month
                   ?day {
     BIND (BNODE() AS ?entityNode)
+    # This makes it possible to interpret cases where "Abstract" is actually a "Description"
+    OPTIONAL {
+      BIND(IF(BOUND(?rawAbstract), STR(?rawAbstract), IF(BOUND(?rawDescription), STR(?description), "")) AS ?abstract)
+      FILTER (?abstract != "")
+    }
+    OPTIONAL {
+      BIND(STR(?rawDescription) AS ?description)
+      FILTER (?abstract != ?description)
+    }
 
     {
       {
