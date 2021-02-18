@@ -104,9 +104,9 @@ public class CrossRefConverterTest extends ConversionTest {
     public static final String START_PAGE = "45";
     public static final String END_PAGE = "89";
     public static final String CONNECTING_MINUS = "-";
-    private final Instant SAMPLE_CROSSREF_DATE_AS_INSTANT = sampleCrossrefDateToInstant();
-    private final CrossRefConverter converter = new CrossRefConverter();
+    private static final Instant SAMPLE_CROSSREF_DATE_AS_INSTANT = sampleCrossrefDateToInstant();
     private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
+    private final CrossRefConverter converter = new CrossRefConverter();
 
     @Test
     @DisplayName("An empty CrossRef document throws IllegalArgument exception")
@@ -142,7 +142,8 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("The creator's name in the publication contains first family and then given name")
-    public void creatorsNameContainsFirstFamilyAndThenGivenName() throws IllegalArgumentException, InvalidIssnException, InvalidIsbnException {
+    public void creatorsNameContainsFirstFamilyAndThenGivenName()
+            throws IllegalArgumentException, InvalidIssnException, InvalidIsbnException {
 
         CrossRefDocument sampleDocumentJournalArticle = createSampleDocumentJournalArticle();
         Publication samplePublication = toPublication(sampleDocumentJournalArticle);
@@ -165,7 +166,8 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("The earliest year found in the \"published-print\" field is stored in the entity description.")
-    public void entityDescriptionContainsTheEarliestYearFoundInPublishedPrintField() throws InvalidIssnException, InvalidIsbnException {
+    public void entityDescriptionContainsTheEarliestYearFoundInPublishedPrintField()
+            throws InvalidIssnException, InvalidIsbnException {
         CrossRefDocument sampleDocumentJournalArticle = createSampleDocumentJournalArticle();
         Publication samplePublication = toPublication(sampleDocumentJournalArticle);
         String actualYear = samplePublication.getEntityDescription().getDate().getYear();
@@ -186,7 +188,8 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("toPublication sets PublicationContext to Journal when the input has the tag \"journal-article\"")
-    public void toPublicationSetsPublicationContextToJournalWhenTheInputHasTheTagJournalArticle() throws InvalidIssnException, InvalidIsbnException {
+    public void toPublicationSetsPublicationContextToJournalWhenTheInputHasTheTagJournalArticle()
+            throws InvalidIssnException, InvalidIsbnException {
 
         CrossRefDocument sampleDocumentJournalArticle = createSampleDocumentJournalArticle();
         Publication samplePublication = toPublication(sampleDocumentJournalArticle);
@@ -740,7 +743,7 @@ public class CrossRefConverterTest extends ConversionTest {
         assertThat(actualPublication.getPublishedDate(), is(equalTo(SAMPLE_CROSSREF_DATE_AS_INSTANT)));
     }
 
-    private Instant sampleCrossrefDateToInstant() {
+    private static Instant sampleCrossrefDateToInstant() {
         LocalDate date  =  LocalDate.of(EXPECTED_YEAR, EXPECTED_MONTH, EXPECTED_DAY);
         return  Instant.ofEpochSecond(date.toEpochDay() * 86400L);
     }
@@ -794,14 +797,13 @@ public class CrossRefConverterTest extends ConversionTest {
     private CrossRefDocument createCrossRefDocumentWithBasicMetadata() {
         CrossRefDocument crossRefDocument = new CrossRefDocument();
 
-        CrossrefDate crossrefDate = createCrossrefDate();
-
         setAuthor(crossRefDocument);
         crossRefDocument.setPublisher(SAMPLE_PUBLISHER);
         crossRefDocument.setTitle(List.of(SAMPLE_DOCUMENT_TITLE));
         crossRefDocument.setDoi(SOME_DOI);
         crossRefDocument.setUrl(SOME_DOI_AS_URL.toString());
         crossRefDocument.setLink(List.of(createLink()));
+        CrossrefDate crossrefDate = createCrossrefDate();
         crossRefDocument.setCreated(crossrefDate);
         crossRefDocument.setDeposited(crossrefDate);
         crossRefDocument.setPublishedPrint(crossrefDate);
@@ -810,7 +812,6 @@ public class CrossRefConverterTest extends ConversionTest {
 
         return crossRefDocument;
     }
-
 
     private void setPublicationTypeJournalArticle(CrossRefDocument document) {
         document.setType(CrossrefType.JOURNAL_ARTICLE.getType());
