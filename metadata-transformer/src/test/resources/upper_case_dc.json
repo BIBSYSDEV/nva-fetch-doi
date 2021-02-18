@@ -1,0 +1,40 @@
+{
+  "entityDescription" : {
+    "type" : "EntityDescription",
+    "mainTitle" : "Upper Case DC Test Page",
+    "contributors" : [ {
+      "type" : "Contributor",
+      "identity" : {
+        "type" : "Identity",
+        "name" : "Casimodo Upperton"
+      },
+      "correspondingAuthor" : false
+    }, {
+      "type" : "Contributor",
+      "identity" : {
+        "type" : "Identity",
+        "name" : "Casey McUpper"
+      },
+      "correspondingAuthor" : false
+    } ],
+    "tags" : [ "Upper Case" ],
+    "description" : "Very upper upper case description.",
+    "abstract" : "Very upper upper case, shouty ABSTRACT."
+  },
+  "@context" : {
+    "@vocab" : "https://nva.unit.no/publication#",
+    "id" : "@id",
+    "type" : "@type",
+    "graph" : "@graph",
+    "value" : "@value",
+    "language" : "@language",
+    "tags" : {
+      "@id" : "https://nva.unit.no/publication#tag",
+      "@container" : "@set"
+    },
+    "contributors" : {
+      "@id" : "https://nva.unit.no/publication#contributor",
+      "@container" : "@set"
+    }
+  }
+}

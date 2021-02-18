@@ -2,11 +2,10 @@ package no.unit.nva.metadata.service;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import no.unit.nva.api.CreatePublicationRequest;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.PublicationDate;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
@@ -19,16 +18,18 @@ import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static nva.commons.core.JsonUtils.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
 
 public class MetadataServiceTest {
 
     public static final String URI_TEMPLATE = "http://localhost:%d/article/%s";
     public static final String TEST_REVIEW_PAPER_HTML = "test_review_paper.html";
+    public static final String TEST_REVIEW_PAPER_JSON = "src/test/resources/test_review_paper.json";
     public static final String UPPER_CASE_DC_HTML = "upper_case_dc.html";
+    public static final String UPPER_CASE_DC_JSON = "src/test/resources/upper_case_dc.json";
 
 
     private WireMockServer wireMockServer;
@@ -40,7 +41,10 @@ public class MetadataServiceTest {
         URI uri = prepareWebServerAndReturnUriToMetdata(TEST_REVIEW_PAPER_HTML);
         Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
 
-        assertKnownMetadataMappingsFromReviewPaperHtml(request.get());
+        File file = new File(TEST_REVIEW_PAPER_JSON);
+
+        CreatePublicationRequest expected = objectMapper.readValue(file, CreatePublicationRequest.class);
+        assertThat(request.get(), is(equalTo(expected)));
 
         wireMockServer.stop();
     }
@@ -52,33 +56,12 @@ public class MetadataServiceTest {
         URI uri = prepareWebServerAndReturnUriToMetdata(UPPER_CASE_DC_HTML);
         Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
 
-        assertKnownMetadataMappingsFromUpperCaseDcHtml(request.get());
+        File file = new File(UPPER_CASE_DC_JSON);
+
+        CreatePublicationRequest expected = objectMapper.readValue(file, CreatePublicationRequest.class);
+        assertThat(request.get(), is(equalTo(expected)));
 
         wireMockServer.stop();
-    }
-
-    private void assertKnownMetadataMappingsFromReviewPaperHtml(CreatePublicationRequest request) {
-        assertThat(request.getEntityDescription(), is(notNullValue()));
-
-        EntityDescription entityDescription = request.getEntityDescription();
-        assertThat(entityDescription.getMainTitle(), is(notNullValue()));
-        assertThat(entityDescription.getDescription(), is(notNullValue()));
-        assertThat(entityDescription.getTags(), hasSize(3));
-        assertThat(entityDescription.getContributors(), hasSize(2));
-        assertThat(entityDescription.getDate(), is(notNullValue()));
-
-        PublicationDate date = entityDescription.getDate();
-        assertThat(date.getYear(), is(notNullValue()));
-    }
-
-    private void assertKnownMetadataMappingsFromUpperCaseDcHtml(CreatePublicationRequest request) {
-        assertThat(request.getEntityDescription(), is(notNullValue()));
-
-        EntityDescription entityDescription = request.getEntityDescription();
-        assertThat(entityDescription.getMainTitle(), is(notNullValue()));
-        assertThat(entityDescription.getDescription(), is(notNullValue()));
-        assertThat(entityDescription.getTags(), hasSize(1));
-        assertThat(entityDescription.getContributors(), hasSize(2));
     }
 
     private URI prepareWebServerAndReturnUriToMetdata(String filename) {
