@@ -106,6 +106,9 @@ public class CrossRefConverterTest extends ConversionTest {
     public static final String SAMPLE_PUBLISHER = "Sample Publisher Inc";
     public static final String SAMPLE_LINK = "https://localhost/some.link";
     public static final String REVIEW_RECOMMENDATION = "GO";
+    public static final String START_PAGE = "45";
+    public static final String END_PAGE = "89";
+    public static final String CONNECTING_MINUS = "-";
 
     private CrossRefDocument sampleDocumentJournalArticle = createSampleDocumentJournalArticle();
     private final CrossRefConverter converter = new CrossRefConverter();
@@ -655,8 +658,13 @@ public class CrossRefConverterTest extends ConversionTest {
 
         Publication actualPublication = toPublication(crossRefDocument);
 
-        assertNotNull(actualPublication);
-
+        Pages actualPages = actualPublication
+                .getEntityDescription()
+                .getReference()
+                .getPublicationInstance()
+                .getPages();
+        Pages expectedPages = new Range.Builder().withBegin(START_PAGE).withEnd(END_PAGE).build();
+        assertThat(actualPages, is(equalTo(expectedPages)));
     }
 
 
@@ -740,6 +748,8 @@ public class CrossRefConverterTest extends ConversionTest {
     private CrossRefDocument createSampleDocumentBookChapter() {
         CrossRefDocument document = createCrossRefDocumentBasicMetadata();
         setPublicationTypeBookChapter(document);
+        String pages = START_PAGE + CONNECTING_MINUS + END_PAGE;
+        document.setPage(pages);
         return document;
     }
 
