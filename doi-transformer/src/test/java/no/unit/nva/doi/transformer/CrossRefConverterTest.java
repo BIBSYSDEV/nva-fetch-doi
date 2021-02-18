@@ -25,6 +25,7 @@ import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
@@ -640,7 +641,7 @@ public class CrossRefConverterTest extends ConversionTest {
         Publication actualPublication = toPublication(crossRefDocument);
 
         assertThat(actualPublication.getEntityDescription().getReference().getPublicationInstance().getClass(),
-                is(equalTo(BookAnthology.class)));
+                is(equalTo(ChapterArticle.class)));
 
     }
 

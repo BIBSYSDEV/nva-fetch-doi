@@ -33,6 +33,7 @@ import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.JacocoGenerated;
@@ -289,14 +290,15 @@ public class CrossRefConverter extends AbstractConverter {
                 return createJournalArticle(document);
             case BOOK:
             case BOOK_CHAPTER:
-                return createBookAnthology(document);
+                return createChapterArticle(document);
             default:
                 throw new IllegalArgumentException(String.format(UNRECOGNIZED_TYPE_MESSAGE, document.getType()));
         }
     }
 
-    private BookAnthology createBookAnthology(CrossRefDocument document) {
-        return new BookAnthology.Builder()
+    private ChapterArticle createChapterArticle(CrossRefDocument document) {
+        return new ChapterArticle.Builder()
+                .withPages(extractPages(document))
                 .withPeerReviewed(hasReviews(document)) // Same as in BasicContext
                 .build();
     }
