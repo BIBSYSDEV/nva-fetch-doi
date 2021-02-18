@@ -126,7 +126,8 @@ public class CrossRefConverterTest extends ConversionTest {
         final String someStrangeCrossrefType = "SomeStrangeCrossrefType";
         doc.setType(someStrangeCrossrefType);
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> toPublication(doc));
+        UnsupportedDocumentTypeException exception =
+                assertThrows(UnsupportedDocumentTypeException.class, () -> toPublication(doc));
         String expectedError = String.format(CrossRefConverter.UNRECOGNIZED_TYPE_MESSAGE, someStrangeCrossrefType);
         assertThat(exception.getMessage(), is(equalTo(expectedError)));
     }
@@ -136,7 +137,8 @@ public class CrossRefConverterTest extends ConversionTest {
     public void anCrossRefDocumentWithoutTypeThrowsIllegalArgumentException() throws IllegalArgumentException {
         CrossRefDocument doc = createCrossRefDocumentWithBasicMetadata();
         doc.setType(null);
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> toPublication(doc));
+        UnsupportedDocumentTypeException exception =
+                assertThrows(UnsupportedDocumentTypeException.class, () -> toPublication(doc));
         String expectedError = String.format(CrossRefConverter.UNRECOGNIZED_TYPE_MESSAGE, "null");
         assertThat(exception.getMessage(), is(equalTo(expectedError)));
     }
@@ -145,7 +147,8 @@ public class CrossRefConverterTest extends ConversionTest {
     @Test
     @DisplayName("The creator's name in the publication contains first family and then given name")
     public void creatorsNameContainsFirstFamilyAndThenGivenName()
-            throws IllegalArgumentException, InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
+            throws IllegalArgumentException, InvalidIssnException,
+            InvalidIsbnException, UnsupportedDocumentTypeException {
 
         CrossRefDocument sampleDocumentJournalArticle = createSampleDocumentJournalArticle();
         Publication samplePublication = toPublication(sampleDocumentJournalArticle);
@@ -206,7 +209,7 @@ public class CrossRefConverterTest extends ConversionTest {
         CrossRefDocument sampleDocumentJournalArticle = createSampleDocumentJournalArticle();
         sampleDocumentJournalArticle.setType(NOT_JOURNAL_ARTICLE);
         String expectedError = String.format(CrossRefConverter.UNRECOGNIZED_TYPE_MESSAGE, NOT_JOURNAL_ARTICLE);
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+        UnsupportedDocumentTypeException exception = assertThrows(UnsupportedDocumentTypeException.class,
             () -> toPublication(sampleDocumentJournalArticle));
         assertThat(exception.getMessage(), is(equalTo(expectedError)));
     }
@@ -230,7 +233,8 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("toPublication sets the correct number when the sequence ordinal is valid")
-    public void toPublicationSetsCorrectNumberForValidOrdinal() throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
+    public void toPublicationSetsCorrectNumberForValidOrdinal()
+            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
         CrossRefDocument sampleDocumentJournalArticle = createSampleDocumentJournalArticle();
 
         CrossrefContributor author = sampleDocumentJournalArticle.getAuthor().stream().findFirst().get();
@@ -258,7 +262,8 @@ public class CrossRefConverterTest extends ConversionTest {
     @Test
     @DisplayName("toPublication sets the language to a URI when the input is an ISO639-3 entry")
     public void toPublicationSetsTheLanguageToAUriWhenTheInputFollowsTheIso3Standard()
-            throws LanguageUriNotFoundException, InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
+            throws LanguageUriNotFoundException, InvalidIssnException,
+            InvalidIsbnException, UnsupportedDocumentTypeException {
         Locale sampleLanguage = Locale.ENGLISH;
         CrossRefDocument sampleDocumentJournalArticle = createSampleDocumentJournalArticle();
         sampleDocumentJournalArticle.setLanguage(sampleLanguage.getISO3Language());
@@ -448,7 +453,8 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("toPublication sets tags when subject are available")
-    public void toPublicationSetsTagsWhenSubjectAreAvailable() throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
+    public void toPublicationSetsTagsWhenSubjectAreAvailable()
+            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
         final String expectedTag = "subject1";
         List<String> subject = List.of(expectedTag);
         CrossRefDocument sampleDocumentJournalArticle = createSampleDocumentJournalArticle();

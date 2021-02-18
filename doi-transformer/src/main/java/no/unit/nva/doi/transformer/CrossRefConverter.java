@@ -64,7 +64,10 @@ import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.DAY_I
 import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.FROM_DATE_INDEX_IN_DATE_ARRAY;
 import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.MONTH_INDEX;
 import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.YEAR_INDEX;
-import static no.unit.nva.doi.transformer.utils.CrossrefType.*;
+import static no.unit.nva.doi.transformer.utils.CrossrefType.BOOK;
+import static no.unit.nva.doi.transformer.utils.CrossrefType.BOOK_CHAPTER;
+import static no.unit.nva.doi.transformer.utils.CrossrefType.JOURNAL_ARTICLE;
+import static no.unit.nva.doi.transformer.utils.CrossrefType.getByType;
 import static nva.commons.core.StringUtils.isNotEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 
@@ -97,11 +100,12 @@ public class CrossRefConverter extends AbstractConverter {
      * @return an internal representation of the publication.
      * @throws InvalidIssnException thrown if a provided ISSN is invalid.
      * @throws InvalidIsbnException thrown if a provided ISBN is invalid.
-     *                              type.
+     * @throws UnsupportedDocumentTypeException thrown if a provided documentType is provided.
      */
     public Publication toPublication(CrossRefDocument document,
                                      String owner,
-                                     UUID identifier) throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
+                                     UUID identifier)
+            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
 
         if (document != null && hasTitle(document)) {
             return new Publication.Builder()
@@ -285,7 +289,8 @@ public class CrossRefConverter extends AbstractConverter {
                 .orElse(null);
     }
 
-    private PublicationInstance<?> extractPublicationInstance(CrossRefDocument document) throws UnsupportedDocumentTypeException {
+    private PublicationInstance<?> extractPublicationInstance(CrossRefDocument document)
+            throws UnsupportedDocumentTypeException {
         CrossrefType byType = getByType(document.getType());
         if (byType == JOURNAL_ARTICLE) {
             return createJournalArticle(document);
