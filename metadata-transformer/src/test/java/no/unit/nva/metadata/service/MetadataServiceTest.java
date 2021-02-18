@@ -2,10 +2,10 @@ package no.unit.nva.metadata.service;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import no.unit.nva.api.CreatePublicationRequest;
+import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
@@ -27,9 +27,9 @@ public class MetadataServiceTest {
 
     public static final String URI_TEMPLATE = "http://localhost:%d/article/%s";
     public static final String TEST_REVIEW_PAPER_HTML = "test_review_paper.html";
-    public static final String TEST_REVIEW_PAPER_JSON = "src/test/resources/test_review_paper.json";
+    public static final String TEST_REVIEW_PAPER_JSON = "test_review_paper.json";
     public static final String UPPER_CASE_DC_HTML = "upper_case_dc.html";
-    public static final String UPPER_CASE_DC_JSON = "src/test/resources/upper_case_dc.json";
+    public static final String UPPER_CASE_DC_JSON = "upper_case_dc.json";
 
 
     private WireMockServer wireMockServer;
@@ -41,9 +41,9 @@ public class MetadataServiceTest {
         URI uri = prepareWebServerAndReturnUriToMetdata(TEST_REVIEW_PAPER_HTML);
         Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
 
-        File file = new File(TEST_REVIEW_PAPER_JSON);
-
-        CreatePublicationRequest expected = objectMapper.readValue(file, CreatePublicationRequest.class);
+        CreatePublicationRequest expected = objectMapper.readValue(
+                IoUtils.inputStreamFromResources(TEST_REVIEW_PAPER_JSON),
+                CreatePublicationRequest.class);
         assertThat(request.get(), is(equalTo(expected)));
 
         wireMockServer.stop();
@@ -56,9 +56,9 @@ public class MetadataServiceTest {
         URI uri = prepareWebServerAndReturnUriToMetdata(UPPER_CASE_DC_HTML);
         Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
 
-        File file = new File(UPPER_CASE_DC_JSON);
-
-        CreatePublicationRequest expected = objectMapper.readValue(file, CreatePublicationRequest.class);
+        CreatePublicationRequest expected = objectMapper.readValue(
+                IoUtils.inputStreamFromResources(UPPER_CASE_DC_JSON),
+                CreatePublicationRequest.class);
         assertThat(request.get(), is(equalTo(expected)));
 
         wireMockServer.stop();
