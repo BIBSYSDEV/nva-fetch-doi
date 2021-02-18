@@ -11,6 +11,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
+
+import no.unit.nva.doi.fetch.exceptions.UnsupportedDocumentTypeException;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
@@ -29,7 +31,7 @@ public class DoiTransformServiceTest {
     @Test
     public void transFormPublicationReturnsPublicationOnValidCrossrefBody()
             throws URISyntaxException, InvalidIssnException,
-            JsonProcessingException, InvalidIsbnException {
+            JsonProcessingException, InvalidIsbnException, UnsupportedDocumentTypeException {
         DoiTransformService doiTransformService = new DoiTransformService();
         String crossrefBody = IoUtils.stringFromResources(CROSSREF_JSON_PATH);
 
@@ -43,7 +45,7 @@ public class DoiTransformServiceTest {
     @Test
     public void transFormBookPublicationReturnsPublicationOnValidCrossrefBody()
             throws URISyntaxException, InvalidIssnException,
-            JsonProcessingException, InvalidIsbnException {
+            JsonProcessingException, InvalidIsbnException, UnsupportedDocumentTypeException {
         DoiTransformService doiTransformService = new DoiTransformService();
         String crossrefBody = IoUtils.stringFromResources(CROSSREF_BOOK_JSON_PATH);
 
@@ -56,7 +58,7 @@ public class DoiTransformServiceTest {
 
     @Test
     public void transformPublicationWithXmlAbstractReturnsPublicationWithoutXml() throws URISyntaxException,
-            InvalidIssnException, JsonProcessingException, InvalidIsbnException {
+            InvalidIssnException, JsonProcessingException, InvalidIsbnException, UnsupportedDocumentTypeException {
         DoiTransformService doiTransformService = new DoiTransformService();
         String crossRefBody = IoUtils.stringFromResources(CROSSREF_WITH_XML_ASTRACT_JSON_PATH);
         Publication publication = doiTransformService.transformPublication(crossRefBody, CROSSREF_STRING, OWNER,
@@ -67,7 +69,7 @@ public class DoiTransformServiceTest {
 
     @Test
     public void transFormPublicationReturnsPublicationOnValidDataciteBody() throws URISyntaxException,
-            InvalidIssnException, JsonProcessingException, InvalidIsbnException {
+            InvalidIssnException, JsonProcessingException, InvalidIsbnException, UnsupportedDocumentTypeException {
         DoiTransformService doiTransformService = new DoiTransformService();
         String crossrefBody = IoUtils.stringFromResources(DATACITE_JSON_PATH);
 

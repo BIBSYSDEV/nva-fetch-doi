@@ -1,6 +1,7 @@
 package no.unit.nva.doi.transformer;
 
 import com.ibm.icu.text.RuleBasedNumberFormat;
+import no.unit.nva.doi.fetch.exceptions.UnsupportedDocumentTypeException;
 import no.unit.nva.doi.transformer.language.LanguageMapper;
 import no.unit.nva.doi.transformer.language.SimpleLanguageDetector;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossRefDocument;
@@ -63,6 +64,7 @@ import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.DAY_I
 import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.FROM_DATE_INDEX_IN_DATE_ARRAY;
 import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.MONTH_INDEX;
 import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.YEAR_INDEX;
+import static no.unit.nva.doi.transformer.utils.CrossrefType.*;
 import static nva.commons.core.StringUtils.isNotEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 
@@ -99,7 +101,7 @@ public class CrossRefConverter extends AbstractConverter {
      */
     public Publication toPublication(CrossRefDocument document,
                                      String owner,
-                                     UUID identifier) throws InvalidIssnException, InvalidIsbnException {
+                                     UUID identifier) throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
 
         if (document != null && hasTitle(document)) {
             return new Publication.Builder()
@@ -160,7 +162,8 @@ public class CrossRefConverter extends AbstractConverter {
         }
     }
 
-    private Reference extractReference(CrossRefDocument document) throws InvalidIssnException, InvalidIsbnException {
+    private Reference extractReference(CrossRefDocument document)
+            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
         PublicationInstance<?> instance = extractPublicationInstance(document);
         PublicationContext context = extractPublicationContext(document);
         return new Reference.Builder()
@@ -175,9 +178,9 @@ public class CrossRefConverter extends AbstractConverter {
     }
 
     private PublicationContext extractPublicationContext(CrossRefDocument document)
-            throws InvalidIssnException, InvalidIsbnException {
+            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
 
-        CrossrefType crossrefType = CrossrefType.getByType(document.getType());
+        CrossrefType crossrefType = getByType(document.getType());
         var publicationType = Optional.of(crossrefType.getPublicationType())
                 .orElseThrow(() -> new IllegalArgumentException(MISSING_CROSSREF_TYPE_IN_DOCUMENT));
 
@@ -186,16 +189,15 @@ public class CrossRefConverter extends AbstractConverter {
 
     @JacocoGenerated
     private PublicationContext createContext(CrossRefDocument document, PublicationType publicationType)
-            throws InvalidIssnException, InvalidIsbnException {
-        switch (publicationType) {
-            case JOURNAL_CONTENT:
-                return createJournalContext(document);
-            case BOOK:
-                return createBookContext(document);
-            case BOOK_CHAPTER:
-                return createChapterContext(document);
-            default:
-                throw new IllegalArgumentException(String.format(UNRECOGNIZED_TYPE_MESSAGE, document.getType()));
+            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
+        if (publicationType == PublicationType.JOURNAL_CONTENT) {
+            return createJournalContext(document);
+        } else if (publicationType == PublicationType.BOOK) {
+            return createBookContext(document);
+        } else if (publicationType == PublicationType.BOOK_CHAPTER) {
+            return createChapterContext(document);
+        } else {
+            throw new UnsupportedDocumentTypeException(String.format(UNRECOGNIZED_TYPE_MESSAGE, document.getType()));
         }
     }
 
@@ -283,16 +285,14 @@ public class CrossRefConverter extends AbstractConverter {
                 .orElse(null);
     }
 
-    private PublicationInstance<?> extractPublicationInstance(CrossRefDocument document) {
-        switch (CrossrefType.getByType(document.getType())) {
-            case JOURNAL_ARTICLE:
-                return createJournalArticle(document);
-            case BOOK:
-            case BOOK_CHAPTER:
-                return createChapterArticle(document);
-            default:
-                throw new IllegalArgumentException(String.format(UNRECOGNIZED_TYPE_MESSAGE, document.getType()));
+    private PublicationInstance<?> extractPublicationInstance(CrossRefDocument document) throws UnsupportedDocumentTypeException {
+        CrossrefType byType = getByType(document.getType());
+        if (byType == JOURNAL_ARTICLE) {
+            return createJournalArticle(document);
+        } else if (byType == BOOK || byType == BOOK_CHAPTER) {
+            return createChapterArticle(document);
         }
+        throw new UnsupportedDocumentTypeException(String.format(UNRECOGNIZED_TYPE_MESSAGE, document.getType()));
     }
 
     private ChapterArticle createChapterArticle(CrossRefDocument document) {

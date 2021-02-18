@@ -10,6 +10,7 @@ import no.unit.nva.doi.DataciteClient;
 import no.unit.nva.doi.DoiProxyService;
 import no.unit.nva.doi.MetadataAndContentLocation;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
+import no.unit.nva.doi.fetch.exceptions.UnsupportedDocumentTypeException;
 import no.unit.nva.doi.fetch.model.PublicationDate;
 import no.unit.nva.doi.fetch.model.RequestBody;
 import no.unit.nva.doi.fetch.model.Summary;
@@ -161,7 +162,7 @@ public class MainHandlerTest {
     @Test
     public void processInputThrowsIllegalStateExceptionWithInternalCauseWhenUrlToPublicationProxyIsNotValid()
             throws IOException, InvalidIssnException, URISyntaxException,
-            MetadataNotFoundException, InvalidIsbnException {
+            MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
         Environment environmentWithInvalidHost = createEnvironmentWithInvalidHost();
         MainHandler mainHandler = createMainHandler(environmentWithInvalidHost);
         RequestBody requestBody = createSampleRequest(new URL(VALID_DOI));
@@ -263,7 +264,7 @@ public class MainHandlerTest {
 
     private MainHandler createMainHandler(Environment environment)
             throws URISyntaxException, IOException, InvalidIssnException,
-            MetadataNotFoundException, InvalidIsbnException {
+            MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
         PublicationConverter publicationConverter = mockPublicationConverter();
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
@@ -283,7 +284,8 @@ public class MainHandlerTest {
     }
 
     private DoiTransformService mockDoiTransformServiceReturningSuccessfulResult()
-            throws URISyntaxException, IOException, InvalidIssnException, InvalidIsbnException {
+            throws URISyntaxException, IOException, InvalidIssnException,
+            InvalidIsbnException, UnsupportedDocumentTypeException {
         DoiTransformService service = mock(DoiTransformService.class);
         when(service.transformPublication(anyString(), anyString(), anyString(), any()))
             .thenReturn(getPublication());

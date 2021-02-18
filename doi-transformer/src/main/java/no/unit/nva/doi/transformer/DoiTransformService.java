@@ -7,6 +7,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.UUID;
+
+import no.unit.nva.doi.fetch.exceptions.UnsupportedDocumentTypeException;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossRefDocument;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefApiResponse;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteResponse;
@@ -52,7 +54,8 @@ public class DoiTransformService {
      *                                  the publication instance type.
      */
     public Publication transformPublication(String body, String contentLocation, String owner, URI customerId)
-            throws JsonProcessingException, URISyntaxException, InvalidIssnException, InvalidIsbnException {
+            throws JsonProcessingException, URISyntaxException,
+            InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
         UUID uuid = UUID.randomUUID();
         Instant now = Instant.now();
         return convertInputToPublication(body, contentLocation, now, owner, uuid, customerId);
@@ -60,7 +63,8 @@ public class DoiTransformService {
 
     protected Publication convertInputToPublication(String body, String contentLocation, Instant now, String owner,
                                                     UUID identifier, URI publisher)
-            throws JsonProcessingException, URISyntaxException, InvalidIssnException, InvalidIsbnException {
+            throws JsonProcessingException, URISyntaxException, InvalidIssnException,
+            InvalidIsbnException, UnsupportedDocumentTypeException {
 
         MetadataLocation metadataLocation = MetadataLocation.lookup(contentLocation);
         if (metadataLocation.equals(MetadataLocation.CROSSREF)) {
@@ -77,7 +81,8 @@ public class DoiTransformService {
     }
 
     private Publication convertFromCrossRef(String body, String owner, UUID identifier)
-            throws JsonProcessingException, InvalidIssnException, InvalidIsbnException {
+            throws JsonProcessingException, InvalidIssnException,
+            InvalidIsbnException, UnsupportedDocumentTypeException {
 
         CrossRefDocument document = objectMapper.readValue(body, CrossrefApiResponse.class).getMessage();
         return crossRefConverter.toPublication(document, owner, identifier);
