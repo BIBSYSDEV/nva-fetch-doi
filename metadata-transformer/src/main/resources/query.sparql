@@ -47,7 +47,7 @@ CONSTRUCT {
       FILTER (BOUND(?creator) && STRLEN(?creator)>0)
     }
     UNION {
-      <__URI__> any23:dc.subject | any23:DC.subject ?subject .
+      <__URI__> any23:dc.subject | any23:DC.subject | any23:dc.coverage | any23:DC.coverage ?subject .
     }
     UNION {
       <__URI__> any23:dc.date | any23:DC.date ?rawDate .
@@ -92,7 +92,6 @@ CONSTRUCT {
       }
     }
     UNION {
-
         <__URI__> any23:dc.language | any23:DC.language ?rawLanguage .
     }
   }
