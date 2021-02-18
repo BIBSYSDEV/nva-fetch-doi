@@ -21,10 +21,8 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Journal;
-import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.Pages;
@@ -67,7 +65,6 @@ import static org.hamcrest.text.IsEmptyString.emptyString;
 import static org.hamcrest.text.MatchesPattern.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -109,7 +106,7 @@ public class CrossRefConverterTest extends ConversionTest {
     public static final String START_PAGE = "45";
     public static final String END_PAGE = "89";
     public static final String CONNECTING_MINUS = "-";
-
+    private final Instant SAMPLE_CROSSREF_DATE_AS_INSTANT = sampleCrossrefDateToInstant();
     private CrossRefDocument sampleDocumentJournalArticle = createSampleDocumentJournalArticle();
     private final CrossRefConverter converter = new CrossRefConverter();
     private Publication samplePublication;
@@ -132,7 +129,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @Test
     @DisplayName("An CrossRef document with unknown type throws IllegalArgument exception")
     public void anCrossRefDocumentWithUnknownTypeThrowsIllegalArgumentException() throws IllegalArgumentException {
-        CrossRefDocument doc = createCrossRefDocumentBasicMetadata();
+        CrossRefDocument doc = createCrossRefDocumentWithBasicMetadata();
 
         final String someStrangeCrossrefType = "SomeStrangeCrossrefType";
         doc.setType(someStrangeCrossrefType);
@@ -145,7 +142,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @Test
     @DisplayName("An CrossRef document without type throws IllegalArgument exception")
     public void anCrossRefDocumentWithoutTypeThrowsIllegalArgumentException() throws IllegalArgumentException {
-        CrossRefDocument doc = createCrossRefDocumentBasicMetadata();
+        CrossRefDocument doc = createCrossRefDocumentWithBasicMetadata();
         doc.setType(null);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> toPublication(doc));
         String expectedError = String.format(CrossRefConverter.UNRECOGNIZED_TYPE_MESSAGE, "null");
@@ -615,12 +612,22 @@ public class CrossRefConverterTest extends ConversionTest {
     @DisplayName("toPublication handles all interesting and required fields in CrossrefDocument for book")
     public void toPublicationHandlesAllInterestingAndRequiredFieldsInCrossrefDocumentForBook()
             throws InvalidIssnException, InvalidIsbnException {
-        CrossRefDocument crossRefDocument = createCompleteCrossRefDocument();
 
+        CrossRefDocument crossRefDocument = createSampleDocumentBook();
         Publication actualPublication = toPublication(crossRefDocument);
-
-        assertAssignedValuesAreConverted(actualPublication, sampleCrossrefDateToInstant());
+        assertRequieredValuesAreConverted(actualPublication);
     }
+
+    @Test
+    @DisplayName("toPublication handles all interesting and required fields in CrossrefDocument for book-chapter")
+    public void toPublicationHandlesAllInterestingAndRequiredFieldsInCrossrefDocumentForBookChapter()
+            throws InvalidIssnException, InvalidIsbnException {
+
+        CrossRefDocument crossRefDocument = createSampleDocumentBookChapter();
+        Publication actualPublication = toPublication(crossRefDocument);
+        assertRequieredValuesAreConverted(actualPublication);
+    }
+
 
     @Test
     @DisplayName("toPublication set publicationContext when input Crossref document is BookChapter")
@@ -667,25 +674,7 @@ public class CrossRefConverterTest extends ConversionTest {
         assertThat(actualPages, is(equalTo(expectedPages)));
     }
 
-
-
-    private CrossRefDocument createCompleteCrossRefDocument() {
-        CrossRefDocument crossRefDocument = createSampleDocumentBook();
-        CrossrefDate crossrefDate = createCrossrefDate();
-
-
-        crossRefDocument.setPublisher(SAMPLE_PUBLISHER);
-        crossRefDocument.setTitle(List.of(SAMPLE_DOCUMENT_TITLE));
-        crossRefDocument.setDoi(SOME_DOI);
-        crossRefDocument.setUrl(SOME_DOI_AS_URL.toString());
-        crossRefDocument.setLink(List.of(createLink()));
-        crossRefDocument.setCreated(crossrefDate);
-        crossRefDocument.setDeposited(crossrefDate);
-        crossRefDocument.setIssued(crossrefDate);
-        return crossRefDocument;
-    }
-
-    private void assertAssignedValuesAreConverted(Publication actualPublication, Instant sampleCrossRefDateAsInstant) {
+    private void assertRequieredValuesAreConverted(Publication actualPublication) {
 
         assertTrue(actualPublication.getPublisher().getLabels().containsValue(SAMPLE_PUBLISHER));
 
@@ -695,11 +684,11 @@ public class CrossRefConverterTest extends ConversionTest {
         // url
         assertThat(actualPublication.getLink(), is(equalTo(URI.create(SAMPLE_LINK))));
 
-        assertThat(actualPublication.getCreatedDate(), is(equalTo(sampleCrossRefDateAsInstant)));
+        assertThat(actualPublication.getCreatedDate(), is(equalTo(SAMPLE_CROSSREF_DATE_AS_INSTANT)));
         // deposited
-        assertThat(actualPublication.getModifiedDate(), is(equalTo(sampleCrossRefDateAsInstant)));
+        assertThat(actualPublication.getModifiedDate(), is(equalTo(SAMPLE_CROSSREF_DATE_AS_INSTANT)));
         // issued
-        assertThat(actualPublication.getPublishedDate(), is(equalTo(sampleCrossRefDateAsInstant)));
+        assertThat(actualPublication.getPublishedDate(), is(equalTo(SAMPLE_CROSSREF_DATE_AS_INSTANT)));
     }
 
     private Instant sampleCrossrefDateToInstant() {
@@ -734,32 +723,43 @@ public class CrossRefConverterTest extends ConversionTest {
     }
 
     private CrossRefDocument createSampleDocumentJournalArticle() {
-        CrossRefDocument document = createCrossRefDocumentBasicMetadata();
+        CrossRefDocument document = createCrossRefDocumentWithBasicMetadata();
         setPublicationTypeJournalArticle(document);
         return document;
     }
 
     private CrossRefDocument createSampleDocumentBook() {
-        CrossRefDocument document = createCrossRefDocumentBasicMetadata();
+        CrossRefDocument document = createCrossRefDocumentWithBasicMetadata();
         setPublicationTypeBook(document);
         return document;
     }
 
     private CrossRefDocument createSampleDocumentBookChapter() {
-        CrossRefDocument document = createCrossRefDocumentBasicMetadata();
+        CrossRefDocument document = createCrossRefDocumentWithBasicMetadata();
         setPublicationTypeBookChapter(document);
         String pages = START_PAGE + CONNECTING_MINUS + END_PAGE;
         document.setPage(pages);
         return document;
     }
 
-    private CrossRefDocument createCrossRefDocumentBasicMetadata() {
-        CrossRefDocument document = new CrossRefDocument();
-        setAuthor(document);
-        setPublicationDate(document);
-        setIssuedDate(document);    // Issued is required from CrossRef, is either printed-date or
-        setTitle(document);
-        return document;
+    private CrossRefDocument createCrossRefDocumentWithBasicMetadata() {
+        CrossRefDocument crossRefDocument = new CrossRefDocument();
+
+        CrossrefDate crossrefDate = createCrossrefDate();
+
+        setAuthor(crossRefDocument);
+        crossRefDocument.setPublisher(SAMPLE_PUBLISHER);
+        crossRefDocument.setTitle(List.of(SAMPLE_DOCUMENT_TITLE));
+        crossRefDocument.setDoi(SOME_DOI);
+        crossRefDocument.setUrl(SOME_DOI_AS_URL.toString());
+        crossRefDocument.setLink(List.of(createLink()));
+        crossRefDocument.setCreated(crossrefDate);
+        crossRefDocument.setDeposited(crossrefDate);
+        crossRefDocument.setPublishedPrint(crossrefDate);
+        crossRefDocument.setIndexed(crossrefDate);
+        crossRefDocument.setIssued(crossrefDate);
+
+        return crossRefDocument;
     }
 
 
@@ -773,29 +773,6 @@ public class CrossRefConverterTest extends ConversionTest {
 
     private void setPublicationTypeBookChapter(CrossRefDocument document) {
         document.setType(CrossrefType.BOOK_CHAPTER.getType());
-    }
-
-
-    private void setTitle(CrossRefDocument document) {
-        List<String> titleArray = Collections.singletonList(SAMPLE_DOCUMENT_TITLE);
-        document.setTitle(titleArray);
-    }
-
-    private void setPublicationDate(CrossRefDocument document) {
-        int[][] dateParts = new int[NUMBER_OF_DATES][DATE_SIZE];
-        dateParts[0] = new int[]{EXPECTED_YEAR, 2, 20};
-        dateParts[1] = new int[]{UNEXPECTED_YEAR};
-        CrossrefDate date = new CrossrefDate();
-        date.setDateParts(dateParts);
-        document.setPublishedPrint(date);
-    }
-
-    private void setIssuedDate(CrossRefDocument document) {
-        int[][] dateParts = new int[1][DATE_SIZE];
-        dateParts[0] = new int[]{EXPECTED_YEAR, 2, 20};
-        CrossrefDate date = new CrossrefDate();
-        date.setDateParts(dateParts);
-        document.setIssued(date);
     }
 
 
