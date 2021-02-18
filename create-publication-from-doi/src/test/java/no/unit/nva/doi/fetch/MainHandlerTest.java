@@ -23,6 +23,7 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.TestHeaders;
@@ -160,7 +161,7 @@ public class MainHandlerTest {
     @Test
     public void processInputThrowsIllegalStateExceptionWithInternalCauseWhenUrlToPublicationProxyIsNotValid()
             throws IOException, InvalidIssnException, URISyntaxException,
-            MetadataNotFoundException {
+            MetadataNotFoundException, InvalidIsbnException {
         Environment environmentWithInvalidHost = createEnvironmentWithInvalidHost();
         MainHandler mainHandler = createMainHandler(environmentWithInvalidHost);
         RequestBody requestBody = createSampleRequest(new URL(VALID_DOI));
@@ -261,8 +262,8 @@ public class MainHandlerTest {
     }
 
     private MainHandler createMainHandler(Environment environment)
-        throws URISyntaxException, IOException, InvalidIssnException,
-               MetadataNotFoundException {
+            throws URISyntaxException, IOException, InvalidIssnException,
+            MetadataNotFoundException, InvalidIsbnException {
         PublicationConverter publicationConverter = mockPublicationConverter();
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
@@ -282,7 +283,7 @@ public class MainHandlerTest {
     }
 
     private DoiTransformService mockDoiTransformServiceReturningSuccessfulResult()
-        throws URISyntaxException, IOException, InvalidIssnException {
+            throws URISyntaxException, IOException, InvalidIssnException, InvalidIsbnException {
         DoiTransformService service = mock(DoiTransformService.class);
         when(service.transformPublication(anyString(), anyString(), anyString(), any()))
             .thenReturn(getPublication());

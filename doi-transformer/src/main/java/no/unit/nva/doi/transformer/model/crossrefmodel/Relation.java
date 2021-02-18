@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import nva.commons.core.JacocoGenerated;
 
+@JacocoGenerated
 public class Relation {
 
     @JsonProperty("cites")

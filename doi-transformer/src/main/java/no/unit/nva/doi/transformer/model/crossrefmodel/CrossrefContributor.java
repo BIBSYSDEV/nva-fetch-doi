@@ -5,7 +5,7 @@ import nva.commons.core.JacocoGenerated;
 
 import java.util.List;
 
-public class CrossrefAuthor {
+public class CrossrefContributor {
 
     @JsonProperty("ORCID")
     private String orcid;
@@ -117,8 +117,8 @@ public class CrossrefAuthor {
          *
          * @return an CrossrefAuthor object.
          */
-        public CrossrefAuthor build() {
-            CrossrefAuthor author = new CrossrefAuthor();
+        public CrossrefContributor build() {
+            CrossrefContributor author = new CrossrefContributor();
             author.setGivenName(givenName);
             author.setFamilyName(familyName);
             author.setSequence(sequence);
