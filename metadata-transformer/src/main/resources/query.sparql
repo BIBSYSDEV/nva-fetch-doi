@@ -8,7 +8,7 @@ CONSTRUCT {
   ?entityNode a unit:EntityDescription ;
     unit:mainTitle ?mainTitle ;
     unit:description ?description ;
-    unit:description ?abstract ;
+    unit:abstract ?abstract ;
     unit:tag ?tag ;
     unit:contributor ?contributorNode ;
     unit:date ?dateNode .
@@ -21,56 +21,37 @@ CONSTRUCT {
     unit:month ?month ;
     unit:day ?day .
 } WHERE {
-  select DISTINCT (STR(?title) AS ?mainTitle)
+  SELECT DISTINCT (STR(?title) AS ?mainTitle)
                   ?entityNode
                   ?contributorNode
                   ?identityNode
                   (STR(?creator) AS ?name)
                   (STR(?subject) AS ?tag)
                   (STR(?rawDate) AS ?date)
-                  (STR(?rawDescription) AS ?description)
-                  (STR(?rawAbstract) AS ?abstract)
+                  ?description
+                  ?abstract
                   (STR(?rawLanguage) AS ?language)
                   ?dateNode
                   ?year
                   ?month
                   ?day {
-    BIND (BNODE() AS ?entityNode)
 
+    BIND (BNODE() AS ?entityNode)
     {
-      {
-        <__URI__> any23:dc.title ?title .
-      } UNION {
-        <__URI__> any23:DC.title ?title .
-      }
-    }
-    UNION {
-      {
-        <__URI__> any23:dc.creator ?creator .
-      } UNION {
-        <__URI__> any23:DC.creator ?creator .
-      } UNION {
-        <__URI__> any23:dc.contributor ?creator .
-      } UNION {
-        <__URI__> any23:DC.contributor ?creator .
-      }
+      <__URI__> any23:dc.title | any23:DC.title ?title .
+    } UNION {
+      <__URI__> any23:dc.creator | any23:DC.creator | any23:dc.contributor | any23:DC.contributor ?creator .
+
       BIND(BNODE() AS ?contributorNode)
       BIND(BNODE() AS ?identityNode)
       FILTER (BOUND(?creator) && STRLEN(?creator)>0)
     }
     UNION {
-      {
-        <__URI__> any23:dc.subject ?subject .
-      } UNION {
-        <__URI__> any23:DC.subject ?subject .
-      }
+      <__URI__> any23:dc.subject | any23:DC.subject ?subject .
     }
     UNION {
-      {
-        <__URI__> any23:dc.date ?rawDate .
-      } UNION {
-        <__URI__> any23:DC.date ?rawDate .
-      }
+      <__URI__> any23:dc.date | any23:DC.date ?rawDate .
+
       BIND(BNODE() AS ?dateNode)
       BIND(STR(?rawDate) AS ?stringDate)
       BIND(SUBSTR(?stringDate, 0, 5) AS ?year)
@@ -87,25 +68,32 @@ CONSTRUCT {
       FILTER (BOUND(?stringDate) && REGEX(?stringDate, "^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?$"))
     }
     UNION {
-      {
-        <__URI__> any23:dc.description ?rawDescription .
-      } UNION {
-        <__URI__> any23:DC.description ?rawDescription .
+      SELECT DISTINCT ?abstract ?description WHERE {
+        {
+          <__URI__> any23:dc.description | any23:DC.description ?rawDescription .
+        } UNION {
+          <__URI__> any23:dcterms.abstract | any23:DCTERMS.abstract ?rawAbstract .
+        }
+
+        BIND(STR(?rawAbstract) AS ?abstract)
+
+        OPTIONAL {
+          BIND (STR(?rawDescription) AS ?abstract)
+          FILTER NOT EXISTS {
+            <__URI__> any23:dcterms.abstract | any23:DCTERMS.abstract ?rawAbstract
+          }
+        }
+        OPTIONAL {
+          BIND(STR(?rawDescription) AS ?description)
+          FILTER EXISTS {
+            <__URI__> any23:dcterms.abstract | any23:DCTERMS.abstract ?rawAbstract
+          }
+        }
       }
     }
     UNION {
-      {
-        <__URI__> any23:dcterms.abstract ?rawAbstract .
-      } UNION {
-        <__URI__> any23:DCTERMS.abstract ?rawAbstract .
-      }
-    }
-    UNION {
-      {
-        <__URI__> any23:dc.language ?rawLanguage .
-      } UNION {
-        <__URI__> any23:DC.language ?rawLanguage .
-      }
+
+        <__URI__> any23:dc.language | any23:DC.language ?rawLanguage .
     }
   }
 }
