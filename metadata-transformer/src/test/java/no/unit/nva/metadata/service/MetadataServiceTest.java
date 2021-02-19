@@ -2,8 +2,11 @@ package no.unit.nva.metadata.service;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import no.unit.nva.api.CreatePublicationRequest;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.exceptions.MalformedContributorException;
 import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -78,7 +81,8 @@ public class MetadataServiceTest {
             "provideMetadataForTags",
             "provideMetadataForAbstract",
             "provideMetadataForTitle",
-            "provideMetadataForDate"
+            "provideMetadataForDate",
+            "provideMetdataForContributors"
     })
     public void test(String html, CreatePublicationRequest expectedRequest) throws IOException {
         String filename = "article.html";
@@ -92,6 +96,35 @@ public class MetadataServiceTest {
         assertThat(actual, is(equalTo(expectedRequest)));
 
         wireMockServer.stop();
+    }
+
+    private static Stream<Arguments> provideMetdataForContributors() throws MalformedContributorException {
+        String name = "Full name";
+
+        CreatePublicationRequest request = new CreatePublicationRequest();
+        request.setEntityDescription(new EntityDescription.Builder()
+                .withContributors(List.of(new Contributor.Builder()
+                    .withIdentity(new Identity.Builder()
+                            .withName(name)
+                            .build())
+                    .build())
+                )
+                .build());
+
+        return Stream.of(
+                arguments(Map.of(
+                        "dc.contributor", name),
+                        request),
+                arguments(Map.of(
+                        "DC.contributor", name),
+                        request),
+                arguments(Map.of(
+                        "dc.creator", name),
+                        request),
+                arguments(Map.of(
+                        "DC.creator", name),
+                        request)
+                );
     }
 
     private static Stream<Arguments> provideMetadataForDate() {
@@ -129,7 +162,7 @@ public class MetadataServiceTest {
                 arguments(Map.of(
                         "DC.date", year),
                         yearOnlyrequest)
-        );
+                );
     }
 
     private static Stream<Arguments> provideMetadataForTitle() {
@@ -147,7 +180,7 @@ public class MetadataServiceTest {
                 arguments(Map.of(
                         "DC.title", title),
                         request)
-        );
+                );
     }
 
     private static Stream<Arguments> provideMetadataForTags() {
@@ -164,7 +197,7 @@ public class MetadataServiceTest {
                         "dc.coverage", coverage,
                         "dc.subject", subject),
                         request)
-        );
+                );
     }
 
     private static Stream<Arguments> provideMetadataForAbstract() {
@@ -197,7 +230,7 @@ public class MetadataServiceTest {
                 arguments(Map.of(
                         "dcterms.abstract", abstract_),
                         abstractOnlyRequest)
-        );
+                 );
     }
 
     private static Arguments arguments(Map<String,String> metadata, CreatePublicationRequest expected) {
