@@ -31,7 +31,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static nva.commons.core.JsonUtils.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
@@ -202,17 +201,17 @@ public class MetadataServiceTest {
 
     private static Stream<Arguments> provideMetadataForAbstract() {
         String description = "Description";
-        String abstract_ = "Abstract";
+        String abstractString = "Abstract";
 
         CreatePublicationRequest request = new CreatePublicationRequest();
         request.setEntityDescription(new EntityDescription.Builder()
                 .withDescription(description)
-                .withAbstract(abstract_)
+                .withAbstract(abstractString)
                 .build());
 
         CreatePublicationRequest abstractOnlyRequest = new CreatePublicationRequest();
         abstractOnlyRequest.setEntityDescription(new EntityDescription.Builder()
-                .withAbstract(abstract_)
+                .withAbstract(abstractString)
                 .build());
 
         CreatePublicationRequest emptyRequest = new CreatePublicationRequest();
@@ -221,14 +220,14 @@ public class MetadataServiceTest {
 
         return Stream.of(
                 arguments(Map.of(
-                        "dcterms.abstract", abstract_,
+                        "dcterms.abstract", abstractString,
                         "dc.description", description),
                         request),
                 arguments(Map.of(
-                        "dc.description", abstract_),
+                        "dc.description", abstractString),
                         abstractOnlyRequest),
                 arguments(Map.of(
-                        "dcterms.abstract", abstract_),
+                        "dcterms.abstract", abstractString),
                         abstractOnlyRequest)
                  );
     }
