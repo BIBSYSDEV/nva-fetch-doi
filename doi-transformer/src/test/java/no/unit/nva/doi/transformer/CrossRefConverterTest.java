@@ -820,6 +820,20 @@ public class CrossRefConverterTest extends ConversionTest {
         return affiliations;
     }
 
+    private CrossRefDocument setEditor(CrossRefDocument document) {
+        CrossrefContributor editor = new CrossrefContributor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
+                .withFamilyName(AUTHOR_FAMILY_NAME)
+                .withSequence(FIRST_AUTHOR).build();
+        CrossrefContributor secondEditor = new CrossrefContributor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
+                .withFamilyName(AUTHOR_FAMILY_NAME)
+                .withSequence(SECOND_AUTHOR).build();
+        List<CrossrefContributor> editors = Arrays.asList(editor, secondEditor);
+        document.setEditor(editors);
+        return document;
+    }
+
+
+
     private int startCountingFromOne(int i) {
         return i + 1;
     }
