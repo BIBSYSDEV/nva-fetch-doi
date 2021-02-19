@@ -59,5 +59,4 @@ public class ExceptionsTest {
         assertEquals(HttpStatus.SC_BAD_GATEWAY, exception.statusCode());
     }
 
-
 }
