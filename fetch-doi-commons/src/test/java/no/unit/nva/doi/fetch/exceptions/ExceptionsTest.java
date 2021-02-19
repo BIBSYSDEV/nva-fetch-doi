@@ -52,4 +52,11 @@ public class ExceptionsTest {
         assertEquals(HttpStatus.SC_BAD_GATEWAY, exception.statusCode());
     }
 
+    @Test
+    public void canCreateUnsupportedDocumentTypeException() {
+        UnsupportedDocumentTypeException exception = new UnsupportedDocumentTypeException(MESSAGE);
+        assertNotNull(exception);
+        assertEquals(HttpStatus.SC_BAD_GATEWAY, exception.statusCode());
+    }
+
 }

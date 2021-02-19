@@ -13,6 +13,7 @@ import no.unit.nva.doi.fetch.exceptions.CreatePublicationException;
 import no.unit.nva.doi.fetch.exceptions.MalformedRequestException;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
 import no.unit.nva.doi.fetch.exceptions.TransformFailedException;
+import no.unit.nva.doi.fetch.exceptions.UnsupportedDocumentTypeException;
 import no.unit.nva.doi.fetch.model.RequestBody;
 import no.unit.nva.doi.fetch.model.Summary;
 import no.unit.nva.doi.fetch.service.IdentityUpdater;
@@ -151,7 +152,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     private CreatePublicationRequest getPublicationRequest(String owner, String customerId, URL url)
             throws URISyntaxException, IOException, InvalidIssnException,
-            MetadataNotFoundException, InvalidIsbnException {
+            MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
         CreatePublicationRequest request;
         if (DoiValidator.validate(url)) {
             logger.info("URL is a DOI");
@@ -171,7 +172,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     private CreatePublicationRequest getPublicationFromDoi(String owner, String customerId, URL url)
             throws URISyntaxException, IOException, InvalidIssnException,
-            MetadataNotFoundException, InvalidIsbnException {
+            MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
         Publication publication = IdentityUpdater.enrichPublicationCreators(bareProxyClient,
                 getPublicationMetadataFromDoi(url, owner, URI.create(customerId)));
         return objectMapper.convertValue(publication, CreatePublicationRequest.class);
@@ -196,7 +197,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     private Publication getPublicationMetadataFromDoi(URL doiUrl,
                                                String owner, URI customerId)
             throws URISyntaxException, IOException, InvalidIssnException,
-            MetadataNotFoundException, InvalidIsbnException {
+            MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
 
         MetadataAndContentLocation metadataAndContentLocation = doiProxyService.lookupDoiMetadata(
             doiUrl.toString(), DataciteContentType.DATACITE_JSON);
