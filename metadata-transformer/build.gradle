@@ -13,4 +13,5 @@ dependencies {
     }
 
     testImplementation group: 'com.github.tomakehurst', name: 'wiremock-jre8', version: '2.27.2'
+    testImplementation group: 'com.j2html', name: 'j2html', version: '1.4.0'
 }
