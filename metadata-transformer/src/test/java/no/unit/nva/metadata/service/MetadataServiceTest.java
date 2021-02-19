@@ -82,7 +82,7 @@ public class MetadataServiceTest {
             "provideMetadataForAbstract",
             "provideMetadataForTitle",
             "provideMetadataForDate",
-            "provideMetdataForContributors"
+            "provideMetadataForContributors"
     })
     public void test(String html, CreatePublicationRequest expectedRequest) throws IOException {
         String filename = "article.html";
@@ -98,7 +98,7 @@ public class MetadataServiceTest {
         wireMockServer.stop();
     }
 
-    private static Stream<Arguments> provideMetdataForContributors() throws MalformedContributorException {
+    private static Stream<Arguments> provideMetadataForContributors() throws MalformedContributorException {
         String name = "Full name";
 
         CreatePublicationRequest request = new CreatePublicationRequest();
