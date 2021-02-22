@@ -25,6 +25,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.Role;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Journal;
@@ -46,6 +47,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -122,7 +124,7 @@ public class CrossRefConverter extends AbstractConverter {
                     .withProjects(createProjects())
                     .withFileSet(createFilseSet())
                     .withEntityDescription(new EntityDescription.Builder()
-                            .withContributors(toContributors(document.getAuthor()))
+                            .withContributors(toContributors(document))
                             .withDate(extractIssuedDate(document))
                             .withMainTitle(extractTitle(document))
                             .withAlternativeTitles(extractAlternativeTitles(document))
@@ -393,13 +395,36 @@ public class CrossRefConverter extends AbstractConverter {
         return nonNull(crossrefDate) ? crossrefDate.toInstant() : null;
     }
 
-    protected List<Contributor> toContributors(List<CrossrefContributor> authors) {
+    protected List<Contributor> toContributors(CrossRefDocument document) {
+
+        List<Contributor> contributors = new ArrayList<>();
+        contributors.addAll(toContributorsWithoutRole(document.getAuthor()));
+        contributors.addAll(toContributorsWithRole(document.getEditor(), Role.EDITOR));
+        return contributors;
+    }
+
+    protected List<Contributor> toContributorsWithoutRole(List<CrossrefContributor> authors) {
         List<Contributor> contributors = Collections.emptyList();
         if (authors != null) {
             List<Try<Contributor>> contributorMappings =
                     IntStream.range(0, authors.size())
                             .boxed()
                             .map(attempt(index -> toContributor(authors.get(index), index + 1)))
+                            .collect(Collectors.toList());
+
+            reportFailures(contributorMappings);
+            contributors = successfulMappings(contributorMappings);
+        }
+        return contributors;
+    }
+
+    protected List<Contributor> toContributorsWithRole(List<CrossrefContributor> authors, Role role ) {
+        List<Contributor> contributors = Collections.emptyList();
+        if (authors != null) {
+            List<Try<Contributor>> contributorMappings =
+                    IntStream.range(0, authors.size())
+                            .boxed()
+                            .map(attempt(index -> toContributorWithRole(authors.get(index), role,  index + 1)))
                             .collect(Collectors.toList());
 
             reportFailures(contributorMappings);
@@ -447,6 +472,34 @@ public class CrossRefConverter extends AbstractConverter {
         return contributorBuilder.withIdentity(identity)
                 .withSequence(parseSequence(author.getSequence(), alternativeSequence)).build();
     }
+
+
+    /**
+     * Coverts an author to a Contributor with Role (from external model to internal).
+     *
+     * @param contributor              the Contributor.
+     * @param role  Assigned role for the contributor                                
+     * @param alternativeSequence sequence in case where the Author object does not contain a valid sequence entry
+     * @return a Contributor object.
+     * @throws MalformedContributorException when the contributor cannot be built.
+     */
+    private Contributor toContributorWithRole(CrossrefContributor contributor, Role role,   int alternativeSequence) throws
+            MalformedContributorException {
+        Identity identity = new Identity.Builder()
+                .withName(toName(contributor.getFamilyName(), contributor.getGivenName()))
+                .withOrcId(contributor.getOrcid())
+                .build();
+        final Contributor.Builder contributorBuilder = new Contributor.Builder();
+        if (nonNull(contributor.getAffiliation())) {
+            contributorBuilder.withAffiliations(getAffiliations(contributor.getAffiliation()));
+        }
+        return contributorBuilder.withIdentity(identity)
+                .withRole(role)
+                .withSequence(parseSequence(contributor.getSequence(), alternativeSequence))
+                .build();
+    }
+
+
 
     private List<Organization> getAffiliations(List<CrossrefAffiliation> crossrefAffiliations) {
         return crossrefAffiliations.stream()
