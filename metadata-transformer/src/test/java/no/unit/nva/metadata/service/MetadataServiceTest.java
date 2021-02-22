@@ -1,6 +1,7 @@
 package no.unit.nva.metadata.service;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
+import j2html.tags.EmptyTag;
 import no.unit.nva.api.CreatePublicationRequest;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -29,6 +30,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static j2html.TagCreator.head;
+import static j2html.TagCreator.html;
+import static j2html.TagCreator.meta;
 import static nva.commons.core.JsonUtils.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -265,17 +269,17 @@ public class MetadataServiceTest {
     }
 
     private static String createHtml(Map<String,String> metadata) {
-        String htmlTop = "<html><head>";
-        String htmlMetaTagTemplate = "<meta  name=\"%s\" content=\"%s\" />";
-        String htmlBottom = "</head><div></div></body></html>";
+        return html(
+                head(
+                    metadata.keySet().stream()
+                            .map(content -> getMetaTag(metadata, content))
+                            .toArray(EmptyTag[]::new)
+                )
+        ).renderFormatted();
+    }
 
-        StringBuilder builder = new StringBuilder(htmlTop);
-        metadata.keySet().forEach(property -> {
-            builder.append(String.format(htmlMetaTagTemplate, property, metadata.get(property)));
-        });
-        builder.append(String.format(htmlMetaTagTemplate, "test", "test"));
-        builder.append(htmlBottom);
-        return builder.toString();
+    private static EmptyTag getMetaTag(Map<String, String> metadata, String content) {
+        return meta().withName(content).withContent(metadata.get(content));
     }
 
     private URI prepareWebServerAndReturnUriToMetadata(String filename) {
