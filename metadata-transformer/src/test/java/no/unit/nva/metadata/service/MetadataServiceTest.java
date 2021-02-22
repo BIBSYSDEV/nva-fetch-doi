@@ -55,6 +55,7 @@ public class MetadataServiceTest {
         CreatePublicationRequest expected = objectMapper.readValue(
                 IoUtils.inputStreamFromResources(TEST_REVIEW_PAPER_JSON),
                 CreatePublicationRequest.class);
+        assertThat(request.isPresent(), is(true));
         assertThat(request.get(), is(equalTo(expected)));
 
         wireMockServer.stop();
@@ -70,6 +71,7 @@ public class MetadataServiceTest {
         CreatePublicationRequest expected = objectMapper.readValue(
                 IoUtils.inputStreamFromResources(UPPER_CASE_DC_JSON),
                 CreatePublicationRequest.class);
+        assertThat(request.isPresent(), is(true));
         assertThat(request.get(), is(equalTo(expected)));
 
         wireMockServer.stop();
@@ -83,12 +85,14 @@ public class MetadataServiceTest {
             "provideMetadataForDate",
             "provideMetadataForContributors"
     })
-    public void test(String html, CreatePublicationRequest expectedRequest) throws IOException {
+    public void getCreatePublicationRequestReturnsRequest(String html, CreatePublicationRequest expectedRequest)
+            throws IOException {
         String filename = "article.html";
         URI uri = prepareWebServerAndReturnUriToMetadata(filename, html);
         MetadataService metadataService = new MetadataService();
         Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
 
+        assertThat(request.isPresent(), is(true));
         CreatePublicationRequest actual = request.get();
         actual.setContext(null);
 
@@ -99,154 +103,178 @@ public class MetadataServiceTest {
 
     private static Stream<Arguments> provideMetadataForContributors() throws MalformedContributorException {
         String name = "Full name";
-
-        CreatePublicationRequest request = new CreatePublicationRequest();
-        request.setEntityDescription(new EntityDescription.Builder()
-                .withContributors(List.of(new Contributor.Builder()
-                    .withIdentity(new Identity.Builder()
-                            .withName(name)
-                            .build())
-                    .build())
-                )
-                .build());
+        CreatePublicationRequest request = requestWithContributorName(name);
 
         return Stream.of(
-                arguments(Map.of(
+                generateMetadataHtml(Map.of(
                         "dc.contributor", name),
                         request),
-                arguments(Map.of(
+                generateMetadataHtml(Map.of(
                         "DC.contributor", name),
                         request),
-                arguments(Map.of(
+                generateMetadataHtml(Map.of(
                         "dc.creator", name),
                         request),
-                arguments(Map.of(
+                generateMetadataHtml(Map.of(
                         "DC.creator", name),
                         request)
                 );
     }
 
+    private static CreatePublicationRequest requestWithContributorName(String name)
+            throws MalformedContributorException {
+        Identity identity = new Identity.Builder()
+                .withName(name)
+                .build();
+        Contributor contributor = new Contributor.Builder()
+                .withIdentity(identity)
+                .build();
+        EntityDescription entityDescription = new EntityDescription.Builder()
+                .withContributors(List.of(contributor))
+                .build();
+        CreatePublicationRequest request = new CreatePublicationRequest();
+        request.setEntityDescription(entityDescription);
+        return request;
+    }
+
     private static Stream<Arguments> provideMetadataForDate() {
         String year = "2021";
         String month = "02";
-        String day = "19";
-        CreatePublicationRequest request = new CreatePublicationRequest();
-        request.setEntityDescription(new EntityDescription.Builder()
-                .withDate(new PublicationDate.Builder()
-                        .withYear(year)
-                        .withMonth(month)
-                        .withDay(day)
-                        .build())
-                .build());
+        String day = "22";
 
-        CreatePublicationRequest yearOnlyrequest = new CreatePublicationRequest();
-        yearOnlyrequest.setEntityDescription(new EntityDescription.Builder()
-                .withDate(new PublicationDate.Builder()
-                        .withYear(year)
-                        .build())
-                .build());
+        PublicationDate date = new PublicationDate.Builder()
+                .withYear(year)
+                .withMonth(month)
+                .withDay(day)
+                .build();
+        CreatePublicationRequest request = requestWithDate(date);
 
-        String date = String.join("-", year, month, day);
+        PublicationDate yearOnlyDate = new PublicationDate.Builder()
+                .withYear(year)
+                .build();
+        CreatePublicationRequest yearOnlyRequest = requestWithDate(yearOnlyDate);
+
+        String dateString = String.join("-", year, month, day);
 
         return Stream.of(
-                arguments(Map.of(
-                        "dc.date", date),
+                generateMetadataHtml(Map.of(
+                        "dc.date", dateString),
                         request),
-                arguments(Map.of(
-                        "DC.date", date),
+                generateMetadataHtml(Map.of(
+                        "DC.date", dateString),
                         request),
-                arguments(Map.of(
+                generateMetadataHtml(Map.of(
                         "dc.date", year),
-                        yearOnlyrequest),
-                arguments(Map.of(
+                        yearOnlyRequest),
+                generateMetadataHtml(Map.of(
                         "DC.date", year),
-                        yearOnlyrequest)
+                        yearOnlyRequest)
                 );
+    }
+
+    private static CreatePublicationRequest requestWithDate(PublicationDate date) {
+        EntityDescription entityDescription = new EntityDescription.Builder()
+                .withDate(date)
+                .build();
+        CreatePublicationRequest request = new CreatePublicationRequest();
+        request.setEntityDescription(entityDescription);
+        return request;
     }
 
     private static Stream<Arguments> provideMetadataForTitle() {
         String title = "Title";
-
-        CreatePublicationRequest request = new CreatePublicationRequest();
-        request.setEntityDescription(new EntityDescription.Builder()
-                .withMainTitle(title)
-                .build());
+        CreatePublicationRequest request = requestWithTitle(title);
 
         return Stream.of(
-                arguments(Map.of(
+                generateMetadataHtml(Map.of(
                         "dc.title", title),
                         request),
-                arguments(Map.of(
+                generateMetadataHtml(Map.of(
                         "DC.title", title),
                         request)
                 );
     }
 
+    private static CreatePublicationRequest requestWithTitle(String title) {
+        EntityDescription entityDescription = new EntityDescription.Builder()
+                .withMainTitle(title)
+                .build();
+        CreatePublicationRequest request = new CreatePublicationRequest();
+        request.setEntityDescription(entityDescription);
+        return request;
+    }
+
     private static Stream<Arguments> provideMetadataForTags() {
         String coverage = "Coverage";
         String subject = "Subject";
-
-        CreatePublicationRequest request = new CreatePublicationRequest();
-        request.setEntityDescription(new EntityDescription.Builder()
-                .withTags(List.of(subject, coverage))
-                .build());
+        CreatePublicationRequest request = requestWithTags(List.of(subject, coverage));
 
         return Stream.of(
-                arguments(Map.of(
+                generateMetadataHtml(Map.of(
                         "dc.coverage", coverage,
                         "dc.subject", subject),
                         request)
                 );
     }
 
+    private static CreatePublicationRequest requestWithTags(List<String> tags) {
+        EntityDescription entityDescription = new EntityDescription.Builder()
+                .withTags(tags)
+                .build();
+        CreatePublicationRequest request = new CreatePublicationRequest();
+        request.setEntityDescription(entityDescription);
+        return request;
+    }
+
     private static Stream<Arguments> provideMetadataForAbstract() {
         String description = "Description";
         String abstractString = "Abstract";
 
-        CreatePublicationRequest request = new CreatePublicationRequest();
-        request.setEntityDescription(new EntityDescription.Builder()
-                .withDescription(description)
-                .withAbstract(abstractString)
-                .build());
+        CreatePublicationRequest request = requestWithDescriptionAndOrAbstract(description, abstractString);
 
-        CreatePublicationRequest abstractOnlyRequest = new CreatePublicationRequest();
-        abstractOnlyRequest.setEntityDescription(new EntityDescription.Builder()
-                .withAbstract(abstractString)
-                .build());
-
-        CreatePublicationRequest emptyRequest = new CreatePublicationRequest();
-        emptyRequest.setEntityDescription(new EntityDescription.Builder()
-                .build());
+        CreatePublicationRequest abstractOnlyRequest =
+                requestWithDescriptionAndOrAbstract(null, abstractString);
 
         return Stream.of(
-                arguments(Map.of(
+                generateMetadataHtml(Map.of(
                         "dcterms.abstract", abstractString,
                         "dc.description", description),
                         request),
-                arguments(Map.of(
+                generateMetadataHtml(Map.of(
                         "dc.description", abstractString),
                         abstractOnlyRequest),
-                arguments(Map.of(
+                generateMetadataHtml(Map.of(
                         "dcterms.abstract", abstractString),
                         abstractOnlyRequest)
                  );
     }
 
-    private static Arguments arguments(Map<String,String> metadata, CreatePublicationRequest expected) {
+    private static CreatePublicationRequest requestWithDescriptionAndOrAbstract(
+            String description, String abstractString) {
+        EntityDescription entityDescription = new EntityDescription.Builder()
+                .withDescription(description)
+                .withAbstract(abstractString)
+                .build();
+        CreatePublicationRequest request = new CreatePublicationRequest();
+        request.setEntityDescription(entityDescription);
+        return request;
+    }
+
+    private static Arguments generateMetadataHtml(Map<String,String> metadata, CreatePublicationRequest expected) {
         return Arguments.of(createHtml(metadata), expected);
     }
 
     private static String createHtml(Map<String,String> metadata) {
-        String top = "<html><head>";
-        String tagTemplate = "<meta  name=\"%s\" content=\"%s\" />";
-        String bottom = "</head><div></div></body></html>";
+        String htmlTop = "<html><head>";
+        String htmlMetaTagTemplate = "<meta  name=\"%s\" content=\"%s\" />";
+        String htmlBottom = "</head><div></div></body></html>";
 
-        StringBuilder builder = new StringBuilder(top);
-        metadata.keySet().stream().forEach(property -> {
-            builder.append(String.format(tagTemplate, property, metadata.get(property)));
+        StringBuilder builder = new StringBuilder(htmlTop);
+        metadata.keySet().forEach(property -> {
+            builder.append(String.format(htmlMetaTagTemplate, property, metadata.get(property)));
         });
-        builder.append(String.format(tagTemplate, "test", "test"));
-        builder.append(bottom);
+        builder.append(String.format(htmlMetaTagTemplate, "test", "test"));
+        builder.append(htmlBottom);
         return builder.toString();
     }
 
