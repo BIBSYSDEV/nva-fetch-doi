@@ -424,7 +424,8 @@ public class CrossRefConverter extends AbstractConverter {
             List<Try<Contributor>> contributorMappings =
                     IntStream.range(0, authors.size())
                             .boxed()
-                            .map(attempt(index -> toContributorWithRole(authors.get(index), role,  index + 1)))
+                            .map(attempt(index ->
+                                    toContributorWithRole(authors.get(index), role,  index + 1)))
                             .collect(Collectors.toList());
 
             reportFailures(contributorMappings);
@@ -483,8 +484,8 @@ public class CrossRefConverter extends AbstractConverter {
      * @return a Contributor object.
      * @throws MalformedContributorException when the contributor cannot be built.
      */
-    private Contributor toContributorWithRole(CrossrefContributor contributor, Role role,   int alternativeSequence) throws
-            MalformedContributorException {
+    private Contributor toContributorWithRole(CrossrefContributor contributor, Role role, int alternativeSequence)
+            throws MalformedContributorException {
         Identity identity = new Identity.Builder()
                 .withName(toName(contributor.getFamilyName(), contributor.getGivenName()))
                 .withOrcId(contributor.getOrcid())
@@ -498,8 +499,6 @@ public class CrossRefConverter extends AbstractConverter {
                 .withSequence(parseSequence(contributor.getSequence(), alternativeSequence))
                 .build();
     }
-
-
 
     private List<Organization> getAffiliations(List<CrossrefAffiliation> crossrefAffiliations) {
         return crossrefAffiliations.stream()
