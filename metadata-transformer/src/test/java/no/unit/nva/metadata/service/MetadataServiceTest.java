@@ -1,6 +1,9 @@
 package no.unit.nva.metadata.service;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
+import j2html.TagCreator;
+import j2html.tags.ContainerTag;
+import j2html.tags.EmptyTag;
 import no.unit.nva.api.CreatePublicationRequest;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -29,6 +32,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static j2html.TagCreator.head;
+import static j2html.TagCreator.html;
+import static j2html.TagCreator.meta;
 import static nva.commons.core.JsonUtils.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -237,17 +243,17 @@ public class MetadataServiceTest {
     }
 
     private static String createHtml(Map<String,String> metadata) {
-        String top = "<html><head>";
-        String tagTemplate = "<meta  name=\"%s\" content=\"%s\" />";
-        String bottom = "</head><div></div></body></html>";
+        return html(
+                head(
+                    metadata.keySet().stream()
+                            .map(content -> getMetaTag(metadata, content))
+                            .toArray(EmptyTag[]::new)
+                )
+        ).renderFormatted();
+    }
 
-        StringBuilder builder = new StringBuilder(top);
-        metadata.keySet().stream().forEach(property -> {
-            builder.append(String.format(tagTemplate, property, metadata.get(property)));
-        });
-        builder.append(String.format(tagTemplate, "test", "test"));
-        builder.append(bottom);
-        return builder.toString();
+    private static EmptyTag getMetaTag(Map<String, String> metadata, String content) {
+        return meta().withName(content).withContent(metadata.get(content));
     }
 
     private URI prepareWebServerAndReturnUriToMetadata(String filename) {
