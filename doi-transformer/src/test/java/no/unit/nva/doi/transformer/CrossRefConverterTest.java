@@ -19,6 +19,7 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.Role;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Journal;
@@ -610,21 +611,21 @@ public class CrossRefConverterTest extends ConversionTest {
     @DisplayName("toPublication handles all interesting and required fields in CrossrefDocument for journal-article")
     public void toPublicationHandlesAllInterestingAndRequiredFieldsInCrossrefDocumentForJournalArticle()
             throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
-        assertRequieredValuesAreConverted(toPublication(sampleJournalArticle()));
+        assertRequiredValuesAreConverted(toPublication(sampleJournalArticle()));
     }
 
     @Test
     @DisplayName("toPublication handles all interesting and required fields in CrossrefDocument for book")
     public void toPublicationHandlesAllInterestingAndRequiredFieldsInCrossrefDocumentForBook()
             throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
-        assertRequieredValuesAreConverted(toPublication(sampleBook()));
+        assertRequiredValuesAreConverted(toPublication(sampleBook()));
     }
 
     @Test
     @DisplayName("toPublication handles all interesting and required fields in CrossrefDocument for book-chapter")
     public void toPublicationHandlesAllInterestingAndRequiredFieldsInCrossrefDocumentForBookChapter()
             throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
-        assertRequieredValuesAreConverted(toPublication(sampleBookChapter()));
+        assertRequiredValuesAreConverted(toPublication(sampleBookChapter()));
     }
 
     @Test
@@ -658,20 +659,37 @@ public class CrossRefConverterTest extends ConversionTest {
         assertThat(actualPages, is(equalTo(expectedPages)));
     }
 
-    private void assertRequieredValuesAreConverted(Publication actualPublication) {
-        //Publisher
+    @Test
+    @DisplayName("toPublication Assigns Roles to Editors")
+    public void toPublicationAssignsRolesToEditors()
+            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
+
+        CrossRefDocument sampleBook = sampleBook();
+        setEditors(sampleBook);
+        Publication samplePublication = toPublication(sampleBook);
+
+        List<Contributor> contributors = samplePublication.getEntityDescription().getContributors();
+
+        final int size = sampleBook.getAuthor().size() + sampleBook.getEditor().size();
+        assertThat(contributors.size(), is(equalTo(size)));
+
+        List<Contributor> editors = contributors.stream().filter(this::isEditor).collect(Collectors.toList());
+        assertThat(editors.size(), is(equalTo(sampleBook.getEditor().size())));
+
+    }
+
+
+    private boolean isEditor(Contributor contributor) {
+        return Role.EDITOR.equals(contributor.getRole());
+    }
+
+    private void assertRequiredValuesAreConverted(Publication actualPublication) {
         assertTrue(actualPublication.getPublisher().getLabels().containsValue(SAMPLE_PUBLISHER));
-        //Title
         assertThat(actualPublication.getEntityDescription().getMainTitle(), is(equalTo(SAMPLE_DOCUMENT_TITLE)));
-        // DOI
         assertThat(actualPublication.getDoi(), is(equalTo(SOME_DOI_AS_URL)));
-        // url
         assertThat(actualPublication.getLink(), is(equalTo(URI.create(SAMPLE_LINK))));
-        // created - Date on which the DOI was first registered
         assertThat(actualPublication.getCreatedDate(), is(equalTo(SAMPLE_CROSSREF_DATE_AS_INSTANT)));
-        // deposited - Date on which the work metadata was most recently updated
         assertThat(actualPublication.getModifiedDate(), is(equalTo(SAMPLE_CROSSREF_DATE_AS_INSTANT)));
-        // issued - Earliest of published-print and published-online
         assertThat(actualPublication.getPublishedDate(), is(equalTo(SAMPLE_CROSSREF_DATE_AS_INSTANT)));
     }
 
@@ -819,6 +837,20 @@ public class CrossRefConverterTest extends ConversionTest {
         List<CrossrefAffiliation> affiliations = List.of(firstAffiliation, secondAffiliation);
         return affiliations;
     }
+
+    private CrossRefDocument setEditors(CrossRefDocument document) {
+        CrossrefContributor editor = new CrossrefContributor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
+                .withFamilyName(AUTHOR_FAMILY_NAME)
+                .withSequence(FIRST_AUTHOR).build();
+        CrossrefContributor secondEditor = new CrossrefContributor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
+                .withFamilyName(AUTHOR_FAMILY_NAME)
+                .withSequence(SECOND_AUTHOR).build();
+        List<CrossrefContributor> editors = Arrays.asList(editor, secondEditor);
+        document.setEditor(editors);
+        return document;
+    }
+
+
 
     private int startCountingFromOne(int i) {
         return i + 1;
