@@ -418,7 +418,7 @@ public class CrossRefConverter extends AbstractConverter {
         return contributors;
     }
 
-    protected List<Contributor> toContributorsWithRole(List<CrossrefContributor> authors, Role role ) {
+    protected List<Contributor> toContributorsWithRole(List<CrossrefContributor> authors, Role role) {
         List<Contributor> contributors = Collections.emptyList();
         if (authors != null) {
             List<Try<Contributor>> contributorMappings =
