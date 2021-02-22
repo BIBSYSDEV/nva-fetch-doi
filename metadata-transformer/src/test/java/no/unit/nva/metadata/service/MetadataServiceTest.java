@@ -46,6 +46,19 @@ public class MetadataServiceTest {
     public static final String UPPER_CASE_DC_HTML = "upper_case_dc.html";
     public static final String UPPER_CASE_DC_JSON = "upper_case_dc.json";
 
+    public static final String DC_CONTRIBUTOR = "dc.contributor";
+    public static final String DC_CONTRIBUTOR_UPPER_CASE = "DC.contributor";
+    public static final String DC_CREATOR = "dc.creator";
+    public static final String DC_CREATOR_UPPER_CASE = "DC.creator";
+    public static final String DC_DATE = "dc.date";
+    public static final String DC_DATE_UPPER_CASE = "DC.date";
+    public static final String DC_TITLE = "dc.title";
+    public static final String DC_TITLE_UPPER_CASE = "DC.title";
+    public static final String DCTERMS_ABSTRACT = "dcterms.abstract";
+    public static final String DC_DESCRIPTION = "dc.description";
+    public static final String DC_COVERAGE = "dc.coverage";
+    public static final String DC_SUBJECT = "dc.subject";
+
 
     private WireMockServer wireMockServer;
 
@@ -111,16 +124,16 @@ public class MetadataServiceTest {
 
         return Stream.of(
                 generateMetadataHtml(Map.of(
-                        "dc.contributor", name),
+                        DC_CONTRIBUTOR, name),
                         request),
                 generateMetadataHtml(Map.of(
-                        "DC.contributor", name),
+                        DC_CONTRIBUTOR_UPPER_CASE, name),
                         request),
                 generateMetadataHtml(Map.of(
-                        "dc.creator", name),
+                        DC_CREATOR, name),
                         request),
                 generateMetadataHtml(Map.of(
-                        "DC.creator", name),
+                        DC_CREATOR_UPPER_CASE, name),
                         request)
                 );
     }
@@ -162,16 +175,16 @@ public class MetadataServiceTest {
 
         return Stream.of(
                 generateMetadataHtml(Map.of(
-                        "dc.date", dateString),
+                        DC_DATE, dateString),
                         request),
                 generateMetadataHtml(Map.of(
-                        "DC.date", dateString),
+                        DC_DATE_UPPER_CASE, dateString),
                         request),
                 generateMetadataHtml(Map.of(
-                        "dc.date", year),
+                        DC_DATE, year),
                         yearOnlyRequest),
                 generateMetadataHtml(Map.of(
-                        "DC.date", year),
+                        DC_DATE_UPPER_CASE, year),
                         yearOnlyRequest)
                 );
     }
@@ -191,10 +204,10 @@ public class MetadataServiceTest {
 
         return Stream.of(
                 generateMetadataHtml(Map.of(
-                        "dc.title", title),
+                        DC_TITLE, title),
                         request),
                 generateMetadataHtml(Map.of(
-                        "DC.title", title),
+                        DC_TITLE_UPPER_CASE, title),
                         request)
                 );
     }
@@ -215,8 +228,8 @@ public class MetadataServiceTest {
 
         return Stream.of(
                 generateMetadataHtml(Map.of(
-                        "dc.coverage", coverage,
-                        "dc.subject", subject),
+                        DC_COVERAGE, coverage,
+                        DC_SUBJECT, subject),
                         request)
                 );
     }
@@ -241,14 +254,14 @@ public class MetadataServiceTest {
 
         return Stream.of(
                 generateMetadataHtml(Map.of(
-                        "dcterms.abstract", abstractString,
-                        "dc.description", description),
+                        DCTERMS_ABSTRACT, abstractString,
+                        DC_DESCRIPTION, description),
                         request),
                 generateMetadataHtml(Map.of(
-                        "dc.description", abstractString),
+                        DC_DESCRIPTION, abstractString),
                         abstractOnlyRequest),
                 generateMetadataHtml(Map.of(
-                        "dcterms.abstract", abstractString),
+                        DCTERMS_ABSTRACT, abstractString),
                         abstractOnlyRequest)
                  );
     }
