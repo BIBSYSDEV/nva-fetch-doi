@@ -14,6 +14,7 @@ import no.unit.nva.doi.transformer.model.crossrefmodel.Isxn;
 import no.unit.nva.doi.transformer.model.crossrefmodel.Isxn.IsxnType;
 import no.unit.nva.doi.transformer.model.crossrefmodel.Link;
 import no.unit.nva.doi.transformer.utils.CrossrefType;
+import no.unit.nva.doi.transformer.utils.IssnCleaner;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
@@ -23,6 +24,7 @@ import no.unit.nva.model.Role;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.utils.IssnUtil;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
@@ -34,6 +36,7 @@ import nva.commons.core.ioutils.IoUtils;
 import nva.commons.doi.DoiConverter;
 import nva.commons.logutils.LogUtils;
 import org.apache.commons.validator.routines.ISBNValidator;
+import org.apache.commons.validator.routines.ISSNValidator;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -88,12 +91,14 @@ public class CrossRefConverterTest extends ConversionTest {
     public static final URI SOME_DOI_AS_URL = URI.create("http://dx.doi.org/10.1007/978-3-030-22507-0_9");
     public static final String VALID_ISSN_A = "0306-4379";
     public static final String VALID_ISSN_B = "1066-8888";
+    public static final String INVALID_ISSN = "abcd--8888";
     public static final String VALID_ISBN_A = "9788202529819";
     public static final String VALID_ISBN_B = "978-82-450-0364-2";
     public static final String INVALID_ISBN = "9xz-8b-4asdas50-0364-2";
     public static final int EXPECTED_MONTH = 2;
     public static final int EXPECTED_DAY = 20;
     public static final ISBNValidator ISBN_VALIDATOR = new ISBNValidator();
+    public static final ISSNValidator ISSN_VALIDATOR = new ISSNValidator();
     public static final String SAMPLE_CONTAINER_TITLE = "Container Title";
     public static final String SAMPLE_PUBLISHER = "Sample Publisher Inc";
     public static final String SAMPLE_LINK = "https://localhost/some.link";
@@ -563,7 +568,6 @@ public class CrossRefConverterTest extends ConversionTest {
         Isxn printIsbnB = sampleIsxn(type, INVALID_ISBN);
         List<Isxn> isbns = Arrays.asList(printIsbnA, printIsbnB);
         sampleBook.setIsbnType(isbns);
-        TestAppender testAppender = LogUtils.getTestingAppender(CrossRefConverter.class);
 
         Book actualPublicationContext = (Book) toPublication(sampleBook).getEntityDescription()
                 .getReference()
@@ -576,6 +580,31 @@ public class CrossRefConverterTest extends ConversionTest {
                 .collect(Collectors.toSet());
 
         assertEquals(expectedValues, actualValues);
+    }
+
+
+    @Test
+    @DisplayName("toPublication filters ISSN error and continues")
+    public void toPublicationFiltersIssnErrorAndContinues()
+            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
+        IsxnType type = IsxnType.ELECTRONIC;
+        Isxn onlineIssnA = sampleIsxn(type, VALID_ISSN_A);
+        Isxn onlineIssnB = sampleIsxn(type, INVALID_ISSN);
+        List<Isxn> issns = Arrays.asList(onlineIssnA, onlineIssnB);
+        CrossRefDocument sampleJournalArticle = sampleJournalArticle();
+        sampleJournalArticle.setIssnType(issns);
+        Publication actualPublication = toPublication(sampleJournalArticle);
+        Journal actualPublicationContext = (Journal) actualPublication.getEntityDescription()
+                .getReference()
+                .getPublicationContext();
+        String actualOnlineIssn = actualPublicationContext.getOnlineIssn();
+        List<String> poolOfExpectedValues = issns.stream()
+                .map(Isxn::getValue)
+                .map(IssnCleaner::clean)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        assertThat(poolOfExpectedValues, hasItem(actualOnlineIssn));
+        assertThat(poolOfExpectedValues, not(hasItem(INVALID_ISSN)));
     }
 
     @Test
