@@ -90,6 +90,7 @@ public class CrossRefConverterTest extends ConversionTest {
     public static final String VALID_ISSN_B = "1066-8888";
     public static final String VALID_ISBN_A = "9788202529819";
     public static final String VALID_ISBN_B = "978-82-450-0364-2";
+    public static final String INVALID_ISBN = "9xz-8b-4asdas50-0364-2";
     public static final int EXPECTED_MONTH = 2;
     public static final int EXPECTED_DAY = 20;
     public static final ISBNValidator ISBN_VALIDATOR = new ISBNValidator();
@@ -546,6 +547,32 @@ public class CrossRefConverterTest extends ConversionTest {
         Set<String> expectedValues = isbns.stream()
                 .map(Isxn::getValue)
                 .map(ISBN_VALIDATOR::validate)
+                .collect(Collectors.toSet());
+
+        assertEquals(expectedValues, actualValues);
+    }
+
+    @Test
+    @DisplayName("toPublication filters ISBN error and continues")
+    public void toPublicationFiltersIsbnErrorAndContinues()
+            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
+        CrossRefDocument sampleBook = sampleBook();
+
+        IsxnType type = IsxnType.PRINT;
+        Isxn printIsbnA = sampleIsxn(type, VALID_ISBN_A);
+        Isxn printIsbnB = sampleIsxn(type, INVALID_ISBN);
+        List<Isxn> isbns = Arrays.asList(printIsbnA, printIsbnB);
+        sampleBook.setIsbnType(isbns);
+        TestAppender testAppender = LogUtils.getTestingAppender(CrossRefConverter.class);
+
+        Book actualPublicationContext = (Book) toPublication(sampleBook).getEntityDescription()
+                .getReference()
+                .getPublicationContext();
+        Set<String> actualValues = new HashSet<>(actualPublicationContext.getIsbnList());
+        Set<String> expectedValues = isbns.stream()
+                .map(Isxn::getValue)
+                .map(ISBN_VALIDATOR::validate)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
         assertEquals(expectedValues, actualValues);
