@@ -11,6 +11,7 @@ import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate;
 import no.unit.nva.doi.transformer.model.crossrefmodel.Isxn;
 import no.unit.nva.doi.transformer.model.crossrefmodel.Link;
 import no.unit.nva.doi.transformer.utils.CrossrefType;
+import no.unit.nva.doi.transformer.utils.IsbnCleaner;
 import no.unit.nva.doi.transformer.utils.IssnCleaner;
 import no.unit.nva.doi.transformer.utils.PublicationType;
 import no.unit.nva.doi.transformer.utils.StringUtils;
@@ -50,10 +51,13 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -74,7 +78,7 @@ import static nva.commons.core.StringUtils.isNotEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 
 
-@SuppressWarnings({"PMD.GodClass","PMD.CouplingBetweenObjects"})
+@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class CrossRefConverter extends AbstractConverter {
 
     public static final String INVALID_ENTRY_ERROR = "The entry is empty or has no title";
@@ -100,14 +104,12 @@ public class CrossRefConverter extends AbstractConverter {
      * @param owner      the owning institution.
      * @param identifier the publication identifier.
      * @return an internal representation of the publication.
-     * @throws InvalidIssnException thrown if a provided ISSN is invalid.
-     * @throws InvalidIsbnException thrown if a provided ISBN is invalid.
      * @throws UnsupportedDocumentTypeException thrown if a provided documentType is provided.
      */
     public Publication toPublication(CrossRefDocument document,
                                      String owner,
                                      UUID identifier)
-            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
+            throws UnsupportedDocumentTypeException, InvalidIssnException, InvalidIsbnException {
 
         if (document != null && hasTitle(document)) {
             return new Publication.Builder()
@@ -169,7 +171,7 @@ public class CrossRefConverter extends AbstractConverter {
     }
 
     private Reference extractReference(CrossRefDocument document)
-            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
+            throws UnsupportedDocumentTypeException, InvalidIssnException, InvalidIsbnException {
         PublicationInstance<?> instance = extractPublicationInstance(document);
         PublicationContext context = extractPublicationContext(document);
         return new Reference.Builder()
@@ -184,7 +186,7 @@ public class CrossRefConverter extends AbstractConverter {
     }
 
     private PublicationContext extractPublicationContext(CrossRefDocument document)
-            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
+            throws UnsupportedDocumentTypeException, InvalidIssnException, InvalidIsbnException {
 
         CrossrefType crossrefType = getByType(document.getType());
         var publicationType = Optional.of(crossrefType.getPublicationType())
@@ -195,7 +197,7 @@ public class CrossRefConverter extends AbstractConverter {
 
     @JacocoGenerated
     private PublicationContext createContext(CrossRefDocument document, PublicationType publicationType)
-            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
+            throws UnsupportedDocumentTypeException, InvalidIssnException, InvalidIsbnException {
         if (publicationType == PublicationType.JOURNAL_CONTENT) {
             return createJournalContext(document);
         } else if (publicationType == PublicationType.BOOK) {
@@ -243,14 +245,28 @@ public class CrossRefConverter extends AbstractConverter {
     }
 
     private List<String> extractIsbn(CrossRefDocument document) {
-        List<Isxn> isbns = document.getIsbnType();
-        if (isNull(isbns) || isbns.isEmpty()) {
+        // Document can have both 'ISBN' and 'isbn-type'
+        List<Isxn> isbnType = document.getIsbnType();
+        final List<String> isbn = document.getIsbn();
+        if ((isNull(isbnType) || isbnType.isEmpty()) && (isNull(isbn) || isbn.isEmpty())) {
             return Collections.emptyList();
         }
-        return isbns.stream()
-                .map(Isxn::getValue)
-                .collect(Collectors.toList());
+        Set<String> isbnCandidates = new HashSet<>();
+        if (nonNull(isbnType)) {
+            isbnCandidates.addAll(isbnType.stream()
+                    .map(Isxn::getValue)
+                    .map(IsbnCleaner::clean)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet()));
+        }
+        if (nonNull(isbn)) {
+            isbnCandidates.addAll(isbn.stream()
+                    .map(IsbnCleaner::clean)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet()));
+        }
 
+        return isbnCandidates.isEmpty() ? Collections.emptyList() : new ArrayList<>(isbnCandidates);
     }
 
     private String extractSeriesTitle(CrossRefDocument document) {
@@ -425,7 +441,7 @@ public class CrossRefConverter extends AbstractConverter {
                     IntStream.range(0, authors.size())
                             .boxed()
                             .map(attempt(index ->
-                                    toContributorWithRole(authors.get(index), role,  index + 1)))
+                                    toContributorWithRole(authors.get(index), role, index + 1)))
                             .collect(Collectors.toList());
 
             reportFailures(contributorMappings);
@@ -478,8 +494,8 @@ public class CrossRefConverter extends AbstractConverter {
     /**
      * Coverts an author to a Contributor with Role (from external model to internal).
      *
-     * @param contributor              the Contributor.
-     * @param role  Assigned role for the contributor                                
+     * @param contributor         the Contributor.
+     * @param role                Assigned role for the contributor
      * @param alternativeSequence sequence in case where the Author object does not contain a valid sequence entry
      * @return a Contributor object.
      * @throws MalformedContributorException when the contributor cannot be built.
@@ -549,7 +565,7 @@ public class CrossRefConverter extends AbstractConverter {
     private URL extractFulltextLinkAsURL(CrossRefDocument document) {
         try {
             final Optional<URI> optionalURI = extractFirstLinkToSourceDocument(document);
-            return  optionalURI.isPresent() ? optionalURI.get().toURL() : null;
+            return optionalURI.isPresent() ? optionalURI.get().toURL() : null;
         } catch (MalformedURLException e) {
             logger.warn("Malformed URL in CrossRef document");
         }
@@ -558,11 +574,12 @@ public class CrossRefConverter extends AbstractConverter {
 
     private URI extractFulltextLinkAsURI(CrossRefDocument document) {
         final Optional<URI> optionalURI = extractFirstLinkToSourceDocument(document);
-        return  optionalURI.isPresent() ? optionalURI.get() : null;
+        return optionalURI.isPresent() ? optionalURI.get() : null;
     }
 
     /**
      * Extract first valid link to fulltext/source document.
+     *
      * @param document CrossrefDocument containing data.
      * @return An optional containing first link in list, without filtering.
      */

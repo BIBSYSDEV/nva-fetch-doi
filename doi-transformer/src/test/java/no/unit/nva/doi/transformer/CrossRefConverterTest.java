@@ -555,7 +555,8 @@ public class CrossRefConverterTest extends ConversionTest {
                 .map(Isxn::getValue)
                 .map(ISBN_VALIDATOR::validate)
                 .collect(Collectors.toSet());
-        assertEquals(actualValues, expectedValues);
+
+        assertEquals(expectedValues, actualValues);
     }
 
     @Test
