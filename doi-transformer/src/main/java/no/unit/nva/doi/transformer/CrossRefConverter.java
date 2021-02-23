@@ -92,6 +92,9 @@ public class CrossRefConverter extends AbstractConverter {
     public static final String MISSING_CROSSREF_TYPE_IN_DOCUMENT = "Missing crossref type in document";
     private static final Logger logger = LoggerFactory.getLogger(CrossRefConverter.class);
     private static final String DEFAULT_LANGUAGE_ENGLISH = "en";
+    public static final String CANNOT_CREATE_REFERENCE_FOR_PUBLICATION = ", cannot create reference for publication";
+    public static final String HANDLING_ISSN_ISBN_CANNOT_CREATE_REFERENCE =
+            "Error handling ISSN/ISBN" + CANNOT_CREATE_REFERENCE_FOR_PUBLICATION;
 
     public CrossRefConverter() {
         super(new SimpleLanguageDetector(), new DoiConverter());
@@ -108,8 +111,7 @@ public class CrossRefConverter extends AbstractConverter {
      */
     public Publication toPublication(CrossRefDocument document,
                                      String owner,
-                                     UUID identifier)
-            throws UnsupportedDocumentTypeException, InvalidIssnException, InvalidIsbnException {
+                                     UUID identifier) {
 
         if (document != null && hasTitle(document)) {
             return new Publication.Builder()
@@ -170,15 +172,23 @@ public class CrossRefConverter extends AbstractConverter {
         }
     }
 
-    private Reference extractReference(CrossRefDocument document)
-            throws UnsupportedDocumentTypeException, InvalidIssnException, InvalidIsbnException {
-        PublicationInstance<?> instance = extractPublicationInstance(document);
-        PublicationContext context = extractPublicationContext(document);
-        return new Reference.Builder()
-                .withDoi(doiConverter.toUri(document.getDoi()))
-                .withPublishingContext(context)
-                .withPublicationInstance(instance)
-                .build();
+    private Reference extractReference(CrossRefDocument document) {
+        try {
+            PublicationInstance<?> instance = extractPublicationInstance(document);
+            PublicationContext context = extractPublicationContext(document);
+            return new Reference.Builder()
+                    .withDoi(doiConverter.toUri(document.getDoi()))
+                    .withPublishingContext(context)
+                    .withPublicationInstance(instance)
+                    .build();
+        } catch (InvalidIssnException | InvalidIsbnException e) {
+            logger.error(HANDLING_ISSN_ISBN_CANNOT_CREATE_REFERENCE);
+            return null;
+        } catch (UnsupportedDocumentTypeException e) {
+            logger.error(String.format(UNRECOGNIZED_TYPE_MESSAGE + CANNOT_CREATE_REFERENCE_FOR_PUBLICATION,
+                    document.getType()));
+            return null;
+        }
     }
 
     private Range extractPages(CrossRefDocument document) {

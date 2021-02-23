@@ -14,5 +14,5 @@ def var = dependencies {
     implementation group: 'jakarta.ws.rs', name: 'jakarta.ws.rs-api', version: project.ext.jakartaVersion
 
     implementation group: 'commons-validator', name: 'commons-validator', version: '1.6'
-
+    testImplementation group: 'no.unit.nva', name: 'logutils', version: project.ext.nvaCoreVersion
 }

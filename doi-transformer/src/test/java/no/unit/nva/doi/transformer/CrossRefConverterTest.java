@@ -32,9 +32,13 @@ import no.unit.nva.model.pages.Range;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.doi.DoiConverter;
+import nva.commons.logutils.LogUtils;
 import org.apache.commons.validator.routines.ISBNValidator;
+import org.hamcrest.CoreMatchers;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import nva.commons.logutils.TestAppender;
 
 import java.io.IOException;
 import java.net.URI;
@@ -117,11 +121,6 @@ public class CrossRefConverterTest extends ConversionTest {
     private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
     private final CrossRefConverter converter = new CrossRefConverter();
 
-    private static Instant sampleCrossrefDateAsInstant() {
-        LocalDate date = LocalDate.of(EXPECTED_YEAR, EXPECTED_MONTH, EXPECTED_DAY);
-        return Instant.ofEpochSecond(date.toEpochDay() * 86400L);
-    }
-
     @Test
     @DisplayName("An empty CrossRef document throws IllegalArgument exception")
     public void anEmptyCrossRefDocumentThrowsIllegalArgumentException() throws IllegalArgumentException {
@@ -132,25 +131,29 @@ public class CrossRefConverterTest extends ConversionTest {
     }
 
     @Test
-    @DisplayName("An CrossRef document with unknown type throws IllegalArgument exception")
-    public void anCrossRefDocumentWithUnknownTypeThrowsIllegalArgumentException() throws IllegalArgumentException {
+    @DisplayName("An CrossRef document with unknown type logs error and continues")
+    public void anCrossRefDocumentWithUnknownTypeLogsErrorAndContinues()
+            throws IllegalArgumentException, InvalidIsbnException,
+            UnsupportedDocumentTypeException, InvalidIssnException {
         CrossRefDocument crossRefDocument = sampleCrossRefDocumentWithBasicMetadata();
         crossRefDocument.setType(SOME_STRANGE_CROSSREF_TYPE);
-        UnsupportedDocumentTypeException exception =
-                assertThrows(UnsupportedDocumentTypeException.class, () -> toPublication(crossRefDocument));
+        TestAppender testAppender = LogUtils.getTestingAppender(CrossRefConverter.class);
+        toPublication(crossRefDocument);
         String expectedError = String.format(CrossRefConverter.UNRECOGNIZED_TYPE_MESSAGE, SOME_STRANGE_CROSSREF_TYPE);
-        assertThat(exception.getMessage(), is(equalTo(expectedError)));
+        assertThat(testAppender.getMessages(), CoreMatchers.containsString(expectedError));
     }
 
     @Test
     @DisplayName("An CrossRef document without type throws IllegalArgument exception")
-    public void anCrossRefDocumentWithoutTypeThrowsIllegalArgumentException() throws IllegalArgumentException {
+    public void anCrossRefDocumentWithoutTypeThrowsIllegalArgumentException()
+            throws IllegalArgumentException, InvalidIsbnException,
+            UnsupportedDocumentTypeException, InvalidIssnException {
         CrossRefDocument crossRefDocument = sampleCrossRefDocumentWithBasicMetadata();
         crossRefDocument.setType(null);
-        UnsupportedDocumentTypeException exception =
-                assertThrows(UnsupportedDocumentTypeException.class, () -> toPublication(crossRefDocument));
+        TestAppender testAppender = LogUtils.getTestingAppender(CrossRefConverter.class);
+        toPublication(crossRefDocument);
         String expectedError = String.format(CrossRefConverter.UNRECOGNIZED_TYPE_MESSAGE, "null");
-        assertThat(exception.getMessage(), is(equalTo(expectedError)));
+        assertThat(testAppender.getMessages(), CoreMatchers.containsString(expectedError));
     }
 
     @Test
@@ -207,17 +210,6 @@ public class CrossRefConverterTest extends ConversionTest {
         Publication samplePublication = toPublication(sampleJournalArticle());
         assertThat(samplePublication.getEntityDescription().getReference().getPublicationContext().getClass(),
                 is(equalTo(Journal.class)));
-    }
-
-    @Test
-    @DisplayName("toPublication throws Exception when the input does not have the tag \"journal-article\"")
-    public void toPublicationThrowsExceptionWhenTheInputDoesNotHaveTheTagJournalArticle() {
-        CrossRefDocument sampleDocumentJournalArticle = sampleJournalArticle();
-        sampleDocumentJournalArticle.setType(NOT_JOURNAL_ARTICLE);
-        String expectedError = String.format(CrossRefConverter.UNRECOGNIZED_TYPE_MESSAGE, NOT_JOURNAL_ARTICLE);
-        UnsupportedDocumentTypeException exception = assertThrows(UnsupportedDocumentTypeException.class,
-            () -> toPublication(sampleDocumentJournalArticle));
-        assertThat(exception.getMessage(), is(equalTo(expectedError)));
     }
 
     @Test
@@ -851,7 +843,10 @@ public class CrossRefConverterTest extends ConversionTest {
         return document;
     }
 
-
+    private static Instant sampleCrossrefDateAsInstant() {
+        LocalDate date = LocalDate.of(EXPECTED_YEAR, EXPECTED_MONTH, EXPECTED_DAY);
+        return Instant.ofEpochSecond(date.toEpochDay() * 86400L);
+    }
 
     private int startCountingFromOne(int i) {
         return i + 1;
