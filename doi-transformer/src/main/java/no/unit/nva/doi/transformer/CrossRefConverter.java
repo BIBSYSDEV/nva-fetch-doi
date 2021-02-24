@@ -583,8 +583,7 @@ public class CrossRefConverter extends AbstractConverter {
     }
 
     private URI extractFulltextLinkAsURI(CrossRefDocument document) {
-        final Optional<URI> optionalURI = extractFirstLinkToSourceDocument(document);
-        return optionalURI.isPresent() ? optionalURI.get() : null;
+        return  extractFirstLinkToSourceDocument(document).orElse(null);
     }
 
     /**
