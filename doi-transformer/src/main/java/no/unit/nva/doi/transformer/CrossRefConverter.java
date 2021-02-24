@@ -34,6 +34,8 @@ import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.book.BookAnthology;
+import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.Range;
@@ -296,10 +298,30 @@ public class CrossRefConverter extends AbstractConverter {
         CrossrefType byType = getByType(document.getType());
         if (byType == JOURNAL_ARTICLE) {
             return createJournalArticle(document);
-        } else if (byType == BOOK || byType == BOOK_CHAPTER) {
+        } else if (byType == BOOK) {
+            if (hasEditor(document)) {
+                return createBookAnthology(document);
+            } else {
+                return createBookMonograph(document);
+            }
+        } else if (byType == BOOK_CHAPTER) {
             return createChapterArticle(document);
         }
         throw new UnsupportedDocumentTypeException(String.format(UNRECOGNIZED_TYPE_MESSAGE, document.getType()));
+    }
+
+    private boolean hasEditor(CrossRefDocument document) {
+        return nonNull(document.getEditor()) && !document.getEditor().isEmpty();
+    }
+
+    private BookAnthology createBookAnthology(CrossRefDocument document) {
+        return new BookAnthology.Builder()
+                .build();
+    }
+
+    private BookMonograph createBookMonograph(CrossRefDocument document) {
+        return new BookMonograph.Builder()
+                .build();
     }
 
     private ChapterArticle createChapterArticle(CrossRefDocument document) {
