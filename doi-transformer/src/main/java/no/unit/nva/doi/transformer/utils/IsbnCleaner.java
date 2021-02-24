@@ -1,6 +1,5 @@
 package no.unit.nva.doi.transformer.utils;
 
-
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import org.apache.commons.validator.routines.ISBNValidator;
 import org.slf4j.Logger;
@@ -9,6 +8,8 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+import static no.unit.nva.doi.transformer.utils.StringUtils.removeMultipleWhiteSpaces;
 
 
 public final class IsbnCleaner {
@@ -28,16 +29,12 @@ public final class IsbnCleaner {
      * @return A string of a valid ISBN, or null.
      */
     public static String clean(String value) {
-
         String isbnCandidate = stripSeparatorAndWhitespace(value);
-
         if (isNull(isbnCandidate)) {
             return null;
         }
-
         try {
-            checkIsbn(isbnCandidate);
-            return isbnCandidate;
+            return checkIsbn(isbnCandidate);
         } catch (InvalidIsbnException e) {
             logger.warn(ERROR_WHEN_TRYING_TO_CLEAN_ISSN + e.getMessage());
             return null;
@@ -52,14 +49,7 @@ public final class IsbnCleaner {
      * @return a formatted ISSN candidate or null.
      */
     private static String stripSeparatorAndWhitespace(String value) {
-        if (isNull(value)) {
-            return null;
-        }
-
-        String cleanedString = StringUtils.removeMultipleWhiteSpaces(value).replaceAll(INVALID_CHARS, EMPTY_STRING);
-
-        return  cleanedString;
-
+        return nonNull(value) ? removeMultipleWhiteSpaces(value).replaceAll(INVALID_CHARS, EMPTY_STRING) : null;
     }
 
 
