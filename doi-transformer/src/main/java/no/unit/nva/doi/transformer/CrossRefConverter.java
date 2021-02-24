@@ -94,6 +94,7 @@ public class CrossRefConverter extends AbstractConverter {
     public static final String CANNOT_CREATE_REFERENCE_FOR_PUBLICATION = ", cannot create reference for publication";
     public static final String HANDLING_ISSN_ISBN_CANNOT_CREATE_REFERENCE =
             "Error handling ISSN/ISBN" + CANNOT_CREATE_REFERENCE_FOR_PUBLICATION;
+    public static final String MALFORMED_URL_MESSAGE = "Malformed URL in CrossRef document";
 
     public CrossRefConverter() {
         super(new SimpleLanguageDetector(), new DoiConverter());
@@ -586,7 +587,7 @@ public class CrossRefConverter extends AbstractConverter {
     }
 
     private URL handleMalformedUrlException() {
-        logger.warn("Malformed URL in CrossRef document");
+        logger.warn(MALFORMED_URL_MESSAGE);
         return null;
     }
 
@@ -608,7 +609,7 @@ public class CrossRefConverter extends AbstractConverter {
                 return links.stream().findFirst().map(Link::getUrl).map(URI::create);
             }
         } catch (IllegalArgumentException e) {
-            logger.warn("Malformed URL in CrossRef document link");
+            logger.warn(MALFORMED_URL_MESSAGE);
         }
         return Optional.empty();
     }
