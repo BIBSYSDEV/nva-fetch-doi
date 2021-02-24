@@ -257,7 +257,7 @@ public class CrossRefConverter extends AbstractConverter {
         // Document can have both 'ISBN' and 'isbn-type'
         List<Isxn> isbnType = document.getIsbnType();
         final List<String> isbn = document.getIsbn();
-        if ((isNull(isbnType) || isbnType.isEmpty()) && (isNull(isbn) || isbn.isEmpty())) {
+        if (isEmptyOrNullIsbn(isbnType, isbn)) {
             return Collections.emptyList();
         }
         Set<String> isbnCandidates = new HashSet<>();
@@ -276,6 +276,10 @@ public class CrossRefConverter extends AbstractConverter {
         }
 
         return isbnCandidates.isEmpty() ? Collections.emptyList() : new ArrayList<>(isbnCandidates);
+    }
+
+    private boolean isEmptyOrNullIsbn(List<Isxn> isbnType, List<String> isbn) {
+        return (isNull(isbnType) || isbnType.isEmpty()) && (isNull(isbn) || isbn.isEmpty());
     }
 
     private String extractSeriesTitle(CrossRefDocument document) {
