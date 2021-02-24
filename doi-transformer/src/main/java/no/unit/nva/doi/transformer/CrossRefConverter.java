@@ -44,7 +44,6 @@ import nva.commons.doi.DoiConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.time.Instant;
@@ -231,7 +230,7 @@ public class CrossRefConverter extends AbstractConverter {
                 .build();
     }
 
-    private Chapter createChapterContext(CrossRefDocument document) throws InvalidIsbnException {
+    private Chapter createChapterContext(CrossRefDocument document) {
         return new Chapter.Builder()
                 .withLinkedContext(extractFulltextLinkAsURI(document))
                 .build();
@@ -573,12 +572,17 @@ public class CrossRefConverter extends AbstractConverter {
     }
 
     private URL extractFulltextLinkAsURL(CrossRefDocument document) {
-        try {
-            final Optional<URI> optionalURI = extractFirstLinkToSourceDocument(document);
-            return optionalURI.isPresent() ? optionalURI.get().toURL() : null;
-        } catch (MalformedURLException e) {
-            logger.warn("Malformed URL in CrossRef document");
-        }
+        return extractFirstLinkToSourceDocument(document)
+                .map(this::transformToUrl)
+                .orElse(null);
+    }
+
+    private URL transformToUrl(URI uri) {
+        return attempt(uri::toURL).orElse(fail -> handleMalformedUrlException());
+    }
+
+    private URL handleMalformedUrlException() {
+        logger.warn("Malformed URL in CrossRef document");
         return null;
     }
 
