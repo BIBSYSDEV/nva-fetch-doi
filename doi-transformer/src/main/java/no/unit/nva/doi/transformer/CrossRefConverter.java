@@ -185,6 +185,7 @@ public class CrossRefConverter extends AbstractConverter {
         return StringUtils.parsePage(document.getPage());
     }
 
+
     private PublicationContext extractPublicationContext(CrossRefDocument document)
             throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
 
@@ -221,7 +222,7 @@ public class CrossRefConverter extends AbstractConverter {
                 .build();
     }
 
-    private Chapter createChapterContext(CrossRefDocument document) throws InvalidIsbnException {
+    private Chapter createChapterContext(CrossRefDocument document) {
         return new Chapter.Builder()
                 .withLinkedContext(extractFulltextLinkAsURI(document))
                 .build();
@@ -316,11 +317,13 @@ public class CrossRefConverter extends AbstractConverter {
 
     private BookAnthology createBookAnthology(CrossRefDocument document) {
         return new BookAnthology.Builder()
+                .withPeerReviewed(hasReviews(document)) // Same as in BasicContext
                 .build();
     }
 
     private BookMonograph createBookMonograph(CrossRefDocument document) {
         return new BookMonograph.Builder()
+                .withPeerReviewed(hasReviews(document)) // Same as in BasicContext
                 .build();
     }
 
@@ -420,23 +423,8 @@ public class CrossRefConverter extends AbstractConverter {
     protected List<Contributor> toContributors(CrossRefDocument document) {
 
         List<Contributor> contributors = new ArrayList<>();
-        contributors.addAll(toContributorsWithoutRole(document.getAuthor()));
+        contributors.addAll(toContributorsWithRole(document.getAuthor(), Role.CREATOR));
         contributors.addAll(toContributorsWithRole(document.getEditor(), Role.EDITOR));
-        return contributors;
-    }
-
-    protected List<Contributor> toContributorsWithoutRole(List<CrossrefContributor> authors) {
-        List<Contributor> contributors = Collections.emptyList();
-        if (authors != null) {
-            List<Try<Contributor>> contributorMappings =
-                    IntStream.range(0, authors.size())
-                            .boxed()
-                            .map(attempt(index -> toContributor(authors.get(index), index + 1)))
-                            .collect(Collectors.toList());
-
-            reportFailures(contributorMappings);
-            contributors = successfulMappings(contributorMappings);
-        }
         return contributors;
     }
 
@@ -473,29 +461,6 @@ public class CrossRefConverter extends AbstractConverter {
     private Consumer<Exception> getExceptionConsumer() {
         return e -> logger.error(e.getMessage(), e);
     }
-
-    /**
-     * Coverts an author to a Contributor (from external model to internal).
-     *
-     * @param author              the Author.
-     * @param alternativeSequence sequence in case where the Author object does not contain a valid sequence entry
-     * @return a Contributor object.
-     * @throws MalformedContributorException when the contributer cannot be built.
-     */
-    private Contributor toContributor(CrossrefContributor author, int alternativeSequence) throws
-            MalformedContributorException {
-        Identity identity = new Identity.Builder()
-                .withName(toName(author.getFamilyName(), author.getGivenName()))
-                .withOrcId(author.getOrcid())
-                .build();
-        final Contributor.Builder contributorBuilder = new Contributor.Builder();
-        if (nonNull(author.getAffiliation())) {
-            contributorBuilder.withAffiliations(getAffiliations(author.getAffiliation()));
-        }
-        return contributorBuilder.withIdentity(identity)
-                .withSequence(parseSequence(author.getSequence(), alternativeSequence)).build();
-    }
-
 
     /**
      * Coverts an author to a Contributor with Role (from external model to internal).

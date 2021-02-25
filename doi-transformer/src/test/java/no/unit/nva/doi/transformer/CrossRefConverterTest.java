@@ -25,6 +25,8 @@ import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
+import no.unit.nva.model.instancetypes.book.BookAnthology;
+import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.Pages;
@@ -53,6 +55,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static java.util.Objects.nonNull;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
@@ -678,6 +681,50 @@ public class CrossRefConverterTest extends ConversionTest {
 
     }
 
+
+    @Test
+    @DisplayName("toPublication sets publicationInstance to BookAnthology when book has editors")
+    public void toPublicationSetsPublicationInstanceToBookAnthologyWhenBookHasEditors()
+            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
+
+        CrossRefDocument sampleBook = sampleBook();
+        setEditors(sampleBook);
+
+        var publicationInstance = toPublication(sampleBook)
+                .getEntityDescription().getReference().getPublicationInstance();
+
+        assertTrue(publicationInstance instanceof BookAnthology);
+
+    }
+
+    @Test
+    @DisplayName("toPublication sets publicationInstance to BookMonograph when book has no editors")
+    public void toPublicationSetsPublicationInstanceToBookMonographWhenBookHasNoEditors()
+            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
+
+        CrossRefDocument sampleBook = sampleBook();
+        sampleBook.setEditor(null);
+        var publicationInstance = toPublication(sampleBook)
+                .getEntityDescription().getReference().getPublicationInstance();
+
+        assertTrue(publicationInstance instanceof BookMonograph);
+    }
+
+    @Test
+    @DisplayName("toPublication assigns roles to all authors and editors")
+    public void toPublicationAssignRolesToAuthorsAndEditors()
+            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
+
+        CrossRefDocument sampleBook = sampleBook();
+        setAuthorWithMultipleAffiliations(sampleBook);
+        setEditors(sampleBook);
+        assertTrue(toPublication(sampleBook).getEntityDescription().getContributors().size() > 2);
+        assertTrue(toPublication(sampleBook).getEntityDescription().getContributors().stream().allMatch(this::hasRole));
+    }
+
+    boolean hasRole(Contributor contributor) {
+        return nonNull(contributor.getRole());
+    }
 
     private boolean isEditor(Contributor contributor) {
         return Role.EDITOR.equals(contributor.getRole());
