@@ -63,8 +63,7 @@ public class DoiTransformService {
 
     protected Publication convertInputToPublication(String body, String contentLocation, Instant now, String owner,
                                                     UUID identifier, URI publisher)
-            throws JsonProcessingException, URISyntaxException, InvalidIssnException,
-            InvalidIsbnException, UnsupportedDocumentTypeException {
+            throws JsonProcessingException, URISyntaxException, InvalidIssnException {
 
         MetadataLocation metadataLocation = MetadataLocation.lookup(contentLocation);
         if (metadataLocation.equals(MetadataLocation.CROSSREF)) {
@@ -81,8 +80,7 @@ public class DoiTransformService {
     }
 
     private Publication convertFromCrossRef(String body, String owner, UUID identifier)
-            throws JsonProcessingException, InvalidIssnException,
-            InvalidIsbnException, UnsupportedDocumentTypeException {
+            throws JsonProcessingException {
 
         CrossRefDocument document = objectMapper.readValue(body, CrossrefApiResponse.class).getMessage();
         return crossRefConverter.toPublication(document, owner, identifier);
