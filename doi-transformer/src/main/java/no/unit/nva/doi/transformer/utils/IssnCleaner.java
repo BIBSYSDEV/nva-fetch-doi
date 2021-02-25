@@ -40,8 +40,7 @@ public final class IssnCleaner {
         }
 
         try {
-            IssnUtil.checkIssn(issnCandidate);
-            return issnCandidate;
+            return IssnUtil.checkIssn(issnCandidate);
         } catch (InvalidIssnException e) {
             logger.warn(ERROR_WHEN_TRYING_TO_CLEAN_ISSN + e.getMessage());
             return null;

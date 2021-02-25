@@ -11,6 +11,7 @@ import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate;
 import no.unit.nva.doi.transformer.model.crossrefmodel.Isxn;
 import no.unit.nva.doi.transformer.model.crossrefmodel.Link;
 import no.unit.nva.doi.transformer.utils.CrossrefType;
+import no.unit.nva.doi.transformer.utils.IsbnCleaner;
 import no.unit.nva.doi.transformer.utils.IssnCleaner;
 import no.unit.nva.doi.transformer.utils.PublicationType;
 import no.unit.nva.doi.transformer.utils.StringUtils;
@@ -43,17 +44,19 @@ import nva.commons.doi.DoiConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -74,7 +77,7 @@ import static nva.commons.core.StringUtils.isNotEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 
 
-@SuppressWarnings({"PMD.GodClass","PMD.CouplingBetweenObjects"})
+@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class CrossRefConverter extends AbstractConverter {
 
     public static final String INVALID_ENTRY_ERROR = "The entry is empty or has no title";
@@ -88,6 +91,10 @@ public class CrossRefConverter extends AbstractConverter {
     public static final String MISSING_CROSSREF_TYPE_IN_DOCUMENT = "Missing crossref type in document";
     private static final Logger logger = LoggerFactory.getLogger(CrossRefConverter.class);
     private static final String DEFAULT_LANGUAGE_ENGLISH = "en";
+    public static final String CANNOT_CREATE_REFERENCE_FOR_PUBLICATION = ", cannot create reference for publication";
+    public static final String HANDLING_ISSN_ISBN_CANNOT_CREATE_REFERENCE =
+            "Error handling ISSN/ISBN" + CANNOT_CREATE_REFERENCE_FOR_PUBLICATION;
+    public static final String MALFORMED_URL_MESSAGE = "Malformed URL in CrossRef document";
 
     public CrossRefConverter() {
         super(new SimpleLanguageDetector(), new DoiConverter());
@@ -100,14 +107,11 @@ public class CrossRefConverter extends AbstractConverter {
      * @param owner      the owning institution.
      * @param identifier the publication identifier.
      * @return an internal representation of the publication.
-     * @throws InvalidIssnException thrown if a provided ISSN is invalid.
-     * @throws InvalidIsbnException thrown if a provided ISBN is invalid.
      * @throws UnsupportedDocumentTypeException thrown if a provided documentType is provided.
      */
     public Publication toPublication(CrossRefDocument document,
                                      String owner,
-                                     UUID identifier)
-            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
+                                     UUID identifier) {
 
         if (document != null && hasTitle(document)) {
             return new Publication.Builder()
@@ -168,15 +172,23 @@ public class CrossRefConverter extends AbstractConverter {
         }
     }
 
-    private Reference extractReference(CrossRefDocument document)
-            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
-        PublicationInstance<?> instance = extractPublicationInstance(document);
-        PublicationContext context = extractPublicationContext(document);
-        return new Reference.Builder()
-                .withDoi(doiConverter.toUri(document.getDoi()))
-                .withPublishingContext(context)
-                .withPublicationInstance(instance)
-                .build();
+    private Reference extractReference(CrossRefDocument document) {
+        try {
+            PublicationInstance<?> instance = extractPublicationInstance(document);
+            PublicationContext context = extractPublicationContext(document);
+            return new Reference.Builder()
+                    .withDoi(doiConverter.toUri(document.getDoi()))
+                    .withPublishingContext(context)
+                    .withPublicationInstance(instance)
+                    .build();
+        } catch (InvalidIssnException | InvalidIsbnException e) {
+            logger.error(HANDLING_ISSN_ISBN_CANNOT_CREATE_REFERENCE);
+            return null;
+        } catch (UnsupportedDocumentTypeException e) {
+            logger.error(String.format(UNRECOGNIZED_TYPE_MESSAGE + CANNOT_CREATE_REFERENCE_FOR_PUBLICATION,
+                    document.getType()));
+            return null;
+        }
     }
 
     private Range extractPages(CrossRefDocument document) {
@@ -184,7 +196,7 @@ public class CrossRefConverter extends AbstractConverter {
     }
 
     private PublicationContext extractPublicationContext(CrossRefDocument document)
-            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
+            throws UnsupportedDocumentTypeException, InvalidIssnException, InvalidIsbnException {
 
         CrossrefType crossrefType = getByType(document.getType());
         var publicationType = Optional.of(crossrefType.getPublicationType())
@@ -195,7 +207,7 @@ public class CrossRefConverter extends AbstractConverter {
 
     @JacocoGenerated
     private PublicationContext createContext(CrossRefDocument document, PublicationType publicationType)
-            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
+            throws UnsupportedDocumentTypeException, InvalidIssnException, InvalidIsbnException {
         if (publicationType == PublicationType.JOURNAL_CONTENT) {
             return createJournalContext(document);
         } else if (publicationType == PublicationType.BOOK) {
@@ -219,7 +231,7 @@ public class CrossRefConverter extends AbstractConverter {
                 .build();
     }
 
-    private Chapter createChapterContext(CrossRefDocument document) throws InvalidIsbnException {
+    private Chapter createChapterContext(CrossRefDocument document) {
         return new Chapter.Builder()
                 .withLinkedContext(extractFulltextLinkAsURI(document))
                 .build();
@@ -243,14 +255,32 @@ public class CrossRefConverter extends AbstractConverter {
     }
 
     private List<String> extractIsbn(CrossRefDocument document) {
-        List<Isxn> isbns = document.getIsbnType();
-        if (isNull(isbns) || isbns.isEmpty()) {
+        // Document can have both 'ISBN' and 'isbn-type'
+        List<Isxn> isbnType = document.getIsbnType();
+        final List<String> isbn = document.getIsbn();
+        if (isEmptyOrNullIsbn(isbnType, isbn)) {
             return Collections.emptyList();
         }
-        return isbns.stream()
-                .map(Isxn::getValue)
-                .collect(Collectors.toList());
+        Set<String> isbnCandidates = new HashSet<>();
+        if (nonNull(isbnType)) {
+            isbnCandidates.addAll(isbnType.stream()
+                    .map(Isxn::getValue)
+                    .map(IsbnCleaner::clean)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet()));
+        }
+        if (nonNull(isbn)) {
+            isbnCandidates.addAll(isbn.stream()
+                    .map(IsbnCleaner::clean)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet()));
+        }
 
+        return isbnCandidates.isEmpty() ? Collections.emptyList() : new ArrayList<>(isbnCandidates);
+    }
+
+    private boolean isEmptyOrNullIsbn(List<Isxn> isbnType, List<String> isbn) {
+        return (isNull(isbnType) || isbnType.isEmpty()) && (isNull(isbn) || isbn.isEmpty());
     }
 
     private String extractSeriesTitle(CrossRefDocument document) {
@@ -425,7 +455,7 @@ public class CrossRefConverter extends AbstractConverter {
                     IntStream.range(0, authors.size())
                             .boxed()
                             .map(attempt(index ->
-                                    toContributorWithRole(authors.get(index), role,  index + 1)))
+                                    toContributorWithRole(authors.get(index), role, index + 1)))
                             .collect(Collectors.toList());
 
             reportFailures(contributorMappings);
@@ -478,8 +508,8 @@ public class CrossRefConverter extends AbstractConverter {
     /**
      * Coverts an author to a Contributor with Role (from external model to internal).
      *
-     * @param contributor              the Contributor.
-     * @param role  Assigned role for the contributor                                
+     * @param contributor         the Contributor.
+     * @param role                Assigned role for the contributor
      * @param alternativeSequence sequence in case where the Author object does not contain a valid sequence entry
      * @return a Contributor object.
      * @throws MalformedContributorException when the contributor cannot be built.
@@ -547,22 +577,27 @@ public class CrossRefConverter extends AbstractConverter {
     }
 
     private URL extractFulltextLinkAsURL(CrossRefDocument document) {
-        try {
-            final Optional<URI> optionalURI = extractFirstLinkToSourceDocument(document);
-            return  optionalURI.isPresent() ? optionalURI.get().toURL() : null;
-        } catch (MalformedURLException e) {
-            logger.warn("Malformed URL in CrossRef document");
-        }
+        return extractFirstLinkToSourceDocument(document)
+                .map(this::transformToUrl)
+                .orElse(null);
+    }
+
+    private URL transformToUrl(URI uri) {
+        return attempt(uri::toURL).orElse(fail -> handleMalformedUrlException());
+    }
+
+    private URL handleMalformedUrlException() {
+        logger.warn(MALFORMED_URL_MESSAGE);
         return null;
     }
 
     private URI extractFulltextLinkAsURI(CrossRefDocument document) {
-        final Optional<URI> optionalURI = extractFirstLinkToSourceDocument(document);
-        return  optionalURI.isPresent() ? optionalURI.get() : null;
+        return  extractFirstLinkToSourceDocument(document).orElse(null);
     }
 
     /**
      * Extract first valid link to fulltext/source document.
+     *
      * @param document CrossrefDocument containing data.
      * @return An optional containing first link in list, without filtering.
      */
@@ -574,7 +609,7 @@ public class CrossRefConverter extends AbstractConverter {
                 return links.stream().findFirst().map(Link::getUrl).map(URI::create);
             }
         } catch (IllegalArgumentException e) {
-            logger.warn("Malformed URL in CrossRef document link");
+            logger.warn(MALFORMED_URL_MESSAGE);
         }
         return Optional.empty();
     }
