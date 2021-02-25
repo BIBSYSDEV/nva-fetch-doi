@@ -125,7 +125,7 @@ public class CrossRefConverter extends AbstractConverter {
                     .withPublisher(extractAndCreatePublisher(document))
                     .withStatus(DEFAULT_NEW_PUBLICATION_STATUS)
                     .withIndexedDate(extractInstantFromCrossrefDate(document.getIndexed()))
-                    .withLink(extractFulltextLinkAsURI(document))
+                    .withLink(extractFulltextLinkAsUri(document))
                     .withProjects(createProjects())
                     .withFileSet(createFilseSet())
                     .withEntityDescription(new EntityDescription.Builder()
@@ -228,14 +228,14 @@ public class CrossRefConverter extends AbstractConverter {
                 .withPeerReviewed(hasReviews(document))
                 .withSeriesTitle(extractSeriesTitle(document))
                 .withPublisher(extractPublisherName(document))
-                .withUrl(extractFulltextLinkAsURL(document))
+                .withUrl(extractFulltextLinkAsUrl(document))
                 .withIsbnList(extractIsbn(document))
                 .build();
     }
 
     private Chapter createChapterContext(CrossRefDocument document) {
         return new Chapter.Builder()
-                .withLinkedContext(extractFulltextLinkAsURI(document))
+                .withLinkedContext(extractFulltextLinkAsUri(document))
                 .build();
     }
 
@@ -562,8 +562,8 @@ public class CrossRefConverter extends AbstractConverter {
         return Collections.emptyList();
     }
 
-    private URL extractFulltextLinkAsURL(CrossRefDocument document) {
-        return extractFirstLinkToSourceDocument(document)
+    private URL extractFulltextLinkAsUrl(CrossRefDocument document) {
+        return extractFirstLinkToSourceDocument(document.getLink())
                 .map(this::transformToUrl)
                 .orElse(null);
     }
@@ -577,21 +577,15 @@ public class CrossRefConverter extends AbstractConverter {
         return null;
     }
 
-    private URI extractFulltextLinkAsURI(CrossRefDocument document) {
-        return  extractFirstLinkToSourceDocument(document).orElse(null);
+    private URI extractFulltextLinkAsUri(CrossRefDocument document) {
+        return  extractFirstLinkToSourceDocument(document.getLink()).orElse(null);
     }
 
-    /**
-     * Extract first valid link to fulltext/source document.
-     *
-     * @param document CrossrefDocument containing data.
-     * @return An optional containing first link in list, without filtering.
-     */
-    private Optional<URI> extractFirstLinkToSourceDocument(CrossRefDocument document) {
-        return hasLink(document.getLink()) ? getFirstLinkAsURI(document.getLink()) : Optional.empty();
+    private Optional<URI> extractFirstLinkToSourceDocument(List<Link> links) {
+        return hasLink(links) ? getFirstLinkAsUri(links) : Optional.empty();
     }
 
-    private Optional<URI> getFirstLinkAsURI(List<Link> links) {
+    private Optional<URI> getFirstLinkAsUri(List<Link> links) {
         return links.stream().findFirst().map(Link::getUrl).map(URI::create);
     }
 
