@@ -109,7 +109,6 @@ public class CrossRefConverter extends AbstractConverter {
      * @param owner      the owning institution.
      * @param identifier the publication identifier.
      * @return an internal representation of the publication.
-     * @throws UnsupportedDocumentTypeException thrown if a provided documentType is provided.
      */
     public Publication toPublication(CrossRefDocument document,
                                      String owner,
@@ -589,16 +588,15 @@ public class CrossRefConverter extends AbstractConverter {
      * @return An optional containing first link in list, without filtering.
      */
     private Optional<URI> extractFirstLinkToSourceDocument(CrossRefDocument document) {
-        // TODO Add filter to select what kind of document we want.
-        try {
-            List<Link> links = document.getLink();
-            if (nonNull(links) && !links.isEmpty()) {
-                return links.stream().findFirst().map(Link::getUrl).map(URI::create);
-            }
-        } catch (IllegalArgumentException e) {
-            logger.warn(MALFORMED_URL_MESSAGE);
-        }
-        return Optional.empty();
+        return hasLink(document.getLink()) ? getFirstLinkAsURI(document.getLink()) : Optional.empty();
+    }
+
+    private Optional<URI> getFirstLinkAsURI(List<Link> links) {
+        return links.stream().findFirst().map(Link::getUrl).map(URI::create);
+    }
+
+    private boolean hasLink(List<Link> links) {
+        return nonNull(links) && !links.isEmpty();
     }
 
 }

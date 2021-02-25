@@ -1,7 +1,6 @@
 package no.unit.nva.doi.transformer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import no.unit.nva.doi.fetch.exceptions.UnsupportedDocumentTypeException;
 import no.unit.nva.doi.transformer.language.LanguageMapper;
 import no.unit.nva.doi.transformer.language.exceptions.LanguageUriNotFoundException;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossRefDocument;
@@ -24,8 +23,6 @@ import no.unit.nva.model.Role;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Journal;
-import no.unit.nva.model.exceptions.InvalidIsbnException;
-import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
@@ -219,11 +216,9 @@ public class CrossRefConverterTest extends ConversionTest {
         List<Integer> ordinals = toPublication(sampleJournalArticle).getEntityDescription().getContributors().stream()
                 .map(Contributor::getSequence).collect(Collectors.toList());
         assertThat(ordinals.size(), is(numberOfAuthors));
-        List<Integer> expectedValues = IntStream.range(0, numberOfAuthors)
+        assertThat(ordinals, contains(IntStream.range(0, numberOfAuthors)
                 .map(this::startCountingFromOne)
-                .boxed()
-                .collect(Collectors.toList());
-        assertThat(ordinals, contains(expectedValues.toArray()));
+                .boxed().toArray()));
     }
 
     @Test
@@ -231,9 +226,8 @@ public class CrossRefConverterTest extends ConversionTest {
     public void toPublicationSetsCorrectNumberForValidOrdinal() {
         CrossRefDocument sampleJournalArticle = sampleJournalArticle();
         CrossrefContributor author = sampleJournalArticle.getAuthor().stream().findFirst().get();
-        String validOrdinal = ORDINAL_SECOND;
         int expected = 2;
-        author.setSequence(validOrdinal);
+        author.setSequence(ORDINAL_SECOND);
         int actual = toPublication(sampleJournalArticle)
                 .getEntityDescription().getContributors().stream().findFirst().get().getSequence();
         assertThat(actual, is(equalTo(expected)));
@@ -617,35 +611,26 @@ public class CrossRefConverterTest extends ConversionTest {
 
         CrossRefDocument sampleBook = sampleBook();
         setEditors(sampleBook);
-
-        var publicationInstance = toPublication(sampleBook)
-                .getEntityDescription().getReference().getPublicationInstance();
-
-        assertTrue(publicationInstance instanceof BookAnthology);
-
+        assertThat(toPublication(sampleBook).getEntityDescription().getReference().getPublicationInstance().getClass(),
+                is(equalTo(BookAnthology.class)));
     }
 
     @Test
     @DisplayName("toPublication sets publicationInstance to BookMonograph when book has no editors")
     public void toPublicationSetsPublicationInstanceToBookMonographWhenBookHasNoEditors() {
-
         CrossRefDocument sampleBook = sampleBook();
         sampleBook.setEditor(null);
-        var publicationInstance = toPublication(sampleBook)
-                .getEntityDescription().getReference().getPublicationInstance();
-
-        assertTrue(publicationInstance instanceof BookMonograph);
+        assertThat(toPublication(sampleBook).getEntityDescription().getReference().getPublicationInstance().getClass(),
+                is(equalTo(BookMonograph.class)));
     }
 
     @Test
     @DisplayName("toPublication assigns roles to all authors and editors")
     public void toPublicationAssignRolesToAuthorsAndEditors() {
-
         CrossRefDocument sampleBook = sampleBook();
         setAuthorWithMultipleAffiliations(sampleBook);
         setEditors(sampleBook);
         final List<Contributor> contributors = toPublication(sampleBook).getEntityDescription().getContributors();
-
         assertThat(contributors.size(), is(EXPECTED_NUMBER_OF_CONTRIBUTORS));
         assertTrue(contributors.stream().allMatch(this::hasRole));
     }
@@ -742,19 +727,17 @@ public class CrossRefConverterTest extends ConversionTest {
         document.setType(CrossrefType.BOOK_CHAPTER.getType());
     }
 
-    private CrossRefDocument setAuthor(CrossRefDocument document) {
+    private void setAuthor(CrossRefDocument document) {
         CrossrefContributor author = new CrossrefContributor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
                 .withFamilyName(AUTHOR_FAMILY_NAME)
                 .withSequence(FIRST_AUTHOR).build();
         CrossrefContributor secondAuthor = new CrossrefContributor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
                 .withFamilyName(AUTHOR_FAMILY_NAME)
                 .withSequence(SECOND_AUTHOR).build();
-        List<CrossrefContributor> authors = Arrays.asList(author, secondAuthor);
-        document.setAuthor(authors);
-        return document;
+        document.setAuthor(Arrays.asList(author, secondAuthor));
     }
 
-    private CrossRefDocument setAuthorWithAffiliation(CrossRefDocument document) {
+    private void setAuthorWithAffiliation(CrossRefDocument document) {
         CrossrefContributor author = new CrossrefContributor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
                 .withFamilyName(AUTHOR_FAMILY_NAME)
                 .withSequence(FIRST_AUTHOR).build();
@@ -762,12 +745,10 @@ public class CrossRefConverterTest extends ConversionTest {
                 .withFamilyName(AUTHOR_FAMILY_NAME)
                 .withAffiliation(sampleAffiliation())
                 .withSequence(SECOND_AUTHOR).build();
-        List<CrossrefContributor> authors = Arrays.asList(author, secondAuthor);
-        document.setAuthor(authors);
-        return document;
+        document.setAuthor(Arrays.asList(author, secondAuthor));
     }
 
-    private CrossRefDocument setAuthorWithMultipleAffiliations(CrossRefDocument document) {
+    private void setAuthorWithMultipleAffiliations(CrossRefDocument document) {
         CrossrefContributor author = new CrossrefContributor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
                 .withFamilyName(AUTHOR_FAMILY_NAME)
                 .withSequence(FIRST_AUTHOR).build();
@@ -775,12 +756,10 @@ public class CrossRefConverterTest extends ConversionTest {
                 .withFamilyName(AUTHOR_FAMILY_NAME)
                 .withAffiliation(sampleMultipleAffiliations())
                 .withSequence(SECOND_AUTHOR).build();
-        List<CrossrefContributor> authors = Arrays.asList(author, secondAuthor);
-        document.setAuthor(authors);
-        return document;
+        document.setAuthor(Arrays.asList(author, secondAuthor));
     }
 
-    private CrossRefDocument setAuthorWithUnauthenticatedOrcid(CrossRefDocument document) {
+    private void setAuthorWithUnauthenticatedOrcid(CrossRefDocument document) {
         CrossrefContributor author = new CrossrefContributor.Builder()
                 .withGivenName(AUTHOR_GIVEN_NAME)
                 .withFamilyName(AUTHOR_FAMILY_NAME)
@@ -791,16 +770,13 @@ public class CrossRefConverterTest extends ConversionTest {
         CrossrefContributor secondAuthor = new CrossrefContributor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
                 .withFamilyName(AUTHOR_FAMILY_NAME)
                 .withSequence(SECOND_AUTHOR).build();
-        List<CrossrefContributor> authors = Arrays.asList(author, secondAuthor);
-        document.setAuthor(authors);
-        return document;
+        document.setAuthor(Arrays.asList(author, secondAuthor));
     }
 
     private List<CrossrefAffiliation> sampleAffiliation() {
         CrossrefAffiliation affiliation = new CrossrefAffiliation();
         affiliation.setName("affiliationName");
-        List<CrossrefAffiliation> affiliations = List.of(affiliation);
-        return affiliations;
+        return List.of(affiliation);
     }
 
     private List<CrossrefAffiliation> sampleMultipleAffiliations() {
@@ -808,20 +784,17 @@ public class CrossRefConverterTest extends ConversionTest {
         firstAffiliation.setName("firstAffiliationName");
         CrossrefAffiliation secondAffiliation = new CrossrefAffiliation();
         secondAffiliation.setName("secondAffiliationName");
-        List<CrossrefAffiliation> affiliations = List.of(firstAffiliation, secondAffiliation);
-        return affiliations;
+        return List.of(firstAffiliation, secondAffiliation);
     }
 
-    private CrossRefDocument setEditors(CrossRefDocument document) {
+    private void setEditors(CrossRefDocument document) {
         CrossrefContributor editor = new CrossrefContributor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
                 .withFamilyName(AUTHOR_FAMILY_NAME)
                 .withSequence(FIRST_AUTHOR).build();
         CrossrefContributor secondEditor = new CrossrefContributor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
                 .withFamilyName(AUTHOR_FAMILY_NAME)
                 .withSequence(SECOND_AUTHOR).build();
-        List<CrossrefContributor> editors = Arrays.asList(editor, secondEditor);
-        document.setEditor(editors);
-        return document;
+        document.setEditor(Arrays.asList(editor, secondEditor));
     }
 
     private static Instant sampleCrossrefDateAsInstant() {
