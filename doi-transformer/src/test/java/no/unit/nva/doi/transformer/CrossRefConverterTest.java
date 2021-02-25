@@ -122,6 +122,7 @@ public class CrossRefConverterTest extends ConversionTest {
     private static final String SAMPLE_ORCID = "http://orcid.org/0000-1111-2222-3333";
     private static final Instant SAMPLE_CROSSREF_DATE_AS_INSTANT = sampleCrossrefDateAsInstant();
     private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
+    public static final int EXPECTED_NUMBER_OF_CONTRIBUTORS = 4;
     private final CrossRefConverter converter = new CrossRefConverter();
 
     @Test
@@ -337,8 +338,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @Test
     @DisplayName("toPublication sets the MetadataSource to the specfied URL when the Crossref "
             + "document has as \"source\" a valid URL")
-    public void toPublicationSetsTheMetadataSourceToTheSourceUrlIfTheDocHasAsSourceAValidUrl()
-            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
+    public void toPublicationSetsTheMetadataSourceToTheSourceUrlIfTheDocHasAsSourceAValidUrl() {
         URI expectedURI = URI.create(SOURCE_URI);
         CrossRefDocument sampleJournalArticle = sampleJournalArticle();
         sampleJournalArticle.setSource(SOURCE_URI);
@@ -431,8 +431,7 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("toPublication sets affiliation labels when author.affiliation.name is available")
-    public void toPublicationSetsAffiliationLabelWhenAuthorHasAffiliationName()
-            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
+    public void toPublicationSetsAffiliationLabelWhenAuthorHasAffiliationName() {
         CrossRefDocument sampleJournalArticle = sampleJournalArticle();
         setAuthorWithAffiliation(sampleJournalArticle);
         List<Contributor> contributors = toPublication(sampleJournalArticle).getEntityDescription().getContributors();
@@ -481,8 +480,7 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("toPublication sets ISBN when crossref-type is book")
-    public void toPublicationSetsIsbnWhenCrossrefDocumentIsTypeBook()
-            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
+    public void toPublicationSetsIsbnWhenCrossrefDocumentIsTypeBook() {
         CrossRefDocument sampleBook = sampleBook();
         List<Isxn> isbns = addIsbnsToBook(sampleBook, VALID_ISBN_A,VALID_ISBN_B).getIsbnType();
         Book actualPublicationContext = convertAndGetBookContext(sampleBook);
@@ -493,8 +491,7 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("toPublication filters ISBN error and continues")
-    public void toPublicationFiltersIsbnErrorAndContinues()
-            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
+    public void toPublicationFiltersIsbnErrorAndContinues() {
         CrossRefDocument sampleBook = sampleBook();
         List<Isxn> isbns = addIsbnsToBook(sampleBook, VALID_ISBN_A,INVALID_ISBN).getIsbnType();
         Book actualPublicationContext = convertAndGetBookContext(sampleBook);
@@ -616,8 +613,7 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("toPublication sets publicationInstance to BookAnthology when book has editors")
-    public void toPublicationSetsPublicationInstanceToBookAnthologyWhenBookHasEditors()
-            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
+    public void toPublicationSetsPublicationInstanceToBookAnthologyWhenBookHasEditors() {
 
         CrossRefDocument sampleBook = sampleBook();
         setEditors(sampleBook);
@@ -631,8 +627,7 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("toPublication sets publicationInstance to BookMonograph when book has no editors")
-    public void toPublicationSetsPublicationInstanceToBookMonographWhenBookHasNoEditors()
-            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
+    public void toPublicationSetsPublicationInstanceToBookMonographWhenBookHasNoEditors() {
 
         CrossRefDocument sampleBook = sampleBook();
         sampleBook.setEditor(null);
@@ -644,14 +639,15 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("toPublication assigns roles to all authors and editors")
-    public void toPublicationAssignRolesToAuthorsAndEditors()
-            throws InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
+    public void toPublicationAssignRolesToAuthorsAndEditors() {
 
         CrossRefDocument sampleBook = sampleBook();
         setAuthorWithMultipleAffiliations(sampleBook);
         setEditors(sampleBook);
-        assertTrue(toPublication(sampleBook).getEntityDescription().getContributors().size() > 2);
-        assertTrue(toPublication(sampleBook).getEntityDescription().getContributors().stream().allMatch(this::hasRole));
+        final List<Contributor> contributors = toPublication(sampleBook).getEntityDescription().getContributors();
+
+        assertThat(contributors.size(), is(EXPECTED_NUMBER_OF_CONTRIBUTORS));
+        assertTrue(contributors.stream().allMatch(this::hasRole));
     }
 
     boolean hasRole(Contributor contributor) {
@@ -844,12 +840,11 @@ public class CrossRefConverterTest extends ConversionTest {
     }
 
     private Set<String> constructExpectedIsbnValues(List<Isxn> isbns) {
-        Set<String> expectedValues = isbns.stream()
+        return isbns.stream()
                 .map(Isxn::getValue)
                 .map(ISBN_VALIDATOR::validate)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-        return expectedValues;
     }
 
     private CrossRefDocument addIsbnsToBook(CrossRefDocument sampleBook, String... isxnStrings) {
@@ -879,22 +874,19 @@ public class CrossRefConverterTest extends ConversionTest {
     }
 
     private List<Organization> getOrganisations(List<Contributor> contributors) {
-        List<Organization> organisations =
-                contributors.stream()
-                        .map(Contributor::getAffiliations)
-                        .filter(Objects::nonNull)
-                        .flatMap(Collection::stream)
-                        .collect(Collectors.toList());
-        return organisations;
+        return contributors.stream()
+                .map(Contributor::getAffiliations)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
     }
 
     private List<String> getPoolOfExpectedValues(List<Isxn> issns) {
-        List<String> poolOfExpectedValues = issns.stream()
+        return issns.stream()
                 .map(Isxn::getValue)
                 .map(IssnCleaner::clean)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-        return poolOfExpectedValues;
     }
 
 }
