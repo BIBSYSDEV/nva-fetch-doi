@@ -35,6 +35,8 @@ import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.book.BookAnthology;
+import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.Range;
@@ -107,7 +109,6 @@ public class CrossRefConverter extends AbstractConverter {
      * @param owner      the owning institution.
      * @param identifier the publication identifier.
      * @return an internal representation of the publication.
-     * @throws UnsupportedDocumentTypeException thrown if a provided documentType is provided.
      */
     public Publication toPublication(CrossRefDocument document,
                                      String owner,
@@ -124,7 +125,7 @@ public class CrossRefConverter extends AbstractConverter {
                     .withPublisher(extractAndCreatePublisher(document))
                     .withStatus(DEFAULT_NEW_PUBLICATION_STATUS)
                     .withIndexedDate(extractInstantFromCrossrefDate(document.getIndexed()))
-                    .withLink(extractFulltextLinkAsURI(document))
+                    .withLink(extractFulltextLinkAsUri(document))
                     .withProjects(createProjects())
                     .withFileSet(createFilseSet())
                     .withEntityDescription(new EntityDescription.Builder()
@@ -195,6 +196,7 @@ public class CrossRefConverter extends AbstractConverter {
         return StringUtils.parsePage(document.getPage());
     }
 
+
     private PublicationContext extractPublicationContext(CrossRefDocument document)
             throws UnsupportedDocumentTypeException, InvalidIssnException, InvalidIsbnException {
 
@@ -226,14 +228,14 @@ public class CrossRefConverter extends AbstractConverter {
                 .withPeerReviewed(hasReviews(document))
                 .withSeriesTitle(extractSeriesTitle(document))
                 .withPublisher(extractPublisherName(document))
-                .withUrl(extractFulltextLinkAsURL(document))
+                .withUrl(extractFulltextLinkAsUrl(document))
                 .withIsbnList(extractIsbn(document))
                 .build();
     }
 
     private Chapter createChapterContext(CrossRefDocument document) {
         return new Chapter.Builder()
-                .withLinkedContext(extractFulltextLinkAsURI(document))
+                .withLinkedContext(extractFulltextLinkAsUri(document))
                 .build();
     }
 
@@ -326,10 +328,32 @@ public class CrossRefConverter extends AbstractConverter {
         CrossrefType byType = getByType(document.getType());
         if (byType == JOURNAL_ARTICLE) {
             return createJournalArticle(document);
-        } else if (byType == BOOK || byType == BOOK_CHAPTER) {
+        } else if (byType == BOOK) {
+            if (hasEditor(document)) {
+                return createBookAnthology(document);
+            } else {
+                return createBookMonograph(document);
+            }
+        } else if (byType == BOOK_CHAPTER) {
             return createChapterArticle(document);
         }
         throw new UnsupportedDocumentTypeException(String.format(UNRECOGNIZED_TYPE_MESSAGE, document.getType()));
+    }
+
+    private boolean hasEditor(CrossRefDocument document) {
+        return nonNull(document.getEditor()) && !document.getEditor().isEmpty();
+    }
+
+    private BookAnthology createBookAnthology(CrossRefDocument document) {
+        return new BookAnthology.Builder()
+                .withPeerReviewed(hasReviews(document)) // Same as in BasicContext
+                .build();
+    }
+
+    private BookMonograph createBookMonograph(CrossRefDocument document) {
+        return new BookMonograph.Builder()
+                .withPeerReviewed(hasReviews(document)) // Same as in BasicContext
+                .build();
     }
 
     private ChapterArticle createChapterArticle(CrossRefDocument document) {
@@ -428,23 +452,8 @@ public class CrossRefConverter extends AbstractConverter {
     protected List<Contributor> toContributors(CrossRefDocument document) {
 
         List<Contributor> contributors = new ArrayList<>();
-        contributors.addAll(toContributorsWithoutRole(document.getAuthor()));
+        contributors.addAll(toContributorsWithRole(document.getAuthor(), Role.CREATOR));
         contributors.addAll(toContributorsWithRole(document.getEditor(), Role.EDITOR));
-        return contributors;
-    }
-
-    protected List<Contributor> toContributorsWithoutRole(List<CrossrefContributor> authors) {
-        List<Contributor> contributors = Collections.emptyList();
-        if (authors != null) {
-            List<Try<Contributor>> contributorMappings =
-                    IntStream.range(0, authors.size())
-                            .boxed()
-                            .map(attempt(index -> toContributor(authors.get(index), index + 1)))
-                            .collect(Collectors.toList());
-
-            reportFailures(contributorMappings);
-            contributors = successfulMappings(contributorMappings);
-        }
         return contributors;
     }
 
@@ -481,29 +490,6 @@ public class CrossRefConverter extends AbstractConverter {
     private Consumer<Exception> getExceptionConsumer() {
         return e -> logger.error(e.getMessage(), e);
     }
-
-    /**
-     * Coverts an author to a Contributor (from external model to internal).
-     *
-     * @param author              the Author.
-     * @param alternativeSequence sequence in case where the Author object does not contain a valid sequence entry
-     * @return a Contributor object.
-     * @throws MalformedContributorException when the contributer cannot be built.
-     */
-    private Contributor toContributor(CrossrefContributor author, int alternativeSequence) throws
-            MalformedContributorException {
-        Identity identity = new Identity.Builder()
-                .withName(toName(author.getFamilyName(), author.getGivenName()))
-                .withOrcId(author.getOrcid())
-                .build();
-        final Contributor.Builder contributorBuilder = new Contributor.Builder();
-        if (nonNull(author.getAffiliation())) {
-            contributorBuilder.withAffiliations(getAffiliations(author.getAffiliation()));
-        }
-        return contributorBuilder.withIdentity(identity)
-                .withSequence(parseSequence(author.getSequence(), alternativeSequence)).build();
-    }
-
 
     /**
      * Coverts an author to a Contributor with Role (from external model to internal).
@@ -576,8 +562,8 @@ public class CrossRefConverter extends AbstractConverter {
         return Collections.emptyList();
     }
 
-    private URL extractFulltextLinkAsURL(CrossRefDocument document) {
-        return extractFirstLinkToSourceDocument(document)
+    private URL extractFulltextLinkAsUrl(CrossRefDocument document) {
+        return extractFirstLinkToSourceDocument(document.getLink())
                 .map(this::transformToUrl)
                 .orElse(null);
     }
@@ -591,27 +577,20 @@ public class CrossRefConverter extends AbstractConverter {
         return null;
     }
 
-    private URI extractFulltextLinkAsURI(CrossRefDocument document) {
-        return  extractFirstLinkToSourceDocument(document).orElse(null);
+    private URI extractFulltextLinkAsUri(CrossRefDocument document) {
+        return  extractFirstLinkToSourceDocument(document.getLink()).orElse(null);
     }
 
-    /**
-     * Extract first valid link to fulltext/source document.
-     *
-     * @param document CrossrefDocument containing data.
-     * @return An optional containing first link in list, without filtering.
-     */
-    private Optional<URI> extractFirstLinkToSourceDocument(CrossRefDocument document) {
-        // TODO Add filter to select what kind of document we want.
-        try {
-            List<Link> links = document.getLink();
-            if (nonNull(links) && !links.isEmpty()) {
-                return links.stream().findFirst().map(Link::getUrl).map(URI::create);
-            }
-        } catch (IllegalArgumentException e) {
-            logger.warn(MALFORMED_URL_MESSAGE);
-        }
-        return Optional.empty();
+    private Optional<URI> extractFirstLinkToSourceDocument(List<Link> links) {
+        return hasLink(links) ? getFirstLinkAsUri(links) : Optional.empty();
+    }
+
+    private Optional<URI> getFirstLinkAsUri(List<Link> links) {
+        return links.stream().findFirst().map(Link::getUrl).map(URI::create);
+    }
+
+    private boolean hasLink(List<Link> links) {
+        return nonNull(links) && !links.isEmpty();
     }
 
 }
