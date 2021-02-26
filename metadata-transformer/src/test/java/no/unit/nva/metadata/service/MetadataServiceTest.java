@@ -102,7 +102,7 @@ public class MetadataServiceTest {
             "provideMetadataForDate",
             "provideMetadataForContributors"
     })
-    public void getCreatePublicationRequestReturnsRequest(String html, CreatePublicationRequest expectedRequest)
+    public void getCreatePublicationParsesHtmlAndReturnsMetadata(String html, CreatePublicationRequest expectedRequest)
             throws IOException {
         String filename = "article.html";
         URI uri = prepareWebServerAndReturnUriToMetadata(filename, html);
