@@ -6,8 +6,13 @@ import com.github.jsonldjava.core.JsonLdOptions;
 import com.github.jsonldjava.utils.JsonUtils;
 import no.unit.nva.api.CreatePublicationRequest;
 import no.unit.nva.metadata.MetadataConverter;
+import no.unit.nva.model.Reference;
 import org.apache.any23.extractor.ExtractionException;
 import org.eclipse.rdf4j.model.Model;
+import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.query.QueryResults;
 import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
@@ -26,7 +31,9 @@ import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -42,11 +49,17 @@ public class MetadataService {
     private static final ObjectMapper objectMapper = new ObjectMapper();
     public static final String REPLACEMENT_MARKER = "__URI__";
     public static final String NEWLINE_DELIMITER = "\n";
+    public static final String DOI_PREFIX = "doi:";
+    public static final String DOI_ORG = "https://doi.org/";
+    public static final String ANY_23 = "http://vocab.sindice.net/any23#";
+    public static final String DC_IDENTIFIER = "dc.identifier";
+    public static final String DC_IDENTIFIER_UPPER_CASE = "DC.identifier";
+    public static final String DOI_START = "10.";
 
     private final TranslatorService translatorService;
     private final Repository db = new SailRepository(new MemoryStore());
     private static final Logger logger = LoggerFactory.getLogger(MetadataService.class);
-
+    private static final ValueFactory valueFactory = SimpleValueFactory.getInstance();
 
     public MetadataService() throws IOException {
         translatorService = new TranslatorService();
@@ -64,44 +77,86 @@ public class MetadataService {
      */
     public Optional<CreatePublicationRequest> getCreatePublicationRequest(URI uri) {
         try {
-            String jsonld = getMetadataJson(uri);
-            return Optional.ofNullable(MetadataConverter.fromJsonLd(jsonld));
+            Model metadata = getMetadata(uri);
+            String jsonld = toFramedJsonLd(getQueryModel(metadata, uri));
+            CreatePublicationRequest request = MetadataConverter.fromJsonLd(jsonld);
+            addAdditionalFieldsFromMetadata(request, metadata);
+            return Optional.ofNullable(request);
         } catch (Exception e) {
             logger.error("Error mapping metadata to CreatePublicationRequest", e);
             return Optional.empty();
         }
     }
 
-    /**
-     * Extracts metadata from the HTML dereferenced from a supplied URI.
-     * @param uri URI to dereference.
-     * @return JSON representation of an NVA Publication.
-     * @throws ExtractionException If the metadata extraction fails.
-     * @throws IOException If resources files cannot be found.
-     * @throws URISyntaxException If the URI is invalid.
-     */
-    public String getMetadataJson(URI uri) throws ExtractionException, IOException, URISyntaxException {
-        Model metadata = getMetadata(uri);
-        return toFramedJsonLd(metadata);
+    private void addAdditionalFieldsFromMetadata(CreatePublicationRequest request, Model metadata) {
+        Optional<URI> doi = getDoiFromMetadata(metadata);
+        if (doi.isPresent()) {
+            if (request.getEntityDescription().getReference() == null) {
+                request.getEntityDescription().setReference(new Reference());
+            }
+            request.getEntityDescription().getReference().setDoi(doi.get());
+        }
+    }
+
+    private Optional<URI> getDoiFromMetadata(Model metadata) {
+        return metadata
+                .stream()
+                .filter(this::isDcIdentifier)
+                .map(Statement::getObject)
+                .map(Value::stringValue)
+                .map(this::toDoiUri)
+                .filter(Objects::nonNull)
+                .findFirst();
+    }
+
+    private boolean isDcIdentifier(Statement statement) {
+        return List.of(
+                valueFactory.createIRI(ANY_23, DC_IDENTIFIER),
+                valueFactory.createIRI(ANY_23, DC_IDENTIFIER_UPPER_CASE))
+                .contains(statement.getPredicate());
+    }
+
+    private URI toDoiUri(String stringValue) {
+        URI doi = null;
+        try {
+            if (stringValue.startsWith(DOI_PREFIX)) {
+                doi = new URI(stringValue.replace(DOI_PREFIX, DOI_ORG));
+            } else if (stringValue.startsWith(DOI_START)) {
+                doi = new URI(DOI_ORG + stringValue);
+            }
+        } catch (URISyntaxException e) {
+            logger.warn("Can not create URI from DOI string value", e);
+        }
+        return doi;
     }
 
     private Model getMetadata(URI uri) throws ExtractionException, IOException, URISyntaxException {
         translatorService.loadMetadataFromUri(uri);
         try (RepositoryConnection repositoryConnection = db.getConnection()) {
             repositoryConnection.add(loadExtractedData(), EMPTY_BASE_URI, RDFFormat.JSONLD);
-            var query = repositoryConnection.prepareGraphQuery(getQueryAsString(uri));
-            return QueryResults.asModel(query.evaluate());
+            return QueryResults.asModel(repositoryConnection.getStatements(null, null, null));
         } finally {
             db.shutDown();
         }
     }
 
-    private String toFramedJsonLd(Model resultModel) throws IOException {
+    private String toFramedJsonLd(Model model) throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        Rio.write(resultModel, outputStream, RDFFormat.JSONLD);
+        Rio.write(model, outputStream, RDFFormat.JSONLD);
         var jsonObject = JsonUtils.fromInputStream(new ByteArrayInputStream(outputStream.toByteArray()));
         Object framed = frame(jsonObject, loadContext(), avoidBlankNodeIdentifiersAndOmitDefaultsConfig());
         return JsonUtils.toPrettyString(framed);
+
+    }
+
+    private Model getQueryModel(Model model, URI uri) {
+        try (RepositoryConnection repositoryConnection = db.getConnection()) {
+            repositoryConnection.add(model);
+            var query = repositoryConnection.prepareGraphQuery(getQueryAsString(uri));
+            return QueryResults.asModel(query.evaluate());
+        } finally {
+            db.shutDown();
+        }
     }
 
     /**

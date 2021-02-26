@@ -7,6 +7,7 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.Reference;
 import no.unit.nva.model.exceptions.MalformedContributorException;
 import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,7 @@ import static j2html.TagCreator.html;
 import static j2html.TagCreator.meta;
 import static nva.commons.core.JsonUtils.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
@@ -58,41 +60,11 @@ public class MetadataServiceTest {
     public static final String DC_DESCRIPTION = "dc.description";
     public static final String DC_COVERAGE = "dc.coverage";
     public static final String DC_SUBJECT = "dc.subject";
+    public static final String DC_IDENTIFIER = "dc.identifier";
+    public static final String DC_IDENTIFIER_UPPER_CASE = "DC.identifier";
 
 
     private WireMockServer wireMockServer;
-
-    @Test
-    public void getMetadataJsonReturnsCreatePublicationRequest()
-            throws IOException {
-        MetadataService metadataService = new MetadataService();
-        URI uri = prepareWebServerAndReturnUriToMetadata(TEST_REVIEW_PAPER_HTML);
-        Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
-
-        CreatePublicationRequest expected = objectMapper.readValue(
-                IoUtils.inputStreamFromResources(TEST_REVIEW_PAPER_JSON),
-                CreatePublicationRequest.class);
-        assertThat(request.isPresent(), is(true));
-        assertThat(request.get(), is(equalTo(expected)));
-
-        wireMockServer.stop();
-    }
-
-    @Test
-    public void getMetadataJsonFromUpperCaseTagMetadataReturnsCreatePublicationRequest()
-            throws IOException {
-        MetadataService metadataService = new MetadataService();
-        URI uri = prepareWebServerAndReturnUriToMetadata(UPPER_CASE_DC_HTML);
-        Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
-
-        CreatePublicationRequest expected = objectMapper.readValue(
-                IoUtils.inputStreamFromResources(UPPER_CASE_DC_JSON),
-                CreatePublicationRequest.class);
-        assertThat(request.isPresent(), is(true));
-        assertThat(request.get(), is(equalTo(expected)));
-
-        wireMockServer.stop();
-    }
 
     @ParameterizedTest
     @MethodSource({
@@ -100,7 +72,8 @@ public class MetadataServiceTest {
             "provideMetadataForAbstract",
             "provideMetadataForTitle",
             "provideMetadataForDate",
-            "provideMetadataForContributors"
+            "provideMetadataForContributors",
+            "provideMetadataForIdentifier"
     })
     public void getCreatePublicationParsesHtmlAndReturnsMetadata(String html, CreatePublicationRequest expectedRequest)
             throws IOException {
@@ -264,6 +237,47 @@ public class MetadataServiceTest {
                         DCTERMS_ABSTRACT, abstractString),
                         abstractOnlyRequest)
                  );
+    }
+
+    private static Stream<Arguments> provideMetadataForIdentifier() {
+        String doiWithPrefix = "doi:10.1/url";
+        String doiWithoutPrefix = "10.1/url";
+        String notADoi = "identifier/not/a/doi";
+        String expectedDoi = "https://doi.org/10.1/url";
+        String dummyTitle = "To avoid NPE in JsonLdProcessor";
+
+        CreatePublicationRequest request = requestWithIdentifier(URI.create(expectedDoi), dummyTitle);
+        CreatePublicationRequest emptyRequest = requestWithIdentifier(null, dummyTitle);
+
+        return Stream.of(
+                generateMetadataHtml(Map.of(
+                        DC_TITLE, dummyTitle,
+                        DC_IDENTIFIER, doiWithPrefix),
+                        request),
+                generateMetadataHtml(Map.of(
+                        DC_TITLE, dummyTitle,
+                        DC_IDENTIFIER_UPPER_CASE, doiWithoutPrefix),
+                        request),
+                generateMetadataHtml(Map.of(
+                        DC_TITLE, dummyTitle,
+                        DC_IDENTIFIER, notADoi),
+                        emptyRequest)
+                );
+    }
+
+    private static CreatePublicationRequest requestWithIdentifier(URI identifier, String title) {
+        EntityDescription entityDescription = new EntityDescription.Builder()
+                .withMainTitle(title)
+                .build();
+        if (identifier != null) {
+            Reference reference = new Reference.Builder()
+                    .withDoi(identifier)
+                    .build();
+            entityDescription.setReference(reference);
+        }
+        CreatePublicationRequest request = new CreatePublicationRequest();
+        request.setEntityDescription(entityDescription);
+        return request;
     }
 
     private static CreatePublicationRequest requestWithDescriptionAndOrAbstract(
