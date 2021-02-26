@@ -7,10 +7,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.UUID;
+
+import no.unit.nva.doi.fetch.exceptions.UnsupportedDocumentTypeException;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossRefDocument;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefApiResponse;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteResponse;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 
 public class DoiTransformService {
@@ -47,10 +50,12 @@ public class DoiTransformService {
      * @throws JsonProcessingException  when cannot process json.
      * @throws URISyntaxException       when the input contains invalid URIs
      * @throws InvalidIssnException     thrown if a provided ISSN is invalid.
-     *                                  the publication instance type.
+     * @throws InvalidIsbnException     thrown if a provided ISBN is invalid.
+     * @throws UnsupportedDocumentTypeException thrown if a provided documentType is provided.
      */
     public Publication transformPublication(String body, String contentLocation, String owner, URI customerId)
-            throws JsonProcessingException, URISyntaxException, InvalidIssnException {
+            throws JsonProcessingException, URISyntaxException,
+            InvalidIssnException, InvalidIsbnException, UnsupportedDocumentTypeException {
         UUID uuid = UUID.randomUUID();
         Instant now = Instant.now();
         return convertInputToPublication(body, contentLocation, now, owner, uuid, customerId);
@@ -62,7 +67,7 @@ public class DoiTransformService {
 
         MetadataLocation metadataLocation = MetadataLocation.lookup(contentLocation);
         if (metadataLocation.equals(MetadataLocation.CROSSREF)) {
-            return convertFromCrossRef(body, now, owner, identifier, publisher);
+            return convertFromCrossRef(body, owner, identifier);
         } else {
             return convertFromDatacite(body, now, owner, identifier, publisher);
         }
@@ -74,10 +79,10 @@ public class DoiTransformService {
         return dataciteConverter.toPublication(dataciteResponse, now, uuid, owner, publisherId);
     }
 
-    private Publication convertFromCrossRef(String body, Instant now, String owner, UUID identifier, URI publisherId)
-            throws JsonProcessingException, InvalidIssnException {
+    private Publication convertFromCrossRef(String body, String owner, UUID identifier)
+            throws JsonProcessingException {
 
         CrossRefDocument document = objectMapper.readValue(body, CrossrefApiResponse.class).getMessage();
-        return crossRefConverter.toPublication(document, now, owner, identifier, publisherId);
+        return crossRefConverter.toPublication(document, owner, identifier);
     }
 }

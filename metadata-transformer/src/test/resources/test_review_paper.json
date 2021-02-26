@@ -1,0 +1,45 @@
+{
+  "entityDescription" : {
+    "type" : "EntityDescription",
+    "mainTitle" : "Title of article",
+    "date" : {
+      "type" : "PublicationDate",
+      "year" : "2021",
+      "month" : "02",
+      "day" : "06"
+    },
+    "contributors" : [ {
+      "type" : "Contributor",
+      "identity" : {
+        "type" : "Identity",
+        "name" : "Mr. Apple"
+      },
+      "correspondingAuthor" : false
+    }, {
+      "type" : "Contributor",
+      "identity" : {
+        "type" : "Identity",
+        "name" : "Mr. Orange"
+      },
+      "correspondingAuthor" : false
+    } ],
+    "tags" : [ "Anything", "Nothing", "Something", "Coverall" ],
+    "abstract" : "Very descriptive description of an article."
+  },
+  "@context" : {
+    "@vocab" : "https://nva.unit.no/publication#",
+    "id" : "@id",
+    "type" : "@type",
+    "graph" : "@graph",
+    "value" : "@value",
+    "language" : "@language",
+    "tags" : {
+      "@id" : "https://nva.unit.no/publication#tag",
+      "@container" : "@set"
+    },
+    "contributors" : {
+      "@id" : "https://nva.unit.no/publication#contributor",
+      "@container" : "@set"
+    }
+  }
+}

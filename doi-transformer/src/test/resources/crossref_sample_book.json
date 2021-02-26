@@ -1,0 +1,129 @@
+{
+  "status": "ok",
+  "message-type": "work",
+  "message-version": "1.0.0",
+  "message": {
+    "indexed": {
+      "date-parts": [
+        [
+          2020,
+          3,
+          28
+        ]
+      ],
+      "date-time": "2020-03-28T18:05:50Z",
+      "timestamp": 1585418750187
+    },
+    "reference-count": 0,
+    "publisher": "Cappelen Damm Akademisk\/NOASP",
+    "isbn-type": [
+      {
+        "value": "9788202529819",
+        "type": "print"
+      }
+    ],
+    "content-domain": {
+      "domain": [],
+      "crossmark-restriction": false
+    },
+    "short-container-title": [],
+    "DOI": "10.23865\/noasp.17",
+    "type": "book",
+    "created": {
+      "date-parts": [
+        [
+          2017,
+          6,
+          12
+        ]
+      ],
+      "date-time": "2017-06-12T07:01:08Z",
+      "timestamp": 1497250868000
+    },
+    "source": "Crossref",
+    "is-referenced-by-count": 0,
+    "title": [
+      "Aksjonsforskning i Norge: Teoretisk og empirisk mangfold"
+    ],
+    "prefix": "10.23865",
+    "member": "9951",
+    "published-online": {
+      "date-parts": [
+        [
+          2017,
+          6,
+          14
+        ]
+      ]
+    },
+    "container-title": [],
+    "original-title": [],
+    "deposited": {
+      "date-parts": [
+        [
+          2017,
+          6,
+          12
+        ]
+      ],
+      "date-time": "2017-06-12T07:01:08Z",
+      "timestamp": 1497250868000
+    },
+    "score": 1.0,
+    "subtitle": [],
+    "editor": [
+      {
+        "given": "Stein",
+        "family": "Gj\u00f8tterud",
+        "sequence": "first",
+        "affiliation": []
+      },
+      {
+        "given": "Hilde",
+        "family": "Hiim",
+        "sequence": "additional",
+        "affiliation": []
+      },
+      {
+        "given": "Dag",
+        "family": "Huseb\u00f8",
+        "sequence": "additional",
+        "affiliation": []
+      },
+      {
+        "given": "Liv Helene",
+        "family": "Jensen",
+        "sequence": "additional",
+        "affiliation": []
+      },
+      {
+        "given": "Tove Herborg",
+        "family": "Steen-Olsen",
+        "sequence": "additional",
+        "affiliation": []
+      },
+      {
+        "given": "Else",
+        "family": "Stjernestr\u00f8m",
+        "sequence": "additional",
+        "affiliation": []
+      }
+    ],
+    "short-title": [],
+    "issued": {
+      "date-parts": [
+        [
+          2017,
+          6,
+          14
+        ]
+      ]
+    },
+    "ISBN": [
+      "9788202529819"
+    ],
+    "references-count": 0,
+    "URL": "http:\/\/dx.doi.org\/10.23865\/noasp.17",
+    "relation": {}
+  }
+}

@@ -1,16 +1,18 @@
 package no.unit.nva.doi.transformer.model.crossrefmodel;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import nva.commons.core.JacocoGenerated;
+
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("PMD.ShortClassName")
-public class Issn {
+public class Isxn {
 
     @JsonProperty("value")
     private String value;
     @JsonProperty("type")
-    private IssnType type;
+    private IsxnType type;
 
     public String getValue() {
         return value;
@@ -20,15 +22,15 @@ public class Issn {
         this.value = value;
     }
 
-    public IssnType getType() {
+    public IsxnType getType() {
         return type;
     }
 
     public void setType(String type) {
-        this.type = IssnType.getType(type);
+        this.type = IsxnType.getType(type);
     }
 
-    public enum IssnType {
+    public enum IsxnType {
         PRINT("print"),
         ELECTRONIC("electronic");
 
@@ -39,7 +41,7 @@ public class Issn {
 
         private static String ERROR_MESSAGE = "Invalid Type:%s.  Allowed types are: " + ISSN_TYPE_NAMES;
 
-        IssnType(String name) {
+        IsxnType(String name) {
             this.name = name;
         }
 
@@ -48,7 +50,8 @@ public class Issn {
          * @param name The string representation of the type
          * @return an IssnType if the string has a valid value or throw a RuntimeException if not.
          */
-        public static IssnType getType(String name) {
+        @JacocoGenerated
+        public static IsxnType getType(String name) {
             return Arrays.stream(values())
                 .filter(issnType -> issnType.name.equalsIgnoreCase(name)).findFirst()
                 .orElseThrow(() -> new RuntimeException(String.format(ERROR_MESSAGE, name)));

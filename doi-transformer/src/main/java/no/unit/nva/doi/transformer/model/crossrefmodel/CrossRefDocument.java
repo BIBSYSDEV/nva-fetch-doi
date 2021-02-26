@@ -3,88 +3,126 @@ package no.unit.nva.doi.transformer.model.crossrefmodel;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import nva.commons.core.JacocoGenerated;
 
+
 import java.util.List;
 
 @SuppressWarnings({"PMD.TooManyFields", "PMD.ExcessivePublicCount"})
 public class CrossRefDocument {
 
-    @JsonProperty("indexed")
-    private CrossrefDate indexed;
-    @JsonProperty("reference-count")
-    private int referenceCount;
     @JsonProperty("publisher")
     private String publisher;
-    @JsonProperty("issue")
-    private String issue;
-    @JsonProperty("license")
-    private List<License> license;
-    @JsonProperty("content-domain")
-    private ContentDomain contentDomain;
-    @JsonProperty("short-container-title")
-    private List<String> shortContainerTitle;
-    @JsonProperty("published-print")
-    private CrossrefDate publishedPrint;
+    @JsonProperty("title")
+    private List<String> title;
+    @JsonProperty("original-title")
+    private List<String> originalTitle;
+    @JsonProperty("short-title")
+    private List<String> shortTitle;
+    @JsonProperty("abstract")
+    private String abstractText;
+    @JsonProperty("reference-count")
+    private int referenceCount;   // this is deprecated,  Same as references-count
+    @JsonProperty("references-count")
+    private int referencesCount;
+    @SuppressWarnings("PMD.LinguisticNaming")
+    @JsonProperty("is-referenced-by-count")
+    private int isReferencedByCount;
+    @JsonProperty("source")
+    private String source;
+    @JsonProperty("prefix")
+    private String prefix;
     @JsonProperty("DOI")
     private String doi;
+    @JsonProperty("URL")
+    private String url;
+    @JsonProperty("member")
+    private String member;
     @JsonProperty("type")
     private String type;
     @JsonProperty("created")
     private CrossrefDate created;
-    @JsonProperty("page")
-    private String page;
-    @JsonProperty("source")
-    private String source;
-    @SuppressWarnings("PMD.LinguisticNaming")
-    @JsonProperty("is-referenced-by-count")
-    private int isReferencedByCount;
-    @JsonProperty("title")
-    private List<String> title;
-    @JsonProperty("prefix")
-    private String prefix;
-    @JsonProperty("volume")
-    private String volume;
-    @JsonProperty("author")
-    private List<CrossrefAuthor> author;
-    @JsonProperty("member")
-    private String member;
-    @JsonProperty("reference")
-    private List<CrossRefReference> reference;
-    @JsonProperty("container-title")
-    private List<String> containerTitle;
-    @JsonProperty("original-title")
-    private List<String> originalTitle;
-    @JsonProperty("language")
-    private String language;
-    @JsonProperty("link")
-    private List<Link> link;
     @JsonProperty("deposited")
     private CrossrefDate deposited;
-    @JsonProperty("score")
-    private float score;
-    @JsonProperty("subtitle")
-    private List<String> subtitle;
-    @JsonProperty("short-title")
-    private List<String> shortTitle;
+    @JsonProperty("indexed")
+    private CrossrefDate indexed;
     @JsonProperty("issued")
     private CrossrefDate issued;
-    @JsonProperty("references-count")
-    private int referencesCount;
-    @JsonProperty("journal-issue")
-    private JournalIssue journalIssue;
-    @JsonProperty("alternative-id")
-    private List<String> alternativeId;
-    @JsonProperty("URL")
-    private String url;
-    @JsonProperty("relation")
-    private Relation relation;
+    @JsonProperty("posted")
+    private CrossrefDate posted;
+    @JsonProperty("accepted")
+    private CrossrefDate accepted;
+    @JsonProperty("subtitle")
+    private List<String> subtitle;
+    @JsonProperty("container-title")
+    private List<String> containerTitle;
+    @JsonProperty("short-container-title")
+    private List<String> shortContainerTitle;
+    @JsonProperty("group-title")
+    private List<String> groupTitle;
+    @JsonProperty("issue")
+    private String issue;
+    @JsonProperty("volume")
+    private String volume;
+    @JsonProperty("page")
+    private String page;
+    @JsonProperty("article-number")
+    private String articleNumber;
+    @JsonProperty("published-print")
+    private CrossrefDate publishedPrint;
+    @JsonProperty("published-online")
+    private CrossrefDate publishedOnline;
+    @JsonProperty("subject")
+    private List<String> subject;
     @JsonProperty("ISSN")
     private List<String> issn;
     @JsonProperty("issn-type")
-    private List<Issn> issnType;
-    @JsonProperty("abstract")
-    private String abstractText;
-    @JsonProperty("subject")
-    private List<String> subject;
+    private List<Isxn> issnType;
+    @JsonProperty("ISBN")
+    private List<String> isbn;
+    @JsonProperty("isbn-type")
+    private List<Isxn> isbnType;
+    @JsonProperty("archive")
+    private List<String> archive;
+    @JsonProperty("license")
+    private List<License> license;
+    @JsonProperty("funder")
+    private List<CrossrefFunder> funder;
+    @JsonProperty("assertion")
+    private List<CrossrefAssertion> assertion;
+    @JsonProperty("author")
+    private List<CrossrefContributor> author;
+    @JsonProperty("editor")
+    private List<CrossrefContributor> editor;
+    @JsonProperty("chair")
+    private List<CrossrefContributor> chair;
+    @JsonProperty("translator")
+    private List<CrossrefContributor> translator;
+    @JsonProperty("update-to")
+    private List<CrossrefUpdate> updateTo;
+    @JsonProperty("update-policy")
+    private String updatePolicy;
+    @JsonProperty("link")
+    private List<Link> link;
+    @JsonProperty("clinical-trial-number")
+    private List<CrossrefClinicalTrialNumber> clinicalTrialNumber;
+    @JsonProperty("alternative-id")
+    private List<String> alternativeId;
+    @JsonProperty("reference")
+    private List<CrossRefReference> reference;
+    @JsonProperty("content-domain")
+    private ContentDomain contentDomain;
+    @JsonProperty("relation")
+    private CrossrefRelation relation;
+    @JsonProperty("review")
+    private CrossrefReview review;
+    @JsonProperty("publisher-location")
+    private String publisherLocation;
+
+
+    @JsonProperty("score")
+    private float score;
+
+    @JsonProperty("language")
+    private String language;
 
     public void setIndexed(CrossrefDate indexed) {
         this.indexed = indexed;
@@ -215,14 +253,6 @@ public class CrossRefDocument {
         this.referencesCount = input;
     }
 
-    public JournalIssue getJournalIssue() {
-        return journalIssue;
-    }
-
-    public void setJournalIssue(JournalIssue input) {
-        this.journalIssue = input;
-    }
-
     public List<String> getAlternativeId() {
         return alternativeId;
     }
@@ -239,11 +269,11 @@ public class CrossRefDocument {
         this.url = input;
     }
 
-    public Relation getRelation() {
+    public CrossrefRelation getRelation() {
         return relation;
     }
 
-    public void setRelation(Relation input) {
+    public void setRelation(CrossrefRelation input) {
         this.relation = input;
     }
 
@@ -255,12 +285,20 @@ public class CrossRefDocument {
         this.issn = input;
     }
 
-    public List<Issn> getIssnType() {
+    public List<Isxn> getIssnType() {
         return issnType;
     }
 
-    public void setIssnType(List<Issn> input) {
+    public void setIssnType(List<Isxn> input) {
         this.issnType = input;
+    }
+
+    public void setIsbnType(List<Isxn> isbnType) {
+        this.isbnType = isbnType;
+    }
+
+    public List<Isxn> getIsbnType() {
+        return isbnType;
     }
 
     public CrossrefDate getPublishedPrint() {
@@ -343,11 +381,11 @@ public class CrossRefDocument {
         this.volume = volume;
     }
 
-    public List<CrossrefAuthor> getAuthor() {
+    public List<CrossrefContributor> getAuthor() {
         return author;
     }
 
-    public void setAuthor(List<CrossrefAuthor> author) {
+    public void setAuthor(List<CrossrefContributor> author) {
         this.author = author;
     }
 
@@ -391,6 +429,154 @@ public class CrossRefDocument {
         this.subject = subject;
     }
 
+    public CrossrefDate getPosted() {
+        return posted;
+    }
+
+    @JacocoGenerated
+    public void setPosted(CrossrefDate posted) {
+        this.posted = posted;
+    }
+
+    public CrossrefDate getAccepted() {
+        return accepted;
+    }
+
+    @JacocoGenerated
+    public void setAccepted(CrossrefDate accepted) {
+        this.accepted = accepted;
+    }
+
+    public List<String> getGroupTitle() {
+        return groupTitle;
+    }
+
+    @JacocoGenerated
+    public void setGroupTitle(List<String> groupTitle) {
+        this.groupTitle = groupTitle;
+    }
+
+    public String getArticleNumber() {
+        return articleNumber;
+    }
+
+    @JacocoGenerated
+    public void setArticleNumber(String articleNumber) {
+        this.articleNumber = articleNumber;
+    }
+
+    public CrossrefDate getPublishedOnline() {
+        return publishedOnline;
+    }
+
+    public void setPublishedOnline(CrossrefDate publishedOnline) {
+        this.publishedOnline = publishedOnline;
+    }
+
+    public List<String> getIsbn() {
+        return isbn;
+    }
+
+    public void setIsbn(List<String> isbn) {
+        this.isbn = isbn;
+    }
+
+    public List<String> getArchive() {
+        return archive;
+    }
+
+    @JacocoGenerated
+    public void setArchive(List<String> archive) {
+        this.archive = archive;
+    }
+
+    public List<CrossrefFunder> getFunder() {
+        return funder;
+    }
+
+    @JacocoGenerated
+    public void setFunder(List<CrossrefFunder> funder) {
+        this.funder = funder;
+    }
+
+    public List<CrossrefAssertion> getAssertion() {
+        return assertion;
+    }
+
+    @JacocoGenerated
+    public void setAssertion(List<CrossrefAssertion> assertion) {
+        this.assertion = assertion;
+    }
+
+    public List<CrossrefContributor> getEditor() {
+        return editor;
+    }
+
+    public void setEditor(List<CrossrefContributor> editor) {
+        this.editor = editor;
+    }
+
+    public List<CrossrefContributor> getChair() {
+        return chair;
+    }
+
+    @JacocoGenerated
+    public void setChair(List<CrossrefContributor> chair) {
+        this.chair = chair;
+    }
+
+    public List<CrossrefContributor> getTranslator() {
+        return translator;
+    }
+
+    @JacocoGenerated
+    public void setTranslator(List<CrossrefContributor> translator) {
+        this.translator = translator;
+    }
+
+    public List<CrossrefUpdate> getUpdateTo() {
+        return updateTo;
+    }
+
+    @JacocoGenerated
+    public void setUpdateTo(List<CrossrefUpdate> updateTo) {
+        this.updateTo = updateTo;
+    }
+
+    public String getUpdatePolicy() {
+        return updatePolicy;
+    }
+
+    @JacocoGenerated
+    public void setUpdatePolicy(String updatePolicy) {
+        this.updatePolicy = updatePolicy;
+    }
+
+    public List<CrossrefClinicalTrialNumber> getClinicalTrialNumber() {
+        return clinicalTrialNumber;
+    }
+
+    @JacocoGenerated
+    public void setClinicalTrialNumber(List<CrossrefClinicalTrialNumber> clinicalTrialNumber) {
+        this.clinicalTrialNumber = clinicalTrialNumber;
+    }
+
+    public CrossrefReview getReview() {
+        return review;
+    }
+
+    public void setReview(CrossrefReview review) {
+        this.review = review;
+    }
+
+    public String getPublisherLocation() {
+        return publisherLocation;
+    }
+
+    @JacocoGenerated
+    public void setPublisherLocation(String publisherLocation) {
+        this.publisherLocation = publisherLocation;
+    }
 }
 
 

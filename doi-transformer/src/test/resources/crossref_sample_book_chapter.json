@@ -1,0 +1,718 @@
+{
+  "status": "ok",
+  "message-type": "work",
+  "message-version": "1.0.0",
+  "message": {
+    "indexed": {
+      "date-parts": [
+        [
+          2021,
+          1,
+          14
+        ]
+      ],
+      "date-time": "2021-01-14T17:13:00Z",
+      "timestamp": 1610644380000
+    },
+    "publisher-location": "Cham",
+    "reference-count": 43,
+    "publisher": "Springer International Publishing",
+    "isbn-type": [
+      {
+        "value": "9783030225063",
+        "type": "print"
+      },
+      {
+        "value": "9783030225070",
+        "type": "electronic"
+      }
+    ],
+    "license": [
+      {
+        "URL": "http:\/\/www.springer.com\/tdm",
+        "start": {
+          "date-parts": [
+            [
+              2019,
+              1,
+              1
+            ]
+          ],
+          "date-time": "2019-01-01T00:00:00Z",
+          "timestamp": 1546300800000
+        },
+        "delay-in-days": 0,
+        "content-version": "tdm"
+      },
+      {
+        "URL": "http:\/\/www.springer.com\/tdm",
+        "start": {
+          "date-parts": [
+            [
+              2019,
+              1,
+              1
+            ]
+          ],
+          "date-time": "2019-01-01T00:00:00Z",
+          "timestamp": 1546300800000
+        },
+        "delay-in-days": 0,
+        "content-version": "tdm"
+      },
+      {
+        "URL": "http:\/\/www.springer.com\/tdm",
+        "start": {
+          "date-parts": [
+            [
+              2019,
+              1,
+              1
+            ]
+          ],
+          "date-time": "2019-01-01T00:00:00Z",
+          "timestamp": 1546300800000
+        },
+        "delay-in-days": 0,
+        "content-version": "vor"
+      }
+    ],
+    "content-domain": {
+      "domain": [
+        "link.springer.com"
+      ],
+      "crossmark-restriction": false
+    },
+    "short-container-title": [],
+    "published-print": {
+      "date-parts": [
+        [
+          2019
+        ]
+      ]
+    },
+    "DOI": "10.1007\/978-3-030-22507-0_9",
+    "type": "book-chapter",
+    "created": {
+      "date-parts": [
+        [
+          2019,
+          7,
+          9
+        ]
+      ],
+      "date-time": "2019-07-09T23:37:42Z",
+      "timestamp": 1562715462000
+    },
+    "page": "106-122",
+    "update-policy": "http:\/\/dx.doi.org\/10.1007\/springer_crossmark_policy",
+    "source": "Crossref",
+    "is-referenced-by-count": 0,
+    "title": [
+      "Development of a Quantitative Evaluation Tool of Cognitive Workload in Field Studies Through Eye Tracking"
+    ],
+    "prefix": "10.1007",
+    "author": [
+      {
+        "ORCID": "http:\/\/orcid.org\/0000-0003-0730-371X",
+        "authenticated-orcid": false,
+        "given": "Giovanni",
+        "family": "Pignoni",
+        "sequence": "first",
+        "affiliation": []
+      },
+      {
+        "given": "Sashidharan",
+        "family": "Komandur",
+        "sequence": "additional",
+        "affiliation": []
+      }
+    ],
+    "member": "297",
+    "published-online": {
+      "date-parts": [
+        [
+          2019,
+          6,
+          18
+        ]
+      ]
+    },
+    "reference": [
+      {
+        "issue": "3",
+        "key": "9_CR1",
+        "doi-asserted-by": "publisher",
+        "first-page": "199",
+        "DOI": "10.1016\/j.trf.2010.12.001",
+        "volume": "14",
+        "author": "S Benedetto",
+        "year": "2011",
+        "unstructured": "Benedetto, S., Pedrotti, M., Minin, L., Baccino, T., Re, A., Montanari, R.: Driver workload and eye blink duration. Transp. Res. Part F: Traffic Psychol. Behav. 14(3), 199\u2013208 (2011). https:\/\/doi.org\/10.1016\/j.trf.2010.12.001. http:\/\/linkinghub.elsevier.com\/retrieve\/pii\/S136984781000094X",
+        "journal-title": "Transp. Res. Part F: Traffic Psychol. Behav."
+      },
+      {
+        "issue": "25",
+        "key": "9_CR2",
+        "doi-asserted-by": "publisher",
+        "first-page": "1795",
+        "DOI": "10.1177\/154193120104502508",
+        "volume": "45",
+        "author": "DB Boles",
+        "year": "2001",
+        "unstructured": "Boles, D.B., Adair, L.P.: Validity of the multiple resources questionnaire (MRQ). Proc. Hum. Factors Ergon. Soc. Annu. Meet. 45(25), 1795\u20131799 (2001). https:\/\/doi.org\/10.1177\/154193120104502508",
+        "journal-title": "Proc. Hum. Factors Ergon. Soc. Annu. Meet."
+      },
+      {
+        "key": "9_CR3",
+        "year": "2007",
+        "edition": "3",
+        "unstructured": "Cacioppo, J.T., Tassinary, L.G., Berntson, G. (eds.): Handbook of Psychophysiology, 3rd edn. Cambridge University Press, Cambridge (2007). https:\/\/doi.org\/10.1017\/CBO9780511546396. http:\/\/ebooks.cambridge.org\/ref\/id\/CBO9780511546396",
+        "volume-title": "Handbook of Psychophysiology",
+        "DOI": "10.1017\/CBO9780511546396",
+        "doi-asserted-by": "publisher"
+      },
+      {
+        "key": "9_CR4",
+        "doi-asserted-by": "publisher",
+        "first-page": "1",
+        "DOI": "10.1016\/j.apergo.2017.10.011",
+        "volume": "68",
+        "author": "T Cegovnik",
+        "year": "2018",
+        "unstructured": "Cegovnik, T., Stojmenova, K., Jakus, G., Sodnik, J.: An analysis of the suitability of a low-cost eye tracker for assessing the cognitive load of drivers. Appl. Ergon. 68, 1\u201311 (2018). https:\/\/doi.org\/10.1016\/j.apergo.2017.10.011. https:\/\/linkinghub.elsevier.com\/retrieve\/pii\/S0003687017302326",
+        "journal-title": "Appl. Ergon."
+      },
+      {
+        "issue": "6",
+        "key": "9_CR5",
+        "doi-asserted-by": "publisher",
+        "first-page": "335",
+        "DOI": "10.1016\/j.erap.2013.09.001",
+        "volume": "63",
+        "author": "L Di Stasi",
+        "year": "2013",
+        "unstructured": "Di Stasi, L., Marchitto, M., Antol\u00ed, A., Ca\u00f1as, J.: Saccadic peak velocity as an alternative index of operator attention: a short review. Rev. Europ\u00e9enne de Psychol. Appliqu\u00e9e\/Eur. Rev. Appl. Psychol. 63(6), 335\u2013343 (2013). https:\/\/doi.org\/10.1016\/j.erap.2013.09.001. https:\/\/linkinghub.elsevier.com\/retrieve\/pii\/S1162908813000741",
+        "journal-title": "Rev. Europ\u00e9enne de Psychol. Appliqu\u00e9e\/Eur. Rev. Appl. Psychol."
+      },
+      {
+        "issue": "2",
+        "key": "9_CR6",
+        "doi-asserted-by": "publisher",
+        "first-page": "97",
+        "DOI": "10.1177\/154193128803200221",
+        "volume": "32",
+        "author": "MR Endsley",
+        "year": "1988",
+        "unstructured": "Endsley, M.R.: Design and evaluation for situation awareness enhancement. Proc. Hum. Factors Soc. Ann. Meet. 32(2), 97\u2013101 (1988). https:\/\/doi.org\/10.1177\/154193128803200221",
+        "journal-title": "Proc. Hum. Factors Soc. Ann. Meet."
+      },
+      {
+        "key": "9_CR7",
+        "unstructured": "Endsley, M.R.: Direct measurement of situation awareness: validity and use of SAGAT. In: Situation Awareness Analysis and Measurement, pp. 147\u2013173. Lawrence Erlbaum Associates Publishers, Mahwah (2000)"
+      },
+      {
+        "issue": "2",
+        "key": "9_CR8",
+        "doi-asserted-by": "publisher",
+        "first-page": "97",
+        "DOI": "10.1016\/j.trf.2005.04.012",
+        "volume": "8",
+        "author": "J Engstr\u00f6m",
+        "year": "2005",
+        "unstructured": "Engstr\u00f6m, J., Johansson, E., \u00d6stlund, J.: Effects of visual and cognitive load in real and simulated motorway driving. Transp. Res. Part F: Traffic Psychol. Behav. 8(2), 97\u2013120 (2005). https:\/\/doi.org\/10.1016\/j.trf.2005.04.012. https:\/\/www.sciencedirect.com\/science\/article\/pii\/S1369847805000185",
+        "journal-title": "Transp. Res. Part F: Traffic Psychol. Behav."
+      },
+      {
+        "key": "9_CR9",
+        "unstructured": "Ferscha, A., Gollan, B.: Modeling pupil dilation as online input for estimation of cognitive load in non-laboratory attention-aware systems. In: Eighth International Conference on Advanced Cognitive Technologies and Applications, COGNITIVE 2016, Rome, Italy, 20\u201324 March 2016 (2016)"
+      },
+      {
+        "issue": "1",
+        "key": "9_CR10",
+        "doi-asserted-by": "publisher",
+        "first-page": "103",
+        "DOI": "10.1016\/j.apergo.2008.01.001",
+        "volume": "40",
+        "author": "KS Gould",
+        "year": "2009",
+        "unstructured": "Gould, K.S., R\u00f8ed, B.K., Saus, E.R., Koefoed, V.F., Bridger, R.S., Moen, B.E.: Effects of navigation method on workload and performance in simulated high-speed ship navigation. Appl. Ergon. 40(1), 103\u2013114 (2009). https:\/\/doi.org\/10.1016\/j.apergo.2008.01.001. http:\/\/linkinghub.elsevier.com\/retrieve\/pii\/S0003687008000094",
+        "journal-title": "Appl. Ergon."
+      },
+      {
+        "key": "9_CR11",
+        "series-title": "Lecture Notes in Computer Science (Lecture Notes in Artificial Intelligence)",
+        "doi-asserted-by": "publisher",
+        "first-page": "461",
+        "DOI": "10.1007\/978-3-319-58625-0_33",
+        "volume-title": "Augmented Cognition. Enhancing Cognition and Behavior in Complex Human Environments",
+        "author": "OS Hareide",
+        "year": "2017",
+        "unstructured": "Hareide, O.S., Mjelde, F.V., Glomsvoll, O., Ostnes, R.: Developing a high-speed craft route monitor window. In: Schmorrow, D.D., Fidopiastis, C.M. (eds.) AC 2017. LNCS (LNAI), vol. 10285, pp. 461\u2013473. Springer, Cham (2017). https:\/\/doi.org\/10.1007\/978-3-319-58625-0_33"
+      },
+      {
+        "issue": "05",
+        "key": "9_CR12",
+        "doi-asserted-by": "publisher",
+        "first-page": "927",
+        "DOI": "10.1017\/S0373463317000182",
+        "volume": "70",
+        "author": "OS Hareide",
+        "year": "2017",
+        "unstructured": "Hareide, O.S., Ostnes, R.: Maritime usability study by analysing eye tracking data. J. Navig. 70(05), 927\u2013943 (2017). https:\/\/doi.org\/10.1017\/S0373463317000182",
+        "journal-title": "J. Navig."
+      },
+      {
+        "key": "9_CR13",
+        "series-title": "Lecture Notes in Computer Science (Lecture Notes in Artificial Intelligence)",
+        "doi-asserted-by": "publisher",
+        "first-page": "273",
+        "DOI": "10.1007\/978-3-319-91467-1_22",
+        "volume-title": "Augmented Cognition: Users and Contexts",
+        "author": "OS Hareide",
+        "year": "2018",
+        "unstructured": "Hareide, O.S., Ostnes, R.: Validation of a maritime usability study with eye tracking data. In: Schmorrow, D.D., Fidopiastis, C.M. (eds.) AC 2018. LNCS (LNAI), vol. 10916, pp. 273\u2013292. Springer, Cham (2018). https:\/\/doi.org\/10.1007\/978-3-319-91467-1_22"
+      },
+      {
+        "key": "9_CR14",
+        "doi-asserted-by": "publisher",
+        "first-page": "139",
+        "DOI": "10.1016\/S0166-4115(08)62386-9",
+        "volume": "52",
+        "author": "SG Hart",
+        "year": "1988",
+        "unstructured": "Hart, S.G., Staveland, L.E.: Development of NASA-TLX (task load index): results of empirical and theoretical research. Adv. Psychol. 52, 139\u2013183 (1988). https:\/\/doi.org\/10.1016\/S0166-4115(08)62386-9. http:\/\/linkinghub.elsevier.com\/retrieve\/pii\/S0166411508623869",
+        "journal-title": "Adv. Psychol."
+      },
+      {
+        "issue": "3611",
+        "key": "9_CR15",
+        "doi-asserted-by": "publisher",
+        "first-page": "1190",
+        "DOI": "10.1126\/science.143.3611.1190",
+        "volume": "143",
+        "author": "EH Hess",
+        "year": "1964",
+        "unstructured": "Hess, E.H., Polt, J.M.: Pupil size in relation to mental activity during simple problem-solving. Science 143(3611), 1190\u20131192 (1964). https:\/\/doi.org\/10.1126\/science.143.3611.1190",
+        "journal-title": "Science"
+      },
+      {
+        "key": "9_CR16",
+        "unstructured": "Hiscocks, P.D., Eng, P.: Measuring luminance with a digital camera, p. 27. Syscomp Electronic Design Limited (2014)"
+      },
+      {
+        "key": "9_CR17",
+        "unstructured": "Holmqvist, K., Andersson, R.: Eye tracking: a comprehensive guide to methods and measures (2017). OCLC number: 1057373387"
+      },
+      {
+        "key": "9_CR18",
+        "doi-asserted-by": "publisher",
+        "first-page": "454",
+        "DOI": "10.1016\/j.jlp.2014.11.001",
+        "volume": "32",
+        "author": "LH Ikuma",
+        "year": "2014",
+        "unstructured": "Ikuma, L.H., Harvey, C., Taylor, C.F., Handal, C.: A guide for assessing control room operator performance using speed and accuracy, perceived workload, situation awareness, and eye tracking. J. Loss Prev. Process. Ind. 32, 454\u2013465 (2014). https:\/\/doi.org\/10.1016\/j.jlp.2014.11.001. https:\/\/linkinghub.elsevier.com\/retrieve\/pii\/S095042301400179X",
+        "journal-title": "J. Loss Prev. Process. Ind."
+      },
+      {
+        "key": "9_CR19",
+        "unstructured": "ISO: Road vehicles \u2013 transport information and control systems \u2013 detection- response task (DRT) for assessing attentional effects of cognitive load in driving. ISO 17488:2016 (2016)"
+      },
+      {
+        "issue": "6",
+        "key": "9_CR20",
+        "doi-asserted-by": "publisher",
+        "first-page": "341",
+        "DOI": "10.1016\/S0169-8141(01)00040-3",
+        "volume": "28",
+        "author": "HS Jung",
+        "year": "2001",
+        "unstructured": "Jung, H.S., Jung, H.S.: Establishment of overall workload assessment technique for various tasks and workplaces. Int. J. Ind. Ergon. 28(6), 341\u2013353 (2001). https:\/\/doi.org\/10.1016\/S0169-8141(01)00040-3. http:\/\/linkinghub.elsevier.com\/retrieve\/pii\/S0169814101000403",
+        "journal-title": "Int. J. Ind. Ergon."
+      },
+      {
+        "issue": "3756",
+        "key": "9_CR21",
+        "doi-asserted-by": "publisher",
+        "first-page": "1583",
+        "DOI": "10.1126\/science.154.3756.1583",
+        "volume": "154",
+        "author": "D Kahneman",
+        "year": "1966",
+        "unstructured": "Kahneman, D., Beatty, J.: Pupil diameter and load on memory. Science 154(3756), 1583\u20131585 (1966). https:\/\/doi.org\/10.1126\/science.154.3756.1583",
+        "journal-title": "Science"
+      },
+      {
+        "issue": "3785",
+        "key": "9_CR22",
+        "doi-asserted-by": "publisher",
+        "first-page": "218",
+        "DOI": "10.1126\/science.157.3785.218",
+        "volume": "157",
+        "author": "D Kahneman",
+        "year": "1967",
+        "unstructured": "Kahneman, D., Beatty, J., Pollack, I.: Perceptual deficit during a mental task. Science 157(3785), 218\u2013219 (1967). https:\/\/doi.org\/10.1126\/science.157.3785.218",
+        "journal-title": "Science"
+      },
+      {
+        "key": "9_CR23",
+        "unstructured": "Kassner, M., Patera, W., Bulling, A.: Pupil: an open source platform for pervasive eye tracking and mobile gaze-based interaction. In: Adjunct Proceedings of the 2014 ACM International Joint Conference on Pervasive and Ubiquitous Computing, UbiComp 2014 Adjunct, pp. 1151\u20131160. ACM, New York (2014). https:\/\/doi.org\/10.1145\/2638728.2641695",
+        "DOI": "10.1145\/2638728.2641695",
+        "doi-asserted-by": "crossref"
+      },
+      {
+        "key": "9_CR24",
+        "unstructured": "Kassner, M., Patera, W., Bulling, A.: Pupil: an open source platform for pervasive eye tracking and mobile gaze-based interaction, April 2014. http:\/\/arxiv.org\/abs\/1405.0006",
+        "DOI": "10.1145\/2638728.2641695",
+        "doi-asserted-by": "crossref"
+      },
+      {
+        "key": "9_CR25",
+        "unstructured": "Konica Minolta Sensing Singapore Pte Ltd.: CS-2000 SPECTRORADIOMETER. Konica Minolta Sensing Singapore Pte Ltd., March 2018. http:\/\/sensing.konicaminolta.asia\/products\/cs-2000-spectroradiometer\/"
+      },
+      {
+        "key": "9_CR26",
+        "unstructured": "Marshall, S.P.: Method and apparatus for eye tracking and monitoring pupil dilation to evaluate cognitive activity, March 1999. https:\/\/patents.google.com\/patent\/US6090051A\/en"
+      },
+      {
+        "key": "9_CR27",
+        "series-title": "Lecture Notes in Computer Science",
+        "doi-asserted-by": "publisher",
+        "first-page": "265",
+        "DOI": "10.1007\/978-3-642-02809-0_29",
+        "volume-title": "Digital Human Modeling",
+        "author": "SP Marshall",
+        "year": "2009",
+        "unstructured": "Marshall, S.P.: What the eyes reveal: measuring the cognitive workload of teams. In: Duffy, V.G. (ed.) ICDHM 2009. LNCS, vol. 5620, pp. 265\u2013274. Springer, Heidelberg (2009). https:\/\/doi.org\/10.1007\/978-3-642-02809-0_29"
+      },
+      {
+        "key": "9_CR28",
+        "unstructured": "Marshall, S.: The index of cognitive activity: measuring cognitive workload. In: Proceedings of the IEEE 7th Conference on Human Factors and Power Plants, pp. 7:5\u20137:9. IEEE, Scottsdale (2002). https:\/\/doi.org\/10.1109\/HFPP.2002.1042860",
+        "DOI": "10.1109\/HFPP.2002.1042860",
+        "doi-asserted-by": "publisher"
+      },
+      {
+        "key": "9_CR29",
+        "unstructured": "Palinko, O., Kun, A.: Exploring the influence of light and cognitive load on pupil diameter in driving simulator studies. In: Proceedings of the 6th International Driving Symposium on Human Factors in Driver Assessment, Training, and Vehicle Design: Driving Assessment, pp. 329\u2013336. University of Iowa, Olympic Valley-Lake Tahoe (2011). https:\/\/doi.org\/10.17077\/drivingassessment.1416, http:\/\/ir.uiowa.edu\/drivingassessment\/2011\/papers\/48",
+        "DOI": "10.17077\/drivingassessment.1416",
+        "doi-asserted-by": "publisher"
+      },
+      {
+        "key": "9_CR30",
+        "unstructured": "Palinko, O., Kun, A.L., Shyrokov, A., Heeman, P.: Estimating cognitive load using remote eye tracking in a driving simulator. In: Proceedings of the 2010 Symposium on Eye-Tracking Research & Applications, ETRA 2010, p. 141. ACM Press, Austin (2010). https:\/\/doi.org\/10.1145\/1743666.1743701",
+        "DOI": "10.1145\/1743666.1743701",
+        "doi-asserted-by": "publisher"
+      },
+      {
+        "issue": "6",
+        "key": "9_CR31",
+        "doi-asserted-by": "publisher",
+        "first-page": "681",
+        "DOI": "10.1016\/j.apergo.2005.05.004",
+        "volume": "36",
+        "author": "L Pickup",
+        "year": "2005",
+        "unstructured": "Pickup, L., Wilson, J.R., Norris, B.J., Mitchell, L., Morrisroe, G.: The integrated workload scale (IWS): a new self-report tool to assess railway signaller workload. Appl. Ergon. 36(6), 681\u2013693 (2005). https:\/\/doi.org\/10.1016\/j.apergo.2005.05.004. http:\/\/linkinghub.elsevier.com\/retrieve\/pii\/S0003687005000918",
+        "journal-title": "Appl. Ergon."
+      },
+      {
+        "issue": "1",
+        "key": "9_CR32",
+        "doi-asserted-by": "publisher",
+        "first-page": "31",
+        "DOI": "10.1037\/1076-898X.6.1.31",
+        "volume": "6",
+        "author": "MA Recarte",
+        "year": "2000",
+        "unstructured": "Recarte, M.A., Nunes, L.M.: Effects of verbal and spatial-imagery tasks on eye fixations while driving. J. Exp. Psychol. Appl. 6(1), 31\u201343 (2000). https:\/\/doi.org\/10.1037\/1076-898X.6.1.31",
+        "journal-title": "J. Exp. Psychol. Appl."
+      },
+      {
+        "issue": "2",
+        "key": "9_CR33",
+        "doi-asserted-by": "publisher",
+        "first-page": "374",
+        "DOI": "10.1017\/S1138741600004406",
+        "volume": "11",
+        "author": "MA Recarte",
+        "year": "2008",
+        "unstructured": "Recarte, M.A., Perez, E., Conchillo, A., Nunes, L.M.: Mental workload and visual impairment: differences between pupil, blink, and subjective rating. Span. J. Psychol. 11(2), 374\u2013385 (2008). https:\/\/doi.org\/10.1017\/S1138741600004406",
+        "journal-title": "Span. J. Psychol."
+      },
+      {
+        "issue": "1",
+        "key": "9_CR34",
+        "doi-asserted-by": "publisher",
+        "first-page": "61",
+        "DOI": "10.1111\/j.1464-0597.2004.00161.x",
+        "volume": "53",
+        "author": "S Rubio",
+        "year": "2004",
+        "unstructured": "Rubio, S., Diaz, E., Martin, J., Puente, J.M.: Evaluation of subjective mental workload: a comparison of SWAT, NASA-TLX, and workload profile methods. Appl. Psychol. 53(1), 61\u201386 (2004). https:\/\/doi.org\/10.1111\/j.1464-0597.2004.00161.x",
+        "journal-title": "Appl. Psychol."
+      },
+      {
+        "key": "9_CR35",
+        "doi-asserted-by": "publisher",
+        "first-page": "49",
+        "DOI": "10.1016\/j.ergon.2016.09.003",
+        "volume": "63",
+        "author": "CF Rusnock",
+        "year": "2018",
+        "unstructured": "Rusnock, C.F., Borghetti, B.J.: Workload profiles: a continuous measure of mental workload. Int. J. Ind. Ergon. 63, 49\u201364 (2018). https:\/\/doi.org\/10.1016\/j.ergon.2016.09.003. https:\/\/linkinghub.elsevier.com\/retrieve\/pii\/S0169814116301287",
+        "journal-title": "Int. J. Ind. Ergon."
+      },
+      {
+        "key": "9_CR36",
+        "doi-asserted-by": "publisher",
+        "first-page": "43",
+        "DOI": "10.1016\/j.compchemeng.2015.09.012",
+        "volume": "85",
+        "author": "C Sharma",
+        "year": "2016",
+        "unstructured": "Sharma, C., Bhavsar, P., Srinivasan, B., Srinivasan, R.: Eye gaze movement studies of control room operators: a novel approach to improve process safety. Comput. Chem. Eng. 85, 43\u201357 (2016). https:\/\/doi.org\/10.1016\/j.compchemeng.2015.09.012. https:\/\/linkinghub.elsevier.com\/retrieve\/pii\/S0098135415003075",
+        "journal-title": "Comput. Chem. Eng."
+      },
+      {
+        "issue": "6",
+        "key": "9_CR37",
+        "doi-asserted-by": "publisher",
+        "first-page": "601",
+        "DOI": "10.1016\/0275-5408(94)00019-V",
+        "volume": "15",
+        "author": "P Stanley",
+        "year": "1995",
+        "unstructured": "Stanley, P.: The effect of field of view size on steady-state pupil diameter. Ophthalmic Physiol. Opt. 15(6), 601\u2013603 (1995). https:\/\/doi.org\/10.1016\/0275-5408(94)00019-V. http:\/\/linkinghub.elsevier.com\/retrieve\/pii\/027554089400019V",
+        "journal-title": "Ophthalmic Physiol. Opt."
+      },
+      {
+        "key": "9_CR38",
+        "unstructured": "Tossell, K.: ktossell\/libuvc (2017). https:\/\/github.com\/ktossell\/libuvc"
+      },
+      {
+        "issue": "3",
+        "key": "9_CR39",
+        "doi-asserted-by": "publisher",
+        "first-page": "358",
+        "DOI": "10.1080\/00140139608964470",
+        "volume": "39",
+        "author": "PS Tsang",
+        "year": "1996",
+        "unstructured": "Tsang, P.S., Velazquez, V.L.: Diagnosticity and multidimensional subjective workload ratings. Ergonomics 39(3), 358\u2013381 (1996). https:\/\/doi.org\/10.1080\/00140139608964470",
+        "journal-title": "Ergonomics"
+      },
+      {
+        "issue": "2",
+        "key": "9_CR40",
+        "doi-asserted-by": "publisher",
+        "first-page": "99",
+        "DOI": "10.1027\/2192-0923\/a000013",
+        "volume": "1",
+        "author": "AD Voogt",
+        "year": "2011",
+        "unstructured": "Voogt, A.D.: Helicopter accidents at night. Aviat. Psychol. Appl. Hum. Factors 1(2), 99\u2013102 (2011). https:\/\/doi.org\/10.1027\/2192-0923\/a000013",
+        "journal-title": "Aviat. Psychol. Appl. Hum. Factors"
+      },
+      {
+        "issue": "10",
+        "key": "9_CR41",
+        "doi-asserted-by": "publisher",
+        "first-page": "12",
+        "DOI": "10.1167\/12.10.12",
+        "volume": "12",
+        "author": "AB Watson",
+        "year": "2012",
+        "unstructured": "Watson, A.B., Yellott, J.I.: A unified formula for light-adapted pupil size. J. Vis. 12(10), 12\u201312 (2012). https:\/\/doi.org\/10.1167\/12.10.12",
+        "journal-title": "J. Vis."
+      },
+      {
+        "issue": "22",
+        "key": "9_CR42",
+        "doi-asserted-by": "publisher",
+        "first-page": "8456",
+        "DOI": "10.1073\/pnas.1201858109",
+        "volume": "109",
+        "author": "SM Wierda",
+        "year": "2012",
+        "unstructured": "Wierda, S.M., van Rijn, H., Taatgen, N.A., Martens, S.: Pupil dilation deconvolution reveals the dynamics of attention at high temporal resolution. Proc. Nat. Acad. Sci. 109(22), 8456\u20138460 (2012). https:\/\/doi.org\/10.1073\/pnas.1201858109",
+        "journal-title": "Proc. Nat. Acad. Sci."
+      },
+      {
+        "key": "9_CR43",
+        "unstructured": "Wuller, D., Gabele, H.: The usage of digital cameras as luminance meters, San Jose, CA, USA, p. 65020U, February 2007. https:\/\/doi.org\/10.1117\/12.703205",
+        "DOI": "10.1117\/12.703205",
+        "doi-asserted-by": "publisher"
+      }
+    ],
+    "container-title": [
+      "Engineering Psychology and Cognitive Ergonomics",
+      "Lecture Notes in Computer Science"
+    ],
+    "original-title": [],
+    "link": [
+      {
+        "URL": "http:\/\/link.springer.com\/content\/pdf\/10.1007\/978-3-030-22507-0_9",
+        "content-type": "unspecified",
+        "content-version": "vor",
+        "intended-application": "similarity-checking"
+      }
+    ],
+    "deposited": {
+      "date-parts": [
+        [
+          2021,
+          1,
+          14
+        ]
+      ],
+      "date-time": "2021-01-14T16:47:49Z",
+      "timestamp": 1610642869000
+    },
+    "score": 1.0,
+    "subtitle": [],
+    "short-title": [],
+    "issued": {
+      "date-parts": [
+        [
+          2019
+        ]
+      ]
+    },
+    "ISBN": [
+      "9783030225063",
+      "9783030225070"
+    ],
+    "references-count": 43,
+    "URL": "http:\/\/dx.doi.org\/10.1007\/978-3-030-22507-0_9",
+    "relation": {
+      "cites": []
+    },
+    "ISSN": [
+      "0302-9743",
+      "1611-3349"
+    ],
+    "issn-type": [
+      {
+        "value": "0302-9743",
+        "type": "print"
+      },
+      {
+        "value": "1611-3349",
+        "type": "electronic"
+      }
+    ],
+    "assertion": [
+      {
+        "value": "18 June 2019",
+        "order": 1,
+        "name": "first_online",
+        "label": "First Online",
+        "group": {
+          "name": "ChapterHistory",
+          "label": "Chapter History"
+        }
+      },
+      {
+        "value": "HCII",
+        "order": 1,
+        "name": "conference_acronym",
+        "label": "Conference Acronym",
+        "group": {
+          "name": "ConferenceInfo",
+          "label": "Conference Information"
+        }
+      },
+      {
+        "value": "International Conference on Human-Computer Interaction",
+        "order": 2,
+        "name": "conference_name",
+        "label": "Conference Name",
+        "group": {
+          "name": "ConferenceInfo",
+          "label": "Conference Information"
+        }
+      },
+      {
+        "value": "Orlando, FL",
+        "order": 3,
+        "name": "conference_city",
+        "label": "Conference City",
+        "group": {
+          "name": "ConferenceInfo",
+          "label": "Conference Information"
+        }
+      },
+      {
+        "value": "USA",
+        "order": 4,
+        "name": "conference_country",
+        "label": "Conference Country",
+        "group": {
+          "name": "ConferenceInfo",
+          "label": "Conference Information"
+        }
+      },
+      {
+        "value": "2019",
+        "order": 5,
+        "name": "conference_year",
+        "label": "Conference Year",
+        "group": {
+          "name": "ConferenceInfo",
+          "label": "Conference Information"
+        }
+      },
+      {
+        "value": "26 July 2019",
+        "order": 7,
+        "name": "conference_start_date",
+        "label": "Conference Start Date",
+        "group": {
+          "name": "ConferenceInfo",
+          "label": "Conference Information"
+        }
+      },
+      {
+        "value": "31 July 2019",
+        "order": 8,
+        "name": "conference_end_date",
+        "label": "Conference End Date",
+        "group": {
+          "name": "ConferenceInfo",
+          "label": "Conference Information"
+        }
+      },
+      {
+        "value": "21",
+        "order": 9,
+        "name": "conference_number",
+        "label": "Conference Number",
+        "group": {
+          "name": "ConferenceInfo",
+          "label": "Conference Information"
+        }
+      },
+      {
+        "value": "hcii2019",
+        "order": 10,
+        "name": "conference_id",
+        "label": "Conference ID",
+        "group": {
+          "name": "ConferenceInfo",
+          "label": "Conference Information"
+        }
+      },
+      {
+        "value": "http:\/\/2019.hci.international\/",
+        "order": 11,
+        "name": "conference_url",
+        "label": "Conference URL",
+        "group": {
+          "name": "ConferenceInfo",
+          "label": "Conference Information"
+        }
+      }
+    ]
+  }
+}

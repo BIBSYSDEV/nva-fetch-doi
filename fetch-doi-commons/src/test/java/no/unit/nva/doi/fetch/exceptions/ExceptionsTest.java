@@ -12,7 +12,7 @@ public class ExceptionsTest {
 
     @Test
     public void canCreateInsertPublicationException() {
-        InsertPublicationException exception = new InsertPublicationException(MESSAGE);
+        CreatePublicationException exception = new CreatePublicationException(MESSAGE);
         assertNotNull(exception);
         assertEquals(HttpStatus.SC_BAD_GATEWAY, exception.statusCode());
     }
@@ -48,6 +48,13 @@ public class ExceptionsTest {
     @Test
     public void canCreateTransformFailedException() {
         TransformFailedException exception = new TransformFailedException(MESSAGE);
+        assertNotNull(exception);
+        assertEquals(HttpStatus.SC_BAD_GATEWAY, exception.statusCode());
+    }
+
+    @Test
+    public void canCreateUnsupportedDocumentTypeException() {
+        UnsupportedDocumentTypeException exception = new UnsupportedDocumentTypeException(MESSAGE);
         assertNotNull(exception);
         assertEquals(HttpStatus.SC_BAD_GATEWAY, exception.statusCode());
     }
