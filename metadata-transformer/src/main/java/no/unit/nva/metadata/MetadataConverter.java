@@ -16,6 +16,7 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import static nva.commons.core.JsonUtils.objectMapper;
 
@@ -26,7 +27,8 @@ public class MetadataConverter {
     public static final String ANY_23 = "http://vocab.sindice.net/any23#";
     public static final String DC_IDENTIFIER = "dc.identifier";
     public static final String DC_IDENTIFIER_UPPER_CASE = "DC.identifier";
-    public static final String DOI_START = "10.";
+    public static final String DOI_START = "10\\.[0-9]+\\/.*";
+    public final Pattern doiStartPattern;
 
     private static final Logger logger = LoggerFactory.getLogger(MetadataConverter.class);
     private static final ValueFactory valueFactory = SimpleValueFactory.getInstance();
@@ -37,6 +39,7 @@ public class MetadataConverter {
     public MetadataConverter(Model metadata, String jsonld) {
         this.metadata = metadata;
         this.jsonld = jsonld;
+        this.doiStartPattern = Pattern.compile(DOI_START);
     }
 
     public CreatePublicationRequest toRequest() throws JsonProcessingException {
@@ -78,7 +81,9 @@ public class MetadataConverter {
         try {
             if (stringValue.startsWith(DOI_PREFIX)) {
                 doi = new URI(stringValue.replace(DOI_PREFIX, DOI_ORG));
-            } else if (stringValue.startsWith(DOI_START)) {
+            } else if (stringValue.startsWith(DOI_ORG)) {
+                doi = new URI(stringValue);
+            } else if (doiStartPattern.matcher(stringValue).matches()) {
                 doi = new URI(DOI_ORG + stringValue);
             }
         } catch (URISyntaxException e) {

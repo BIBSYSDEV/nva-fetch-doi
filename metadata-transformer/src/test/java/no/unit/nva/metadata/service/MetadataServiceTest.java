@@ -260,6 +260,10 @@ public class MetadataServiceTest {
                         request),
                 generateMetadataHtml(Map.of(
                         DC_TITLE, dummyTitle,
+                        DC_IDENTIFIER_UPPER_CASE, expectedDoi),
+                        request),
+                generateMetadataHtml(Map.of(
+                        DC_TITLE, dummyTitle,
                         DC_IDENTIFIER, notADoi),
                         emptyRequest)
                 );
