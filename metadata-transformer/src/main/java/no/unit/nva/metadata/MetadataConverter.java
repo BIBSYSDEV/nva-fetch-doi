@@ -2,7 +2,6 @@ package no.unit.nva.metadata;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.api.CreatePublicationRequest;
-import no.unit.nva.model.Reference;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.Value;
@@ -49,12 +48,13 @@ public class MetadataConverter {
     }
 
     private void addAdditionalFieldsFromMetadata(CreatePublicationRequest request, Model metadata) {
+        addDoi(request, metadata);
+    }
+
+    private void addDoi(CreatePublicationRequest request, Model metadata) {
         Optional<URI> doi = getDoiFromMetadata(metadata);
         if (doi.isPresent()) {
-            if (request.getEntityDescription().getReference() == null) {
-                request.getEntityDescription().setReference(new Reference());
-            }
-            request.getEntityDescription().getReference().setDoi(doi.get());
+            request.addReferenceDoi(doi.get());
         }
     }
 
@@ -80,16 +80,28 @@ public class MetadataConverter {
         URI doi = null;
         try {
             if (stringValue.startsWith(DOI_PREFIX)) {
-                doi = new URI(stringValue.replace(DOI_PREFIX, DOI_ORG));
+                doi = createUriReplaceDoiPrefixWithHost(stringValue);
             } else if (stringValue.startsWith(DOI_ORG)) {
                 doi = new URI(stringValue);
-            } else if (doiStartPattern.matcher(stringValue).matches()) {
-                doi = new URI(DOI_ORG + stringValue);
+            } else if (hasDoiPattern(stringValue)) {
+                doi = createUriAddHostToDoiPath(stringValue);
             }
         } catch (URISyntaxException e) {
             logger.warn("Can not create URI from DOI string value", e);
         }
         return doi;
+    }
+
+    private URI createUriAddHostToDoiPath(String stringValue) throws URISyntaxException {
+        return new URI(DOI_ORG + stringValue);
+    }
+
+    private boolean hasDoiPattern(String stringValue) {
+        return doiStartPattern.matcher(stringValue).matches();
+    }
+
+    private URI createUriReplaceDoiPrefixWithHost(String stringValue) throws URISyntaxException {
+        return new URI(stringValue.replace(DOI_PREFIX, DOI_ORG));
     }
 
 }
