@@ -9,8 +9,6 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.exceptions.MalformedContributorException;
-import nva.commons.core.ioutils.IoUtils;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -34,20 +32,13 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static j2html.TagCreator.head;
 import static j2html.TagCreator.html;
 import static j2html.TagCreator.meta;
-import static nva.commons.core.JsonUtils.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 public class MetadataServiceTest {
 
     public static final String URI_TEMPLATE = "http://localhost:%d/article/%s";
-    public static final String TEST_REVIEW_PAPER_HTML = "test_review_paper.html";
-    public static final String TEST_REVIEW_PAPER_JSON = "test_review_paper.json";
-    public static final String UPPER_CASE_DC_HTML = "upper_case_dc.html";
-    public static final String UPPER_CASE_DC_JSON = "upper_case_dc.json";
-
     public static final String DC_CONTRIBUTOR = "dc.contributor";
     public static final String DC_CONTRIBUTOR_UPPER_CASE = "DC.contributor";
     public static final String DC_CREATOR = "dc.creator";
