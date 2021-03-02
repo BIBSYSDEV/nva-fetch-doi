@@ -53,6 +53,8 @@ public class MetadataServiceTest {
     public static final String DC_SUBJECT = "dc.subject";
     public static final String DC_IDENTIFIER = "dc.identifier";
     public static final String DC_IDENTIFIER_UPPER_CASE = "DC.identifier";
+    public static final String DC_LANGUAGE = "dc.language";
+    public static final String DC_LANGUAGE_UPPER_CASE = "DC.language";
 
 
     private WireMockServer wireMockServer;
@@ -64,7 +66,8 @@ public class MetadataServiceTest {
             "provideMetadataForTitle",
             "provideMetadataForDate",
             "provideMetadataForContributors",
-            "provideMetadataForIdentifier"
+            "provideMetadataForIdentifier",
+            "provideMetadataForLanguage"
     })
     public void getCreatePublicationParsesHtmlAndReturnsMetadata(String html, CreatePublicationRequest expectedRequest)
             throws IOException {
@@ -260,6 +263,24 @@ public class MetadataServiceTest {
                 );
     }
 
+    private static Stream<Arguments> provideMetadataForLanguage() {
+        String language = "de";
+        String uppercaseLanguage = "DE";
+        String notALanguage = "00";
+        String expectedLanguage = "https://lexvo.org/id/iso639-3/deu";
+        String underterminedLanguage = "https://lexvo.org/id/iso639-3/und";
+        CreatePublicationRequest request = requestWithLanguage(URI.create(expectedLanguage));
+        CreatePublicationRequest underterminedRequest = requestWithLanguage(URI.create(underterminedLanguage));
+
+        return Stream.of(
+            generateMetadataHtml(Map.of(DC_LANGUAGE, language), request),
+            generateMetadataHtml(Map.of(DC_LANGUAGE_UPPER_CASE, uppercaseLanguage), request),
+            generateMetadataHtml(Map.of(DC_LANGUAGE, notALanguage), underterminedRequest),
+            generateMetadataHtml(Map.of(DC_LANGUAGE_UPPER_CASE, ""), underterminedRequest),
+            generateMetadataHtml(DC_LANGUAGE, null, underterminedRequest)
+        );
+    }
+
     private static CreatePublicationRequest requestWithIdentifier(URI identifier, String title) {
         EntityDescription entityDescription = new EntityDescription.Builder()
                 .withMainTitle(title)
@@ -284,6 +305,19 @@ public class MetadataServiceTest {
         CreatePublicationRequest request = new CreatePublicationRequest();
         request.setEntityDescription(entityDescription);
         return request;
+    }
+
+    private static CreatePublicationRequest requestWithLanguage(URI language) {
+        EntityDescription entityDescription = new EntityDescription.Builder()
+            .withLanguage(language)
+            .build();
+        CreatePublicationRequest request = new CreatePublicationRequest();
+        request.setEntityDescription(entityDescription);
+        return request;
+    }
+
+    private static Arguments generateMetadataHtml(String name, String content, CreatePublicationRequest expected) {
+        return Arguments.of(html(head(meta().withName(name).withContent(content))).renderFormatted(), expected);
     }
 
     private static Arguments generateMetadataHtml(Map<String,String> metadata, CreatePublicationRequest expected) {
