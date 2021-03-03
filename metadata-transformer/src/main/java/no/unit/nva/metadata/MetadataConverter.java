@@ -48,17 +48,9 @@ public class MetadataConverter {
 
     public CreatePublicationRequest toRequest() throws JsonProcessingException {
         CreatePublicationRequest request = objectMapper.readValue(jsonld, CreatePublicationRequest.class);
-
-        addDoi(request, metadata);
-
+        getDoiFromMetadata(metadata).ifPresent(request::addReferenceDoi);
+        getLanguageFromMetadata(metadata).ifPresent(request.getEntityDescription()::setLanguage);
         return request;
-    }
-
-    private void addDoi(CreatePublicationRequest request, Model metadata) {
-        Optional<URI> doi = getDoiFromMetadata(metadata);
-        if (doi.isPresent()) {
-            request.addReferenceDoi(doi.get());
-        }
     }
 
     private Optional<URI> getDoiFromMetadata(Model metadata) {
@@ -137,5 +129,4 @@ public class MetadataConverter {
     private URI createUriReplaceDoiPrefixWithHost(String stringValue) throws URISyntaxException {
         return new URI(stringValue.replace(DOI_PREFIX, DOI_ORG));
     }
-
 }
