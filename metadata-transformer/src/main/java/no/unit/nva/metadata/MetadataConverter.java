@@ -105,7 +105,7 @@ public class MetadataConverter {
     }
 
     private URI toLexvoUri(String language) {
-        String iso3Language= "und";
+        String iso3Language = "und";
 
         if (language != null && !language.isEmpty()) {
             try {
