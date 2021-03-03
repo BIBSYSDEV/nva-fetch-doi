@@ -47,7 +47,6 @@ public class MetadataService {
     private final Repository db = new SailRepository(new MemoryStore());
     private static final Logger logger = LoggerFactory.getLogger(MetadataService.class);
 
-
     public MetadataService() throws IOException {
         translatorService = new TranslatorService();
     }
@@ -64,44 +63,43 @@ public class MetadataService {
      */
     public Optional<CreatePublicationRequest> getCreatePublicationRequest(URI uri) {
         try {
-            String jsonld = getMetadataJson(uri);
-            return Optional.ofNullable(MetadataConverter.fromJsonLd(jsonld));
+            Model metadata = getMetadata(uri);
+            String jsonld = toFramedJsonLd(getModelFromQuery(metadata, uri));
+            MetadataConverter converter = new MetadataConverter(metadata, jsonld);
+            return Optional.ofNullable(converter.toRequest());
         } catch (Exception e) {
             logger.error("Error mapping metadata to CreatePublicationRequest", e);
             return Optional.empty();
         }
     }
 
-    /**
-     * Extracts metadata from the HTML dereferenced from a supplied URI.
-     * @param uri URI to dereference.
-     * @return JSON representation of an NVA Publication.
-     * @throws ExtractionException If the metadata extraction fails.
-     * @throws IOException If resources files cannot be found.
-     * @throws URISyntaxException If the URI is invalid.
-     */
-    public String getMetadataJson(URI uri) throws ExtractionException, IOException, URISyntaxException {
-        Model metadata = getMetadata(uri);
-        return toFramedJsonLd(metadata);
-    }
-
     private Model getMetadata(URI uri) throws ExtractionException, IOException, URISyntaxException {
         translatorService.loadMetadataFromUri(uri);
         try (RepositoryConnection repositoryConnection = db.getConnection()) {
             repositoryConnection.add(loadExtractedData(), EMPTY_BASE_URI, RDFFormat.JSONLD);
-            var query = repositoryConnection.prepareGraphQuery(getQueryAsString(uri));
-            return QueryResults.asModel(query.evaluate());
+            return QueryResults.asModel(repositoryConnection.getStatements(null, null, null));
         } finally {
             db.shutDown();
         }
     }
 
-    private String toFramedJsonLd(Model resultModel) throws IOException {
+    private String toFramedJsonLd(Model model) throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        Rio.write(resultModel, outputStream, RDFFormat.JSONLD);
+        Rio.write(model, outputStream, RDFFormat.JSONLD);
         var jsonObject = JsonUtils.fromInputStream(new ByteArrayInputStream(outputStream.toByteArray()));
         Object framed = frame(jsonObject, loadContext(), avoidBlankNodeIdentifiersAndOmitDefaultsConfig());
         return JsonUtils.toPrettyString(framed);
+
+    }
+
+    private Model getModelFromQuery(Model model, URI uri) {
+        try (RepositoryConnection repositoryConnection = db.getConnection()) {
+            repositoryConnection.add(model);
+            var query = repositoryConnection.prepareGraphQuery(getQueryAsString(uri));
+            return QueryResults.asModel(query.evaluate());
+        } finally {
+            db.shutDown();
+        }
     }
 
     /**
