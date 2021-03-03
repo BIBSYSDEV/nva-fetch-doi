@@ -128,12 +128,12 @@ public class MetadataServiceTest {
                 .withMonth(month)
                 .withDay(day)
                 .build();
-        CreatePublicationRequest request = requestWithDate(date);
+        CreatePublicationRequest request = createRequestWithDate(date);
 
         PublicationDate yearOnlyDate = new PublicationDate.Builder()
                 .withYear(year)
                 .build();
-        CreatePublicationRequest yearOnlyRequest = requestWithDate(yearOnlyDate);
+        CreatePublicationRequest yearOnlyRequest = createRequestWithDate(yearOnlyDate);
 
         String dateString = String.join("-", year, month, day);
 
@@ -153,7 +153,7 @@ public class MetadataServiceTest {
                 );
     }
 
-    private static CreatePublicationRequest requestWithDate(PublicationDate date) {
+    private static CreatePublicationRequest createRequestWithDate(PublicationDate date) {
         EntityDescription entityDescription = new EntityDescription.Builder()
                 .withDate(date)
                 .build();
@@ -164,7 +164,7 @@ public class MetadataServiceTest {
 
     private static Stream<Arguments> provideMetadataForTitle() {
         String title = "Title";
-        CreatePublicationRequest request = requestWithTitle(title);
+        CreatePublicationRequest request = createRequestWithTitle(title);
 
         return Stream.of(
                 generateMetadataHtml(Map.of(
@@ -176,7 +176,7 @@ public class MetadataServiceTest {
                 );
     }
 
-    private static CreatePublicationRequest requestWithTitle(String title) {
+    private static CreatePublicationRequest createRequestWithTitle(String title) {
         EntityDescription entityDescription = new EntityDescription.Builder()
                 .withMainTitle(title)
                 .build();
@@ -188,7 +188,7 @@ public class MetadataServiceTest {
     private static Stream<Arguments> provideMetadataForTags() {
         String coverage = "Coverage";
         String subject = "Subject";
-        CreatePublicationRequest request = requestWithTags(List.of(subject, coverage));
+        CreatePublicationRequest request = createRequestWithTags(List.of(subject, coverage));
 
         return Stream.of(
                 generateMetadataHtml(Map.of(
@@ -198,7 +198,7 @@ public class MetadataServiceTest {
                 );
     }
 
-    private static CreatePublicationRequest requestWithTags(List<String> tags) {
+    private static CreatePublicationRequest createRequestWithTags(List<String> tags) {
         EntityDescription entityDescription = new EntityDescription.Builder()
                 .withTags(tags)
                 .build();
@@ -211,10 +211,11 @@ public class MetadataServiceTest {
         String description = "Description";
         String abstractString = "Abstract";
 
-        CreatePublicationRequest request = requestWithDescriptionAndOrAbstract(description, abstractString);
+        CreatePublicationRequest request = createRequestWithDescriptionAndOrAbstract(description, abstractString);
 
+        // When dcterms:abstract is missing from metadata then dc:description replaces abstract in the request
         CreatePublicationRequest abstractOnlyRequest =
-                requestWithDescriptionAndOrAbstract(null, abstractString);
+                createRequestWithDescriptionAndOrAbstract(null, abstractString);
 
         return Stream.of(
                 generateMetadataHtml(Map.of(
@@ -237,8 +238,8 @@ public class MetadataServiceTest {
         String expectedDoi = "https://doi.org/10.1/url";
         String dummyTitle = "To avoid NPE in JsonLdProcessor";
 
-        CreatePublicationRequest request = requestWithIdentifier(URI.create(expectedDoi), dummyTitle);
-        CreatePublicationRequest emptyRequest = requestWithIdentifier(null, dummyTitle);
+        CreatePublicationRequest request = createRequestWithIdentifier(URI.create(expectedDoi), dummyTitle);
+        CreatePublicationRequest emptyRequest = createRequestWithIdentifier(null, dummyTitle);
 
         return Stream.of(
                 generateMetadataHtml(Map.of(
@@ -260,7 +261,7 @@ public class MetadataServiceTest {
                 );
     }
 
-    private static CreatePublicationRequest requestWithIdentifier(URI identifier, String title) {
+    private static CreatePublicationRequest createRequestWithIdentifier(URI identifier, String title) {
         EntityDescription entityDescription = new EntityDescription.Builder()
                 .withMainTitle(title)
                 .build();
@@ -275,7 +276,7 @@ public class MetadataServiceTest {
         return request;
     }
 
-    private static CreatePublicationRequest requestWithDescriptionAndOrAbstract(
+    private static CreatePublicationRequest createRequestWithDescriptionAndOrAbstract(
             String description, String abstractString) {
         EntityDescription entityDescription = new EntityDescription.Builder()
                 .withDescription(description)

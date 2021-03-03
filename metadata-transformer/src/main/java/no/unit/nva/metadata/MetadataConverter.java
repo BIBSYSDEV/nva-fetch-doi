@@ -43,12 +43,10 @@ public class MetadataConverter {
 
     public CreatePublicationRequest toRequest() throws JsonProcessingException {
         CreatePublicationRequest request = objectMapper.readValue(jsonld, CreatePublicationRequest.class);
-        addAdditionalFieldsFromMetadata(request, metadata);
-        return request;
-    }
 
-    private void addAdditionalFieldsFromMetadata(CreatePublicationRequest request, Model metadata) {
         addDoi(request, metadata);
+
+        return request;
     }
 
     private void addDoi(CreatePublicationRequest request, Model metadata) {
