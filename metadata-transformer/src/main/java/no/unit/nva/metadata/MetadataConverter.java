@@ -48,17 +48,17 @@ public class MetadataConverter {
 
     public CreatePublicationRequest toRequest() throws JsonProcessingException {
         CreatePublicationRequest request = objectMapper.readValue(jsonld, CreatePublicationRequest.class);
-        addAdditionalFieldsFromMetadata(request, metadata);
+
+        addDoi(request, metadata);
+
         return request;
     }
 
-    private void addAdditionalFieldsFromMetadata(CreatePublicationRequest request, Model metadata) {
+    private void addDoi(CreatePublicationRequest request, Model metadata) {
         Optional<URI> doi = getDoiFromMetadata(metadata);
         if (doi.isPresent()) {
             request.addReferenceDoi(doi.get());
         }
-
-        getLanguageFromMetadata(metadata).ifPresent(uri -> request.getEntityDescription().setLanguage(uri));
     }
 
     private Optional<URI> getDoiFromMetadata(Model metadata) {
