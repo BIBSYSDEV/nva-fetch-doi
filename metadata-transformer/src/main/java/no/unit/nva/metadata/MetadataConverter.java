@@ -108,16 +108,16 @@ public class MetadataConverter {
     }
 
     private URI toLexvoUri(String language) {
-        String iso3_language_code  = ISO3_LANGUAGE_CODE_UNDEFINED;
+        String iso3LanguageCode  = ISO3_LANGUAGE_CODE_UNDEFINED;
         if (!StringUtils.isEmpty(language)) {
             try {
-                iso3_language_code = new Locale(language).getISO3Language();
+                iso3LanguageCode = new Locale(language).getISO3Language();
             } catch (MissingResourceException e) {
                 logger.warn("Could not map two-letter BCP-47 language code to three-letter ISO639-3 language code.", e);
             }
         }
 
-        return URI.create(LEXVO_ORG + iso3_language_code);
+        return URI.create(LEXVO_ORG + iso3LanguageCode);
     }
 
     private URI createUriAddHostToDoiPath(String stringValue) throws URISyntaxException {
