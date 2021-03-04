@@ -13,15 +13,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -53,6 +49,8 @@ public class MetadataServiceTest {
     public static final String DC_SUBJECT = "dc.subject";
     public static final String DC_IDENTIFIER = "dc.identifier";
     public static final String DC_IDENTIFIER_UPPER_CASE = "DC.identifier";
+    public static final String DC_LANGUAGE = "dc.language";
+    public static final String DC_LANGUAGE_UPPER_CASE = "DC.language";
 
 
     private WireMockServer wireMockServer;
@@ -64,7 +62,8 @@ public class MetadataServiceTest {
             "provideMetadataForTitle",
             "provideMetadataForDate",
             "provideMetadataForContributors",
-            "provideMetadataForIdentifier"
+            "provideMetadataForIdentifier",
+            "provideMetadataForLanguage"
     })
     public void getCreatePublicationParsesHtmlAndReturnsMetadata(String html, CreatePublicationRequest expectedRequest)
             throws IOException {
@@ -261,6 +260,25 @@ public class MetadataServiceTest {
                 );
     }
 
+    private static Stream<Arguments> provideMetadataForLanguage() {
+        String language = "de";
+        String uppercaseLanguage = "DE";
+        String notALanguage = "00";
+        String expectedLanguage = "https://lexvo.org/id/iso639-3/deu";
+        String underterminedLanguage = "https://lexvo.org/id/iso639-3/und";
+        CreatePublicationRequest request = requestWithLanguage(URI.create(expectedLanguage));
+        CreatePublicationRequest underterminedRequest = requestWithLanguage(URI.create(underterminedLanguage));
+
+        return Stream.of(
+            generateMetadataHtml(Map.of(DC_LANGUAGE, language), request),
+            generateMetadataHtml(Map.of(DC_LANGUAGE_UPPER_CASE, uppercaseLanguage), request),
+            generateMetadataHtml(Map.of(DC_LANGUAGE, notALanguage), underterminedRequest),
+            generateMetadataHtml(Map.of(DC_LANGUAGE_UPPER_CASE, ""), underterminedRequest),
+            generateMetadataHtml(Map.of(DC_LANGUAGE, " "), underterminedRequest),
+            generateMetadataHtml(DC_LANGUAGE, null, underterminedRequest)
+        );
+    }
+
     private static CreatePublicationRequest createRequestWithIdentifier(URI identifier, String title) {
         EntityDescription entityDescription = new EntityDescription.Builder()
                 .withMainTitle(title)
@@ -287,6 +305,19 @@ public class MetadataServiceTest {
         return request;
     }
 
+    private static CreatePublicationRequest requestWithLanguage(URI language) {
+        EntityDescription entityDescription = new EntityDescription.Builder()
+            .withLanguage(language)
+            .build();
+        CreatePublicationRequest request = new CreatePublicationRequest();
+        request.setEntityDescription(entityDescription);
+        return request;
+    }
+
+    private static Arguments generateMetadataHtml(String name, String content, CreatePublicationRequest expected) {
+        return Arguments.of(html(head(meta().withName(name).withContent(content))).renderFormatted(), expected);
+    }
+
     private static Arguments generateMetadataHtml(Map<String,String> metadata, CreatePublicationRequest expected) {
         return Arguments.of(createHtml(metadata), expected);
     }
@@ -305,11 +336,6 @@ public class MetadataServiceTest {
         return meta().withName(content).withContent(metadata.get(content));
     }
 
-    private URI prepareWebServerAndReturnUriToMetadata(String filename) {
-        var body = getBody("/" + filename);
-        return prepareWebServerAndReturnUriToMetadata(filename, body);
-    }
-
     private URI prepareWebServerAndReturnUriToMetadata(String filename, String body) {
         startMock(filename, body);
         var uriString = String.format(URI_TEMPLATE, wireMockServer.port(), filename);
@@ -326,11 +352,4 @@ public class MetadataServiceTest {
                         .withHeader("Content-Type", "text/html")
                         .withBody(body)));
     }
-
-    private String getBody(String filename) {
-        var inputStream = getClass().getResourceAsStream(filename);
-        return new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines()
-                .collect(Collectors.joining("\n"));
-    }
-
 }
