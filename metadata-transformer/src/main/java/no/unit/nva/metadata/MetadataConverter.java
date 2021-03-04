@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import no.unit.nva.api.CreatePublicationRequest;
+import nva.commons.core.StringUtils;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.Value;
@@ -32,6 +33,8 @@ public class MetadataConverter {
     public static final String DC_LANGUAGE = "dc.language";
     public static final String DC_LANGUAGE_UPPER_CASE = "DC.language";
     public static final String LEXVO_ORG = "https://lexvo.org/id/iso639-3/";
+    public static final String ISO3_LANGUAGE_CODE_UNDEFINED = "und";
+
     public final Pattern doiStartPattern;
 
     private static final Logger logger = LoggerFactory.getLogger(MetadataConverter.class);
@@ -49,7 +52,7 @@ public class MetadataConverter {
     public CreatePublicationRequest toRequest() throws JsonProcessingException {
         CreatePublicationRequest request = objectMapper.readValue(jsonld, CreatePublicationRequest.class);
         getDoiFromMetadata(metadata).ifPresent(request::addReferenceDoi);
-        getLanguageFromMetadata(metadata).ifPresent(request.getEntityDescription()::setLanguage);
+        getLanguageFromMetadata(metadata).ifPresent(language -> request.getEntityDescription().setLanguage(language));
         return request;
     }
 
@@ -105,17 +108,16 @@ public class MetadataConverter {
     }
 
     private URI toLexvoUri(String language) {
-        String iso3Language = "und";
-
-        if (language != null && !language.isEmpty()) {
+        String iso3_language_code  = ISO3_LANGUAGE_CODE_UNDEFINED;
+        if (!StringUtils.isEmpty(language)) {
             try {
-                iso3Language = new Locale(language).getISO3Language();
+                iso3_language_code = new Locale(language).getISO3Language();
             } catch (MissingResourceException e) {
                 logger.warn("Could not map two-letter BCP-47 language code to three-letter ISO639-3 language code.", e);
             }
         }
 
-        return URI.create(LEXVO_ORG + iso3Language);
+        return URI.create(LEXVO_ORG + iso3_language_code);
     }
 
     private URI createUriAddHostToDoiPath(String stringValue) throws URISyntaxException {

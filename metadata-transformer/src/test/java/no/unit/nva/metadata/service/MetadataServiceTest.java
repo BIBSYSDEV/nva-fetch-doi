@@ -274,6 +274,7 @@ public class MetadataServiceTest {
             generateMetadataHtml(Map.of(DC_LANGUAGE_UPPER_CASE, uppercaseLanguage), request),
             generateMetadataHtml(Map.of(DC_LANGUAGE, notALanguage), underterminedRequest),
             generateMetadataHtml(Map.of(DC_LANGUAGE_UPPER_CASE, ""), underterminedRequest),
+            generateMetadataHtml(Map.of(DC_LANGUAGE, " "), underterminedRequest),
             generateMetadataHtml(DC_LANGUAGE, null, underterminedRequest)
         );
     }
