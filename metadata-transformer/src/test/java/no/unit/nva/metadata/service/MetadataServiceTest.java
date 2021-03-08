@@ -2,6 +2,7 @@ package no.unit.nva.metadata.service;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import j2html.tags.EmptyTag;
+import java.util.Arrays;
 import no.unit.nva.api.CreatePublicationRequest;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -164,6 +165,7 @@ public class MetadataServiceTest {
 
     private static Stream<Arguments> provideMetadataForTitle() {
         String title = "Title";
+        String alternativeTitle = "This is a longer title";
         CreatePublicationRequest request = createRequestWithTitle(title);
 
         return Stream.of(
@@ -174,7 +176,9 @@ public class MetadataServiceTest {
                         DC_TITLE_UPPER_CASE, title),
                         request),
                 generateMetadataHtml(Map.of(
-                        CITATION_TITLE, title),
+                        DC_TITLE, title,
+                        DC_TITLE_UPPER_CASE, title,
+                        CITATION_TITLE, alternativeTitle),
                         request)
                 );
     }
