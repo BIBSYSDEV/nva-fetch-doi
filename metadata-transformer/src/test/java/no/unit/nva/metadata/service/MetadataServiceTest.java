@@ -51,6 +51,7 @@ public class MetadataServiceTest {
     public static final String DC_IDENTIFIER_UPPER_CASE = "DC.identifier";
     public static final String DC_LANGUAGE = "dc.language";
     public static final String DC_LANGUAGE_UPPER_CASE = "DC.language";
+    public static final String CITATION_TITLE = "citation_title";
 
 
     private WireMockServer wireMockServer;
@@ -171,6 +172,9 @@ public class MetadataServiceTest {
                         request),
                 generateMetadataHtml(Map.of(
                         DC_TITLE_UPPER_CASE, title),
+                        request),
+                generateMetadataHtml(Map.of(
+                        CITATION_TITLE, title),
                         request)
                 );
     }

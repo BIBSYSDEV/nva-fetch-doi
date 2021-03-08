@@ -38,7 +38,7 @@ CONSTRUCT {
 
     BIND (BNODE() AS ?entityNode)
     {
-      <__URI__> any23:dc.title | any23:DC.title ?title .
+      <__URI__> any23:dc.title | any23:DC.title | any23:citation_title ?title .
     } UNION {
       <__URI__> any23:dc.creator | any23:DC.creator | any23:dc.contributor | any23:DC.contributor ?creator .
 
