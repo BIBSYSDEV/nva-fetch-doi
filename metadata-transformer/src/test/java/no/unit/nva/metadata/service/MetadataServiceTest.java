@@ -2,7 +2,6 @@ package no.unit.nva.metadata.service;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import j2html.tags.EmptyTag;
-import java.util.Arrays;
 import no.unit.nva.api.CreatePublicationRequest;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
