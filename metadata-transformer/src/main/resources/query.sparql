@@ -21,7 +21,8 @@ CONSTRUCT {
     unit:month ?month ;
     unit:day ?day .
 } WHERE {
-  SELECT DISTINCT (STR(?title) AS ?mainTitle)
+  SELECT DISTINCT ?uri
+                  (STR(?title) AS ?mainTitle)
                   ?entityNode
                   ?contributorNode
                   ?identityNode
@@ -36,9 +37,14 @@ CONSTRUCT {
                   ?month
                   ?day {
 
+    BIND (IRI(<__URI__>) AS ?uri)
     BIND (BNODE() AS ?entityNode)
     {
-      <__URI__> any23:dc.title | any23:DC.title | any23:citation_title ?title .
+      SELECT ?title WHERE {
+        VALUES ?titleProperty { any23:dc.title any23:DC.title any23:citation_title }
+        ?uri ?titleProperty ?title  .
+      } ORDER BY STRLEN(STR(?title))
+        LIMIT 1
     } UNION {
       <__URI__> any23:dc.creator | any23:DC.creator | any23:dc.contributor | any23:DC.contributor ?creator .
 
