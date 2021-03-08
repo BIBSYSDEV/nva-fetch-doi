@@ -167,6 +167,8 @@ public class MetadataServiceTest {
         String title = "Title";
         String alternativeTitle = "This is a longer title";
         CreatePublicationRequest request = createRequestWithTitle(title);
+        CreatePublicationRequest longerTitleRequest = createRequestWithTitle(alternativeTitle);
+
 
         return Stream.of(
                 generateMetadataHtml(Map.of(
@@ -179,7 +181,7 @@ public class MetadataServiceTest {
                         DC_TITLE, title,
                         DC_TITLE_UPPER_CASE, title,
                         CITATION_TITLE, alternativeTitle),
-                        request)
+                        longerTitleRequest)
                 );
     }
 
