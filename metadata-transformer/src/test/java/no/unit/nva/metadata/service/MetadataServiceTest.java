@@ -165,9 +165,9 @@ public class MetadataServiceTest {
 
     private static Stream<Arguments> provideMetadataForTitle() {
         String title = "Title";
-        String alternativeTitle = "This is a longer title";
+        String longerTitle = "This is a longer title";
         CreatePublicationRequest request = createRequestWithTitle(title);
-        CreatePublicationRequest longerTitleRequest = createRequestWithTitle(alternativeTitle);
+        CreatePublicationRequest longerTitleRequest = createRequestWithTitle(longerTitle);
 
 
         return Stream.of(
@@ -180,7 +180,7 @@ public class MetadataServiceTest {
                 generateMetadataHtml(Map.of(
                         DC_TITLE, title,
                         DC_TITLE_UPPER_CASE, title,
-                        CITATION_TITLE, alternativeTitle),
+                        CITATION_TITLE, longerTitle),
                         longerTitleRequest)
                 );
     }
