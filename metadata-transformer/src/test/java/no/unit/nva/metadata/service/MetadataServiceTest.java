@@ -44,9 +44,13 @@ public class MetadataServiceTest {
     public static final String DC_TITLE = "dc.title";
     public static final String DC_TITLE_UPPER_CASE = "DC.title";
     public static final String DCTERMS_ABSTRACT = "dcterms.abstract";
+    public static final String DCTERMS_ABSTRACT_UPPER_CASE = "DCTERMS.abstract";
     public static final String DC_DESCRIPTION = "dc.description";
+    public static final String DC_DESCRIPTION_UPPER_CASE = "DC.description";
     public static final String DC_COVERAGE = "dc.coverage";
+    public static final String DC_COVERAGE_UPPER_CASE = "DC.coverage";
     public static final String DC_SUBJECT = "dc.subject";
+    public static final String DC_SUBJECT_UPPER_CASE = "DC.subject";
     public static final String DC_IDENTIFIER = "dc.identifier";
     public static final String DC_IDENTIFIER_UPPER_CASE = "DC.identifier";
     public static final String DC_LANGUAGE = "dc.language";
@@ -56,18 +60,19 @@ public class MetadataServiceTest {
 
     private WireMockServer wireMockServer;
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "#{index} - {0}")
     @MethodSource({
-            "provideMetadataForTags",
-            "provideMetadataForAbstract",
-            "provideMetadataForTitle",
-            "provideMetadataForDate",
-            "provideMetadataForContributors",
-            "provideMetadataForIdentifier",
-            "provideMetadataForLanguage"
+        "provideMetadataForTags",
+        "provideMetadataForAbstract",
+        "provideMetadataForTitle",
+        "provideMetadataForDate",
+        "provideMetadataForContributors",
+        "provideMetadataForIdentifier",
+        "provideMetadataForLanguage"
     })
-    public void getCreatePublicationParsesHtmlAndReturnsMetadata(String html, CreatePublicationRequest expectedRequest)
-            throws IOException {
+    public void getCreatePublicationParsesHtmlAndReturnsMetadata(String testDescription, String html,
+                                                                 CreatePublicationRequest expectedRequest)
+        throws IOException {
         String filename = "article.html";
         URI uri = prepareWebServerAndReturnUriToMetadata(filename, html);
         MetadataService metadataService = new MetadataService();
@@ -87,19 +92,19 @@ public class MetadataServiceTest {
         CreatePublicationRequest request = requestWithContributorName(name);
 
         return Stream.of(
-                generateMetadataHtml(Map.of(
-                        DC_CONTRIBUTOR, name),
-                        request),
-                generateMetadataHtml(Map.of(
-                        DC_CONTRIBUTOR_UPPER_CASE, name),
-                        request),
-                generateMetadataHtml(Map.of(
-                        DC_CREATOR, name),
-                        request),
-                generateMetadataHtml(Map.of(
-                        DC_CREATOR_UPPER_CASE, name),
-                        request)
-                );
+            generateTestWithMetadataHtml("dc.contributor map to contributor name in request",
+                Map.of(DC_CONTRIBUTOR, name),
+                request),
+            generateTestWithMetadataHtml("DC.contributor map to contributor name in request",
+                Map.of(DC_CONTRIBUTOR_UPPER_CASE, name),
+                request),
+            generateTestWithMetadataHtml("dc.creator map to contributor name in request",
+                Map.of(DC_CREATOR, name),
+                request),
+            generateTestWithMetadataHtml("DC.creator map to contributor name in request",
+                Map.of(DC_CREATOR_UPPER_CASE, name),
+                request)
+        );
     }
 
     private static CreatePublicationRequest requestWithContributorName(String name)
@@ -138,19 +143,19 @@ public class MetadataServiceTest {
         String dateString = String.join("-", year, month, day);
 
         return Stream.of(
-                generateMetadataHtml(Map.of(
-                        DC_DATE, dateString),
-                        request),
-                generateMetadataHtml(Map.of(
-                        DC_DATE_UPPER_CASE, dateString),
-                        request),
-                generateMetadataHtml(Map.of(
-                        DC_DATE, year),
-                        yearOnlyRequest),
-                generateMetadataHtml(Map.of(
-                        DC_DATE_UPPER_CASE, year),
-                        yearOnlyRequest)
-                );
+            generateTestWithMetadataHtml("dc.date with year, month and day map to request",
+                Map.of(DC_DATE, dateString),
+                request),
+            generateTestWithMetadataHtml("DC.date with year, month and day map to request",
+                Map.of(DC_DATE_UPPER_CASE, dateString),
+                request),
+            generateTestWithMetadataHtml("dc.date with only year map to request",
+                Map.of(DC_DATE, year),
+                yearOnlyRequest),
+            generateTestWithMetadataHtml("DC.date with only year map to request",
+                Map.of(DC_DATE_UPPER_CASE, year),
+                yearOnlyRequest)
+        );
     }
 
     private static CreatePublicationRequest createRequestWithDate(PublicationDate date) {
@@ -168,20 +173,21 @@ public class MetadataServiceTest {
         CreatePublicationRequest request = createRequestWithTitle(title);
         CreatePublicationRequest longerTitleRequest = createRequestWithTitle(longerTitle);
 
-
         return Stream.of(
-                generateMetadataHtml(Map.of(
-                        DC_TITLE, title),
-                        request),
-                generateMetadataHtml(Map.of(
-                        DC_TITLE_UPPER_CASE, title),
-                        request),
-                generateMetadataHtml(Map.of(
-                        DC_TITLE, title,
-                        DC_TITLE_UPPER_CASE, title,
-                        CITATION_TITLE, longerTitle),
-                        longerTitleRequest)
-                );
+            generateTestWithMetadataHtml("dc.title map to request", Map.of(
+                DC_TITLE, title),
+                request),
+            generateTestWithMetadataHtml("DC.title map to request", Map.of(
+                DC_TITLE_UPPER_CASE, title),
+                request),
+            generateTestWithMetadataHtml("citation.title map to request", Map.of(
+                CITATION_TITLE, title),
+                request),
+            generateTestWithMetadataHtml("With multiple title sources the longer takes precedence", Map.of(
+                DC_TITLE, title,
+                CITATION_TITLE, longerTitle),
+                longerTitleRequest)
+            );
     }
 
     private static CreatePublicationRequest createRequestWithTitle(String title) {
@@ -199,11 +205,15 @@ public class MetadataServiceTest {
         CreatePublicationRequest request = createRequestWithTags(List.of(subject, coverage));
 
         return Stream.of(
-                generateMetadataHtml(Map.of(
-                        DC_COVERAGE, coverage,
-                        DC_SUBJECT, subject),
-                        request)
-                );
+            generateTestWithMetadataHtml("dc.coverage and dc.subject map to request", Map.of(
+                DC_COVERAGE, coverage,
+                DC_SUBJECT, subject),
+                request),
+            generateTestWithMetadataHtml("DC.coverage and DC.subject map to request", Map.of(
+                DC_COVERAGE_UPPER_CASE, coverage,
+                DC_SUBJECT_UPPER_CASE, subject),
+                request)
+        );
     }
 
     private static CreatePublicationRequest createRequestWithTags(List<String> tags) {
@@ -220,23 +230,25 @@ public class MetadataServiceTest {
         String abstractString = "Abstract";
 
         CreatePublicationRequest request = createRequestWithDescriptionAndOrAbstract(description, abstractString);
-
-        // When dcterms:abstract is missing from metadata then dc:description replaces abstract in the request
         CreatePublicationRequest abstractOnlyRequest =
                 createRequestWithDescriptionAndOrAbstract(null, abstractString);
 
         return Stream.of(
-                generateMetadataHtml(Map.of(
-                        DCTERMS_ABSTRACT, abstractString,
-                        DC_DESCRIPTION, description),
-                        request),
-                generateMetadataHtml(Map.of(
-                        DC_DESCRIPTION, abstractString),
-                        abstractOnlyRequest),
-                generateMetadataHtml(Map.of(
-                        DCTERMS_ABSTRACT, abstractString),
-                        abstractOnlyRequest)
-                 );
+            generateTestWithMetadataHtml("dcterms.description and dc.description maps to request", Map.of(
+                DCTERMS_ABSTRACT, abstractString,
+                DC_DESCRIPTION, description),
+                request),
+            generateTestWithMetadataHtml("DCTERMS.description and DC.description maps to request", Map.of(
+                DCTERMS_ABSTRACT_UPPER_CASE, abstractString,
+                DC_DESCRIPTION_UPPER_CASE, description),
+                request),
+            generateTestWithMetadataHtml("dc.description replaces missing dcterms.abstract in request", Map.of(
+                DC_DESCRIPTION, abstractString),
+                abstractOnlyRequest),
+            generateTestWithMetadataHtml("dcterms.abstract will map to request without dc.description", Map.of(
+                DCTERMS_ABSTRACT, abstractString),
+                abstractOnlyRequest)
+        );
     }
 
     private static Stream<Arguments> provideMetadataForIdentifier() {
@@ -250,23 +262,23 @@ public class MetadataServiceTest {
         CreatePublicationRequest emptyRequest = createRequestWithIdentifier(null, dummyTitle);
 
         return Stream.of(
-                generateMetadataHtml(Map.of(
-                        DC_TITLE, dummyTitle,
-                        DC_IDENTIFIER, doiWithPrefix),
-                        request),
-                generateMetadataHtml(Map.of(
-                        DC_TITLE, dummyTitle,
-                        DC_IDENTIFIER_UPPER_CASE, doiWithoutPrefix),
-                        request),
-                generateMetadataHtml(Map.of(
-                        DC_TITLE, dummyTitle,
-                        DC_IDENTIFIER_UPPER_CASE, expectedDoi),
-                        request),
-                generateMetadataHtml(Map.of(
-                        DC_TITLE, dummyTitle,
-                        DC_IDENTIFIER, notADoi),
-                        emptyRequest)
-                );
+            generateTestWithMetadataHtml("dc.identifier with doi prefix map to request", Map.of(
+                DC_TITLE, dummyTitle,
+                DC_IDENTIFIER, doiWithPrefix),
+                request),
+            generateTestWithMetadataHtml("DC.identifier without doi prefix map to request", Map.of(
+                DC_TITLE, dummyTitle,
+                DC_IDENTIFIER_UPPER_CASE, doiWithoutPrefix),
+                request),
+            generateTestWithMetadataHtml("DC.identifier with full url map to request", Map.of(
+                DC_TITLE, dummyTitle,
+                DC_IDENTIFIER_UPPER_CASE, expectedDoi),
+                request),
+            generateTestWithMetadataHtml("dc.identifier with no doi gives empty request", Map.of(
+                DC_TITLE, dummyTitle,
+                DC_IDENTIFIER, notADoi),
+                emptyRequest)
+        );
     }
 
     private static Stream<Arguments> provideMetadataForLanguage() {
@@ -277,14 +289,17 @@ public class MetadataServiceTest {
         String underterminedLanguage = "https://lexvo.org/id/iso639-3/und";
         CreatePublicationRequest request = requestWithLanguage(URI.create(expectedLanguage));
         CreatePublicationRequest underterminedRequest = requestWithLanguage(URI.create(underterminedLanguage));
-
         return Stream.of(
-            generateMetadataHtml(Map.of(DC_LANGUAGE, language), request),
-            generateMetadataHtml(Map.of(DC_LANGUAGE_UPPER_CASE, uppercaseLanguage), request),
-            generateMetadataHtml(Map.of(DC_LANGUAGE, notALanguage), underterminedRequest),
-            generateMetadataHtml(Map.of(DC_LANGUAGE_UPPER_CASE, ""), underterminedRequest),
-            generateMetadataHtml(Map.of(DC_LANGUAGE, " "), underterminedRequest),
-            generateMetadataHtml(DC_LANGUAGE, null, underterminedRequest)
+            generateTestWithMetadataHtml("dc.language with BCP-47 code map to ISO639-3 code in request",
+                    Map.of(DC_LANGUAGE, language), request),
+            generateTestWithMetadataHtml("DC.language with BCP-47 code map to ISO639-3 code in request",
+                    Map.of(DC_LANGUAGE_UPPER_CASE, uppercaseLanguage), request),
+            generateTestWithMetadataHtml("dc.language with invalid code map to 'und' ISO639-3 code in request",
+                    Map.of(DC_LANGUAGE, notALanguage), underterminedRequest),
+            generateTestWithMetadataHtml("DC.language with empty code map to 'und' ISO639-3 code in request",
+                    Map.of(DC_LANGUAGE_UPPER_CASE, ""), underterminedRequest),
+            generateTestWithMetadataHtml("dc.language with no value maps to 'und' ISO639-3 code in request",
+                    DC_LANGUAGE, null, underterminedRequest)
         );
     }
 
@@ -323,12 +338,15 @@ public class MetadataServiceTest {
         return request;
     }
 
-    private static Arguments generateMetadataHtml(String name, String content, CreatePublicationRequest expected) {
-        return Arguments.of(html(head(meta().withName(name).withContent(content))).renderFormatted(), expected);
+    private static Arguments generateTestWithMetadataHtml(String testDescription, String name, String content,
+                                                          CreatePublicationRequest expected) {
+        return Arguments.of(testDescription, html(head(meta().withName(name).withContent(content))).renderFormatted(),
+            expected);
     }
 
-    private static Arguments generateMetadataHtml(Map<String,String> metadata, CreatePublicationRequest expected) {
-        return Arguments.of(createHtml(metadata), expected);
+    private static Arguments generateTestWithMetadataHtml(String testDescription, Map<String, String> metadata,
+                                                          CreatePublicationRequest expected) {
+        return Arguments.of(testDescription, createHtml(metadata), expected);
     }
 
     private static String createHtml(Map<String,String> metadata) {
