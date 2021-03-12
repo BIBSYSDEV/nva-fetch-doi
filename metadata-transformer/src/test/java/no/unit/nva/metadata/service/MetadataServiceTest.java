@@ -33,26 +33,16 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class MetadataServiceTest {
 
     public static final String URI_TEMPLATE = "http://localhost:%d/article/%s";
-    public static final String DC_CONTRIBUTOR = "dc.contributor";
-    public static final String DC_CONTRIBUTOR_UPPER_CASE = "DC.contributor";
-    public static final String DC_CREATOR = "dc.creator";
-    public static final String DC_CREATOR_UPPER_CASE = "DC.creator";
-    public static final String DC_DATE = "dc.date";
-    public static final String DC_DATE_UPPER_CASE = "DC.date";
-    public static final String DC_TITLE = "dc.title";
-    public static final String DC_TITLE_UPPER_CASE = "DC.title";
-    public static final String DCTERMS_ABSTRACT = "dcterms.abstract";
-    public static final String DCTERMS_ABSTRACT_UPPER_CASE = "DCTERMS.abstract";
-    public static final String DC_DESCRIPTION = "dc.description";
-    public static final String DC_DESCRIPTION_UPPER_CASE = "DC.description";
-    public static final String DC_COVERAGE = "dc.coverage";
-    public static final String DC_COVERAGE_UPPER_CASE = "DC.coverage";
-    public static final String DC_SUBJECT = "dc.subject";
-    public static final String DC_SUBJECT_UPPER_CASE = "DC.subject";
-    public static final String DC_IDENTIFIER = "dc.identifier";
-    public static final String DC_IDENTIFIER_UPPER_CASE = "DC.identifier";
-    public static final String DC_LANGUAGE = "dc.language";
-    public static final String DC_LANGUAGE_UPPER_CASE = "DC.language";
+    public static final String DC_CONTRIBUTOR = "DC.contributor";
+    public static final String DC_CREATOR = "DC.creator";
+    public static final String DC_DATE = "DC.date";
+    public static final String DC_TITLE = "DC.title";
+    public static final String DCTERMS_ABSTRACT = "DCTERMS.abstract";
+    public static final String DC_DESCRIPTION = "DC.description";
+    public static final String DC_COVERAGE = "DC.coverage";
+    public static final String DC_SUBJECT = "DC.subject";
+    public static final String DC_IDENTIFIER = "DC.identifier";
+    public static final String DC_LANGUAGE = "DC.language";
     public static final String CITATION_TITLE = "citation_title";
 
     private WireMockServer wireMockServer;
@@ -89,14 +79,10 @@ public class MetadataServiceTest {
         CreatePublicationRequest request = requestWithContributorName(name);
 
         return Stream.of(
-            generateTestHtml("dc.contributor maps to contributor name in createRequest",
-                Map.of(DC_CONTRIBUTOR, name), request),
             generateTestHtml("DC.contributor maps to contributor name in createRequest",
-                Map.of(DC_CONTRIBUTOR_UPPER_CASE, name), request),
-            generateTestHtml("dc.creator maps to contributor name in createRequest",
-                Map.of(DC_CREATOR, name), request),
+                Map.of(DC_CONTRIBUTOR, name), request),
             generateTestHtml("DC.creator maps to contributor name in createRequest",
-                Map.of(DC_CREATOR_UPPER_CASE, name), request)
+                Map.of(DC_CREATOR, name), request)
         );
     }
 
@@ -136,14 +122,10 @@ public class MetadataServiceTest {
         String dateString = String.join("-", year, month, day);
 
         return Stream.of(
-            generateTestHtml("dc.date with year, month and day maps to publication date in createRequest",
-                Map.of(DC_DATE, dateString), request),
             generateTestHtml("DC.date with year, month and day maps to publication date createRequest",
-                Map.of(DC_DATE_UPPER_CASE, dateString), request),
-            generateTestHtml("dc.date with only year maps to publication date createRequest",
-                Map.of(DC_DATE, year), yearOnlyRequest),
+                Map.of(DC_DATE, dateString), request),
             generateTestHtml("DC.date with only year maps to publication date createRequest",
-                Map.of(DC_DATE_UPPER_CASE, year), yearOnlyRequest)
+                Map.of(DC_DATE, year), yearOnlyRequest)
         );
     }
 
@@ -163,13 +145,11 @@ public class MetadataServiceTest {
         CreatePublicationRequest longerTitleRequest = createRequestWithTitle(longerTitle);
 
         return Stream.of(
-            generateTestHtml("dc.title maps to title in createRequest",
+            generateTestHtml("DC.title maps to mainTitle in createRequest",
                 Map.of(DC_TITLE, title), request),
-            generateTestHtml("DC.title maps to title in createRequest",
-                Map.of(DC_TITLE_UPPER_CASE, title), request),
-            generateTestHtml("citation.title maps to title in createRequest",
+            generateTestHtml("citation.title maps to mainTitle in createRequest",
                 Map.of(CITATION_TITLE, title), request),
-            generateTestHtml("The longer title takes precedence and maps to title in createRequest",
+            generateTestHtml("The longer title takes precedence and maps to mainTitle in createRequest",
                 Map.of(DC_TITLE, title, CITATION_TITLE, longerTitle), longerTitleRequest)
         );
     }
@@ -189,10 +169,8 @@ public class MetadataServiceTest {
         CreatePublicationRequest request = createRequestWithTags(List.of(subject, coverage));
 
         return Stream.of(
-            generateTestHtml("dc.coverage and dc.subject maps to respective tags in createRequest",
-                Map.of(DC_COVERAGE, coverage, DC_SUBJECT, subject), request),
             generateTestHtml("DC.coverage and DC.subject maps to respective tags in createRequest",
-                Map.of(DC_COVERAGE_UPPER_CASE, coverage, DC_SUBJECT_UPPER_CASE, subject), request)
+                Map.of(DC_COVERAGE, coverage, DC_SUBJECT, subject), request)
         );
     }
 
@@ -214,13 +192,11 @@ public class MetadataServiceTest {
             createRequestWithDescriptionAndOrAbstract(null, abstractString);
 
         return Stream.of(
-            generateTestHtml("dcterms.abstract and dc.description maps to respective tags in createRequest",
-                Map.of(DCTERMS_ABSTRACT, abstractString, DC_DESCRIPTION, description), request),
             generateTestHtml("DCTERMS.abstract and DC.description maps to respective tags in createRequest",
-                Map.of(DCTERMS_ABSTRACT_UPPER_CASE, abstractString, DC_DESCRIPTION_UPPER_CASE, description), request),
-            generateTestHtml("Without dcterms.abstract maps dc.description to abstract in createRequest",
+                Map.of(DCTERMS_ABSTRACT, abstractString, DC_DESCRIPTION, description), request),
+            generateTestHtml("Without DCTERMS.abstract maps DC.description to abstract in createRequest",
                 Map.of(DC_DESCRIPTION, abstractString), abstractOnlyRequest),
-            generateTestHtml("Without dc.description, dcterms.abstract maps to abstract in createRequest",
+            generateTestHtml("Without DC.description, DCTERMS.abstract maps to abstract in createRequest",
                 Map.of(DCTERMS_ABSTRACT, abstractString), abstractOnlyRequest)
         );
     }
@@ -236,35 +212,32 @@ public class MetadataServiceTest {
         CreatePublicationRequest emptyRequest = createRequestWithIdentifier(null, dummyTitle);
 
         return Stream.of(
-            generateTestHtml("dc.identifier with doi prefix maps to doi URI in createRequest",
+            generateTestHtml("DC.identifier with doi prefix maps to doi URI in createRequest",
                 Map.of(DC_TITLE, dummyTitle, DC_IDENTIFIER, doiWithPrefix), request),
             generateTestHtml("DC.identifier without doi prefix maps to doi URI in createRequest",
-                Map.of(DC_TITLE, dummyTitle, DC_IDENTIFIER_UPPER_CASE, doiWithoutPrefix), request),
+                Map.of(DC_TITLE, dummyTitle, DC_IDENTIFIER, doiWithoutPrefix), request),
             generateTestHtml("DC.identifier as doi URI maps to doi URI in createRequest",
-                Map.of(DC_TITLE, dummyTitle, DC_IDENTIFIER_UPPER_CASE, expectedDoi), request),
-            generateTestHtml("dc.identifier with no doi maps to empty createRequest",
+                Map.of(DC_TITLE, dummyTitle, DC_IDENTIFIER, expectedDoi), request),
+            generateTestHtml("DC.identifier with no doi maps to empty createRequest",
                 Map.of(DC_TITLE, dummyTitle, DC_IDENTIFIER, notADoi), emptyRequest)
         );
     }
 
     private static Stream<Arguments> provideMetadataForLanguage() {
         String language = "de";
-        String uppercaseLanguage = "DE";
         String notALanguage = "00";
         String expectedLanguage = "https://lexvo.org/id/iso639-3/deu";
         String underterminedLanguage = "https://lexvo.org/id/iso639-3/und";
         CreatePublicationRequest request = requestWithLanguage(URI.create(expectedLanguage));
         CreatePublicationRequest underterminedRequest = requestWithLanguage(URI.create(underterminedLanguage));
         return Stream.of(
-            generateTestHtml("dc.language with BCP-47 code maps to ISO639-3 code in createRequest",
+            generateTestHtml("DC.language with BCP-47 code maps to ISO639-3 mainLanguage in createRequest",
                 Map.of(DC_LANGUAGE, language), request),
-            generateTestHtml("DC.language with BCP-47 code maps to ISO639-3 code in createRequest",
-                Map.of(DC_LANGUAGE_UPPER_CASE, uppercaseLanguage), request),
-            generateTestHtml("dc.language with invalid code maps to 'und' ISO639-3 code in createRequest",
+            generateTestHtml("DC.language with invalid code maps to 'und' ISO639-3 mainLanguage in createRequest",
                 Map.of(DC_LANGUAGE, notALanguage), underterminedRequest),
-            generateTestHtml("DC.language with empty code maps to 'und' ISO639-3 code in createRequest",
-                Map.of(DC_LANGUAGE_UPPER_CASE, ""), underterminedRequest),
-            generateTestHtml("dc.language with no value maps to 'und' ISO639-3 code in createRequest",
+            generateTestHtml("DC.language with empty code maps to 'und' ISO639-3 mainLanguage in createRequest",
+                Map.of(DC_LANGUAGE, ""), underterminedRequest),
+            generateTestHtml("DC.language with no code maps to 'und' ISO639-3 mainLanguage in createRequest",
                 DC_LANGUAGE, null, underterminedRequest)
         );
     }
