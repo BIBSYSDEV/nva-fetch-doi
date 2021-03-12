@@ -1,4 +1,4 @@
-package no.unit.nva.metadata;
+package no.unit.nva.metadata.validation;
 
 import org.w3c.dom.Node;
 

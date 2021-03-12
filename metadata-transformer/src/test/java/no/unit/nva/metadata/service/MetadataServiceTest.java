@@ -37,7 +37,9 @@ public class MetadataServiceTest {
     public static final String DC_CREATOR = "DC.creator";
     public static final String DC_DATE = "DC.date";
     public static final String DC_TITLE = "DC.title";
+    public static final String DC_TITLE_LOWERCASE = "dc.title";
     public static final String DCTERMS_ABSTRACT = "DCTERMS.abstract";
+    public static final String DCTERMS_ABSTRACT_LOWERCASE = "dcterms.abstract";
     public static final String DC_DESCRIPTION = "DC.description";
     public static final String DC_COVERAGE = "DC.coverage";
     public static final String DC_SUBJECT = "DC.subject";
@@ -49,6 +51,7 @@ public class MetadataServiceTest {
 
     @ParameterizedTest(name = "#{index} - {0}")
     @MethodSource({
+        "provideMetadataWithLowercasePrefixesForValidationTest",
         "provideMetadataForTags",
         "provideMetadataForAbstract",
         "provideMetadataForTitle",
@@ -72,6 +75,20 @@ public class MetadataServiceTest {
         assertThat(actual, is(equalTo(expectedRequest)));
 
         wireMockServer.stop();
+    }
+
+    private static Stream<Arguments> provideMetadataWithLowercasePrefixesForValidationTest() {
+        String title = "Title";
+        String abstractString = "Abstract";
+        CreatePublicationRequest request = createRequestWithTitle(title);
+        CreatePublicationRequest abstractOnlyRequest = createRequestWithDescriptionAndOrAbstract(null, abstractString);
+
+        return Stream.of(
+            generateTestHtml("dc.title still maps to mainTitle in createRequest",
+                Map.of(DC_TITLE_LOWERCASE, title), request),
+            generateTestHtml("dcterms.abstract still maps to abstract in createRequest",
+                Map.of(DCTERMS_ABSTRACT_LOWERCASE, abstractString), abstractOnlyRequest)
+        );
     }
 
     private static Stream<Arguments> provideMetadataForContributors() throws MalformedContributorException {

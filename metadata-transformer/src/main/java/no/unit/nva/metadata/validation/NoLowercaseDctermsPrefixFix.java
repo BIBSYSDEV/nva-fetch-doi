@@ -1,4 +1,4 @@
-package no.unit.nva.metadata;
+package no.unit.nva.metadata.validation;
 
 import org.apache.any23.validator.DOMDocument;
 import org.apache.any23.validator.Fix;
@@ -6,6 +6,8 @@ import org.apache.any23.validator.Rule;
 import org.apache.any23.validator.RuleContext;
 
 public class NoLowercaseDctermsPrefixFix extends NoLowercasePrefix implements Fix {
+
+    public static final String UPPERCASE_DCTERMS_PREFIX = "DCTERMS.";
 
     @Override
     public String getHRName() {
@@ -18,6 +20,7 @@ public class NoLowercaseDctermsPrefixFix extends NoLowercasePrefix implements Fi
             .map(this::getNameAttributeNode)
             .filter(this::containsLowercaseDctermsPrefix)
             .forEach(nameAttributeNode -> nameAttributeNode.setTextContent(
-                "DCTERMS." + nameAttributeNode.getTextContent().substring(3)));
+                UPPERCASE_DCTERMS_PREFIX + nameAttributeNode.getTextContent()
+                    .substring(UPPERCASE_DCTERMS_PREFIX.length())));
     }
 }
