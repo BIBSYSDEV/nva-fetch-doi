@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -26,12 +25,10 @@ public class MetadataConverter {
 
     public static final String DOI_PREFIX = "doi:";
     public static final String DOI_ORG = "https://doi.org/";
-    public static final String ANY_23 = "http://vocab.sindice.net/any23#";
-    public static final String DC_IDENTIFIER = "dc.identifier";
-    public static final String DC_IDENTIFIER_UPPER_CASE = "DC.identifier";
-    public static final String DOI_START = "10\\.[0-9]+\\/.*";
-    public static final String DC_LANGUAGE = "dc.language";
-    public static final String DC_LANGUAGE_UPPER_CASE = "DC.language";
+    public static final String DCTERMS = "http://purl.org/dc/terms/";
+    public static final String IDENTIFIER = "identifier";
+    public static final String DOI_START = "10\\.[0-9]+/.*";
+    public static final String LANGUAGE = "language";
     public static final String LEXVO_ORG = "https://lexvo.org/id/iso639-3/";
     public static final String ISO3_LANGUAGE_CODE_UNDEFINED = "und";
 
@@ -78,17 +75,11 @@ public class MetadataConverter {
     }
 
     private boolean isDcIdentifier(Statement statement) {
-        return List.of(
-                valueFactory.createIRI(ANY_23, DC_IDENTIFIER),
-                valueFactory.createIRI(ANY_23, DC_IDENTIFIER_UPPER_CASE))
-                .contains(statement.getPredicate());
+        return statement.getPredicate().equals(valueFactory.createIRI(DCTERMS, IDENTIFIER));
     }
 
     private boolean isDcLanguage(Statement statement) {
-        return List.of(
-            valueFactory.createIRI(ANY_23, DC_LANGUAGE),
-            valueFactory.createIRI(ANY_23, DC_LANGUAGE_UPPER_CASE))
-            .contains(statement.getPredicate());
+        return valueFactory.createIRI(DCTERMS, LANGUAGE).equals(statement.getPredicate());
     }
 
     private URI toDoiUri(String stringValue) {
