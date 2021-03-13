@@ -8,13 +8,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteResponse;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteTypes;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.SingletonCollector;
 
-public final class
-DataciteTypesUtil {
+public final class DataciteTypesUtil {
 
     public static final String TYPE_TEXT = "text";
     public static final String JOURNAL = "journal";
