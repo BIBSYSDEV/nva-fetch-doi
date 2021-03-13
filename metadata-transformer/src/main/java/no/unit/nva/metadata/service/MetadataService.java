@@ -69,8 +69,8 @@ public class MetadataService {
     /**
      * Construct a CreatePublicationRequest for metadata extracted from a supplied URI.
      *
-     * @param uri   URI to dereference.
-     * @return  CreatePublicationRequest for selected set of metadata.
+     * @param uri URI to dereference.
+     * @return CreatePublicationRequest for selected set of metadata.
      */
     public Optional<CreatePublicationRequest> getCreatePublicationRequest(URI uri) {
         try {
@@ -88,20 +88,23 @@ public class MetadataService {
         translatorService.loadMetadataFromUri(uri);
         try (RepositoryConnection repositoryConnection = db.getConnection()) {
             repositoryConnection.add(loadExtractedData(), EMPTY_BASE_URI, RDFFormat.JSONLD);
-            RepositoryResult<Statement> statements = repositoryConnection.getStatements(null, null, null);
-            return getCleanedStatements(statements);
+            try (RepositoryResult<Statement> statements = repositoryConnection.getStatements(null, null, null)) {
+                return fixUpSindiceDcAndDctermsToDcterms(statements);
+            }
         } finally {
             db.shutDown();
         }
     }
 
-    private Model getCleanedStatements(RepositoryResult<Statement> statements) {
+    private Model fixUpSindiceDcAndDctermsToDcterms(RepositoryResult<Statement> statements) {
         ValueFactory valueFactory = SimpleValueFactory.getInstance();
         Model model = new TreeModel();
         while (statements.hasNext()) {
             Statement statement = statements.next();
             if (isSindiceDcOrDcTerms(statement)) {
-                model.add(valueFactory.createStatement(statement.getSubject(), toDcNamespace(statement.getPredicate(), valueFactory), statement.getObject()));
+                model.add(valueFactory.createStatement(statement.getSubject(),
+                        toDcNamespace(statement.getPredicate(), valueFactory),
+                        statement.getObject()));
             } else {
                 model.add(statement);
             }
@@ -126,7 +129,6 @@ public class MetadataService {
         var jsonObject = JsonUtils.fromInputStream(new ByteArrayInputStream(outputStream.toByteArray()));
         Object framed = frame(jsonObject, loadContext(), avoidBlankNodeIdentifiersAndOmitDefaultsConfig());
         return JsonUtils.toPrettyString(framed);
-
     }
 
     private Model getModelFromQuery(Model model, URI uri) {
@@ -142,6 +144,7 @@ public class MetadataService {
     /**
      * Configures JSON-LD processing. Uses JSON-LD 1.1 processing to avoid the inclusion of blank node identifiers,
      * suppresses generation of a base graph node, omits default so nulls are removed.
+     *
      * @return JsonLdOptions
      */
     private JsonLdOptions avoidBlankNodeIdentifiersAndOmitDefaultsConfig() {
@@ -154,7 +157,8 @@ public class MetadataService {
 
     private Map<String, Object> loadContext() {
         try {
-            var type = new TypeReference<Map<String,Object>>() {};
+            var type = new TypeReference<Map<String, Object>>() {
+            };
             return objectMapper.readValue(inputStreamFromResources(CONTEXT_JSON), type);
         } catch (IOException e) {
             throw new RuntimeException(MISSING_CONTEXT_OBJECT_FILE);
