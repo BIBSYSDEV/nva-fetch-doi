@@ -13,7 +13,8 @@ import no.unit.nva.doi.transformer.model.datacitemodel.DataciteTypes;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.SingletonCollector;
 
-public final class DataciteTypesUtil {
+public final class
+DataciteTypesUtil {
 
     public static final String TYPE_TEXT = "text";
     public static final String JOURNAL = "journal";
@@ -41,7 +42,7 @@ public final class DataciteTypesUtil {
 
     private static boolean isTextType(DataciteTypes dataciteTypes) {
         return nonNull(dataciteTypes.getResourceTypeGeneral())
-                && dataciteTypes.getResourceTypeGeneral().equalsIgnoreCase(TYPE_TEXT);
+                && TYPE_TEXT.equalsIgnoreCase(dataciteTypes.getResourceTypeGeneral());
     }
 
     @JacocoGenerated

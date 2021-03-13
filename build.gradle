@@ -78,6 +78,7 @@ subprojects {
         ruleSetConfig = rootProject.resources.text.fromFile('config/pmd/ruleset.xml')
         ruleSets = []
         ignoreFailures = false
+        toolVersion = '6.32.0'
     }
 
     checkstyle {
