@@ -100,6 +100,7 @@ public class MetadataService {
         ValueFactory valueFactory = SimpleValueFactory.getInstance();
         Model model = new TreeModel();
         while (statements.hasNext()) {
+            @SuppressWarnings("PMD.CloseResource")
             Statement statement = statements.next();
             if (isSindiceDcOrDcTerms(statement)) {
                 model.add(valueFactory.createStatement(statement.getSubject(),
