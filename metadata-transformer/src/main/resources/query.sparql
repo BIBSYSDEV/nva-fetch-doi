@@ -39,21 +39,21 @@ CONSTRUCT {
     BIND (BNODE() AS ?entityNode)
     {
       SELECT ?title WHERE {
-        VALUES ?titleProperty { any23:DC.title any23:citation_title }
+        VALUES ?titleProperty { dcterms:title any23:citation_title }
         <__URI__> ?titleProperty ?title  .
       } ORDER BY DESC(STRLEN(STR(?title))) LIMIT 1
     } UNION {
-      <__URI__> any23:DC.creator | any23:DC.contributor ?creator .
+      <__URI__> dcterms:creator | dcterms:contributor ?creator .
 
       BIND(BNODE() AS ?contributorNode)
       BIND(BNODE() AS ?identityNode)
       FILTER (BOUND(?creator) && STRLEN(?creator)>0)
     }
     UNION {
-      <__URI__> any23:DC.subject | any23:DC.coverage ?subject .
+      <__URI__> dcterms:subject | dcterms:coverage ?subject .
     }
     UNION {
-      <__URI__> any23:DC.date ?rawDate .
+      <__URI__> dcterms:date ?rawDate .
 
       BIND(BNODE() AS ?dateNode)
       BIND(STR(?rawDate) AS ?stringDate)
@@ -73,9 +73,9 @@ CONSTRUCT {
     UNION {
       SELECT DISTINCT ?abstract ?description WHERE {
         {
-          <__URI__> any23:DC.description ?rawDescription .
+          <__URI__> dcterms:description ?rawDescription .
         } UNION {
-          <__URI__> any23:DCTERMS.abstract ?rawAbstract .
+          <__URI__> dcterms:abstract ?rawAbstract .
         }
 
         BIND(STR(?rawAbstract) AS ?abstract)
@@ -83,19 +83,19 @@ CONSTRUCT {
         OPTIONAL {
           BIND (STR(?rawDescription) AS ?abstract)
           FILTER NOT EXISTS {
-            <__URI__> any23:DCTERMS.abstract ?rawAbstract
+            <__URI__> dcterms:abstract ?rawAbstract
           }
         }
         OPTIONAL {
           BIND(STR(?rawDescription) AS ?description)
           FILTER EXISTS {
-            <__URI__> any23:DCTERMS.abstract ?rawAbstract
+            <__URI__> dcterms:abstract ?rawAbstract
           }
         }
       }
     }
     UNION {
-        <__URI__> any23:DC.language ?rawLanguage .
+        <__URI__> dcterms:language ?rawLanguage .
     }
   }
 }
