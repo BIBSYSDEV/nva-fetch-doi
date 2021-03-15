@@ -51,7 +51,7 @@ public class MetadataServiceTest {
 
     @ParameterizedTest(name = "#{index} - {0}")
     @MethodSource({
-        "provideMetadataWithLowercasePrefixesForValidationTest",
+        "provideMetadataWithLowercasePrefixes",
         "provideMetadataForTags",
         "provideMetadataForAbstract",
         "provideMetadataForTitle",
@@ -77,16 +77,16 @@ public class MetadataServiceTest {
         wireMockServer.stop();
     }
 
-    private static Stream<Arguments> provideMetadataWithLowercasePrefixesForValidationTest() {
+    private static Stream<Arguments> provideMetadataWithLowercasePrefixes() {
         String title = "Title";
         String abstractString = "Abstract";
         CreatePublicationRequest request = createRequestWithTitle(title);
         CreatePublicationRequest abstractOnlyRequest = createRequestWithDescriptionAndOrAbstract(null, abstractString);
 
         return Stream.of(
-            generateTestHtml("dc.title still maps to mainTitle in createRequest",
+            generateTestHtml("Lowercase dc.title still maps to mainTitle in createRequest",
                 Map.of(DC_TITLE_LOWERCASE, title), request),
-            generateTestHtml("dcterms.abstract still maps to abstract in createRequest",
+            generateTestHtml("Lowercase dcterms.abstract still maps to abstract in createRequest",
                 Map.of(DCTERMS_ABSTRACT_LOWERCASE, abstractString), abstractOnlyRequest)
         );
     }
@@ -244,18 +244,18 @@ public class MetadataServiceTest {
         String language = "de";
         String notALanguage = "00";
         String expectedLanguage = "https://lexvo.org/id/iso639-3/deu";
-        String underterminedLanguage = "https://lexvo.org/id/iso639-3/und";
+        String undeterminedLanguage = "https://lexvo.org/id/iso639-3/und";
         CreatePublicationRequest request = requestWithLanguage(URI.create(expectedLanguage));
-        CreatePublicationRequest underterminedRequest = requestWithLanguage(URI.create(underterminedLanguage));
+        CreatePublicationRequest undeterminedRequest = requestWithLanguage(URI.create(undeterminedLanguage));
         return Stream.of(
             generateTestHtml("DC.language with BCP-47 code maps to ISO639-3 mainLanguage in createRequest",
                 Map.of(DC_LANGUAGE, language), request),
             generateTestHtml("DC.language with invalid code maps to 'und' ISO639-3 mainLanguage in createRequest",
-                Map.of(DC_LANGUAGE, notALanguage), underterminedRequest),
+                Map.of(DC_LANGUAGE, notALanguage), undeterminedRequest),
             generateTestHtml("DC.language with empty code maps to 'und' ISO639-3 mainLanguage in createRequest",
-                Map.of(DC_LANGUAGE, ""), underterminedRequest),
+                Map.of(DC_LANGUAGE, ""), undeterminedRequest),
             generateTestHtml("DC.language with no code maps to 'und' ISO639-3 mainLanguage in createRequest",
-                DC_LANGUAGE, null, underterminedRequest)
+                DC_LANGUAGE, null, undeterminedRequest)
         );
     }
 

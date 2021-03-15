@@ -1,5 +1,9 @@
 package no.unit.nva.metadata.service;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import org.apache.any23.Any23;
 import org.apache.any23.extractor.ExtractionException;
 import org.apache.any23.filter.IgnoreAccidentalRDFa;
@@ -10,11 +14,6 @@ import org.apache.any23.writer.JSONLDWriter;
 import org.apache.any23.writer.ReportingTripleHandler;
 import org.apache.any23.writer.TripleHandler;
 import org.apache.any23.writer.TripleHandlerException;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 
 public class TranslatorService {
 
