@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 import no.unit.nva.api.CreatePublicationRequest;
 import no.unit.nva.metadata.MetadataConverter;
 import org.apache.any23.extractor.ExtractionException;
-import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.ValueFactory;
@@ -45,7 +44,6 @@ public class MetadataService {
     public static final String CONTEXT_JSON = "context.json";
     public static final String MISSING_CONTEXT_OBJECT_FILE = "Missing context object file";
     public static final String REPLACEMENT_MARKER = "__URI__";
-    public static final String NEWLINE_DELIMITER = "\n";
     public static final String SINDICE_DC_URI_PART = "http://vocab.sindice.net/any23#dc.";
     public static final String SINDICE_DCTERMS_URI_PART = "http://vocab.sindice.net/any23#dcterms.";
     public static final String DCTERMS_PREFIX = "http://purl.org/dc/terms/";
@@ -86,27 +84,24 @@ public class MetadataService {
         try (RepositoryConnection repositoryConnection = db.getConnection()) {
             repositoryConnection.add(loadExtractedData(), EMPTY_BASE_URI, RDFFormat.JSONLD);
             try (RepositoryResult<Statement> statements = repositoryConnection.getStatements(null, null, null)) {
-                return fixUpSindiceDcAndDctermsToDcterms(statements);
+                return normalizeStatements(statements);
             }
         } finally {
             db.shutDown();
         }
     }
 
-    private Model fixUpSindiceDcAndDctermsToDcterms(RepositoryResult<Statement> statements) {
+    private Model normalizeStatements(RepositoryResult<Statement> statements) {
         ValueFactory valueFactory = SimpleValueFactory.getInstance();
         Model model = new TreeModel();
-        while (statements.hasNext()) {
-            @SuppressWarnings("PMD.CloseResource")
-            Statement statement = statements.next();
+        for (Statement statement : statements) {
             if (isSindiceDcOrDcTerms(statement)) {
-                model.add(valueFactory.createStatement(statement.getSubject(),
-                    toDcNamespace(statement.getPredicate(), valueFactory),
-                    statement.getObject()));
+                model.add(toDctermsNamespace(valueFactory, statement));
             } else {
                 model.add(statement);
             }
         }
+
         return model;
     }
 
@@ -115,10 +110,11 @@ public class MetadataService {
             || statement.getPredicate().toString().toLowerCase(Locale.ROOT).startsWith(SINDICE_DCTERMS_URI_PART);
     }
 
-    private IRI toDcNamespace(IRI predicate, ValueFactory valueFactory) {
-        String rawProperty = predicate.getLocalName();
-        String property = rawProperty.substring(rawProperty.lastIndexOf(DOT) + 1);
-        return valueFactory.createIRI(DCTERMS_PREFIX, property);
+    private Statement toDctermsNamespace(ValueFactory valueFactory, Statement statement) {
+        String rawProperty = statement.getPredicate().getLocalName();
+        return valueFactory.createStatement(statement.getSubject(),
+            valueFactory.createIRI(DCTERMS_PREFIX, rawProperty.substring(rawProperty.lastIndexOf(DOT) + 1)),
+            statement.getObject());
     }
 
     private String toFramedJsonLd(Model model) throws IOException {
@@ -155,8 +151,7 @@ public class MetadataService {
 
     private Map<String, Object> loadContext() {
         try {
-            var type = new TypeReference<Map<String, Object>>() {
-            };
+            var type = new TypeReference<Map<String, Object>>() {};
             return objectMapper.readValue(inputStreamFromResources(CONTEXT_JSON), type);
         } catch (IOException e) {
             throw new RuntimeException(MISSING_CONTEXT_OBJECT_FILE);
@@ -166,6 +161,6 @@ public class MetadataService {
     private String getQueryAsString(URI uri) {
         var inputStream = inputStreamFromResources(MetadataService.QUERY_SPARQL);
         return new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines()
-            .collect(Collectors.joining(NEWLINE_DELIMITER)).replaceAll(REPLACEMENT_MARKER, uri.toString());
+            .collect(Collectors.joining(System.lineSeparator())).replaceAll(REPLACEMENT_MARKER, uri.toString());
     }
 }
