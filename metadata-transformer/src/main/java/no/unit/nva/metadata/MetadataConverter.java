@@ -1,8 +1,14 @@
 package no.unit.nva.metadata;
 
+import static nva.commons.core.JsonUtils.objectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Locale;
 import java.util.MissingResourceException;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.regex.Pattern;
 import no.unit.nva.api.CreatePublicationRequest;
 import nva.commons.core.StringUtils;
 import org.eclipse.rdf4j.model.Model;
@@ -13,33 +19,19 @@ import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.regex.Pattern;
-
-import static nva.commons.core.JsonUtils.objectMapper;
-
 public class MetadataConverter {
 
     public static final String DOI_PREFIX = "doi:";
     public static final String DOI_ORG = "https://doi.org/";
-    public static final String ANY_23 = "http://vocab.sindice.net/any23#";
-    public static final String DC_IDENTIFIER = "dc.identifier";
-    public static final String DC_IDENTIFIER_UPPER_CASE = "DC.identifier";
-    public static final String DOI_START = "10\\.[0-9]+\\/.*";
-    public static final String DC_LANGUAGE = "dc.language";
-    public static final String DC_LANGUAGE_UPPER_CASE = "DC.language";
+    public static final String DCTERMS = "http://purl.org/dc/terms/";
+    public static final String IDENTIFIER = "identifier";
+    public static final String DOI_START = "10\\.[0-9]+/.*";
+    public static final String LANGUAGE = "language";
     public static final String LEXVO_ORG = "https://lexvo.org/id/iso639-3/";
     public static final String ISO3_LANGUAGE_CODE_UNDEFINED = "und";
-
-    public final Pattern doiStartPattern;
-
     private static final Logger logger = LoggerFactory.getLogger(MetadataConverter.class);
     private static final ValueFactory valueFactory = SimpleValueFactory.getInstance();
-
+    public final Pattern doiStartPattern;
     private final Model metadata;
     private final String jsonld;
 
@@ -58,13 +50,13 @@ public class MetadataConverter {
 
     private Optional<URI> getDoiFromMetadata(Model metadata) {
         return metadata
-                .stream()
-                .filter(this::isDcIdentifier)
-                .map(Statement::getObject)
-                .map(Value::stringValue)
-                .map(this::toDoiUri)
-                .filter(Objects::nonNull)
-                .findFirst();
+            .stream()
+            .filter(this::isDcIdentifier)
+            .map(Statement::getObject)
+            .map(Value::stringValue)
+            .map(this::toDoiUri)
+            .filter(Objects::nonNull)
+            .findFirst();
     }
 
     private Optional<URI> getLanguageFromMetadata(Model metadata) {
@@ -78,17 +70,11 @@ public class MetadataConverter {
     }
 
     private boolean isDcIdentifier(Statement statement) {
-        return List.of(
-                valueFactory.createIRI(ANY_23, DC_IDENTIFIER),
-                valueFactory.createIRI(ANY_23, DC_IDENTIFIER_UPPER_CASE))
-                .contains(statement.getPredicate());
+        return statement.getPredicate().equals(valueFactory.createIRI(DCTERMS, IDENTIFIER));
     }
 
     private boolean isDcLanguage(Statement statement) {
-        return List.of(
-            valueFactory.createIRI(ANY_23, DC_LANGUAGE),
-            valueFactory.createIRI(ANY_23, DC_LANGUAGE_UPPER_CASE))
-            .contains(statement.getPredicate());
+        return valueFactory.createIRI(DCTERMS, LANGUAGE).equals(statement.getPredicate());
     }
 
     private URI toDoiUri(String stringValue) {
@@ -108,7 +94,7 @@ public class MetadataConverter {
     }
 
     private URI toLexvoUri(String language) {
-        String iso3LanguageCode  = ISO3_LANGUAGE_CODE_UNDEFINED;
+        String iso3LanguageCode = ISO3_LANGUAGE_CODE_UNDEFINED;
         if (!StringUtils.isEmpty(language)) {
             try {
                 iso3LanguageCode = new Locale(language).getISO3Language();
