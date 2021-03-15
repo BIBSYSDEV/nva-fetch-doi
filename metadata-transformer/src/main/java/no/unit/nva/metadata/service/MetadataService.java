@@ -91,6 +91,7 @@ public class MetadataService {
         }
     }
 
+    @SuppressWarnings("PMD.CloseResource")
     private Model normalizeStatements(RepositoryResult<Statement> statements) {
         ValueFactory valueFactory = SimpleValueFactory.getInstance();
         Model model = new TreeModel();
