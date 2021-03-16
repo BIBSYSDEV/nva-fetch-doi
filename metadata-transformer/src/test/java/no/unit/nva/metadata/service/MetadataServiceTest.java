@@ -4,7 +4,10 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import j2html.tags.EmptyTag;
 import no.unit.nva.api.CreatePublicationRequest;
 import no.unit.nva.metadata.service.testdata.DateArgumentsProvider;
+import no.unit.nva.metadata.service.testdata.DcContentCaseArgumentsProvider;
+import no.unit.nva.metadata.service.testdata.LanguageArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.MetaTagPair;
+import no.unit.nva.metadata.service.testdata.UndefinedLanguageArgumentsProvider;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
@@ -38,6 +41,7 @@ import static j2html.TagCreator.meta;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MetadataServiceTest {
 
@@ -52,7 +56,6 @@ public class MetadataServiceTest {
     public static final String DC_COVERAGE = "DC.coverage";
     public static final String DC_SUBJECT = "DC.subject";
     public static final String DC_IDENTIFIER = "DC.identifier";
-    public static final String DC_LANGUAGE = "DC.language";
     public static final String CITATION_TITLE = "citation_title";
     public static final String DATE_SEPARATOR = "-";
     public static final String ARTICLE_HTML = "article.html";
@@ -74,8 +77,7 @@ public class MetadataServiceTest {
         "provideMetadataForAbstract",
         "provideMetadataForTitle",
         "provideMetadataForContributors",
-        "provideMetadataForIdentifier",
-        "provideMetadataForLanguage"
+        "provideMetadataForIdentifier"
     })
     public void getCreatePublicationParsesHtmlAndReturnsMetadata(String testDescription, String html,
                                                                  CreatePublicationRequest expectedRequest)
@@ -90,17 +92,19 @@ public class MetadataServiceTest {
         assertThat(actual, is(equalTo(expectedRequest)));
     }
 
+    @ParameterizedTest(name = "getCreatePublication ignores case of {0}")
+    @ArgumentsSource(DcContentCaseArgumentsProvider.class)
+    void getCreatePublicationReturnsValueWhenContentPrefixHasAnyCase(String tagAttribute,
+                                                                     String value) throws IOException {
+        Optional<CreatePublicationRequest> actual = getCreatePublicationRequestResponse(tagAttribute, value);
+        assertTrue(actual.isPresent());
+    }
+
     @ParameterizedTest(name = "getCreatePublication returns date when date attribute {0} with value {1}")
     @ArgumentsSource(DateArgumentsProvider.class)
     void getCreatePublicationReturnsDateWhenDateVariantIsPresent(String tagAttribute, String date) throws IOException {
-        String html = generateHtmlWithSingleMetaTag(tagAttribute, date);
-        URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
-        MetadataService metadataService = new MetadataService();
-        Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
 
-        CreatePublicationRequest actual = request.orElseThrow();
-        actual.setContext(null);
-
+        CreatePublicationRequest actual = getCreatePublicationRequest(tagAttribute, date);
         CreatePublicationRequest expectedRequest = getCreatePublicationRequestWithDateOnly(date);
         assertThat(actual, is(equalTo(expectedRequest)));
     }
@@ -112,15 +116,20 @@ public class MetadataServiceTest {
         List<MetaTagPair> metaDates = List.of(new MetaTagPair(DC_DATE, YEAR_ONLY),
                 new MetaTagPair(DC_DATE, FULL_DATE));
 
+        CreatePublicationRequest actual = getCreatePublicationRequest(metaDates);
+
+        CreatePublicationRequest expectedRequest = getCreatePublicationRequestWithDateOnly(FULL_DATE);
+        assertThat(actual, is(equalTo(expectedRequest)));
+    }
+
+    private CreatePublicationRequest getCreatePublicationRequest(List<MetaTagPair> metaDates) throws IOException {
         String html = createHtml(metaDates);
         URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
         MetadataService metadataService = new MetadataService();
         Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
         CreatePublicationRequest actual = request.orElseThrow();
         actual.setContext(null);
-
-        CreatePublicationRequest expectedRequest = getCreatePublicationRequestWithDateOnly(FULL_DATE);
-        assertThat(actual, is(equalTo(expectedRequest)));
+        return actual;
     }
 
     @ParameterizedTest(name = "Dates that are shorter are accepted when bad date is {0}")
@@ -130,15 +139,59 @@ public class MetadataServiceTest {
         List<MetaTagPair> metaDates = List.of(new MetaTagPair(DC_DATE, YEAR_ONLY),
                 new MetaTagPair(DC_DATE, nonsense));
 
-        String html = createHtml(metaDates);
-        URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
-        MetadataService metadataService = new MetadataService();
-        Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
-        CreatePublicationRequest actual = request.orElseThrow();
-        actual.setContext(null);
+        CreatePublicationRequest actual = getCreatePublicationRequest(metaDates);
 
         CreatePublicationRequest expectedRequest = getCreatePublicationRequestWithDateOnly(YEAR_ONLY);
         assertThat(actual, is(equalTo(expectedRequest)));
+    }
+
+    @ParameterizedTest(name = "getCreatePublication returns Lexvo URI when input is {0} and {1}")
+    @ArgumentsSource(LanguageArgumentsProvider.class)
+    void getCreatePublicationReturnsLexvoUriWhenInputIsValidLanguage(String attribute,
+                                                                     String language,
+                                                                     URI expectedUri) throws IOException {
+        CreatePublicationRequest actual = getCreatePublicationRequest(attribute, language);
+        CreatePublicationRequest expectedRequest = createPublicationRequestWithLanguageOnly(expectedUri);
+        assertThat(actual, is(equalTo(expectedRequest)));
+    }
+
+    @ParameterizedTest(name = "Invalid language code {1} in {0} is mapped to {2}")
+    @ArgumentsSource(UndefinedLanguageArgumentsProvider.class)
+    void getCreatePublicationReturnsLexvoUndUriWhenInputIsInvalidLanguage(String attribute,
+                                                                          String code,
+                                                                          URI expectedUri) throws IOException {
+        CreatePublicationRequest actual = getCreatePublicationRequest(attribute, code);
+        CreatePublicationRequest expectedRequest = createPublicationRequestWithLanguageOnly(expectedUri);
+        assertThat(actual, is(equalTo(expectedRequest)));
+    }
+
+    @Test
+    void getCreatePublicationReturnsNoValueWhenDcTermsElementIsUnknown() throws IOException {
+        Optional<CreatePublicationRequest> request = getCreatePublicationRequestResponse("DC.lnaguage", "Not important");
+        assertTrue(request.isEmpty());
+    }
+
+    private Optional<CreatePublicationRequest> getCreatePublicationRequestResponse(String attribute, String value) throws IOException {
+        String html = createHtml(new MetaTagPair(attribute, value));
+        URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
+        MetadataService metadataService = new MetadataService();
+        return metadataService.getCreatePublicationRequest(uri);
+    }
+
+    private CreatePublicationRequest getCreatePublicationRequest(String attribute, String value) throws IOException {
+        Optional<CreatePublicationRequest> request = getCreatePublicationRequestResponse(attribute, value);
+        CreatePublicationRequest actual = request.orElseThrow();
+        actual.setContext(null);
+        return actual;
+    }
+
+    private CreatePublicationRequest createPublicationRequestWithLanguageOnly(URI uri) {
+        EntityDescription entityDescription = new EntityDescription.Builder()
+                .withLanguage(uri)
+                .build();
+        CreatePublicationRequest expectedRequest = new CreatePublicationRequest();
+        expectedRequest.setEntityDescription(entityDescription);
+        return expectedRequest;
     }
 
     private CreatePublicationRequest getCreatePublicationRequestWithDateOnly(String date) {
@@ -290,25 +343,6 @@ public class MetadataServiceTest {
         );
     }
 
-    private static Stream<Arguments> provideMetadataForLanguage() {
-        String language = "de";
-        String notALanguage = "00";
-        String expectedLanguage = "https://lexvo.org/id/iso639-3/deu";
-        String undeterminedLanguage = "https://lexvo.org/id/iso639-3/und";
-        CreatePublicationRequest request = requestWithLanguage(URI.create(expectedLanguage));
-        CreatePublicationRequest undeterminedRequest = requestWithLanguage(URI.create(undeterminedLanguage));
-        return Stream.of(
-            generateTestHtml("DC.language with BCP-47 code maps to ISO639-3 mainLanguage in createRequest",
-                Map.of(DC_LANGUAGE, language), request),
-            generateTestHtml("DC.language with invalid code maps to 'und' ISO639-3 mainLanguage in createRequest",
-                Map.of(DC_LANGUAGE, notALanguage), undeterminedRequest),
-            generateTestHtml("DC.language with empty code maps to 'und' ISO639-3 mainLanguage in createRequest",
-                Map.of(DC_LANGUAGE, ""), undeterminedRequest),
-            generateTestHtml("DC.language with no code maps to 'und' ISO639-3 mainLanguage in createRequest",
-                DC_LANGUAGE, null, undeterminedRequest)
-        );
-    }
-
     private static CreatePublicationRequest createRequestWithIdentifier(URI identifier, String title) {
         EntityDescription entityDescription = new EntityDescription.Builder()
             .withMainTitle(title)
@@ -335,28 +369,13 @@ public class MetadataServiceTest {
         return request;
     }
 
-    private static CreatePublicationRequest requestWithLanguage(URI language) {
-        EntityDescription entityDescription = new EntityDescription.Builder()
-            .withLanguage(language)
-            .build();
-        CreatePublicationRequest request = new CreatePublicationRequest();
-        request.setEntityDescription(entityDescription);
-        return request;
-    }
-
-    private static Arguments generateTestHtml(String testDescription, String name, String content,
-                                              CreatePublicationRequest expected) {
-        return Arguments.of(testDescription, generateHtmlWithSingleMetaTag(name, content),
-            expected);
-    }
-
-    private static String generateHtmlWithSingleMetaTag(String name, String content) {
-        return html(head(meta().withName(name).withContent(content))).renderFormatted();
-    }
-
     private static Arguments generateTestHtml(String testDescription, Map<String, String> metadata,
                                               CreatePublicationRequest expected) {
         return Arguments.of(testDescription, createHtml(metadata), expected);
+    }
+
+    private String createHtml(MetaTagPair tagPair) {
+        return html(head(getMetaTag(tagPair))).renderFormatted();
     }
 
     private static String createHtml(List<MetaTagPair> tagPairs) {

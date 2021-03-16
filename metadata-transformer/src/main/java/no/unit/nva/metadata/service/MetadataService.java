@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.api.CreatePublicationRequest;
+import no.unit.nva.metadata.DcTerms;
 import no.unit.nva.metadata.MetadataConverter;
 import org.apache.any23.extractor.ExtractionException;
 import org.eclipse.rdf4j.model.IRI;
@@ -55,6 +56,8 @@ public class MetadataService {
     private static final Set<String> HIGHWIRE_DATES = Set.of("citation_publication_date", "citation_cover_date",
             "citation_date");
     public static final String DATE_PROPERTY_NAME = "date";
+    public static final String CITATION_LANGUAGE = "citation_language";
+    private static final String LANGUAGE_PROPERTY_NAME = "language";
     private final TranslatorService translatorService;
     private final Repository db = new SailRepository(new MemoryStore());
 
@@ -105,6 +108,8 @@ public class MetadataService {
                 model.add(toDctermsNamespace(valueFactory, statement));
             } else if (isHighwireDate(statement)) {
                 model.add(toDctermsDate(valueFactory, statement));
+            } else if (isHighWireLanguage(statement)) {
+                model.add(toDctermsLanguage(valueFactory, statement));
             } else {
                 model.add(statement);
             }
@@ -112,14 +117,27 @@ public class MetadataService {
         return model;
     }
 
+    private Statement toDctermsLanguage(ValueFactory valueFactory, Statement statement) {
+        IRI dateProperty = valueFactory.createIRI(DCTERMS_PREFIX, LANGUAGE_PROPERTY_NAME);
+        return valueFactory.createStatement(statement.getSubject(), dateProperty, statement.getObject());    }
+
     private Statement toDctermsDate(ValueFactory valueFactory, Statement statement) {
         IRI dateProperty = valueFactory.createIRI(DCTERMS_PREFIX, DATE_PROPERTY_NAME);
         return valueFactory.createStatement(statement.getSubject(), dateProperty, statement.getObject());
     }
 
+    private boolean isHighWireLanguage(Statement statement) {
+        String property = getLocalName(statement);
+        return CITATION_LANGUAGE.equals(property.toLowerCase(Locale.ROOT));
+    }
+
+    private String getLocalName(Statement statement) {
+        return statement.getPredicate().getLocalName();
+    }
+
     private boolean isHighwireDate(Statement statement) {
-        String property = statement.getPredicate().getLocalName();
-        return HIGHWIRE_DATES.contains(property);
+        String property = getLocalName(statement);
+        return HIGHWIRE_DATES.contains(property.toLowerCase(Locale.ROOT));
     }
 
     private boolean isSindiceDcOrDcTerms(Statement statement) {
@@ -128,10 +146,18 @@ public class MetadataService {
     }
 
     private Statement toDctermsNamespace(ValueFactory valueFactory, Statement statement) {
-        String rawProperty = statement.getPredicate().getLocalName();
-        return valueFactory.createStatement(statement.getSubject(),
-            valueFactory.createIRI(DCTERMS_PREFIX, rawProperty.substring(rawProperty.lastIndexOf(DOT) + 1)),
-            statement.getObject());
+        String rawProperty = getLocalName(statement);
+        String dcLocalName = rawProperty.substring(rawProperty.lastIndexOf(DOT) + 1);
+        Optional<DcTerms> dcTerms = DcTerms.getTermByValue(dcLocalName);
+
+        if (dcTerms.isPresent()) {
+            return valueFactory.createStatement(statement.getSubject(),
+                    dcTerms.get().getIri(),
+                    statement.getObject());
+        } else {
+            logger.warn("Received <" + rawProperty + "> claimed as a DC property");
+            return statement;
+        }
     }
 
     private String toFramedJsonLd(Model model) throws IOException {
