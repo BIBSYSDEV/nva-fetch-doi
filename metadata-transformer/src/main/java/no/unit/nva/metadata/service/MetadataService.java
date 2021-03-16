@@ -114,10 +114,13 @@ public class MetadataService {
     }
 
     private Statement toDctermsLanguage(ValueFactory valueFactory, Statement statement) {
-        return valueFactory.createStatement(statement.getSubject(), DcTerms.LANGUAGE.getIri(valueFactory), statement.getObject());    }
+        return valueFactory.createStatement(statement.getSubject(),
+                DcTerms.LANGUAGE.getIri(valueFactory), statement.getObject());
+    }
 
     private Statement toDctermsDate(ValueFactory valueFactory, Statement statement) {
-        return valueFactory.createStatement(statement.getSubject(), DcTerms.DATE.getIri(valueFactory), statement.getObject());
+        return valueFactory.createStatement(statement.getSubject(),
+                DcTerms.DATE.getIri(valueFactory), statement.getObject());
     }
 
     private boolean isHighWireLanguage(Statement statement) {

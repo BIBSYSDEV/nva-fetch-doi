@@ -62,6 +62,8 @@ public class MetadataServiceTest {
     public static final String YEAR_ONLY = "2001";
     public static final String FULL_DATE = "2001-12-19";
     public static final String DC_DATE = "dc.date";
+    public static final String DC_MISSPELT = "DC.lnaguage";
+    public static final String IRRELEVANT = "Not important";
 
     private WireMockServer wireMockServer;
 
@@ -122,16 +124,6 @@ public class MetadataServiceTest {
         assertThat(actual, is(equalTo(expectedRequest)));
     }
 
-    private CreatePublicationRequest getCreatePublicationRequest(List<MetaTagPair> metaDates) throws IOException {
-        String html = createHtml(metaDates);
-        URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
-        MetadataService metadataService = new MetadataService();
-        Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
-        CreatePublicationRequest actual = request.orElseThrow();
-        actual.setContext(null);
-        return actual;
-    }
-
     @ParameterizedTest(name = "Dates that are shorter are accepted when bad date is {0}")
     @ValueSource(strings = {"20111-02-01", "2011-033-11", "2010-01-011", "20100101", "First of Sept. 2010"})
     void getCreatePublicationReturnsLongestDateWhenLongerNonsenseCandidatesAreAvailable(String nonsense)
@@ -167,15 +159,18 @@ public class MetadataServiceTest {
 
     @Test
     void getCreatePublicationReturnsNoValueWhenDcTermsElementIsUnknown() throws IOException {
-        Optional<CreatePublicationRequest> request = getCreatePublicationRequestResponse("DC.lnaguage", "Not important");
+        Optional<CreatePublicationRequest> request = getCreatePublicationRequestResponse(DC_MISSPELT, IRRELEVANT);
         assertTrue(request.isEmpty());
     }
 
-    private Optional<CreatePublicationRequest> getCreatePublicationRequestResponse(String attribute, String value) throws IOException {
-        String html = createHtml(new MetaTagPair(attribute, value));
+    private CreatePublicationRequest getCreatePublicationRequest(List<MetaTagPair> metaDates) throws IOException {
+        String html = createHtml(metaDates);
         URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
         MetadataService metadataService = new MetadataService();
-        return metadataService.getCreatePublicationRequest(uri);
+        Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
+        CreatePublicationRequest actual = request.orElseThrow();
+        actual.setContext(null);
+        return actual;
     }
 
     private CreatePublicationRequest getCreatePublicationRequest(String attribute, String value) throws IOException {
@@ -183,6 +178,13 @@ public class MetadataServiceTest {
         CreatePublicationRequest actual = request.orElseThrow();
         actual.setContext(null);
         return actual;
+    }
+    private Optional<CreatePublicationRequest> getCreatePublicationRequestResponse(String attribute, String value)
+            throws IOException {
+        String html = createHtml(new MetaTagPair(attribute, value));
+        URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
+        MetadataService metadataService = new MetadataService();
+        return metadataService.getCreatePublicationRequest(uri);
     }
 
     private CreatePublicationRequest createPublicationRequestWithLanguageOnly(URI uri) {
