@@ -40,7 +40,6 @@ public class MetadataServiceTest {
     public static final String URI_TEMPLATE = "http://localhost:%d/article/%s";
     public static final String DC_CONTRIBUTOR = "DC.contributor";
     public static final String DC_CREATOR = "DC.creator";
-    public static final String DC_DATE = "DC.date";
     public static final String DC_TITLE = "DC.title";
     public static final String DC_TITLE_LOWERCASE = "dc.title";
     public static final String DCTERMS_ABSTRACT = "DCTERMS.abstract";
@@ -61,7 +60,6 @@ public class MetadataServiceTest {
         "provideMetadataForTags",
         "provideMetadataForAbstract",
         "provideMetadataForTitle",
-        "provideMetadataForDate",
         "provideMetadataForContributors",
         "provideMetadataForIdentifier",
         "provideMetadataForLanguage"
@@ -103,22 +101,25 @@ public class MetadataServiceTest {
     }
 
     private CreatePublicationRequest getCreatePublicationRequestWithDateOnly(String date) {
+        EntityDescription entityDescription = new EntityDescription.Builder()
+                .withDate(createPublicationDate(date))
+                .build();
+        CreatePublicationRequest expectedRequest = new CreatePublicationRequest();
+        expectedRequest.setEntityDescription(entityDescription);
+        return expectedRequest;
+    }
+
+    private PublicationDate createPublicationDate(String date) {
         String[] dateParts = date.split(DATE_SEPARATOR);
         String year = dateParts[0];
         String month = dateParts.length > 1 ? dateParts[1] : null;
         String day = dateParts.length > 2 ? dateParts[2] : null;
 
-        PublicationDate publicationDate = new PublicationDate.Builder()
+        return new PublicationDate.Builder()
                 .withYear(year)
                 .withMonth(month)
                 .withDay(day)
                 .build();
-        EntityDescription entityDescription = new EntityDescription.Builder()
-                .withDate(publicationDate)
-                .build();
-        CreatePublicationRequest expectedRequest = new CreatePublicationRequest();
-        expectedRequest.setEntityDescription(entityDescription);
-        return expectedRequest;
     }
 
     private static Stream<Arguments> provideMetadataWithLowercasePrefixes() {
@@ -157,42 +158,6 @@ public class MetadataServiceTest {
             .build();
         EntityDescription entityDescription = new EntityDescription.Builder()
             .withContributors(List.of(contributor))
-            .build();
-        CreatePublicationRequest request = new CreatePublicationRequest();
-        request.setEntityDescription(entityDescription);
-        return request;
-    }
-
-    private static Stream<Arguments> provideMetadataForDate() {
-        String year = "2021";
-        String month = "02";
-        String day = "22";
-
-        PublicationDate date = new PublicationDate.Builder()
-            .withYear(year)
-            .withMonth(month)
-            .withDay(day)
-            .build();
-        CreatePublicationRequest request = createRequestWithDate(date);
-
-        PublicationDate yearOnlyDate = new PublicationDate.Builder()
-            .withYear(year)
-            .build();
-        CreatePublicationRequest yearOnlyRequest = createRequestWithDate(yearOnlyDate);
-
-        String dateString = String.join("-", year, month, day);
-
-        return Stream.of(
-            generateTestHtml("DC.date with year, month and day maps to publication date createRequest",
-                Map.of(DC_DATE, dateString), request),
-            generateTestHtml("DC.date with only year maps to publication date createRequest",
-                Map.of(DC_DATE, year), yearOnlyRequest)
-        );
-    }
-
-    private static CreatePublicationRequest createRequestWithDate(PublicationDate date) {
-        EntityDescription entityDescription = new EntityDescription.Builder()
-            .withDate(date)
             .build();
         CreatePublicationRequest request = new CreatePublicationRequest();
         request.setEntityDescription(entityDescription);
