@@ -18,6 +18,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
 import java.net.URI;
@@ -119,6 +120,24 @@ public class MetadataServiceTest {
         actual.setContext(null);
 
         CreatePublicationRequest expectedRequest = getCreatePublicationRequestWithDateOnly(FULL_DATE);
+        assertThat(actual, is(equalTo(expectedRequest)));
+    }
+
+    @ParameterizedTest(name = "Dates that are shorter are accepted when bad date is {0}")
+    @ValueSource(strings = {"20111-02-01", "2011-033-11", "2010-01-011", "20100101", "First of Sept. 2010"})
+    void getCreatePublicationReturnsLongestDateWhenLongerNonsenseCandidatesAreAvailable(String nonsense)
+            throws IOException {
+        List<MetaTagPair> metaDates = List.of(new MetaTagPair(DC_DATE, YEAR_ONLY),
+                new MetaTagPair(DC_DATE, nonsense));
+
+        String html = createHtml(metaDates);
+        URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
+        MetadataService metadataService = new MetadataService();
+        Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
+        CreatePublicationRequest actual = request.orElseThrow();
+        actual.setContext(null);
+
+        CreatePublicationRequest expectedRequest = getCreatePublicationRequestWithDateOnly(YEAR_ONLY);
         assertThat(actual, is(equalTo(expectedRequest)));
     }
 
