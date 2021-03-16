@@ -51,6 +51,7 @@ public class MetadataServiceTest {
     public static final String DC_LANGUAGE = "DC.language";
     public static final String CITATION_TITLE = "citation_title";
     public static final String DATE_SEPARATOR = "-";
+    public static final String ARTICLE_HTML = "article.html";
 
     private WireMockServer wireMockServer;
 
@@ -67,8 +68,7 @@ public class MetadataServiceTest {
     public void getCreatePublicationParsesHtmlAndReturnsMetadata(String testDescription, String html,
                                                                  CreatePublicationRequest expectedRequest)
         throws IOException {
-        String filename = "article.html";
-        URI uri = prepareWebServerAndReturnUriToMetadata(filename, html);
+        URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
         MetadataService metadataService = new MetadataService();
         Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
 
@@ -84,9 +84,8 @@ public class MetadataServiceTest {
     @ParameterizedTest(name = "getCreatePublication returns date when date attribute {0} with value {1}")
     @ArgumentsSource(DateArgumentsProvider.class)
     void getCreatePublicationReturnsDateWhenDateVariantIsPresent(String tagAttribute, String date) throws IOException {
-        String filename = "article.html";
         String html = generateHtmlWithSingleMetaTag(tagAttribute, date);
-        URI uri = prepareWebServerAndReturnUriToMetadata(filename, html);
+        URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
         MetadataService metadataService = new MetadataService();
         Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
 
