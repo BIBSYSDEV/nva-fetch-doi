@@ -11,7 +11,7 @@ public class DateArgumentsProvider implements ArgumentsProvider {
     @Override
     public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
         return Stream.of(
-                Arguments.of("DC.date", "2001", null, null),
+                Arguments.of("DC.date", "2001"),
                 Arguments.of("DC.date", "2001-01-01"),
                 Arguments.of("dc.date", "2001"),
                 Arguments.of("dc.date", "2001-01-01"),
