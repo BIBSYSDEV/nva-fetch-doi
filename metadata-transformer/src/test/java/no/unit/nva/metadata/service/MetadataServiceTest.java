@@ -179,6 +179,7 @@ public class MetadataServiceTest {
         actual.setContext(null);
         return actual;
     }
+
     private Optional<CreatePublicationRequest> getCreatePublicationRequestResponse(String attribute, String value)
             throws IOException {
         String html = createHtml(new MetaTagPair(attribute, value));
