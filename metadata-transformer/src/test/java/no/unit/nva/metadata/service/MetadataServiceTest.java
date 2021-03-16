@@ -1,10 +1,10 @@
-package no.unit.nva.metadata.service.testdata;
+package no.unit.nva.metadata.service;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import j2html.tags.EmptyTag;
 import no.unit.nva.api.CreatePublicationRequest;
-import no.unit.nva.metadata.service.DateArgumentsProvider;
-import no.unit.nva.metadata.service.MetadataService;
+import no.unit.nva.metadata.service.testdata.DateArgumentsProvider;
+import no.unit.nva.metadata.service.testdata.MetaTagPair;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;

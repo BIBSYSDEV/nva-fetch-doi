@@ -1,4 +1,4 @@
-package no.unit.nva.metadata.service;
+package no.unit.nva.metadata.service.testdata;
 
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
