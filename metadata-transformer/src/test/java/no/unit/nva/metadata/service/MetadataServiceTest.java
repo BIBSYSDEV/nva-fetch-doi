@@ -11,6 +11,7 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.exceptions.MalformedContributorException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -60,6 +61,11 @@ public class MetadataServiceTest {
 
     private WireMockServer wireMockServer;
 
+    @AfterEach
+    void tearDown() {
+        wireMockServer.stop();
+    }
+
     @ParameterizedTest(name = "#{index} - {0}")
     @MethodSource({
         "provideMetadataWithLowercasePrefixes",
@@ -77,13 +83,10 @@ public class MetadataServiceTest {
         MetadataService metadataService = new MetadataService();
         Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
 
-        assertThat(request.isPresent(), is(true));
-        CreatePublicationRequest actual = request.get();
+        CreatePublicationRequest actual = request.orElseThrow();
         actual.setContext(null);
 
         assertThat(actual, is(equalTo(expectedRequest)));
-
-        wireMockServer.stop();
     }
 
     @ParameterizedTest(name = "getCreatePublication returns date when date attribute {0} with value {1}")
@@ -94,14 +97,11 @@ public class MetadataServiceTest {
         MetadataService metadataService = new MetadataService();
         Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
 
-        assertThat(request.isPresent(), is(true));
-        CreatePublicationRequest actual = request.get();
+        CreatePublicationRequest actual = request.orElseThrow();
         actual.setContext(null);
 
         CreatePublicationRequest expectedRequest = getCreatePublicationRequestWithDateOnly(date);
         assertThat(actual, is(equalTo(expectedRequest)));
-
-        wireMockServer.stop();
     }
 
     @Test
@@ -115,15 +115,11 @@ public class MetadataServiceTest {
         URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
         MetadataService metadataService = new MetadataService();
         Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
-
-        assertThat(request.isPresent(), is(true));
-        CreatePublicationRequest actual = request.get();
+        CreatePublicationRequest actual = request.orElseThrow();
         actual.setContext(null);
 
         CreatePublicationRequest expectedRequest = getCreatePublicationRequestWithDateOnly(FULL_DATE);
         assertThat(actual, is(equalTo(expectedRequest)));
-
-        wireMockServer.stop();
     }
 
     private CreatePublicationRequest getCreatePublicationRequestWithDateOnly(String date) {
