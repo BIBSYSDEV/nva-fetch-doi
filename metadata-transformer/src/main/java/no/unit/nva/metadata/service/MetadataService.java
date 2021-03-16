@@ -23,7 +23,6 @@ import no.unit.nva.api.CreatePublicationRequest;
 import no.unit.nva.metadata.DcTerms;
 import no.unit.nva.metadata.MetadataConverter;
 import org.apache.any23.extractor.ExtractionException;
-import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.ValueFactory;
@@ -49,15 +48,12 @@ public class MetadataService {
     public static final String REPLACEMENT_MARKER = "__URI__";
     public static final String SINDICE_DC_URI_PART = "http://vocab.sindice.net/any23#dc.";
     public static final String SINDICE_DCTERMS_URI_PART = "http://vocab.sindice.net/any23#dcterms.";
-    public static final String DCTERMS_PREFIX = "http://purl.org/dc/terms/";
     public static final String DOT = ".";
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final Logger logger = LoggerFactory.getLogger(MetadataService.class);
     private static final Set<String> HIGHWIRE_DATES = Set.of("citation_publication_date", "citation_cover_date",
             "citation_date");
-    public static final String DATE_PROPERTY_NAME = "date";
     public static final String CITATION_LANGUAGE = "citation_language";
-    private static final String LANGUAGE_PROPERTY_NAME = "language";
     private final TranslatorService translatorService;
     private final Repository db = new SailRepository(new MemoryStore());
 
@@ -118,12 +114,10 @@ public class MetadataService {
     }
 
     private Statement toDctermsLanguage(ValueFactory valueFactory, Statement statement) {
-        IRI dateProperty = valueFactory.createIRI(DCTERMS_PREFIX, LANGUAGE_PROPERTY_NAME);
-        return valueFactory.createStatement(statement.getSubject(), dateProperty, statement.getObject());    }
+        return valueFactory.createStatement(statement.getSubject(), DcTerms.LANGUAGE.getIri(valueFactory), statement.getObject());    }
 
     private Statement toDctermsDate(ValueFactory valueFactory, Statement statement) {
-        IRI dateProperty = valueFactory.createIRI(DCTERMS_PREFIX, DATE_PROPERTY_NAME);
-        return valueFactory.createStatement(statement.getSubject(), dateProperty, statement.getObject());
+        return valueFactory.createStatement(statement.getSubject(), DcTerms.DATE.getIri(valueFactory), statement.getObject());
     }
 
     private boolean isHighWireLanguage(Statement statement) {
@@ -152,7 +146,7 @@ public class MetadataService {
 
         if (dcTerms.isPresent()) {
             return valueFactory.createStatement(statement.getSubject(),
-                    dcTerms.get().getIri(),
+                    dcTerms.get().getIri(valueFactory),
                     statement.getObject());
         } else {
             logger.warn("Received <" + rawProperty + "> claimed as a DC property");

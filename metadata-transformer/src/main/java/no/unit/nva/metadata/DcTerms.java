@@ -2,7 +2,6 @@ package no.unit.nva.metadata;
 
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.ValueFactory;
-import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -65,7 +64,6 @@ public enum DcTerms {
     VALID("valid");
 
     private static final String DCTERMS_PREFIX = "http://purl.org/dc/terms/";
-    private static final ValueFactory valueFactory = SimpleValueFactory.getInstance();
 
     private final String localName;
 
@@ -73,7 +71,7 @@ public enum DcTerms {
         this.localName = localName;
     }
 
-    public IRI getIri() {
+    public IRI getIri(ValueFactory valueFactory) {
         return valueFactory.createIRI(DCTERMS_PREFIX, localName);
     }
 
