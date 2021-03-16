@@ -11,6 +11,8 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.exceptions.MalformedContributorException;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -52,6 +54,9 @@ public class MetadataServiceTest {
     public static final String CITATION_TITLE = "citation_title";
     public static final String DATE_SEPARATOR = "-";
     public static final String ARTICLE_HTML = "article.html";
+    public static final String YEAR_ONLY = "2001";
+    public static final String FULL_DATE = "2001-12-19";
+    public static final String DC_DATE = "dc.date";
 
     private WireMockServer wireMockServer;
 
@@ -94,6 +99,28 @@ public class MetadataServiceTest {
         actual.setContext(null);
 
         CreatePublicationRequest expectedRequest = getCreatePublicationRequestWithDateOnly(date);
+        assertThat(actual, is(equalTo(expectedRequest)));
+
+        wireMockServer.stop();
+    }
+
+    @Test
+    @DisplayName("getCreatePublication accepts multiple dates, but only one publication date is returned")
+    void getCreatePublicationReturnsMostCompletePublicationDateWhenMultipleCandidatesArePresent() throws IOException {
+
+        List<MetaTagPair> metaDates = List.of(new MetaTagPair(DC_DATE, YEAR_ONLY),
+                new MetaTagPair(DC_DATE, FULL_DATE));
+
+        String html = createHtml(metaDates);
+        URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
+        MetadataService metadataService = new MetadataService();
+        Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
+
+        assertThat(request.isPresent(), is(true));
+        CreatePublicationRequest actual = request.get();
+        actual.setContext(null);
+
+        CreatePublicationRequest expectedRequest = getCreatePublicationRequestWithDateOnly(FULL_DATE);
         assertThat(actual, is(equalTo(expectedRequest)));
 
         wireMockServer.stop();
@@ -317,6 +344,16 @@ public class MetadataServiceTest {
         return Arguments.of(testDescription, createHtml(metadata), expected);
     }
 
+    private static String createHtml(List<MetaTagPair> tagPairs) {
+        return html(
+                head(
+                        tagPairs.stream()
+                                .map(MetadataServiceTest::getMetaTag)
+                                .toArray(EmptyTag[]::new)
+                )
+        ).renderFormatted();
+    }
+
     private static String createHtml(Map<String, String> metadata) {
         return html(
             head(
@@ -325,6 +362,10 @@ public class MetadataServiceTest {
                     .toArray(EmptyTag[]::new)
             )
         ).renderFormatted();
+    }
+
+    private static EmptyTag getMetaTag(MetaTagPair tagPair) {
+        return meta().withName(tagPair.getName()).withContent(tagPair.getContent());
     }
 
     private static EmptyTag getMetaTag(Map<String, String> metadata, String content) {

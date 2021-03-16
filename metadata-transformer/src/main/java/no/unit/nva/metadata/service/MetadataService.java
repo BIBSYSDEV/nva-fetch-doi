@@ -109,7 +109,6 @@ public class MetadataService {
                 model.add(statement);
             }
         }
-
         return model;
     }
 
