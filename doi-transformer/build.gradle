@@ -8,7 +8,7 @@ def var = dependencies {
     api group: 'no.unit.nva', name: 'doi', version: project.ext.nvaCoreVersion
 
     runtimeOnly group: 'org.glassfish.jersey.core', name: 'jersey-common', version: project.ext.jerseyVersion
-    implementation(group: 'com.ibm.icu', name: 'icu4j', version: '66.1') {
+    implementation(group: 'com.ibm.icu', name: 'icu4j', version: '68.2') {
         because 'We use this to map ordinals to numbers'
     }
     implementation group: 'jakarta.ws.rs', name: 'jakarta.ws.rs-api', version: project.ext.jakartaVersion
