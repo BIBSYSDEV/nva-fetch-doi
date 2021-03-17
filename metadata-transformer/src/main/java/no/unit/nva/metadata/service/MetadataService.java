@@ -17,10 +17,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.api.CreatePublicationRequest;
 import no.unit.nva.metadata.MetadataConverter;
 import org.apache.any23.extractor.ExtractionException;
+import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.ValueFactory;
@@ -50,6 +52,9 @@ public class MetadataService {
     public static final String DOT = ".";
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final Logger logger = LoggerFactory.getLogger(MetadataService.class);
+    private static final Set<String> HIGHWIRE_DATES = Set.of("citation_publication_date", "citation_cover_date",
+            "citation_date");
+    public static final String DATE_PROPERTY_NAME = "date";
     private final TranslatorService translatorService;
     private final Repository db = new SailRepository(new MemoryStore());
 
@@ -98,12 +103,23 @@ public class MetadataService {
         for (Statement statement : statements) {
             if (isSindiceDcOrDcTerms(statement)) {
                 model.add(toDctermsNamespace(valueFactory, statement));
+            } else if (isHighwireDate(statement)) {
+                model.add(toDctermsDate(valueFactory, statement));
             } else {
                 model.add(statement);
             }
         }
-
         return model;
+    }
+
+    private Statement toDctermsDate(ValueFactory valueFactory, Statement statement) {
+        IRI dateProperty = valueFactory.createIRI(DCTERMS_PREFIX, DATE_PROPERTY_NAME);
+        return valueFactory.createStatement(statement.getSubject(), dateProperty, statement.getObject());
+    }
+
+    private boolean isHighwireDate(Statement statement) {
+        String property = statement.getPredicate().getLocalName();
+        return HIGHWIRE_DATES.contains(property);
     }
 
     private boolean isSindiceDcOrDcTerms(Statement statement) {

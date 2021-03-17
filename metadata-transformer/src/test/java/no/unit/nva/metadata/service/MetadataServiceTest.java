@@ -1,5 +1,31 @@
 package no.unit.nva.metadata.service;
 
+import com.github.tomakehurst.wiremock.WireMockServer;
+import j2html.tags.EmptyTag;
+import no.unit.nva.api.CreatePublicationRequest;
+import no.unit.nva.metadata.service.testdata.ValidDateArgumentsProvider;
+import no.unit.nva.metadata.service.testdata.MetaTagPair;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Identity;
+import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.Reference;
+import no.unit.nva.model.exceptions.MalformedContributorException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import java.io.IOException;
+import java.net.URI;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
+
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -11,31 +37,12 @@ import static j2html.TagCreator.meta;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import com.github.tomakehurst.wiremock.WireMockServer;
-import j2html.tags.EmptyTag;
-import java.io.IOException;
-import java.net.URI;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Stream;
-import no.unit.nva.api.CreatePublicationRequest;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Identity;
-import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.Reference;
-import no.unit.nva.model.exceptions.MalformedContributorException;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 
 public class MetadataServiceTest {
 
     public static final String URI_TEMPLATE = "http://localhost:%d/article/%s";
     public static final String DC_CONTRIBUTOR = "DC.contributor";
     public static final String DC_CREATOR = "DC.creator";
-    public static final String DC_DATE = "DC.date";
     public static final String DC_TITLE = "DC.title";
     public static final String DC_TITLE_LOWERCASE = "dc.title";
     public static final String DCTERMS_ABSTRACT = "DCTERMS.abstract";
@@ -46,8 +53,19 @@ public class MetadataServiceTest {
     public static final String DC_IDENTIFIER = "DC.identifier";
     public static final String DC_LANGUAGE = "DC.language";
     public static final String CITATION_TITLE = "citation_title";
+    public static final String DATE_SEPARATOR = "-";
+    public static final String ARTICLE_HTML = "article.html";
+    public static final String YEAR_ONLY = "2001";
+    public static final String FULL_DATE = "2001-12-19";
+    public static final String DC_DATE = "dc.date";
+    public static final String VALID_DATE = "2017";
 
     private WireMockServer wireMockServer;
+
+    @AfterEach
+    void tearDown() {
+        wireMockServer.stop();
+    }
 
     @ParameterizedTest(name = "#{index} - {0}")
     @MethodSource({
@@ -55,7 +73,6 @@ public class MetadataServiceTest {
         "provideMetadataForTags",
         "provideMetadataForAbstract",
         "provideMetadataForTitle",
-        "provideMetadataForDate",
         "provideMetadataForContributors",
         "provideMetadataForIdentifier",
         "provideMetadataForLanguage"
@@ -63,18 +80,87 @@ public class MetadataServiceTest {
     public void getCreatePublicationParsesHtmlAndReturnsMetadata(String testDescription, String html,
                                                                  CreatePublicationRequest expectedRequest)
         throws IOException {
-        String filename = "article.html";
-        URI uri = prepareWebServerAndReturnUriToMetadata(filename, html);
+        URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
         MetadataService metadataService = new MetadataService();
         Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
 
-        assertThat(request.isPresent(), is(true));
-        CreatePublicationRequest actual = request.get();
+        CreatePublicationRequest actual = request.orElseThrow();
         actual.setContext(null);
 
         assertThat(actual, is(equalTo(expectedRequest)));
+    }
 
-        wireMockServer.stop();
+    @ParameterizedTest(name = "getCreatePublication returns date when date attribute {0} with value {1}")
+    @ArgumentsSource(ValidDateArgumentsProvider.class)
+    void getCreatePublicationReturnsDateWhenValidDateVariantIsPresent(String tagAttribute, String date)
+            throws IOException {
+        String html = generateHtmlWithSingleMetaTag(tagAttribute, date);
+        URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
+        MetadataService metadataService = new MetadataService();
+        Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
+
+        CreatePublicationRequest actual = request.orElseThrow();
+        actual.setContext(null);
+
+        CreatePublicationRequest expectedRequest = getCreatePublicationRequestWithDateOnly(date);
+        assertThat(actual, is(equalTo(expectedRequest)));
+    }
+
+    @Test
+    void getCreatePublicationReturnsMostCompletePublicationDateWhenMultipleCandidatesArePresent() throws IOException {
+
+        List<MetaTagPair> metaDates = List.of(new MetaTagPair(DC_DATE, YEAR_ONLY),
+                new MetaTagPair(DC_DATE, FULL_DATE));
+
+        String html = createHtml(metaDates);
+        URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
+        MetadataService metadataService = new MetadataService();
+        Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
+        CreatePublicationRequest actual = request.orElseThrow();
+        actual.setContext(null);
+
+        CreatePublicationRequest expectedRequest = getCreatePublicationRequestWithDateOnly(FULL_DATE);
+        assertThat(actual, is(equalTo(expectedRequest)));
+    }
+
+    @ParameterizedTest(name = "Bad date {0} is ignored in preference for shorter, valid date")
+    @ValueSource(strings = {"20111-02-01", "2011-033-11", "2010-01-011", "20100101", "First of Sept. 2010"})
+    void getCreatePublicationReturnsValidDateWhenValidAndInvalidCandidatesAreAvailable(String nonsense)
+            throws IOException {
+        List<MetaTagPair> metaDates = List.of(new MetaTagPair(DC_DATE, VALID_DATE),
+                new MetaTagPair(DC_DATE, nonsense));
+
+        String html = createHtml(metaDates);
+        URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
+        MetadataService metadataService = new MetadataService();
+        Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
+        CreatePublicationRequest actual = request.orElseThrow();
+        actual.setContext(null);
+
+        CreatePublicationRequest expectedRequest = getCreatePublicationRequestWithDateOnly(VALID_DATE);
+        assertThat(actual, is(equalTo(expectedRequest)));
+    }
+
+    private CreatePublicationRequest getCreatePublicationRequestWithDateOnly(String date) {
+        EntityDescription entityDescription = new EntityDescription.Builder()
+                .withDate(createPublicationDate(date))
+                .build();
+        CreatePublicationRequest expectedRequest = new CreatePublicationRequest();
+        expectedRequest.setEntityDescription(entityDescription);
+        return expectedRequest;
+    }
+
+    private PublicationDate createPublicationDate(String date) {
+        String[] dateParts = date.split(DATE_SEPARATOR);
+        String year = dateParts[0];
+        String month = dateParts.length > 1 ? dateParts[1] : null;
+        String day = dateParts.length > 2 ? dateParts[2] : null;
+
+        return new PublicationDate.Builder()
+                .withYear(year)
+                .withMonth(month)
+                .withDay(day)
+                .build();
     }
 
     private static Stream<Arguments> provideMetadataWithLowercasePrefixes() {
@@ -113,42 +199,6 @@ public class MetadataServiceTest {
             .build();
         EntityDescription entityDescription = new EntityDescription.Builder()
             .withContributors(List.of(contributor))
-            .build();
-        CreatePublicationRequest request = new CreatePublicationRequest();
-        request.setEntityDescription(entityDescription);
-        return request;
-    }
-
-    private static Stream<Arguments> provideMetadataForDate() {
-        String year = "2021";
-        String month = "02";
-        String day = "22";
-
-        PublicationDate date = new PublicationDate.Builder()
-            .withYear(year)
-            .withMonth(month)
-            .withDay(day)
-            .build();
-        CreatePublicationRequest request = createRequestWithDate(date);
-
-        PublicationDate yearOnlyDate = new PublicationDate.Builder()
-            .withYear(year)
-            .build();
-        CreatePublicationRequest yearOnlyRequest = createRequestWithDate(yearOnlyDate);
-
-        String dateString = String.join("-", year, month, day);
-
-        return Stream.of(
-            generateTestHtml("DC.date with year, month and day maps to publication date createRequest",
-                Map.of(DC_DATE, dateString), request),
-            generateTestHtml("DC.date with only year maps to publication date createRequest",
-                Map.of(DC_DATE, year), yearOnlyRequest)
-        );
-    }
-
-    private static CreatePublicationRequest createRequestWithDate(PublicationDate date) {
-        EntityDescription entityDescription = new EntityDescription.Builder()
-            .withDate(date)
             .build();
         CreatePublicationRequest request = new CreatePublicationRequest();
         request.setEntityDescription(entityDescription);
@@ -296,13 +346,27 @@ public class MetadataServiceTest {
 
     private static Arguments generateTestHtml(String testDescription, String name, String content,
                                               CreatePublicationRequest expected) {
-        return Arguments.of(testDescription, html(head(meta().withName(name).withContent(content))).renderFormatted(),
+        return Arguments.of(testDescription, generateHtmlWithSingleMetaTag(name, content),
             expected);
+    }
+
+    private static String generateHtmlWithSingleMetaTag(String name, String content) {
+        return html(head(meta().withName(name).withContent(content))).renderFormatted();
     }
 
     private static Arguments generateTestHtml(String testDescription, Map<String, String> metadata,
                                               CreatePublicationRequest expected) {
         return Arguments.of(testDescription, createHtml(metadata), expected);
+    }
+
+    private static String createHtml(List<MetaTagPair> tagPairs) {
+        return html(
+                head(
+                        tagPairs.stream()
+                                .map(MetadataServiceTest::getMetaTag)
+                                .toArray(EmptyTag[]::new)
+                )
+        ).renderFormatted();
     }
 
     private static String createHtml(Map<String, String> metadata) {
@@ -313,6 +377,10 @@ public class MetadataServiceTest {
                     .toArray(EmptyTag[]::new)
             )
         ).renderFormatted();
+    }
+
+    private static EmptyTag getMetaTag(MetaTagPair tagPair) {
+        return meta().withName(tagPair.getName()).withContent(tagPair.getContent());
     }
 
     private static EmptyTag getMetaTag(Map<String, String> metadata, String content) {
