@@ -3,7 +3,7 @@ package no.unit.nva.metadata.service;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import j2html.tags.EmptyTag;
 import no.unit.nva.api.CreatePublicationRequest;
-import no.unit.nva.metadata.service.testdata.DateArgumentsProvider;
+import no.unit.nva.metadata.service.testdata.ValidDateArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.MetaTagPair;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -12,7 +12,6 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.exceptions.MalformedContributorException;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -92,8 +91,9 @@ public class MetadataServiceTest {
     }
 
     @ParameterizedTest(name = "getCreatePublication returns date when date attribute {0} with value {1}")
-    @ArgumentsSource(DateArgumentsProvider.class)
-    void getCreatePublicationReturnsDateWhenDateVariantIsPresent(String tagAttribute, String date) throws IOException {
+    @ArgumentsSource(ValidDateArgumentsProvider.class)
+    void getCreatePublicationReturnsDateWhenValidDateVariantIsPresent(String tagAttribute, String date)
+            throws IOException {
         String html = generateHtmlWithSingleMetaTag(tagAttribute, date);
         URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
         MetadataService metadataService = new MetadataService();
@@ -123,7 +123,7 @@ public class MetadataServiceTest {
         assertThat(actual, is(equalTo(expectedRequest)));
     }
 
-    @ParameterizedTest(name = "Bad date {0} is ignored")
+    @ParameterizedTest(name = "Bad date {0} is ignored in preference for shorter, valid date")
     @ValueSource(strings = {"20111-02-01", "2011-033-11", "2010-01-011", "20100101", "First of Sept. 2010"})
     void getCreatePublicationReturnsValidDateWhenValidAndInvalidCandidatesAreAvailable(String nonsense)
             throws IOException {
