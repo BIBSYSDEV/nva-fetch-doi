@@ -6,6 +6,7 @@ import no.unit.nva.api.CreatePublicationRequest;
 import no.unit.nva.metadata.service.testdata.DateArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.DcContentCaseArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.LanguageArgumentsProvider;
+import no.unit.nva.metadata.service.testdata.ValidDateArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.MetaTagPair;
 import no.unit.nva.metadata.service.testdata.UndefinedLanguageArgumentsProvider;
 import no.unit.nva.model.Contributor;
@@ -123,7 +124,7 @@ public class MetadataServiceTest {
         assertThat(actual, is(equalTo(expectedRequest)));
     }
 
-    @ParameterizedTest(name = "Bad date {0} is ignored")
+    @ParameterizedTest(name = "Bad date {0} is ignored in preference for shorter, valid date")
     @ValueSource(strings = {"20111-02-01", "2011-033-11", "2010-01-011", "20100101", "First of Sept. 2010"})
     void getCreatePublicationReturnsValidDateWhenValidAndInvalidCandidatesAreAvailable(String nonsense)
             throws IOException {
