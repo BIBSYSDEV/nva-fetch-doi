@@ -64,6 +64,7 @@ public class MetadataServiceTest {
     public static final String DC_DATE = "dc.date";
     public static final String DC_MISSPELT = "DC.lnaguage";
     public static final String IRRELEVANT = "Not important";
+    public static final String VALID_DATE = "2017";
 
     private WireMockServer wireMockServer;
 
@@ -112,7 +113,6 @@ public class MetadataServiceTest {
     }
 
     @Test
-    @DisplayName("getCreatePublication accepts multiple dates, but only one publication date is returned")
     void getCreatePublicationReturnsMostCompletePublicationDateWhenMultipleCandidatesArePresent() throws IOException {
 
         List<MetaTagPair> metaDates = List.of(new MetaTagPair(DC_DATE, YEAR_ONLY),
@@ -124,11 +124,11 @@ public class MetadataServiceTest {
         assertThat(actual, is(equalTo(expectedRequest)));
     }
 
-    @ParameterizedTest(name = "Dates that are shorter are accepted when bad date is {0}")
+    @ParameterizedTest(name = "Bad date {0} is ignored")
     @ValueSource(strings = {"20111-02-01", "2011-033-11", "2010-01-011", "20100101", "First of Sept. 2010"})
-    void getCreatePublicationReturnsLongestDateWhenLongerNonsenseCandidatesAreAvailable(String nonsense)
+    void getCreatePublicationReturnsValidDateWhenValidAndInvalidCandidatesAreAvailable(String nonsense)
             throws IOException {
-        List<MetaTagPair> metaDates = List.of(new MetaTagPair(DC_DATE, YEAR_ONLY),
+        List<MetaTagPair> metaDates = List.of(new MetaTagPair(DC_DATE, VALID_DATE),
                 new MetaTagPair(DC_DATE, nonsense));
 
         CreatePublicationRequest actual = getCreatePublicationRequest(metaDates);
