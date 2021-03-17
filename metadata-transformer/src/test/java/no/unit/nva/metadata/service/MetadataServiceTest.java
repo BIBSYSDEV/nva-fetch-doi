@@ -132,7 +132,7 @@ public class MetadataServiceTest {
 
         CreatePublicationRequest actual = getCreatePublicationRequest(metaDates);
 
-        CreatePublicationRequest expectedRequest = getCreatePublicationRequestWithDateOnly(YEAR_ONLY);
+        CreatePublicationRequest expectedRequest = getCreatePublicationRequestWithDateOnly(VALID_DATE);
         assertThat(actual, is(equalTo(expectedRequest)));
     }
 
