@@ -3,12 +3,11 @@ package no.unit.nva.metadata.service;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import j2html.tags.EmptyTag;
 import no.unit.nva.api.CreatePublicationRequest;
-import no.unit.nva.metadata.service.testdata.DateArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.DcContentCaseArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.LanguageArgumentsProvider;
-import no.unit.nva.metadata.service.testdata.ValidDateArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.MetaTagPair;
 import no.unit.nva.metadata.service.testdata.UndefinedLanguageArgumentsProvider;
+import no.unit.nva.metadata.service.testdata.ValidDateArgumentsProvider;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
@@ -104,7 +103,7 @@ public class MetadataServiceTest {
     }
 
     @ParameterizedTest(name = "getCreatePublication returns date when date attribute {0} with value {1}")
-    @ArgumentsSource(DateArgumentsProvider.class)
+    @ArgumentsSource(ValidDateArgumentsProvider.class)
     void getCreatePublicationReturnsDateWhenDateVariantIsPresent(String tagAttribute, String date) throws IOException {
 
         CreatePublicationRequest actual = getCreatePublicationRequest(tagAttribute, date);
