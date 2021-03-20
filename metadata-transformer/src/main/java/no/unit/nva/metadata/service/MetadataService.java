@@ -13,6 +13,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Map;
@@ -23,8 +26,10 @@ import no.unit.nva.api.CreatePublicationRequest;
 import no.unit.nva.metadata.DcTerms;
 import no.unit.nva.metadata.MetadataConverter;
 import org.apache.any23.extractor.ExtractionException;
+import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.model.impl.TreeModel;
@@ -41,24 +46,42 @@ import org.slf4j.LoggerFactory;
 
 public class MetadataService {
 
-    public static final String QUERY_SPARQL = "query.sparql";
-    public static final String EMPTY_BASE_URI = "";
-    public static final String CONTEXT_JSON = "context.json";
-    public static final String MISSING_CONTEXT_OBJECT_FILE = "Missing context object file";
-    public static final String REPLACEMENT_MARKER = "__URI__";
-    public static final String SINDICE_DC_URI_PART = "http://vocab.sindice.net/any23#dc.";
-    public static final String SINDICE_DCTERMS_URI_PART = "http://vocab.sindice.net/any23#dcterms.";
-    public static final String DOT = ".";
+    private static final String QUERY_SPARQL = "query.sparql";
+    private static final String EMPTY_BASE_URI = "";
+    private static final String CONTEXT_JSON = "context.json";
+    private static final String MISSING_CONTEXT_OBJECT_FILE = "Missing context object file";
+    private static final String REPLACEMENT_MARKER = "__URI__";
+    private static final String SINDICE_DC_URI_PART = "http://vocab.sindice.net/any23#dc.";
+    private static final String SINDICE_DCTERMS_URI_PART = "http://vocab.sindice.net/any23#dcterms.";
+    private static final String DOT = ".";
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final Logger logger = LoggerFactory.getLogger(MetadataService.class);
     private static final Set<String> HIGHWIRE_DATES = Set.of("citation_publication_date", "citation_cover_date",
             "citation_date");
-    public static final String CITATION_LANGUAGE = "citation_language";
+    private static final String CITATION_LANGUAGE = "citation_language";
+    private static final Set<String> DOI_PREDICATES = Set.of("http://vocab.sindice.net/any23#dc.identifier",
+            "http://vocab.sindice.net/any23#dcterms.identifier", "http://vocab.sindice.net/any23#citation_doi");
+    private static final String DOI_DISPLAY_REGEX = "(doi:|doc:|http(s)?://(dx\\.)?doi\\.org/)?10\\.\\d{4,9}+/.*";
+    private static final String SHORT_DOI_REGEX = "^http(s)?://doi.org/[^/]+(/)?$";
+    private static final String BIBO_DOI = "http://purl.org/ontology/bibo/doi";
+    private static final String DOI_PREFIX = "https://doi.org/";
+    private static final String HEAD = "HEAD";
+    private static final String LOCATION = "location";
+    private static final int MOVED_PERMANENTLY = 301;
+    private static final String DOI_FIRST_PART = "10";
+    private static final String HTTPS = "https";
+    private static final String HTTP = "http";
+    private final HttpClient httpClient;
     private final TranslatorService translatorService;
     private final Repository db = new SailRepository(new MemoryStore());
 
     public MetadataService() throws IOException {
-        translatorService = new TranslatorService();
+        this(getDefaultHttpClient());
+    }
+
+    public MetadataService(HttpClient httpClient) {
+        this.translatorService = new TranslatorService();
+        this.httpClient = httpClient;
     }
 
     /**
@@ -79,11 +102,18 @@ public class MetadataService {
         }
     }
 
+    private static HttpClient getDefaultHttpClient() {
+        return HttpClient.newBuilder()
+                .followRedirects(HttpClient.Redirect.NEVER)
+                .build();
+    }
+
     private ByteArrayInputStream loadExtractedData() {
         return new ByteArrayInputStream(translatorService.getOutputStream().toByteArray());
     }
 
-    private Model getMetadata(URI uri) throws ExtractionException, IOException, URISyntaxException {
+    private Model getMetadata(URI uri) throws ExtractionException, IOException, URISyntaxException,
+            InterruptedException {
         translatorService.loadMetadataFromUri(uri);
         try (RepositoryConnection repositoryConnection = db.getConnection()) {
             repositoryConnection.add(loadExtractedData(), EMPTY_BASE_URI, RDFFormat.JSONLD);
@@ -96,11 +126,14 @@ public class MetadataService {
     }
 
     @SuppressWarnings("PMD.CloseResource")
-    private Model normalizeStatements(RepositoryResult<Statement> statements) {
+    private Model normalizeStatements(RepositoryResult<Statement> statements) throws IOException, InterruptedException {
         ValueFactory valueFactory = SimpleValueFactory.getInstance();
         Model model = new TreeModel();
         for (Statement statement : statements) {
-            if (isSindiceDcOrDcTerms(statement)) {
+            if (isDoi(statement)) {
+                Optional<Statement> doi = toBiboDoi(valueFactory, statement);
+                doi.ifPresent(model::add);
+            } else if (isSindiceDcOrDcTerms(statement)) {
                 model.add(toDctermsNamespace(valueFactory, statement));
             } else if (isHighwireDate(statement)) {
                 model.add(toDctermsDate(valueFactory, statement));
@@ -111,6 +144,47 @@ public class MetadataService {
             }
         }
         return model;
+    }
+
+    private Optional<Statement> toBiboDoi(ValueFactory valueFactory, Statement statement) throws IOException,
+            InterruptedException {
+        String value = statement.getObject().stringValue();
+        String doi = isShortDoi(value) ? fetchDoiUriFromShortDoi(value).orElse(null)
+                : DOI_PREFIX + value.substring(value.indexOf(DOI_FIRST_PART));
+        IRI property = valueFactory.createIRI(BIBO_DOI);
+        return Optional.ofNullable(valueFactory.createStatement(statement.getSubject(),
+                property, valueFactory.createLiteral(doi)));
+    }
+
+    private Optional<String> fetchDoiUriFromShortDoi(String value) throws IOException, InterruptedException {
+        String uri = value.startsWith(HTTPS) ? value : value.replace(HTTP, HTTPS);
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(uri))
+                .method(HEAD, HttpRequest.BodyPublishers.noBody())
+                .build();
+        HttpResponse<Void> response = httpClient.send(request, HttpResponse.BodyHandlers.discarding());
+        return response.statusCode() == MOVED_PERMANENTLY ? response.headers().firstValue(LOCATION) : Optional.empty();
+    }
+
+    private boolean isDoi(Statement statement) {
+        return isPotentialDoiPredicate(statement) && isDoiString(statement.getObject());
+    }
+
+    private boolean isDoiString(Value object) {
+        String value = object.stringValue();
+        if (value.toLowerCase(Locale.ROOT).matches(DOI_DISPLAY_REGEX)) {
+            return true;
+        } else {
+            return isShortDoi(value);
+        }
+    }
+
+    private boolean isShortDoi(String value) {
+        return value.matches(SHORT_DOI_REGEX);
+    }
+
+    private boolean isPotentialDoiPredicate(Statement statement) {
+        return DOI_PREDICATES.contains(statement.getPredicate().toString().toLowerCase(Locale.ROOT));
     }
 
     private Statement toDctermsLanguage(ValueFactory valueFactory, Statement statement) {

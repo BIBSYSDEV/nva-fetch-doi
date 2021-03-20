@@ -1,4 +1,5 @@
 PREFIX any23: <http://vocab.sindice.net/any23#>
+PREFIX bibo: <http://purl.org/ontology/bibo/>
 PREFIX dcterms: <http://purl.org/dc/terms/>
 PREFIX unit: <https://nva.unit.no/publication#>
 
@@ -11,7 +12,8 @@ CONSTRUCT {
     unit:abstract ?abstract ;
     unit:tag ?tag ;
     unit:contributor ?contributorNode ;
-    unit:date ?dateNode .
+    unit:date ?dateNode ;
+    unit:reference ?referenceNode .
   ?contributorNode a unit:Contributor ;
     unit:identity ?identityNode .
   ?identityNode a unit:Identity ;
@@ -20,6 +22,8 @@ CONSTRUCT {
     unit:year ?year ;
     unit:month ?month ;
     unit:day ?day .
+  ?referenceNode a unit:Reference ;
+    unit:doi ?doi .
 } WHERE {
   SELECT DISTINCT (STR(?title) AS ?mainTitle)
                   ?entityNode
@@ -34,9 +38,10 @@ CONSTRUCT {
                   ?dateNode
                   ?year
                   ?month
-                  ?day {
-
-    BIND (BNODE() AS ?entityNode)
+                  ?day
+                  ?referenceNode
+                  ?doi {
+    BIND(BNODE("entityNode") AS ?entityNode)
     {
       SELECT ?title WHERE {
         VALUES ?titleProperty { dcterms:title any23:citation_title }
@@ -98,6 +103,12 @@ CONSTRUCT {
     }
     UNION {
         <__URI__> dcterms:language ?rawLanguage .
+    } UNION {
+      SELECT ?doi ?referenceNode WHERE {
+        <__URI__> bibo:doi ?doi
+          FILTER (BOUND(?doi))
+          BIND(BNODE("referenceNode") AS ?referenceNode)
+      } LIMIT 1
     }
   }
 }

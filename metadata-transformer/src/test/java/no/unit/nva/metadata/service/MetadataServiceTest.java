@@ -8,11 +8,11 @@ import no.unit.nva.metadata.service.testdata.LanguageArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.MetaTagPair;
 import no.unit.nva.metadata.service.testdata.UndefinedLanguageArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.ValidDateArgumentsProvider;
+import no.unit.nva.metadata.service.testdata.ValidDoiArgumentsProvider;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.Reference;
 import no.unit.nva.model.exceptions.MalformedContributorException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -24,9 +24,14 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -37,10 +42,16 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static j2html.TagCreator.head;
 import static j2html.TagCreator.html;
 import static j2html.TagCreator.meta;
+import static java.util.Objects.nonNull;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class MetadataServiceTest {
 
@@ -64,6 +75,8 @@ public class MetadataServiceTest {
     public static final String DC_MISSPELT = "DC.lnaguage";
     public static final String IRRELEVANT = "Not important";
     public static final String VALID_DATE = "2017";
+    public static final int MOVED_PERMANENTLY = 301;
+    public static final String LOCATION = "location";
 
     private WireMockServer wireMockServer;
 
@@ -78,8 +91,7 @@ public class MetadataServiceTest {
         "provideMetadataForTags",
         "provideMetadataForAbstract",
         "provideMetadataForTitle",
-        "provideMetadataForContributors",
-        "provideMetadataForIdentifier"
+        "provideMetadataForContributors"
     })
     public void getCreatePublicationParsesHtmlAndReturnsMetadata(String testDescription, String html,
                                                                  CreatePublicationRequest expectedRequest)
@@ -97,14 +109,16 @@ public class MetadataServiceTest {
     @ParameterizedTest(name = "getCreatePublication ignores case of {0}")
     @ArgumentsSource(DcContentCaseArgumentsProvider.class)
     void getCreatePublicationReturnsValueWhenContentPrefixHasAnyCase(String tagAttribute,
-                                                                     String value) throws IOException {
+                                                                     String value) throws IOException,
+            InterruptedException {
         Optional<CreatePublicationRequest> actual = getCreatePublicationRequestResponse(tagAttribute, value);
         assertTrue(actual.isPresent());
     }
 
     @ParameterizedTest(name = "getCreatePublication returns date when date attribute {0} with value {1}")
     @ArgumentsSource(ValidDateArgumentsProvider.class)
-    void getCreatePublicationReturnsDateWhenDateVariantIsPresent(String tagAttribute, String date) throws IOException {
+    void getCreatePublicationReturnsDateWhenDateVariantIsPresent(String tagAttribute, String date) throws
+            IOException, InterruptedException {
 
         CreatePublicationRequest actual = getCreatePublicationRequest(tagAttribute, date);
         CreatePublicationRequest expectedRequest = getCreatePublicationRequestWithDateOnly(date);
@@ -140,7 +154,8 @@ public class MetadataServiceTest {
     @ArgumentsSource(LanguageArgumentsProvider.class)
     void getCreatePublicationReturnsLexvoUriWhenInputIsValidLanguage(String attribute,
                                                                      String language,
-                                                                     URI expectedUri) throws IOException {
+                                                                     URI expectedUri) throws IOException,
+            InterruptedException {
         CreatePublicationRequest actual = getCreatePublicationRequest(attribute, language);
         CreatePublicationRequest expectedRequest = createPublicationRequestWithLanguageOnly(expectedUri);
         assertThat(actual, is(equalTo(expectedRequest)));
@@ -150,20 +165,46 @@ public class MetadataServiceTest {
     @ArgumentsSource(UndefinedLanguageArgumentsProvider.class)
     void getCreatePublicationReturnsLexvoUndUriWhenInputIsInvalidLanguage(String attribute,
                                                                           String code,
-                                                                          URI expectedUri) throws IOException {
+                                                                          URI expectedUri) throws IOException,
+            InterruptedException {
         CreatePublicationRequest actual = getCreatePublicationRequest(attribute, code);
         CreatePublicationRequest expectedRequest = createPublicationRequestWithLanguageOnly(expectedUri);
         assertThat(actual, is(equalTo(expectedRequest)));
     }
 
     @Test
-    void getCreatePublicationReturnsNoValueWhenDcTermsElementIsUnknown() throws IOException {
+    void getCreatePublicationReturnsNoValueWhenDcTermsElementIsUnknown() throws IOException, InterruptedException {
         Optional<CreatePublicationRequest> request = getCreatePublicationRequestResponse(DC_MISSPELT, IRRELEVANT);
         assertTrue(request.isEmpty());
     }
 
-    private CreatePublicationRequest getCreatePublicationRequest(List<MetaTagPair> metaDates) throws IOException {
-        String html = createHtml(metaDates);
+    @ParameterizedTest(name = "Identifiers that kind {0} are processed as DOIs")
+    @ArgumentsSource(ValidDoiArgumentsProvider.class)
+    void getCreatePublicationRequestReturnsHttpsDoiWhenInputIsKnownDoiRepresentation(String identifier, URI expected)
+            throws IOException, InterruptedException {
+        CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(DC_IDENTIFIER, identifier,
+                expected.toString());
+        URI actual = createPublicationRequest.getEntityDescription().getReference().getDoi();
+        assertThat(actual, equalTo(expected));
+    }
+
+    @Test
+    void getCreatePublicationRequestReturnsSingleHttpsDoiWhenInputContainsManyValidDois() throws IOException {
+        List<MetaTagPair> dois = List.of(new MetaTagPair(DC_IDENTIFIER, "https://doi.org/10.1109/5.771073"),
+                new MetaTagPair(DC_IDENTIFIER, "http://doi.org/10.1109/5.771073"),
+                new MetaTagPair(DC_IDENTIFIER, "https://dx.doi.org/10.1109/5.771073"),
+                new MetaTagPair(DC_IDENTIFIER, "http://dx.doi.org/10.1109/5.771073"),
+                new MetaTagPair(DC_IDENTIFIER, "10.1109/5.771073"),
+                new MetaTagPair(DC_IDENTIFIER, "doi:10.1109/5.771073"));
+        CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(dois);
+        URI expected = URI.create("https://doi.org/10.1109/5.771073");
+        URI actual = createPublicationRequest.getEntityDescription().getReference().getDoi();
+        assertThat(actual, is(not(instanceOf(List.class))));
+        assertThat(actual, equalTo(expected));
+    }
+
+    private CreatePublicationRequest getCreatePublicationRequest(List<MetaTagPair> tagPairs) throws IOException {
+        String html = createHtml(tagPairs);
         URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
         MetadataService metadataService = new MetadataService();
         Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
@@ -172,19 +213,47 @@ public class MetadataServiceTest {
         return actual;
     }
 
-    private CreatePublicationRequest getCreatePublicationRequest(String attribute, String value) throws IOException {
+    private CreatePublicationRequest getCreatePublicationRequest(String attribute, String value) throws IOException,
+            InterruptedException {
         Optional<CreatePublicationRequest> request = getCreatePublicationRequestResponse(attribute, value);
         CreatePublicationRequest actual = request.orElseThrow();
         actual.setContext(null);
         return actual;
     }
 
-    private Optional<CreatePublicationRequest> getCreatePublicationRequestResponse(String attribute, String value)
-            throws IOException {
-        String html = createHtml(new MetaTagPair(attribute, value));
-        URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
-        MetadataService metadataService = new MetadataService();
+    private CreatePublicationRequest getCreatePublicationRequest(String attribute, String value, String expected)
+            throws IOException, InterruptedException {
+        Optional<CreatePublicationRequest> request = getCreatePublicationRequestResponse(attribute, value, expected);
+        CreatePublicationRequest actual = request.orElseThrow();
+        actual.setContext(null);
+        return actual;
+    }
+
+    private Optional<CreatePublicationRequest> getCreatePublicationRequestResponse(String attribute,
+                                                                                   String value,
+                                                                                   String expected)
+            throws IOException, InterruptedException {
+        URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, createHtml(new MetaTagPair(attribute, value)));
+        MetadataService metadataService = nonNull(expected)
+            ? new MetadataService(setUpMockingForShortDoi(expected))
+            : new MetadataService();
         return metadataService.getCreatePublicationRequest(uri);
+    }
+
+    private Optional<CreatePublicationRequest> getCreatePublicationRequestResponse(String attribute, String value)
+            throws IOException, InterruptedException {
+        return getCreatePublicationRequestResponse(attribute, value, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    private HttpClient setUpMockingForShortDoi(String expected) throws IOException, InterruptedException {
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        HttpResponse<Void> response = mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(MOVED_PERMANENTLY);
+        HttpHeaders headers = HttpHeaders.of(Map.of(LOCATION, List.of(expected)), new TestBipredicate());
+        when(response.headers()).thenReturn(headers);
+        when(mockHttpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(response);
+        return mockHttpClient;
     }
 
     private CreatePublicationRequest createPublicationRequestWithLanguageOnly(URI uri) {
@@ -323,43 +392,6 @@ public class MetadataServiceTest {
         );
     }
 
-    private static Stream<Arguments> provideMetadataForIdentifier() {
-        String doiWithPrefix = "doi:10.1/url";
-        String doiWithoutPrefix = "10.1/url";
-        String notADoi = "identifier/not/a/doi";
-        String expectedDoi = "https://doi.org/10.1/url";
-        String dummyTitle = "To avoid NPE in JsonLdProcessor";
-
-        CreatePublicationRequest request = createRequestWithIdentifier(URI.create(expectedDoi), dummyTitle);
-        CreatePublicationRequest emptyRequest = createRequestWithIdentifier(null, dummyTitle);
-
-        return Stream.of(
-            generateTestHtml("DC.identifier with doi prefix maps to doi URI in createRequest",
-                Map.of(DC_TITLE, dummyTitle, DC_IDENTIFIER, doiWithPrefix), request),
-            generateTestHtml("DC.identifier without doi prefix maps to doi URI in createRequest",
-                Map.of(DC_TITLE, dummyTitle, DC_IDENTIFIER, doiWithoutPrefix), request),
-            generateTestHtml("DC.identifier as doi URI maps to doi URI in createRequest",
-                Map.of(DC_TITLE, dummyTitle, DC_IDENTIFIER, expectedDoi), request),
-            generateTestHtml("DC.identifier with no doi maps to empty createRequest",
-                Map.of(DC_TITLE, dummyTitle, DC_IDENTIFIER, notADoi), emptyRequest)
-        );
-    }
-
-    private static CreatePublicationRequest createRequestWithIdentifier(URI identifier, String title) {
-        EntityDescription entityDescription = new EntityDescription.Builder()
-            .withMainTitle(title)
-            .build();
-        if (identifier != null) {
-            Reference reference = new Reference.Builder()
-                .withDoi(identifier)
-                .build();
-            entityDescription.setReference(reference);
-        }
-        CreatePublicationRequest request = new CreatePublicationRequest();
-        request.setEntityDescription(entityDescription);
-        return request;
-    }
-
     private static CreatePublicationRequest createRequestWithDescriptionAndOrAbstract(
         String description, String abstractString) {
         EntityDescription entityDescription = new EntityDescription.Builder()
@@ -423,5 +455,12 @@ public class MetadataServiceTest {
             .willReturn(aResponse()
                 .withHeader("Content-Type", "text/html")
                 .withBody(body)));
+    }
+
+    private static class TestBipredicate implements BiPredicate<String, String> {
+        @Override
+        public boolean test(String s, String s2) {
+            return true;
+        }
     }
 }
