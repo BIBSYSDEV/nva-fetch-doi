@@ -214,8 +214,11 @@ public class MetadataServiceTest {
     void getCreatePublicationRequestReturnsContributorWhenInputIsValidContributor(List<MetaTagPair> tags)
             throws IOException {
         CreatePublicationRequest request = getCreatePublicationRequest(tags);
-        List<String> expected = tags.stream().filter(this::isNameProperty).map(MetaTagPair::getContent)
-                .collect(Collectors.toSet()).stream().collect(Collectors.toUnmodifiableList());
+        Object[] expected = tags.stream()
+                .filter(this::isNameProperty)
+                .map(MetaTagPair::getContent)
+                .distinct()
+                .toArray();
         List<String> actual = request.getEntityDescription().getContributors().stream()
                 .map(Contributor::getIdentity)
                 .map(Identity::getName)
