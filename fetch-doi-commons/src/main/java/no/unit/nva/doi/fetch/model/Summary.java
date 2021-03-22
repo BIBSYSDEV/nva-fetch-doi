@@ -1,10 +1,10 @@
 package no.unit.nva.doi.fetch.model;
 
-import java.util.UUID;
+import no.unit.nva.identifiers.SortableIdentifier;
 
 public class Summary {
 
-    private UUID identifier;
+    private SortableIdentifier identifier;
     private String title;
     private String creatorName;
     private PublicationDate date;
@@ -20,11 +20,11 @@ public class Summary {
         setDate(builder.date);
     }
 
-    public UUID getIdentifier() {
+    public SortableIdentifier getIdentifier() {
         return identifier;
     }
 
-    public void setIdentifier(UUID identifier) {
+    public void setIdentifier(SortableIdentifier identifier) {
         this.identifier = identifier;
     }
 
@@ -54,7 +54,7 @@ public class Summary {
 
     public static final class Builder {
 
-        private UUID identifier;
+        private SortableIdentifier identifier;
         private String title;
         private String creatorName;
         private PublicationDate date;
@@ -62,7 +62,7 @@ public class Summary {
         public Builder() {
         }
 
-        public Builder withIdentifier(UUID identifier) {
+        public Builder withIdentifier(SortableIdentifier identifier) {
             this.identifier = identifier;
             return this;
         }

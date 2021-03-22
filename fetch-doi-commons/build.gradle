@@ -5,6 +5,7 @@ dependencies {
 
     api group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
     api group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
+    api group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
     api group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
     api group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
     api group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: project.ext.jacksonVersion
