@@ -148,11 +148,11 @@ public class MetadataService {
     private Optional<Statement> toBiboDoi(Statement statement) throws IOException,
             InterruptedException {
         String value = statement.getObject().stringValue();
-        return getDoi(value).map(doiString -> valueFactory.createStatement(statement.getSubject(),
+        return extractDoi(value).map(doiString -> valueFactory.createStatement(statement.getSubject(),
                 valueFactory.createIRI(BIBO_DOI), valueFactory.createLiteral(doiString)));
     }
 
-    private Optional<String> getDoi(String value) throws IOException, InterruptedException {
+    private Optional<String> extractDoi(String value) throws IOException, InterruptedException {
         return isShortDoi(value) ? fetchDoiUriFromShortDoi(value)
                 : Optional.of(DOI_PREFIX + value.substring(value.indexOf(DOI_FIRST_PART)));
     }
