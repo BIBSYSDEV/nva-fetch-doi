@@ -157,7 +157,7 @@ public class MetadataService {
         return statement.getPredicate().toString().endsWith(CITATION_AUTHOR);
     }
 
-    private Optional<Statement> toBiboDoi(ValueFactory valueFactory, Statement statement) throws IOException,
+    private Optional<Statement> toBiboDoi(Statement statement) throws IOException,
             InterruptedException {
         String value = statement.getObject().stringValue();
         return extractDoi(value).map(doiString -> valueFactory.createStatement(statement.getSubject(),
