@@ -89,7 +89,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
                        BareProxyClient bareProxyClient,
                        MetadataService metadataService,
                        Environment environment) {
-        super(RequestBody.class, environment, logger);
+        super(RequestBody.class, environment);
         this.objectMapper = objectMapper;
         this.publicationConverter = publicationConverter;
         this.doiTransformService = doiTransformService;
