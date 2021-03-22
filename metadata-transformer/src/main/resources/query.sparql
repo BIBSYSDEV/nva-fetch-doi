@@ -48,7 +48,8 @@ CONSTRUCT {
         <__URI__> ?titleProperty ?title  .
       } ORDER BY DESC(STRLEN(STR(?title))) LIMIT 1
     } UNION {
-      <__URI__> dcterms:creator | dcterms:contributor ?creator .
+      VALUES ?contributorProperty { dcterms:creator dcterms:contributor }
+      <__URI__> ?contributorProperty ?creator .
 
       BIND(BNODE() AS ?contributorNode)
       BIND(BNODE() AS ?identityNode)

@@ -3,6 +3,7 @@ package no.unit.nva.metadata.service;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import j2html.tags.EmptyTag;
 import no.unit.nva.api.CreatePublicationRequest;
+import no.unit.nva.metadata.service.testdata.ContributorArgumentsSource;
 import no.unit.nva.metadata.service.testdata.DcContentCaseArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.LanguageArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.MetaTagPair;
@@ -13,7 +14,6 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.exceptions.MalformedContributorException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -28,10 +28,14 @@ import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiPredicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -43,7 +47,12 @@ import static j2html.TagCreator.head;
 import static j2html.TagCreator.html;
 import static j2html.TagCreator.meta;
 import static java.util.Objects.nonNull;
+import static no.unit.nva.metadata.service.testdata.ContributorArgumentsSource.CITATION_AUTHOR;
+import static no.unit.nva.metadata.service.testdata.ContributorArgumentsSource.DC_CONTRIBUTOR;
+import static no.unit.nva.metadata.service.testdata.ContributorArgumentsSource.DC_CREATOR;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -56,8 +65,6 @@ import static org.mockito.Mockito.when;
 public class MetadataServiceTest {
 
     public static final String URI_TEMPLATE = "http://localhost:%d/article/%s";
-    public static final String DC_CONTRIBUTOR = "DC.contributor";
-    public static final String DC_CREATOR = "DC.creator";
     public static final String DC_TITLE = "DC.title";
     public static final String DC_TITLE_LOWERCASE = "dc.title";
     public static final String DCTERMS_ABSTRACT = "DCTERMS.abstract";
@@ -90,8 +97,7 @@ public class MetadataServiceTest {
         "provideMetadataWithLowercasePrefixes",
         "provideMetadataForTags",
         "provideMetadataForAbstract",
-        "provideMetadataForTitle",
-        "provideMetadataForContributors"
+        "provideMetadataForTitle"
     })
     public void getCreatePublicationParsesHtmlAndReturnsMetadata(String testDescription, String html,
                                                                  CreatePublicationRequest expectedRequest)
@@ -203,6 +209,26 @@ public class MetadataServiceTest {
         assertThat(actual, equalTo(expected));
     }
 
+    @ParameterizedTest
+    @ArgumentsSource(ContributorArgumentsSource.class)
+    void getCreatePublicationRequestReturnsContributorWhenInputIsValidContributor(List<MetaTagPair> tags)
+            throws IOException {
+        CreatePublicationRequest request = getCreatePublicationRequest(tags);
+        List<String> expected = tags.stream().filter(this::isNameProperty).map(MetaTagPair::getContent)
+                .collect(Collectors.toSet()).stream().collect(Collectors.toUnmodifiableList());
+        List<String> actual = request.getEntityDescription().getContributors().stream()
+                .map(Contributor::getIdentity)
+                .map(Identity::getName)
+                .collect(Collectors.toList());
+        assertThat(actual, containsInAnyOrder(expected));
+    }
+
+    private boolean isNameProperty(MetaTagPair tagPair) {
+        return DC_CONTRIBUTOR.equals(tagPair.getName())
+                || DC_CREATOR.equals(tagPair.getName())
+                || CITATION_AUTHOR.equals(tagPair.getName());
+    }
+
     private CreatePublicationRequest getCreatePublicationRequest(List<MetaTagPair> tagPairs) throws IOException {
         String html = createHtml(tagPairs);
         URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
@@ -299,34 +325,6 @@ public class MetadataServiceTest {
             generateTestHtml("Lowercase dcterms.abstract still maps to abstract in createRequest",
                 Map.of(DCTERMS_ABSTRACT_LOWERCASE, abstractString), abstractOnlyRequest)
         );
-    }
-
-    private static Stream<Arguments> provideMetadataForContributors() throws MalformedContributorException {
-        String name = "Full name";
-        CreatePublicationRequest request = requestWithContributorName(name);
-
-        return Stream.of(
-            generateTestHtml("DC.contributor maps to contributor name in createRequest",
-                Map.of(DC_CONTRIBUTOR, name), request),
-            generateTestHtml("DC.creator maps to contributor name in createRequest",
-                Map.of(DC_CREATOR, name), request)
-        );
-    }
-
-    private static CreatePublicationRequest requestWithContributorName(String name)
-        throws MalformedContributorException {
-        Identity identity = new Identity.Builder()
-            .withName(name)
-            .build();
-        Contributor contributor = new Contributor.Builder()
-            .withIdentity(identity)
-            .build();
-        EntityDescription entityDescription = new EntityDescription.Builder()
-            .withContributors(List.of(contributor))
-            .build();
-        CreatePublicationRequest request = new CreatePublicationRequest();
-        request.setEntityDescription(entityDescription);
-        return request;
     }
 
     private static Stream<Arguments> provideMetadataForTitle() {

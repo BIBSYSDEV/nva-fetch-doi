@@ -71,6 +71,7 @@ public class MetadataService {
     private static final String DOI_FIRST_PART = "10";
     private static final String HTTPS = "https";
     private static final String HTTP = "http";
+    public static final String CITATION_AUTHOR = "citation_author";
     private final HttpClient httpClient;
     private final TranslatorService translatorService;
     private final Repository db = new SailRepository(new MemoryStore());
@@ -139,11 +140,22 @@ public class MetadataService {
                 model.add(toDctermsDate(valueFactory, statement));
             } else if (isHighWireLanguage(statement)) {
                 model.add(toDctermsLanguage(valueFactory, statement));
+            } else if (isHighWireAuthor(statement)) {
+                model.add(toDctermsCreator(valueFactory, statement));
             } else {
                 model.add(statement);
             }
         }
         return model;
+    }
+
+    private Statement toDctermsCreator(ValueFactory valueFactory, Statement statement) {
+        return valueFactory.createStatement(statement.getSubject(),
+                DcTerms.CREATOR.getIri(valueFactory), statement.getObject());
+    }
+
+    private boolean isHighWireAuthor(Statement statement) {
+        return statement.getPredicate().toString().endsWith(CITATION_AUTHOR);
     }
 
     private Optional<Statement> toBiboDoi(ValueFactory valueFactory, Statement statement) throws IOException,
