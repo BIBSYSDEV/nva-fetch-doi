@@ -70,6 +70,7 @@ public class MetadataService {
     private static final String DOI_FIRST_PART = "10";
     private static final String HTTPS = "https";
     private static final String HTTP = "http";
+    public static final String CITATION_AUTHOR = "citation_author";
     public static final ValueFactory valueFactory = SimpleValueFactory.getInstance();
     private final HttpClient httpClient;
     private final TranslatorService translatorService;
@@ -138,11 +139,22 @@ public class MetadataService {
                 model.add(toDctermsDate(statement));
             } else if (isHighWireLanguage(statement)) {
                 model.add(toDctermsLanguage(statement));
+            } else if (isHighWireAuthor(statement)) {
+                model.add(toDctermsCreator(statement));
             } else {
                 model.add(statement);
             }
         }
         return model;
+    }
+
+    private Statement toDctermsCreator(Statement statement) {
+        return valueFactory.createStatement(statement.getSubject(),
+                DcTerms.CREATOR.getIri(valueFactory), statement.getObject());
+    }
+
+    private boolean isHighWireAuthor(Statement statement) {
+        return statement.getPredicate().toString().endsWith(CITATION_AUTHOR);
     }
 
     private Optional<Statement> toBiboDoi(Statement statement) throws IOException,
