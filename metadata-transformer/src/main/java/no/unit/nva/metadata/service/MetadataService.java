@@ -26,7 +26,6 @@ import no.unit.nva.api.CreatePublicationRequest;
 import no.unit.nva.metadata.DcTerms;
 import no.unit.nva.metadata.MetadataConverter;
 import org.apache.any23.extractor.ExtractionException;
-import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.Value;
@@ -72,6 +71,7 @@ public class MetadataService {
     private static final String HTTPS = "https";
     private static final String HTTP = "http";
     public static final String CITATION_AUTHOR = "citation_author";
+    public static final ValueFactory valueFactory = SimpleValueFactory.getInstance();
     private final HttpClient httpClient;
     private final TranslatorService translatorService;
     private final Repository db = new SailRepository(new MemoryStore());
@@ -128,20 +128,19 @@ public class MetadataService {
 
     @SuppressWarnings("PMD.CloseResource")
     private Model normalizeStatements(RepositoryResult<Statement> statements) throws IOException, InterruptedException {
-        ValueFactory valueFactory = SimpleValueFactory.getInstance();
         Model model = new TreeModel();
         for (Statement statement : statements) {
             if (isDoi(statement)) {
-                Optional<Statement> doi = toBiboDoi(valueFactory, statement);
+                Optional<Statement> doi = toBiboDoi(statement);
                 doi.ifPresent(model::add);
             } else if (isSindiceDcOrDcTerms(statement)) {
-                model.add(toDctermsNamespace(valueFactory, statement));
+                model.add(toDctermsNamespace(statement));
             } else if (isHighwireDate(statement)) {
-                model.add(toDctermsDate(valueFactory, statement));
+                model.add(toDctermsDate(statement));
             } else if (isHighWireLanguage(statement)) {
-                model.add(toDctermsLanguage(valueFactory, statement));
+                model.add(toDctermsLanguage(statement));
             } else if (isHighWireAuthor(statement)) {
-                model.add(toDctermsCreator(valueFactory, statement));
+                model.add(toDctermsCreator(statement));
             } else {
                 model.add(statement);
             }
@@ -149,7 +148,7 @@ public class MetadataService {
         return model;
     }
 
-    private Statement toDctermsCreator(ValueFactory valueFactory, Statement statement) {
+    private Statement toDctermsCreator(Statement statement) {
         return valueFactory.createStatement(statement.getSubject(),
                 DcTerms.CREATOR.getIri(valueFactory), statement.getObject());
     }
@@ -161,11 +160,13 @@ public class MetadataService {
     private Optional<Statement> toBiboDoi(ValueFactory valueFactory, Statement statement) throws IOException,
             InterruptedException {
         String value = statement.getObject().stringValue();
-        String doi = isShortDoi(value) ? fetchDoiUriFromShortDoi(value).orElse(null)
-                : DOI_PREFIX + value.substring(value.indexOf(DOI_FIRST_PART));
-        IRI property = valueFactory.createIRI(BIBO_DOI);
-        return Optional.ofNullable(valueFactory.createStatement(statement.getSubject(),
-                property, valueFactory.createLiteral(doi)));
+        return extractDoi(value).map(doiString -> valueFactory.createStatement(statement.getSubject(),
+                valueFactory.createIRI(BIBO_DOI), valueFactory.createLiteral(doiString)));
+    }
+
+    private Optional<String> extractDoi(String value) throws IOException, InterruptedException {
+        return isShortDoi(value) ? fetchDoiUriFromShortDoi(value)
+                : Optional.of(DOI_PREFIX + value.substring(value.indexOf(DOI_FIRST_PART)));
     }
 
     private Optional<String> fetchDoiUriFromShortDoi(String value) throws IOException, InterruptedException {
@@ -184,11 +185,7 @@ public class MetadataService {
 
     private boolean isDoiString(Value object) {
         String value = object.stringValue();
-        if (value.toLowerCase(Locale.ROOT).matches(DOI_DISPLAY_REGEX)) {
-            return true;
-        } else {
-            return isShortDoi(value);
-        }
+        return value.toLowerCase(Locale.ROOT).matches(DOI_DISPLAY_REGEX) || isShortDoi(value);
     }
 
     private boolean isShortDoi(String value) {
@@ -199,12 +196,12 @@ public class MetadataService {
         return DOI_PREDICATES.contains(statement.getPredicate().toString().toLowerCase(Locale.ROOT));
     }
 
-    private Statement toDctermsLanguage(ValueFactory valueFactory, Statement statement) {
+    private Statement toDctermsLanguage(Statement statement) {
         return valueFactory.createStatement(statement.getSubject(),
                 DcTerms.LANGUAGE.getIri(valueFactory), statement.getObject());
     }
 
-    private Statement toDctermsDate(ValueFactory valueFactory, Statement statement) {
+    private Statement toDctermsDate(Statement statement) {
         return valueFactory.createStatement(statement.getSubject(),
                 DcTerms.DATE.getIri(valueFactory), statement.getObject());
     }
@@ -228,7 +225,7 @@ public class MetadataService {
             || statement.getPredicate().toString().toLowerCase(Locale.ROOT).startsWith(SINDICE_DCTERMS_URI_PART);
     }
 
-    private Statement toDctermsNamespace(ValueFactory valueFactory, Statement statement) {
+    private Statement toDctermsNamespace(Statement statement) {
         String rawProperty = getLocalName(statement);
         String dcLocalName = rawProperty.substring(rawProperty.lastIndexOf(DOT) + 1);
         Optional<DcTerms> dcTerms = DcTerms.getTermByValue(dcLocalName);
