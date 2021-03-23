@@ -4,9 +4,10 @@ import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.ValueFactory;
 
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Optional;
 
-public enum DcTerms {
+public enum DcTerms implements OntologyProperty {
     ABSTRACT("abstract"),
     ACCESS_RIGHTS("accessRights"),
     ACCRUAL_METHOD("accrualMethod"),
@@ -64,6 +65,9 @@ public enum DcTerms {
     VALID("valid");
 
     private static final String DCTERMS_PREFIX = "http://purl.org/dc/terms/";
+    public static final String DC = "dc.";
+    public static final String DCTERMS = "dcterms.";
+    public static final String EMPTY_STRING = "";
 
     private final String localName;
 
@@ -71,13 +75,20 @@ public enum DcTerms {
         this.localName = localName;
     }
 
+    @Override
     public IRI getIri(ValueFactory valueFactory) {
         return valueFactory.createIRI(DCTERMS_PREFIX, localName);
     }
 
-    public static Optional<DcTerms> getTermByValue(String term) {
+    public static Optional<DcTerms> getTermByValue(String candidate) {
+        String term = replaceInternalPrefixes(candidate);
         return Optional.of(Arrays.stream(values())
                 .filter(dcTerm -> dcTerm.localName.equalsIgnoreCase(term))
                 .findAny()).orElse(Optional.empty());
+    }
+
+    private static String replaceInternalPrefixes(String input) {
+        String replaced = input.toLowerCase(Locale.ROOT).replace(DCTERMS, EMPTY_STRING);
+        return replaced.replace(DC, EMPTY_STRING);
     }
 }

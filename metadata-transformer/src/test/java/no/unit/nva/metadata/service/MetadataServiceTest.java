@@ -3,7 +3,7 @@ package no.unit.nva.metadata.service;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import j2html.tags.EmptyTag;
 import no.unit.nva.api.CreatePublicationRequest;
-import no.unit.nva.metadata.service.testdata.ContributorArgumentsSource;
+import no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.DcContentCaseArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.LanguageArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.MetaTagPair;
@@ -28,12 +28,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -47,9 +44,9 @@ import static j2html.TagCreator.head;
 import static j2html.TagCreator.html;
 import static j2html.TagCreator.meta;
 import static java.util.Objects.nonNull;
-import static no.unit.nva.metadata.service.testdata.ContributorArgumentsSource.CITATION_AUTHOR;
-import static no.unit.nva.metadata.service.testdata.ContributorArgumentsSource.DC_CONTRIBUTOR;
-import static no.unit.nva.metadata.service.testdata.ContributorArgumentsSource.DC_CREATOR;
+import static no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider.CITATION_AUTHOR;
+import static no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider.DC_CONTRIBUTOR;
+import static no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider.DC_CREATOR;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -210,7 +207,7 @@ public class MetadataServiceTest {
     }
 
     @ParameterizedTest
-    @ArgumentsSource(ContributorArgumentsSource.class)
+    @ArgumentsSource(ContributorArgumentsProvider.class)
     void getCreatePublicationRequestReturnsContributorWhenInputIsValidContributor(List<MetaTagPair> tags)
             throws IOException {
         CreatePublicationRequest request = getCreatePublicationRequest(tags);
