@@ -139,16 +139,20 @@ public class MetadataService {
     }
 
     private OntologyProperty mapToSpecificProperty(OntologyProperty ontologyProperty, Value value) {
-        return value.toString().startsWith("https://doi.org/") ? Bibo.DOI : ontologyProperty;
+        return value.toString().startsWith(DOI_PREFIX) ? Bibo.DOI : ontologyProperty;
     }
 
     private Value extractValue(OntologyProperty ontologyProperty, Value object) throws IOException,
             InterruptedException {
-        if (Bibo.DOI.equals(ontologyProperty) || DcTerms.IDENTIFIER.equals(ontologyProperty) && isDoiString(object)) {
+        if (isPotentialDoiProperty(ontologyProperty) && isDoiString(object)) {
             return extractDoi(object.stringValue());
         } else {
             return object;
         }
+    }
+
+    private boolean isPotentialDoiProperty(OntologyProperty ontologyProperty) {
+        return Bibo.DOI.equals(ontologyProperty) || DcTerms.IDENTIFIER.equals(ontologyProperty);
     }
 
     private OntologyProperty getMappedOntologyProperty(Statement statement) {
