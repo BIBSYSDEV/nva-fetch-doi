@@ -70,7 +70,6 @@ public class MetadataServiceTest {
     public static final String DC_DESCRIPTION = "DC.description";
     public static final String DC_COVERAGE = "DC.coverage";
     public static final String DC_SUBJECT = "DC.subject";
-    public static final String DC_IDENTIFIER = "DC.identifier";
     public static final String CITATION_TITLE = "citation_title";
     public static final String DATE_SEPARATOR = "-";
     public static final String ARTICLE_HTML = "article.html";
@@ -82,6 +81,8 @@ public class MetadataServiceTest {
     public static final String VALID_DATE = "2017";
     public static final int MOVED_PERMANENTLY = 301;
     public static final String LOCATION = "location";
+    public static final String DC_IDENTIFIER = DcTerms.IDENTIFIER.getDcLocalName();
+    public static final String CITATION_DOI = Citation.DOI.getProperty();
 
     private WireMockServer wireMockServer;
 
@@ -197,19 +198,19 @@ public class MetadataServiceTest {
     @Test
     void getCreatePublicationRequestReturnsSingleHttpsDoiWhenInputContainsManyValidDois() throws IOException {
         List<MetaTagPair> dois = List.of(
-                new MetaTagPair(DcTerms.IDENTIFIER.getDcLocalName(), "https://doi.org/10.1109/5.771073"),
-                new MetaTagPair(DcTerms.IDENTIFIER.getDcLocalName(), "http://doi.org/10.1109/5.771073"),
-                new MetaTagPair(DcTerms.IDENTIFIER.getDcLocalName(), "https://dx.doi.org/10.1109/5.771073"),
-                new MetaTagPair(DcTerms.IDENTIFIER.getDcLocalName(), "http://dx.doi.org/10.1109/5.771073"),
-                new MetaTagPair(DcTerms.IDENTIFIER.getDcLocalName(), "10.1109/5.771073"),
-                new MetaTagPair(DcTerms.IDENTIFIER.getDcLocalName(), "doi:10.1109/5.771073"),
-                new MetaTagPair(Citation.DOI.getProperty(), "https://doi.org/10.1109/5.771073"),
-                new MetaTagPair(Citation.DOI.getProperty(), "https://doi.org/10.1109/5.771073"),
-                new MetaTagPair(Citation.DOI.getProperty(), "http://doi.org/10.1109/5.771073"),
-                new MetaTagPair(Citation.DOI.getProperty(), "https://dx.doi.org/10.1109/5.771073"),
-                new MetaTagPair(Citation.DOI.getProperty(), "http://dx.doi.org/10.1109/5.771073"),
-                new MetaTagPair(Citation.DOI.getProperty(), "10.1109/5.771073"),
-                new MetaTagPair(Citation.DOI.getProperty(), "doi:10.1109/5.771073")
+                new MetaTagPair(DC_IDENTIFIER, "https://doi.org/10.1109/5.771073"),
+                new MetaTagPair(DC_IDENTIFIER, "http://doi.org/10.1109/5.771073"),
+                new MetaTagPair(DC_IDENTIFIER, "https://dx.doi.org/10.1109/5.771073"),
+                new MetaTagPair(DC_IDENTIFIER, "http://dx.doi.org/10.1109/5.771073"),
+                new MetaTagPair(DC_IDENTIFIER, "10.1109/5.771073"),
+                new MetaTagPair(DC_IDENTIFIER, "doi:10.1109/5.771073"),
+                new MetaTagPair(CITATION_DOI, "https://doi.org/10.1109/5.771073"),
+                new MetaTagPair(CITATION_DOI, "https://doi.org/10.1109/5.771073"),
+                new MetaTagPair(CITATION_DOI, "http://doi.org/10.1109/5.771073"),
+                new MetaTagPair(CITATION_DOI, "https://dx.doi.org/10.1109/5.771073"),
+                new MetaTagPair(CITATION_DOI, "http://dx.doi.org/10.1109/5.771073"),
+                new MetaTagPair(CITATION_DOI, "10.1109/5.771073"),
+                new MetaTagPair(CITATION_DOI, "doi:10.1109/5.771073")
                 );
         CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(dois);
         URI expected = URI.create("https://doi.org/10.1109/5.771073");
