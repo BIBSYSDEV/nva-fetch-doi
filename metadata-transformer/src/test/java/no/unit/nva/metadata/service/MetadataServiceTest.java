@@ -3,6 +3,8 @@ package no.unit.nva.metadata.service;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import j2html.tags.EmptyTag;
 import no.unit.nva.api.CreatePublicationRequest;
+import no.unit.nva.metadata.Citation;
+import no.unit.nva.metadata.DcTerms;
 import no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.DcContentCaseArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.LanguageArgumentsProvider;
@@ -48,7 +50,6 @@ import static no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider
 import static no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider.DC_CONTRIBUTOR;
 import static no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider.DC_CREATOR;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
@@ -181,11 +182,13 @@ public class MetadataServiceTest {
         assertTrue(request.isEmpty());
     }
 
-    @ParameterizedTest(name = "Identifiers that kind {0} are processed as DOIs")
+    @ParameterizedTest(name = "Identifiers with property {0} that kind {1} are processed as DOIs")
     @ArgumentsSource(ValidDoiArgumentsProvider.class)
-    void getCreatePublicationRequestReturnsHttpsDoiWhenInputIsKnownDoiRepresentation(String identifier, URI expected)
+    void getCreatePublicationRequestReturnsHttpsDoiWhenInputIsKnownDoiRepresentation(String property,
+                                                                                     String identifier,
+                                                                                     URI expected)
             throws IOException, InterruptedException {
-        CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(DC_IDENTIFIER, identifier,
+        CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(property, identifier,
                 expected.toString());
         URI actual = createPublicationRequest.getEntityDescription().getReference().getDoi();
         assertThat(actual, equalTo(expected));
@@ -193,12 +196,21 @@ public class MetadataServiceTest {
 
     @Test
     void getCreatePublicationRequestReturnsSingleHttpsDoiWhenInputContainsManyValidDois() throws IOException {
-        List<MetaTagPair> dois = List.of(new MetaTagPair(DC_IDENTIFIER, "https://doi.org/10.1109/5.771073"),
-                new MetaTagPair(DC_IDENTIFIER, "http://doi.org/10.1109/5.771073"),
-                new MetaTagPair(DC_IDENTIFIER, "https://dx.doi.org/10.1109/5.771073"),
-                new MetaTagPair(DC_IDENTIFIER, "http://dx.doi.org/10.1109/5.771073"),
-                new MetaTagPair(DC_IDENTIFIER, "10.1109/5.771073"),
-                new MetaTagPair(DC_IDENTIFIER, "doi:10.1109/5.771073"));
+        List<MetaTagPair> dois = List.of(
+                new MetaTagPair(DcTerms.IDENTIFIER.getDcLocalName(), "https://doi.org/10.1109/5.771073"),
+                new MetaTagPair(DcTerms.IDENTIFIER.getDcLocalName(), "http://doi.org/10.1109/5.771073"),
+                new MetaTagPair(DcTerms.IDENTIFIER.getDcLocalName(), "https://dx.doi.org/10.1109/5.771073"),
+                new MetaTagPair(DcTerms.IDENTIFIER.getDcLocalName(), "http://dx.doi.org/10.1109/5.771073"),
+                new MetaTagPair(DcTerms.IDENTIFIER.getDcLocalName(), "10.1109/5.771073"),
+                new MetaTagPair(DcTerms.IDENTIFIER.getDcLocalName(), "doi:10.1109/5.771073"),
+                new MetaTagPair(Citation.DOI.getProperty(), "https://doi.org/10.1109/5.771073"),
+                new MetaTagPair(Citation.DOI.getProperty(), "https://doi.org/10.1109/5.771073"),
+                new MetaTagPair(Citation.DOI.getProperty(), "http://doi.org/10.1109/5.771073"),
+                new MetaTagPair(Citation.DOI.getProperty(), "https://dx.doi.org/10.1109/5.771073"),
+                new MetaTagPair(Citation.DOI.getProperty(), "http://dx.doi.org/10.1109/5.771073"),
+                new MetaTagPair(Citation.DOI.getProperty(), "10.1109/5.771073"),
+                new MetaTagPair(Citation.DOI.getProperty(), "doi:10.1109/5.771073")
+                );
         CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(dois);
         URI expected = URI.create("https://doi.org/10.1109/5.771073");
         URI actual = createPublicationRequest.getEntityDescription().getReference().getDoi();
