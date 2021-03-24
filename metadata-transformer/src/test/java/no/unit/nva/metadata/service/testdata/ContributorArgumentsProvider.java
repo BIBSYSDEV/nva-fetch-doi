@@ -7,7 +7,7 @@ import org.junit.jupiter.params.provider.ArgumentsProvider;
 import java.util.List;
 import java.util.stream.Stream;
 
-public class ContributorArgumentsSource implements ArgumentsProvider {
+public class ContributorArgumentsProvider implements ArgumentsProvider {
     public static final String DC_CONTRIBUTOR = "DC.contributor";
     public static final String DC_CREATOR = "DC.creator";
     public static final String CITATION_AUTHOR = "citation_author";

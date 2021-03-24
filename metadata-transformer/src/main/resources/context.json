@@ -5,6 +5,9 @@
     "type": "@type",
     "graph": "@graph",
     "value": "@value",
+    "doi": {
+      "@type": "@id"
+    },
     "language": "@language",
     "tags": {
       "@id": "tag",

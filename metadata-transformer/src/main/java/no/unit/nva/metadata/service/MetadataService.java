@@ -1,6 +1,7 @@
 package no.unit.nva.metadata.service;
 
 import static com.github.jsonldjava.core.JsonLdProcessor.frame;
+import static java.util.Objects.nonNull;
 import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,12 +21,15 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.api.CreatePublicationRequest;
+import no.unit.nva.metadata.Bibo;
+import no.unit.nva.metadata.Citation;
 import no.unit.nva.metadata.DcTerms;
 import no.unit.nva.metadata.MetadataConverter;
+import no.unit.nva.metadata.OntologyProperty;
 import org.apache.any23.extractor.ExtractionException;
+import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.Value;
@@ -50,19 +54,10 @@ public class MetadataService {
     private static final String CONTEXT_JSON = "context.json";
     private static final String MISSING_CONTEXT_OBJECT_FILE = "Missing context object file";
     private static final String REPLACEMENT_MARKER = "__URI__";
-    private static final String SINDICE_DC_URI_PART = "http://vocab.sindice.net/any23#dc.";
-    private static final String SINDICE_DCTERMS_URI_PART = "http://vocab.sindice.net/any23#dcterms.";
-    private static final String DOT = ".";
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final Logger logger = LoggerFactory.getLogger(MetadataService.class);
-    private static final Set<String> HIGHWIRE_DATES = Set.of("citation_publication_date", "citation_cover_date",
-            "citation_date");
-    private static final String CITATION_LANGUAGE = "citation_language";
-    private static final Set<String> DOI_PREDICATES = Set.of("http://vocab.sindice.net/any23#dc.identifier",
-            "http://vocab.sindice.net/any23#dcterms.identifier", "http://vocab.sindice.net/any23#citation_doi");
     private static final String DOI_DISPLAY_REGEX = "(doi:|doc:|http(s)?://(dx\\.)?doi\\.org/)?10\\.\\d{4,9}+/.*";
     private static final String SHORT_DOI_REGEX = "^http(s)?://doi.org/[^/]+(/)?$";
-    private static final String BIBO_DOI = "http://purl.org/ontology/bibo/doi";
     private static final String DOI_PREFIX = "https://doi.org/";
     private static final String HEAD = "HEAD";
     private static final String LOCATION = "location";
@@ -70,7 +65,6 @@ public class MetadataService {
     private static final String DOI_FIRST_PART = "10";
     private static final String HTTPS = "https";
     private static final String HTTP = "http";
-    public static final String CITATION_AUTHOR = "citation_author";
     public static final ValueFactory valueFactory = SimpleValueFactory.getInstance();
     private final HttpClient httpClient;
     private final TranslatorService translatorService;
@@ -130,43 +124,50 @@ public class MetadataService {
     private Model normalizeStatements(RepositoryResult<Statement> statements) throws IOException, InterruptedException {
         Model model = new TreeModel();
         for (Statement statement : statements) {
-            if (isDoi(statement)) {
-                Optional<Statement> doi = toBiboDoi(statement);
-                doi.ifPresent(model::add);
-            } else if (isSindiceDcOrDcTerms(statement)) {
-                model.add(toDctermsNamespace(statement));
-            } else if (isHighwireDate(statement)) {
-                model.add(toDctermsDate(statement));
-            } else if (isHighWireLanguage(statement)) {
-                model.add(toDctermsLanguage(statement));
-            } else if (isHighWireAuthor(statement)) {
-                model.add(toDctermsCreator(statement));
-            } else {
-                model.add(statement);
-            }
+            extractKnownProperties(model, statement);
         }
         return model;
     }
 
-    private Statement toDctermsCreator(Statement statement) {
-        return valueFactory.createStatement(statement.getSubject(),
-                DcTerms.CREATOR.getIri(valueFactory), statement.getObject());
+    private void extractKnownProperties(Model model, Statement statement) throws IOException, InterruptedException {
+        OntologyProperty ontologyProperty = getMappedOntologyProperty(statement);
+        Value value = extractValue(ontologyProperty, statement.getObject());
+        OntologyProperty mappedProperty = mapToSpecificProperty(ontologyProperty, value);
+        if (nonNull(ontologyProperty)) {
+            model.add(statement.getSubject(), mappedProperty.getIri(valueFactory), value);
+        }
     }
 
-    private boolean isHighWireAuthor(Statement statement) {
-        return statement.getPredicate().toString().endsWith(CITATION_AUTHOR);
+    private OntologyProperty mapToSpecificProperty(OntologyProperty ontologyProperty, Value value) {
+        return value.toString().startsWith(DOI_PREFIX) ? Bibo.DOI : ontologyProperty;
     }
 
-    private Optional<Statement> toBiboDoi(Statement statement) throws IOException,
+    private Value extractValue(OntologyProperty ontologyProperty, Value object) throws IOException,
             InterruptedException {
-        String value = statement.getObject().stringValue();
-        return extractDoi(value).map(doiString -> valueFactory.createStatement(statement.getSubject(),
-                valueFactory.createIRI(BIBO_DOI), valueFactory.createLiteral(doiString)));
+        if (isPotentialDoiProperty(ontologyProperty) && isDoiString(object)) {
+            return extractDoi(object.stringValue());
+        } else {
+            return object;
+        }
     }
 
-    private Optional<String> extractDoi(String value) throws IOException, InterruptedException {
-        return isShortDoi(value) ? fetchDoiUriFromShortDoi(value)
+    private boolean isPotentialDoiProperty(OntologyProperty ontologyProperty) {
+        return Bibo.DOI.equals(ontologyProperty) || DcTerms.IDENTIFIER.equals(ontologyProperty);
+    }
+
+    private OntologyProperty getMappedOntologyProperty(Statement statement) {
+        String property = statement.getPredicate().getLocalName();
+        Optional<Citation> citationValue = Citation.getByProperty(property);
+        Optional<DcTerms> dcTermsValue = DcTerms.getTermByValue(property);
+        return citationValue.isPresent()
+                ? citationValue.get().getMappedTerm()
+                : dcTermsValue.orElse(null);
+    }
+
+    private IRI extractDoi(String value) throws IOException, InterruptedException {
+        Optional<String> doiString = isShortDoi(value) ? fetchDoiUriFromShortDoi(value)
                 : Optional.of(DOI_PREFIX + value.substring(value.indexOf(DOI_FIRST_PART)));
+        return doiString.map(valueFactory::createIRI).orElse(null);
     }
 
     private Optional<String> fetchDoiUriFromShortDoi(String value) throws IOException, InterruptedException {
@@ -179,10 +180,6 @@ public class MetadataService {
         return response.statusCode() == MOVED_PERMANENTLY ? response.headers().firstValue(LOCATION) : Optional.empty();
     }
 
-    private boolean isDoi(Statement statement) {
-        return isPotentialDoiPredicate(statement) && isDoiString(statement.getObject());
-    }
-
     private boolean isDoiString(Value object) {
         String value = object.stringValue();
         return value.toLowerCase(Locale.ROOT).matches(DOI_DISPLAY_REGEX) || isShortDoi(value);
@@ -190,54 +187,6 @@ public class MetadataService {
 
     private boolean isShortDoi(String value) {
         return value.matches(SHORT_DOI_REGEX);
-    }
-
-    private boolean isPotentialDoiPredicate(Statement statement) {
-        return DOI_PREDICATES.contains(statement.getPredicate().toString().toLowerCase(Locale.ROOT));
-    }
-
-    private Statement toDctermsLanguage(Statement statement) {
-        return valueFactory.createStatement(statement.getSubject(),
-                DcTerms.LANGUAGE.getIri(valueFactory), statement.getObject());
-    }
-
-    private Statement toDctermsDate(Statement statement) {
-        return valueFactory.createStatement(statement.getSubject(),
-                DcTerms.DATE.getIri(valueFactory), statement.getObject());
-    }
-
-    private boolean isHighWireLanguage(Statement statement) {
-        String property = getLocalName(statement);
-        return CITATION_LANGUAGE.equals(property.toLowerCase(Locale.ROOT));
-    }
-
-    private String getLocalName(Statement statement) {
-        return statement.getPredicate().getLocalName();
-    }
-
-    private boolean isHighwireDate(Statement statement) {
-        String property = getLocalName(statement);
-        return HIGHWIRE_DATES.contains(property.toLowerCase(Locale.ROOT));
-    }
-
-    private boolean isSindiceDcOrDcTerms(Statement statement) {
-        return statement.getPredicate().toString().toLowerCase(Locale.ROOT).startsWith(SINDICE_DC_URI_PART)
-            || statement.getPredicate().toString().toLowerCase(Locale.ROOT).startsWith(SINDICE_DCTERMS_URI_PART);
-    }
-
-    private Statement toDctermsNamespace(Statement statement) {
-        String rawProperty = getLocalName(statement);
-        String dcLocalName = rawProperty.substring(rawProperty.lastIndexOf(DOT) + 1);
-        Optional<DcTerms> dcTerms = DcTerms.getTermByValue(dcLocalName);
-
-        if (dcTerms.isPresent()) {
-            return valueFactory.createStatement(statement.getSubject(),
-                    dcTerms.get().getIri(valueFactory),
-                    statement.getObject());
-        } else {
-            logger.warn("Received <" + rawProperty + "> claimed as a DC property");
-            return statement;
-        }
     }
 
     private String toFramedJsonLd(Model model) throws IOException {

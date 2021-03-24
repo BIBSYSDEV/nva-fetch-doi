@@ -1,4 +1,3 @@
-PREFIX any23: <http://vocab.sindice.net/any23#>
 PREFIX bibo: <http://purl.org/ontology/bibo/>
 PREFIX dcterms: <http://purl.org/dc/terms/>
 PREFIX unit: <https://nva.unit.no/publication#>
@@ -44,16 +43,16 @@ CONSTRUCT {
     BIND(BNODE("entityNode") AS ?entityNode)
     {
       SELECT ?title WHERE {
-        VALUES ?titleProperty { dcterms:title any23:citation_title }
-        <__URI__> ?titleProperty ?title  .
+        <__URI__> dcterms:title ?title  .
       } ORDER BY DESC(STRLEN(STR(?title))) LIMIT 1
     } UNION {
-      VALUES ?contributorProperty { dcterms:creator dcterms:contributor }
-      <__URI__> ?contributorProperty ?creator .
-
-      BIND(BNODE() AS ?contributorNode)
-      BIND(BNODE() AS ?identityNode)
-      FILTER (BOUND(?creator) && STRLEN(?creator)>0)
+        SELECT DISTINCT ?creator (SAMPLE(?cNode) AS ?contributorNode) (SAMPLE(?iNode) AS ?identityNode) WHERE {
+          VALUES ?contributorProperty { dcterms:creator dcterms:contributor }
+          <__URI__> ?contributorProperty ?creator .
+          BIND(BNODE() AS ?cNode)
+          BIND(BNODE() AS ?iNode)
+          FILTER (BOUND(?creator) && STRLEN(?creator)>0)
+      } GROUP BY ?creator
     }
     UNION {
       <__URI__> dcterms:subject | dcterms:coverage ?subject .
