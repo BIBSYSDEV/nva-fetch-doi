@@ -28,6 +28,7 @@ import com.amazonaws.services.secretsmanager.model.InvalidParameterException;
 import com.amazonaws.services.secretsmanager.model.InvalidRequestException;
 import com.amazonaws.services.secretsmanager.model.ResourceNotFoundException;
 import com.amazonaws.services.securitytoken.model.ExpiredTokenException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -46,19 +47,24 @@ public class CrossRefClient {
     public static final String CROSSREF_USER_AGENT =
             "nva-fetch-doi/1.0 (https://github.com/BIBSYSDEV/nva-fetch-doi; mailto:support@unit.no)";
     private static final String CROSSREF_PLUSAPI_HEADER = "Crossref-Plus-API-Token";
-    private static final String CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE  = "Bearer %s";
+    private static final String CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE = "Bearer %s";
     private static final String DOI_EXAMPLES = "10.1000/182, https://doi.org/10.1000/182";
     public static final String ILLEGAL_DOI_MESSAGE = "Illegal DOI:%s. Valid examples:" + DOI_EXAMPLES;
+    private static final String CROSSREFPLUSAPITOKEN_ENV = "CROSSREFPLUSAPITOKEN_NAME";
     private static final Logger logger = LoggerFactory.getLogger(CrossRefClient.class);
     private final transient HttpClient httpClient;
+    private final Optional<String> secretName;
+    private final String region;
 
     @JacocoGenerated
     public CrossRefClient() {
-        this(HttpClient.newHttpClient());
+        this(HttpClient.newHttpClient(), new Environment());
     }
 
-    public CrossRefClient(HttpClient httpClient) {
+    public CrossRefClient(HttpClient httpClient, Environment environment) {
         this.httpClient = httpClient;
+        secretName = environment.readEnvOpt(CROSSREFPLUSAPITOKEN_ENV);
+        region = "eu-west-1";
     }
 
     /**
@@ -97,7 +103,6 @@ public class CrossRefClient {
         if (getCrossRefApiPlusToken().isPresent()) {
             logger.info("CrossRefApiPlusToken.isPresent() == true");
             final String token = getCrossRefApiPlusToken().get();
-            logger.info("Got getCrossRefApiPlusToken, token.length={}, token.start={}", token.length(), token.substring(0,20));
             builder.header(CROSSREF_PLUSAPI_HEADER,
                     String.format(CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE, token));
         }
@@ -159,41 +164,38 @@ public class CrossRefClient {
 
     private Optional<String> getCrossRefApiPlusToken() {
 
-        String secretName = "CrossRefPlusApiToken";
-        String region = "eu-west-1";
-
-        // Create a Secrets Manager client
-        AWSSecretsManager client = AWSSecretsManagerClientBuilder.standard()
-                .withRegion(region)
-                .build();
-
         Optional<String> secret = Optional.empty();
+        if (secretName.isPresent()) {
+            // Create a Secrets Manager client
+            AWSSecretsManager client = AWSSecretsManagerClientBuilder.standard()
+                    .withRegion(region)
+                    .build();
 
-        GetSecretValueRequest getSecretValueRequest = new GetSecretValueRequest()
-                .withSecretId(secretName);
-        GetSecretValueResult getSecretValueResult = null;
+            GetSecretValueRequest getSecretValueRequest = new GetSecretValueRequest()
+                    .withSecretId(secretName.get());
+            GetSecretValueResult getSecretValueResult = null;
 
-        try {
-            getSecretValueResult = client.getSecretValue(getSecretValueRequest);
-        } catch (DecryptionFailureException | InternalServiceErrorException
-                | InvalidParameterException | InvalidRequestException | ExpiredTokenException e) {
-            // Secrets Manager can't decrypt the protected secret text using the provided KMS key.
-            // An error occurred on the server side.
-            // You provided an invalid value for a parameter.
-            // You provided a parameter value that is not valid for the current state of the resource.
-            logger.error("Exception decoding CrossRef-Plus-API secret from AWS secretsManager ");
-        } catch (ResourceNotFoundException e) {
-            // We can't find the resource that you asked for.
-            // Deal with the exception here, and/or rethrow at your discretion.
-            logger.error("CrossRef-Plus-API secret not found in AWS secretsManager ");
+            try {
+                getSecretValueResult = client.getSecretValue(getSecretValueRequest);
+            } catch (DecryptionFailureException | InternalServiceErrorException
+                    | InvalidParameterException | InvalidRequestException | ExpiredTokenException e) {
+                // Secrets Manager can't decrypt the protected secret text using the provided KMS key.
+                // An error occurred on the server side.
+                // You provided an invalid value for a parameter.
+                // You provided a parameter value that is not valid for the current state of the resource.
+                logger.error("Exception decoding CrossRef-Plus-API secret from AWS secretsManager ");
+            } catch (ResourceNotFoundException e) {
+                // We can't find the resource that you asked for.
+                // Deal with the exception here, and/or rethrow at your discretion.
+                logger.error("CrossRef-Plus-API secret not found in AWS secretsManager ");
+            }
+
+            // Decrypts secret using the associated KMS CMK.
+            // Depending on whether the secret is a string or binary, one of these fields will be populated.
+            if (getSecretValueResult.getSecretString() != null) {
+                secret = Optional.of(getSecretValueResult.getSecretString());
+            }
         }
-
-        // Decrypts secret using the associated KMS CMK.
-        // Depending on whether the secret is a string or binary, one of these fields will be populated.
-        if (getSecretValueResult.getSecretString() != null) {
-            secret = Optional.of(getSecretValueResult.getSecretString());
-        }
-
         return secret;
     }
 }
