@@ -97,7 +97,7 @@ public class CrossRefClient {
         if (getCrossRefApiPlusToken().isPresent()) {
             logger.info("CrossRefApiPlusToken.isPresent() == true");
             final String token = getCrossRefApiPlusToken().get();
-            logger.info("Got getCrossRefApiPlusToken, token.length={}", token.length());
+            logger.info("Got getCrossRefApiPlusToken, token.length={}, token.start=", token.length(), token.substring(0,20));
             builder.header(CROSSREF_PLUSAPI_HEADER,
                     String.format(CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE, token));
         }
