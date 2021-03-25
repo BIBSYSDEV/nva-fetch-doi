@@ -3,13 +3,18 @@ package no.unit.nva.metadata.service;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import j2html.tags.EmptyTag;
 import no.unit.nva.api.CreatePublicationRequest;
+import no.unit.nva.metadata.Citation;
+import no.unit.nva.metadata.DcTerms;
 import no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.DcContentCaseArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.LanguageArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.MetaTagPair;
+import no.unit.nva.metadata.service.testdata.ShortDoiUriArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.UndefinedLanguageArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.ValidDateArgumentsProvider;
-import no.unit.nva.metadata.service.testdata.ValidDoiArgumentsProvider;
+import no.unit.nva.metadata.service.testdata.ValidDoiFullUriArgumentsProvider;
+import no.unit.nva.metadata.service.testdata.ValidDoiPseudoUrnArgumentsProvider;
+import no.unit.nva.metadata.service.testdata.ValidDoiStringArgumentsProvider;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
@@ -48,7 +53,6 @@ import static no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider
 import static no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider.DC_CONTRIBUTOR;
 import static no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider.DC_CREATOR;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
@@ -69,7 +73,6 @@ public class MetadataServiceTest {
     public static final String DC_DESCRIPTION = "DC.description";
     public static final String DC_COVERAGE = "DC.coverage";
     public static final String DC_SUBJECT = "DC.subject";
-    public static final String DC_IDENTIFIER = "DC.identifier";
     public static final String CITATION_TITLE = "citation_title";
     public static final String DATE_SEPARATOR = "-";
     public static final String ARTICLE_HTML = "article.html";
@@ -81,6 +84,8 @@ public class MetadataServiceTest {
     public static final String VALID_DATE = "2017";
     public static final int MOVED_PERMANENTLY = 301;
     public static final String LOCATION = "location";
+    public static final String DC_IDENTIFIER = DcTerms.IDENTIFIER.getMetaTagName();
+    public static final String CITATION_DOI = Citation.DOI.getMetaTagName();
 
     private WireMockServer wireMockServer;
 
@@ -181,11 +186,46 @@ public class MetadataServiceTest {
         assertTrue(request.isEmpty());
     }
 
-    @ParameterizedTest(name = "Identifiers that kind {0} are processed as DOIs")
-    @ArgumentsSource(ValidDoiArgumentsProvider.class)
-    void getCreatePublicationRequestReturnsHttpsDoiWhenInputIsKnownDoiRepresentation(String identifier, URI expected)
+    @ParameterizedTest
+    @ArgumentsSource(ValidDoiStringArgumentsProvider.class)
+    void getCreatePublicationRequestReturnsHttpsDoiWhenInputIsDoiString(String metaTagName,
+                                                                        String metaTagContent,
+                                                                        URI expected)
             throws IOException, InterruptedException {
-        CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(DC_IDENTIFIER, identifier,
+        CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(metaTagName, metaTagContent);
+        URI actual = createPublicationRequest.getEntityDescription().getReference().getDoi();
+        assertThat(actual, equalTo(expected));
+    }
+
+    @ParameterizedTest(name = "HTTPS DOI extracted from META tag name {0} and content DOI pseudo-URN {1}")
+    @ArgumentsSource(ValidDoiPseudoUrnArgumentsProvider.class)
+    void getCreatePublicationRequestReturnsHttpsDoiWhenInputIsPseudoUrnOrPlainDoi(String metaTagName,
+                                                                                     String metaTagContent,
+                                                                                     URI expected)
+            throws IOException, InterruptedException {
+        CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(metaTagName, metaTagContent);
+        URI actual = createPublicationRequest.getEntityDescription().getReference().getDoi();
+        assertThat(actual, equalTo(expected));
+    }
+
+    @ParameterizedTest(name = "HTTPS DOI extracted from META tag name {0} and content HTTP DOI {1}")
+    @ArgumentsSource(ValidDoiFullUriArgumentsProvider.class)
+    void getCreatePublicationRequestReturnsHttpsDoiWhenInputIncludesValidHttpOrHttpsDoi(String metaTagName,
+                                                                                        String metaTagContent,
+                                                                                        URI expected)
+            throws IOException, InterruptedException {
+        CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(metaTagName, metaTagContent);
+        URI actual = createPublicationRequest.getEntityDescription().getReference().getDoi();
+        assertThat(actual, equalTo(expected));
+    }
+
+    @ParameterizedTest(name = "HTTPS DOI extracted from META tag name {0} and content ShortDoi {0}")
+    @ArgumentsSource(ShortDoiUriArgumentsProvider.class)
+    void getCreatePublicationRequestReturnsHttpsDoiWhenInputIncludesValidShortDoi(String metaTagName,
+                                                                                  String metaTagContent,
+                                                                                  URI expected)
+            throws IOException, InterruptedException {
+        CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(metaTagName, metaTagContent,
                 expected.toString());
         URI actual = createPublicationRequest.getEntityDescription().getReference().getDoi();
         assertThat(actual, equalTo(expected));
@@ -193,13 +233,22 @@ public class MetadataServiceTest {
 
     @Test
     void getCreatePublicationRequestReturnsSingleHttpsDoiWhenInputContainsManyValidDois() throws IOException {
-        List<MetaTagPair> dois = List.of(new MetaTagPair(DC_IDENTIFIER, "https://doi.org/10.1109/5.771073"),
+        List<MetaTagPair> doimetaTagPairs = List.of(
+                new MetaTagPair(DC_IDENTIFIER, "https://doi.org/10.1109/5.771073"),
                 new MetaTagPair(DC_IDENTIFIER, "http://doi.org/10.1109/5.771073"),
                 new MetaTagPair(DC_IDENTIFIER, "https://dx.doi.org/10.1109/5.771073"),
                 new MetaTagPair(DC_IDENTIFIER, "http://dx.doi.org/10.1109/5.771073"),
                 new MetaTagPair(DC_IDENTIFIER, "10.1109/5.771073"),
-                new MetaTagPair(DC_IDENTIFIER, "doi:10.1109/5.771073"));
-        CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(dois);
+                new MetaTagPair(DC_IDENTIFIER, "doi:10.1109/5.771073"),
+                new MetaTagPair(CITATION_DOI, "https://doi.org/10.1109/5.771073"),
+                new MetaTagPair(CITATION_DOI, "https://doi.org/10.1109/5.771073"),
+                new MetaTagPair(CITATION_DOI, "http://doi.org/10.1109/5.771073"),
+                new MetaTagPair(CITATION_DOI, "https://dx.doi.org/10.1109/5.771073"),
+                new MetaTagPair(CITATION_DOI, "http://dx.doi.org/10.1109/5.771073"),
+                new MetaTagPair(CITATION_DOI, "10.1109/5.771073"),
+                new MetaTagPair(CITATION_DOI, "doi:10.1109/5.771073")
+                );
+        CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(doimetaTagPairs);
         URI expected = URI.create("https://doi.org/10.1109/5.771073");
         URI actual = createPublicationRequest.getEntityDescription().getReference().getDoi();
         assertThat(actual, is(not(instanceOf(List.class))));

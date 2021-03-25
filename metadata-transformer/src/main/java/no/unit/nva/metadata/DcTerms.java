@@ -80,6 +80,10 @@ public enum DcTerms implements OntologyProperty {
         return valueFactory.createIRI(DCTERMS_PREFIX, localName);
     }
 
+    public String getMetaTagName() {
+        return "DC." + localName;
+    }
+
     public static Optional<DcTerms> getTermByValue(String candidate) {
         String term = replaceInternalPrefixes(candidate);
         return Optional.of(Arrays.stream(values())
