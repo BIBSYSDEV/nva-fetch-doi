@@ -84,7 +84,7 @@ public class MetadataServiceTest {
     public static final String VALID_DATE = "2017";
     public static final int MOVED_PERMANENTLY = 301;
     public static final String LOCATION = "location";
-    public static final String DC_IDENTIFIER = DcTerms.IDENTIFIER.getDcLocalName();
+    public static final String DC_IDENTIFIER = DcTerms.IDENTIFIER.getMetaTagName();
     public static final String CITATION_DOI = Citation.DOI.getMetaTagName();
 
     private WireMockServer wireMockServer;

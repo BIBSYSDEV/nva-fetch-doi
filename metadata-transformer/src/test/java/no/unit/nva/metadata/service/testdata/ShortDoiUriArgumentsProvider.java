@@ -10,7 +10,7 @@ import java.net.URI;
 import java.util.stream.Stream;
 
 public class ShortDoiUriArgumentsProvider implements ArgumentsProvider {
-    private static final String DC_IDENTIFIER = DcTerms.IDENTIFIER.getDcLocalName();
+    private static final String DC_IDENTIFIER = DcTerms.IDENTIFIER.getMetaTagName();
     private static final String CITATION_DOI = Citation.DOI.getMetaTagName();
 
     @Override
