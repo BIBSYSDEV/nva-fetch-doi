@@ -9,9 +9,12 @@ import no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.DcContentCaseArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.LanguageArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.MetaTagPair;
+import no.unit.nva.metadata.service.testdata.ShortDoiUriArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.UndefinedLanguageArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.ValidDateArgumentsProvider;
-import no.unit.nva.metadata.service.testdata.ValidDoiArgumentsProvider;
+import no.unit.nva.metadata.service.testdata.ValidDoiFullUriArgumentsProvider;
+import no.unit.nva.metadata.service.testdata.ValidDoiPseudoUrnArgumentsProvider;
+import no.unit.nva.metadata.service.testdata.ValidDoiStringArgumentsProvider;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
@@ -82,7 +85,7 @@ public class MetadataServiceTest {
     public static final int MOVED_PERMANENTLY = 301;
     public static final String LOCATION = "location";
     public static final String DC_IDENTIFIER = DcTerms.IDENTIFIER.getDcLocalName();
-    public static final String CITATION_DOI = Citation.DOI.getProperty();
+    public static final String CITATION_DOI = Citation.DOI.getMetaTagName();
 
     private WireMockServer wireMockServer;
 
@@ -183,13 +186,46 @@ public class MetadataServiceTest {
         assertTrue(request.isEmpty());
     }
 
-    @ParameterizedTest(name = "Identifiers with property {0} that kind {1} are processed as DOIs")
-    @ArgumentsSource(ValidDoiArgumentsProvider.class)
-    void getCreatePublicationRequestReturnsHttpsDoiWhenInputIsKnownDoiRepresentation(String property,
-                                                                                     String identifier,
+    @ParameterizedTest
+    @ArgumentsSource(ValidDoiStringArgumentsProvider.class)
+    void getCreatePublicationRequestReturnsHttpsDoiWhenInputIsDoiString(String metaTagName,
+                                                                        String metaTagContent,
+                                                                        URI expected)
+            throws IOException, InterruptedException {
+        CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(metaTagName, metaTagContent);
+        URI actual = createPublicationRequest.getEntityDescription().getReference().getDoi();
+        assertThat(actual, equalTo(expected));
+    }
+
+    @ParameterizedTest(name = "HTTPS DOI extracted from META tag name {0} and content DOI pseudo-URN {1}")
+    @ArgumentsSource(ValidDoiPseudoUrnArgumentsProvider.class)
+    void getCreatePublicationRequestReturnsHttpsDoiWhenInputIsPseudoUrnOrPlainDoi(String metaTagName,
+                                                                                     String metaTagContent,
                                                                                      URI expected)
             throws IOException, InterruptedException {
-        CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(property, identifier,
+        CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(metaTagName, metaTagContent);
+        URI actual = createPublicationRequest.getEntityDescription().getReference().getDoi();
+        assertThat(actual, equalTo(expected));
+    }
+
+    @ParameterizedTest(name = "HTTPS DOI extracted from META tag name {0} and content HTTP DOI {1}")
+    @ArgumentsSource(ValidDoiFullUriArgumentsProvider.class)
+    void getCreatePublicationRequestReturnsHttpsDoiWhenInputIncludesValidHttpOrHttpsDoi(String metaTagName,
+                                                                                        String metaTagContent,
+                                                                                        URI expected)
+            throws IOException, InterruptedException {
+        CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(metaTagName, metaTagContent);
+        URI actual = createPublicationRequest.getEntityDescription().getReference().getDoi();
+        assertThat(actual, equalTo(expected));
+    }
+
+    @ParameterizedTest(name = "HTTPS DOI extracted from META tag name {0} and content ShortDoi {0}")
+    @ArgumentsSource(ShortDoiUriArgumentsProvider.class)
+    void getCreatePublicationRequestReturnsHttpsDoiWhenInputIncludesValidShortDoi(String metaTagName,
+                                                                                  String metaTagContent,
+                                                                                  URI expected)
+            throws IOException, InterruptedException {
+        CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(metaTagName, metaTagContent,
                 expected.toString());
         URI actual = createPublicationRequest.getEntityDescription().getReference().getDoi();
         assertThat(actual, equalTo(expected));
@@ -197,7 +233,7 @@ public class MetadataServiceTest {
 
     @Test
     void getCreatePublicationRequestReturnsSingleHttpsDoiWhenInputContainsManyValidDois() throws IOException {
-        List<MetaTagPair> dois = List.of(
+        List<MetaTagPair> doimetaTagPairs = List.of(
                 new MetaTagPair(DC_IDENTIFIER, "https://doi.org/10.1109/5.771073"),
                 new MetaTagPair(DC_IDENTIFIER, "http://doi.org/10.1109/5.771073"),
                 new MetaTagPair(DC_IDENTIFIER, "https://dx.doi.org/10.1109/5.771073"),
@@ -212,7 +248,7 @@ public class MetadataServiceTest {
                 new MetaTagPair(CITATION_DOI, "10.1109/5.771073"),
                 new MetaTagPair(CITATION_DOI, "doi:10.1109/5.771073")
                 );
-        CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(dois);
+        CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(doimetaTagPairs);
         URI expected = URI.create("https://doi.org/10.1109/5.771073");
         URI actual = createPublicationRequest.getEntityDescription().getReference().getDoi();
         assertThat(actual, is(not(instanceOf(List.class))));

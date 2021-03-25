@@ -21,7 +21,7 @@ public enum Citation {
         this.mappedTerm = mappedTerm;
     }
 
-    public String getProperty() {
+    public String getMetaTagName() {
         return CITATION + property;
     }
 
@@ -31,7 +31,7 @@ public enum Citation {
 
     public static Optional<Citation> getByProperty(String candidate) {
         return Optional.of(Arrays.stream(values())
-                .filter(property -> property.getProperty().equalsIgnoreCase(candidate))
+                .filter(property -> property.getMetaTagName().equalsIgnoreCase(candidate))
                 .findAny()).orElse(Optional.empty());
     }
 }
