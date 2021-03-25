@@ -35,12 +35,9 @@ Parameters:
   CustomDomainBasePath:
     Type: String
     Description: Base path mapping in CustomDomain
-  CrossrefPlusAPISecretName:
+  CrossrefPlusAPITokenName:
     Type: String
     Default: CrossrefPlusAPI
-  CrossrefPlusAPISecretKey:
-    Type: String
-    Default: Token
 
 Resources:
   ApiAccessLogGroup:
@@ -169,8 +166,7 @@ Resources:
           PUBLICATION_API_SCHEME: https
           PUBLICATION_API_HOST: !Ref CustomDomain
           BARE_PROXY_API_URI: !Sub 'https://${CustomDomain}'
-          CROSSREFPLUSAPISECRET_NAME: !Ref CrossrefPlusAPISecretName
-          CROSSREFPLUSAPISECRET_KEY: !Ref CrossrefPlusAPISecretKey
+          CROSSREFPLUSAPITOKEN_NAME: !Ref CrossrefPlusAPITokenName
 
       Events:
         NvaDoi:

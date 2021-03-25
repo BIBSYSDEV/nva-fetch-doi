@@ -51,8 +51,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     public static final String PUBLICATION_API_HOST_ENV = "PUBLICATION_API_HOST";
     public static final String PUBLICATION_API_SCHEME_ENV = "PUBLICATION_API_SCHEME";
 
-    public static final String CROSSREFPLUSAPISECRET_NAME_ENV = "CROSSREFPLUSAPISECRET_NAME";
-    public static final String CROSSREFPLUSAPISECRET_KEY_ENV = "CROSSREFPLUSAPISECRET_KEY";
+    public static final String CROSSREFPLUSAPITOKEN_ENV = "CROSSREFPLUSAPITOKEN_NAME";
 
     public static final JsonPointer FEIDE_ID = JsonPointer.compile("/authorizer/claims/custom:feideId");
     public static final JsonPointer CUSTOMER_ID = JsonPointer.compile("/authorizer/claims/custom:customerId");
