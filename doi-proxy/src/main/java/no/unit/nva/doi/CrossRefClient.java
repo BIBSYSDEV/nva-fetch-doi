@@ -1,5 +1,19 @@
 package no.unit.nva.doi;
 
+import com.amazonaws.SdkClientException;
+import nva.commons.core.Environment;
+import nva.commons.core.JacocoGenerated;
+import nva.commons.secrets.ErrorReadingSecretException;
+import nva.commons.secrets.SecretsReader;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -13,29 +27,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-
-import com.amazonaws.services.secretsmanager.AWSSecretsManager;
-import com.amazonaws.services.secretsmanager.AWSSecretsManagerClientBuilder;
-import com.amazonaws.services.secretsmanager.model.DecryptionFailureException;
-import com.amazonaws.services.secretsmanager.model.GetSecretValueRequest;
-import com.amazonaws.services.secretsmanager.model.GetSecretValueResult;
-import com.amazonaws.services.secretsmanager.model.InternalServiceErrorException;
-import com.amazonaws.services.secretsmanager.model.InvalidParameterException;
-import com.amazonaws.services.secretsmanager.model.InvalidRequestException;
-import com.amazonaws.services.secretsmanager.model.ResourceNotFoundException;
-import com.amazonaws.services.securitytoken.model.ExpiredTokenException;
-import nva.commons.core.Environment;
-import nva.commons.core.JacocoGenerated;
-USerin SecretsREaderimport nva.commons.secrets.ErrorReadingSecretException;
-import nva.commons.secrets.SecretsReader;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class CrossRefClient {
 
@@ -48,20 +39,19 @@ public class CrossRefClient {
     public static final String FETCH_ERROR = "CrossRefClient failed while trying to fetch:";
     public static final String CROSSREF_USER_AGENT =
             "nva-fetch-doi/1.0 (https://github.com/BIBSYSDEV/nva-fetch-doi; mailto:support@unit.no)";
-    private static final String CROSSREF_PLUSAPI_HEADER = "Crossref-Plus-API-Token";
-    private static final String CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE = "Bearer %s";
-    private static final String DOI_EXAMPLES = "10.1000/182, https://doi.org/10.1000/182";
-    public static final String ILLEGAL_DOI_MESSAGE = "Illegal DOI:%s. Valid examples:" + DOI_EXAMPLES;
-    private static final String CROSSREFPLUSAPITOKEN_NAME_ENV = "CROSSREFPLUSAPITOKEN_NAME";
-    private static final String CROSSREFPLUSAPITOKEN_KEY_ENV = "CROSSREFPLUSAPITOKEN_KEY";
-
-    private static final Logger logger = LoggerFactory.getLogger(CrossRefClient.class);
     public static final String ADDING_TOKEN_IN_HEADER =
             "CrossRefApiPlusToken.isPresent() == true, adding token in header";
     public static final String EXCEPTION_READING_API_SECRET_FROM_AWS_SECRETS_MANAGER =
             "Exception decoding CrossRef-Plus-API secret from AWS secretsManager ";
     public static final String NOT_FOUND_IN_AWS_SECRETS_MANAGER =
             "CrossRef-Plus-API secret not found in AWS secretsManager ";
+    private static final String CROSSREF_PLUSAPI_HEADER = "Crossref-Plus-API-Token";
+    private static final String CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE = "Bearer %s";
+    private static final String DOI_EXAMPLES = "10.1000/182, https://doi.org/10.1000/182";
+    public static final String ILLEGAL_DOI_MESSAGE = "Illegal DOI:%s. Valid examples:" + DOI_EXAMPLES;
+    private static final String CROSSREFPLUSAPITOKEN_NAME_ENV = "CROSSREFPLUSAPITOKEN_NAME";
+    private static final String CROSSREFPLUSAPITOKEN_KEY_ENV = "CROSSREFPLUSAPITOKEN_KEY";
+    private static final Logger logger = LoggerFactory.getLogger(CrossRefClient.class);
     private final transient HttpClient httpClient;
     private final Optional<String> secretName;
     private final Optional<String> secretKey;
@@ -172,46 +162,11 @@ public class CrossRefClient {
 
 
     private Optional<String> getCrossRefApiPlusToken() {
-
         try {
-            return Optional.ofNullable(new  SecretsReader().fetchSecret(secretName.get(), secretKey.get()));
-        } catch (ErrorReadingSecretException e) {
+            return Optional.ofNullable(new SecretsReader().fetchSecret(secretName.get(), secretKey.get()));
+        } catch (ErrorReadingSecretException | SdkClientException e) {
             logger.error(EXCEPTION_READING_API_SECRET_FROM_AWS_SECRETS_MANAGER);
             return Optional.empty();
         }
-
-//        Optional<String> secret = Optional.empty();
-//        if (secretName.isPresent()) {
-//            // Create a Secrets Manager client
-//            AWSSecretsManager client = AWSSecretsManagerClientBuilder.standard()
-//                    .withRegion(region)
-//                    .build();
-//
-//            GetSecretValueRequest getSecretValueRequest = new GetSecretValueRequest()
-//                    .withSecretId(secretName.get());
-//            GetSecretValueResult getSecretValueResult = null;
-//
-//            try {
-//                getSecretValueResult = client.getSecretValue(getSecretValueRequest);
-//            } catch (DecryptionFailureException | InternalServiceErrorException
-//                    | InvalidParameterException | InvalidRequestException | ExpiredTokenException e) {
-//                // Secrets Manager can't decrypt the protected secret text using the provided KMS key.
-//                // An error occurred on the server side.
-//                // You provided an invalid value for a parameter.
-//                // You provided a parameter value that is not valid for the current state of the resource.
-//                logger.error(EXCEPTION_READING_API_SECRET_FROM_AWS_SECRETS_MANAGER);
-//            } catch (ResourceNotFoundException e) {
-//                // We can't find the resource that you asked for.
-//                // Deal with the exception here, and/or rethrow at your discretion.
-//                logger.error(NOT_FOUND_IN_AWS_SECRETS_MANAGER);
-//            }
-//
-//            // Decrypts secret using the associated KMS CMK.
-//            // Depending on whether the secret is a string or binary, one of these fields will be populated.
-//            if (getSecretValueResult.getSecretString() != null) {
-//                secret = Optional.of(getSecretValueResult.getSecretString());
-//            }
-//        }
-//        return secret;
     }
 }
