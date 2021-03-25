@@ -17,6 +17,17 @@ import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+
+import com.amazonaws.services.secretsmanager.AWSSecretsManager;
+import com.amazonaws.services.secretsmanager.AWSSecretsManagerClientBuilder;
+import com.amazonaws.services.secretsmanager.model.DecryptionFailureException;
+import com.amazonaws.services.secretsmanager.model.GetSecretValueRequest;
+import com.amazonaws.services.secretsmanager.model.GetSecretValueResult;
+import com.amazonaws.services.secretsmanager.model.InternalServiceErrorException;
+import com.amazonaws.services.secretsmanager.model.InvalidParameterException;
+import com.amazonaws.services.secretsmanager.model.InvalidRequestException;
+import com.amazonaws.services.secretsmanager.model.ResourceNotFoundException;
+import com.amazonaws.services.securitytoken.model.ExpiredTokenException;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -31,15 +42,15 @@ public class CrossRefClient {
     public static final int TIMEOUT_DURATION = 30;
     public static final String COULD_NOT_FIND_ENTRY_WITH_DOI = "Could not find entry with DOI:";
     public static final String UNKNOWN_ERROR_MESSAGE = "Something went wrong. StatusCode:";
-
-    private static final String DOI_EXAMPLES = "10.1000/182, https://doi.org/10.1000/182";
-    public static final String ILLEGAL_DOI_MESSAGE = "Illegal DOI:%s. Valid examples:" + DOI_EXAMPLES;
     public static final String FETCH_ERROR = "CrossRefClient failed while trying to fetch:";
     public static final String CROSSREF_USER_AGENT =
             "nva-fetch-doi/1.0 (https://github.com/BIBSYSDEV/nva-fetch-doi; mailto:support@unit.no)";
-
-    private final transient HttpClient httpClient;
+    private static final String CROSSREF_PLUSAPI_HEADER = "Crossref-Plus-API-Token";
+    private static final String CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE  = "Bearer %s";
+    private static final String DOI_EXAMPLES = "10.1000/182, https://doi.org/10.1000/182";
+    public static final String ILLEGAL_DOI_MESSAGE = "Illegal DOI:%s. Valid examples:" + DOI_EXAMPLES;
     private static final Logger logger = LoggerFactory.getLogger(CrossRefClient.class);
+    private final transient HttpClient httpClient;
 
     @JacocoGenerated
     public CrossRefClient() {
@@ -67,11 +78,11 @@ public class CrossRefClient {
         HttpRequest request = createRequest(doiUri);
         try {
             return Optional.ofNullable(getFromWeb(request))
-                .map(json -> new MetadataAndContentLocation(CROSSREF_LINK, json));
+                    .map(json -> new MetadataAndContentLocation(CROSSREF_LINK, json));
         } catch (InterruptedException
-            | ExecutionException
-            | NotFoundException
-            | BadRequestException e) {
+                | ExecutionException
+                | NotFoundException
+                | BadRequestException e) {
             String details = FETCH_ERROR + doiUri;
             logger.warn(details);
             logger.warn(e.getMessage());
@@ -80,16 +91,20 @@ public class CrossRefClient {
     }
 
     private HttpRequest createRequest(URI doiUri) {
-        return HttpRequest.newBuilder(doiUri)
-            .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
-            .header(HttpHeaders.USER_AGENT, CROSSREF_USER_AGENT)
-            .timeout(Duration.ofSeconds(TIMEOUT_DURATION))
-            .GET()
-            .build();
+        HttpRequest.Builder builder = HttpRequest.newBuilder(doiUri);
+        builder.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        builder.header(HttpHeaders.USER_AGENT, CROSSREF_USER_AGENT);
+        if (getCrossRefApiPlusToken().isPresent()) {
+            builder.header(CROSSREF_PLUSAPI_HEADER,
+                    String.format(CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE, getCrossRefApiPlusToken()));
+        }
+        builder.timeout(Duration.ofSeconds(TIMEOUT_DURATION));
+        builder.GET();
+        return builder.build();
     }
 
     private String getFromWeb(HttpRequest request)
-        throws InterruptedException, ExecutionException {
+            throws InterruptedException, ExecutionException {
         HttpResponse<String> response = httpClient.sendAsync(request, BodyHandlers.ofString()).get();
         if (responseIsSuccessful(response)) {
             return response.body();
@@ -111,7 +126,7 @@ public class CrossRefClient {
     }
 
     protected URI createUrlToCrossRef(String doi)
-        throws URISyntaxException {
+            throws URISyntaxException {
         List<String> doiPathSegments = extractPathSegmentsFromDoiUri(doi);
         List<String> pathSegments = composeAllPathSegmentsForCrossrefUrl(doiPathSegments);
         return addPathSegments(pathSegments);
@@ -119,8 +134,8 @@ public class CrossRefClient {
 
     private URI addPathSegments(List<String> pathSegments) throws URISyntaxException {
         return new URIBuilder(CROSSREF_LINK)
-            .setPathSegments(pathSegments)
-            .build();
+                .setPathSegments(pathSegments)
+                .build();
     }
 
     private List<String> composeAllPathSegmentsForCrossrefUrl(List<String> doiPathSegments) {
@@ -136,5 +151,46 @@ public class CrossRefClient {
             throw new IllegalArgumentException(ILLEGAL_DOI_MESSAGE + doi);
         }
         return URLEncodedUtils.parsePathSegments(path);
+    }
+
+
+    private Optional<String> getCrossRefApiPlusToken() {
+
+        String secretName = "CrossrefPlusAPI";
+        String region = "eu-west-1";
+
+        // Create a Secrets Manager client
+        AWSSecretsManager client = AWSSecretsManagerClientBuilder.standard()
+                .withRegion(region)
+                .build();
+
+        Optional<String> secret = Optional.empty();
+
+        GetSecretValueRequest getSecretValueRequest = new GetSecretValueRequest()
+                .withSecretId(secretName);
+        GetSecretValueResult getSecretValueResult = null;
+
+        try {
+            getSecretValueResult = client.getSecretValue(getSecretValueRequest);
+        } catch (DecryptionFailureException | InternalServiceErrorException
+                | InvalidParameterException | InvalidRequestException | ExpiredTokenException e) {
+            // Secrets Manager can't decrypt the protected secret text using the provided KMS key.
+            // An error occurred on the server side.
+            // You provided an invalid value for a parameter.
+            // You provided a parameter value that is not valid for the current state of the resource.
+            logger.error("Exception decoding CrossRef-Plus-API secret from AWS secretsManager ");
+        } catch (ResourceNotFoundException e) {
+            // We can't find the resource that you asked for.
+            // Deal with the exception here, and/or rethrow at your discretion.
+            logger.error("CrossRef-Plus-API secret not found in AWS secretsManager ");
+        }
+
+        // Decrypts secret using the associated KMS CMK.
+        // Depending on whether the secret is a string or binary, one of these fields will be populated.
+        if (getSecretValueResult.getSecretString() != null) {
+            secret = Optional.of(getSecretValueResult.getSecretString());
+        }
+
+        return secret;
     }
 }
