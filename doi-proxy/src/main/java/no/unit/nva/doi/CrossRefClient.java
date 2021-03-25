@@ -95,8 +95,11 @@ public class CrossRefClient {
         builder.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         builder.header(HttpHeaders.USER_AGENT, CROSSREF_USER_AGENT);
         if (getCrossRefApiPlusToken().isPresent()) {
+            logger.info("CrossRefApiPlusToken.isPresent() == true");
+            final String token = getCrossRefApiPlusToken().get();
+            logger.info("Got getCrossRefApiPlusToken, token.length={}", token.length());
             builder.header(CROSSREF_PLUSAPI_HEADER,
-                    String.format(CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE, getCrossRefApiPlusToken()));
+                    String.format(CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE, token));
         }
         builder.timeout(Duration.ofSeconds(TIMEOUT_DURATION));
         builder.GET();
