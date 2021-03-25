@@ -124,6 +124,37 @@ Resources:
               required:
                 - identifier
                 - title
+
+  NvaFetchDoiFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [lambda.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      Policies:
+        - PolicyName: writeLog
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*'
+        - PolicyName: readSecret
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:CrossrefPlusAPI*'
+
   NvaFetchDoiFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -131,6 +162,7 @@ Resources:
       Handler: no.unit.nva.doi.fetch.MainHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
+      Role: !Ref NvaFetchDoiFunctionRole
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
