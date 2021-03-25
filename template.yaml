@@ -164,7 +164,7 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           PUBLICATION_API_SCHEME: https
-          PUBLICATION_API_HOST: !Ref CustomDomain
+          PUBLICATION_API_HOST:  !Join [ '.', [ 'api', !Ref CustomDomain ] ]
           BARE_PROXY_API_URI: !Sub 'https://${CustomDomain}'
           CROSSREFPLUSAPITOKEN_NAME: !Ref CrossrefPlusApiTokenName
           CURRENT_REGION: !Ref "AWS::Region"
