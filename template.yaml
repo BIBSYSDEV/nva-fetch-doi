@@ -37,7 +37,10 @@ Parameters:
     Description: Base path mapping in CustomDomain
   CrossrefPlusApiTokenName:
     Type: String
-    Default: CrossrefPlusAPI
+    Default: CrossRefPlusApiToken
+  CrossrefPlusApiTokenKey:
+    Type: String
+    Default: token
 
 Resources:
   ApiAccessLogGroup:
@@ -150,7 +153,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - secretsmanager:GetSecretValue
-                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:*'
+                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:CrossRefPlusApiToken:*'
 
   NvaFetchDoiFunction:
     Type: AWS::Serverless::Function
@@ -167,7 +170,7 @@ Resources:
           PUBLICATION_API_HOST:  !Join [ '.', [ 'api', !Ref CustomDomain ] ]
           BARE_PROXY_API_URI: !Sub 'https://${CustomDomain}'
           CROSSREFPLUSAPITOKEN_NAME: !Ref CrossrefPlusApiTokenName
-          CURRENT_REGION: !Ref "AWS::Region"
+          CROSSREFPLUSAPITOKEN_KEY:  !Ref CrossrefPlusApiTokenKey
       Events:
         NvaDoi:
           Type: Api
