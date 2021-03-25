@@ -153,7 +153,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - secretsmanager:GetSecretValue
-                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:*:*'
+                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:secret:CrossrefPlusAPI*'
 
   NvaFetchDoiFunction:
     Type: AWS::Serverless::Function
@@ -162,7 +162,7 @@ Resources:
       Handler: no.unit.nva.doi.fetch.MainHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
-      Role: !Ref NvaFetchDoiFunctionRole
+      Role: !GetAtt NvaFetchDoiFunctionRole.Arn
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
