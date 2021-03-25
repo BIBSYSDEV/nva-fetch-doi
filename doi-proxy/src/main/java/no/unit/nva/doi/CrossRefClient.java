@@ -97,18 +97,27 @@ public class CrossRefClient {
     }
 
     private HttpRequest createRequest(URI doiUri) {
-        HttpRequest.Builder builder = HttpRequest.newBuilder(doiUri)
+        return HttpRequest.newBuilder(doiUri)
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
                 .header(HttpHeaders.USER_AGENT, CROSSREF_USER_AGENT)
                 .timeout(Duration.ofSeconds(TIMEOUT_DURATION))
-                .GET();
-        if (getCrossRefApiPlusToken().isPresent()) {
-            logger.info("CrossRefApiPlusToken.isPresent() == true");
-            builder.setHeader(CROSSREF_PLUSAPI_HEADER,
-                    String.format(CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE, getCrossRefApiPlusToken().get()));
-        }
-        return builder.build();
+                .GET()
+                .build();
     }
+
+//    private HttpRequest createRequest(URI doiUri) {
+//        HttpRequest.Builder builder = HttpRequest.newBuilder(doiUri)
+//                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+//                .header(HttpHeaders.USER_AGENT, CROSSREF_USER_AGENT)
+//                .timeout(Duration.ofSeconds(TIMEOUT_DURATION))
+//                .GET();
+//        if (getCrossRefApiPlusToken().isPresent()) {
+//            logger.info("CrossRefApiPlusToken.isPresent() == true");
+//            builder.setHeader(CROSSREF_PLUSAPI_HEADER,
+//                    String.format(CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE, getCrossRefApiPlusToken().get()));
+//        }
+//        return builder.build();
+//    }
 
     private String getFromWeb(HttpRequest request)
             throws InterruptedException, ExecutionException {
