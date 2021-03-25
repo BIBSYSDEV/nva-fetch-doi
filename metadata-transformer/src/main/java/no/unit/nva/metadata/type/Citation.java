@@ -1,4 +1,4 @@
-package no.unit.nva.metadata;
+package no.unit.nva.metadata.type;
 
 import java.util.Arrays;
 import java.util.Optional;
