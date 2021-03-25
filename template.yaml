@@ -167,7 +167,7 @@ Resources:
           PUBLICATION_API_HOST: !Ref CustomDomain
           BARE_PROXY_API_URI: !Sub 'https://${CustomDomain}'
           CROSSREFPLUSAPITOKEN_NAME: !Ref CrossrefPlusApiTokenName
-
+          CURRENT_REGION: !Ref "AWS::Region"
       Events:
         NvaDoi:
           Type: Api

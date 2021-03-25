@@ -51,7 +51,15 @@ public class CrossRefClient {
     private static final String DOI_EXAMPLES = "10.1000/182, https://doi.org/10.1000/182";
     public static final String ILLEGAL_DOI_MESSAGE = "Illegal DOI:%s. Valid examples:" + DOI_EXAMPLES;
     private static final String CROSSREFPLUSAPITOKEN_ENV = "CROSSREFPLUSAPITOKEN_NAME";
+    private static final String CURRENTREGION_ENV = "CURRENT_REGION";
+
     private static final Logger logger = LoggerFactory.getLogger(CrossRefClient.class);
+    public static final String ADDING_TOKEN_IN_HEADER =
+            "CrossRefApiPlusToken.isPresent() == true, adding token in header";
+    public static final String EXCEPTION_READING_API_SECRET_FROM_AWS_SECRETS_MANAGER =
+            "Exception decoding CrossRef-Plus-API secret from AWS secretsManager ";
+    public static final String NOT_FOUND_IN_AWS_SECRETS_MANAGER =
+            "CrossRef-Plus-API secret not found in AWS secretsManager ";
     private final transient HttpClient httpClient;
     private final Optional<String> secretName;
     private final String region;
@@ -64,7 +72,7 @@ public class CrossRefClient {
     public CrossRefClient(HttpClient httpClient, Environment environment) {
         this.httpClient = httpClient;
         secretName = environment.readEnvOpt(CROSSREFPLUSAPITOKEN_ENV);
-        region = "eu-west-1";
+        region = environment.readEnv(CURRENTREGION_ENV);
     }
 
     /**
@@ -97,27 +105,18 @@ public class CrossRefClient {
     }
 
     private HttpRequest createRequest(URI doiUri) {
-        return HttpRequest.newBuilder(doiUri)
+        HttpRequest.Builder builder = HttpRequest.newBuilder(doiUri)
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
                 .header(HttpHeaders.USER_AGENT, CROSSREF_USER_AGENT)
                 .timeout(Duration.ofSeconds(TIMEOUT_DURATION))
-                .GET()
-                .build();
+                .GET();
+        if (getCrossRefApiPlusToken().isPresent()) {
+            logger.info(ADDING_TOKEN_IN_HEADER);
+            builder.setHeader(CROSSREF_PLUSAPI_HEADER,
+                    String.format(CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE, getCrossRefApiPlusToken().get()));
+        }
+        return builder.build();
     }
-
-//    private HttpRequest createRequest(URI doiUri) {
-//        HttpRequest.Builder builder = HttpRequest.newBuilder(doiUri)
-//                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
-//                .header(HttpHeaders.USER_AGENT, CROSSREF_USER_AGENT)
-//                .timeout(Duration.ofSeconds(TIMEOUT_DURATION))
-//                .GET();
-//        if (getCrossRefApiPlusToken().isPresent()) {
-//            logger.info("CrossRefApiPlusToken.isPresent() == true");
-//            builder.setHeader(CROSSREF_PLUSAPI_HEADER,
-//                    String.format(CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE, getCrossRefApiPlusToken().get()));
-//        }
-//        return builder.build();
-//    }
 
     private String getFromWeb(HttpRequest request)
             throws InterruptedException, ExecutionException {
@@ -191,11 +190,11 @@ public class CrossRefClient {
                 // An error occurred on the server side.
                 // You provided an invalid value for a parameter.
                 // You provided a parameter value that is not valid for the current state of the resource.
-                logger.error("Exception decoding CrossRef-Plus-API secret from AWS secretsManager ");
+                logger.error(EXCEPTION_READING_API_SECRET_FROM_AWS_SECRETS_MANAGER);
             } catch (ResourceNotFoundException e) {
                 // We can't find the resource that you asked for.
                 // Deal with the exception here, and/or rethrow at your discretion.
-                logger.error("CrossRef-Plus-API secret not found in AWS secretsManager ");
+                logger.error(NOT_FOUND_IN_AWS_SECRETS_MANAGER);
             }
 
             // Decrypts secret using the associated KMS CMK.
