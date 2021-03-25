@@ -151,6 +151,6 @@ Resources:
     Type: AWS::ApiGateway::BasePathMapping
     Properties:
       BasePath: !Ref CustomDomainBasePath
-      DomainName: !Ref CustomDomain
+      DomainName: !Join [ '.', [ 'api', !Ref CustomDomain ] ]
       RestApiId: !Ref NvaFetchDoiFunctionApi
       Stage: !Ref NvaFetchDoiFunctionApi.Stage
