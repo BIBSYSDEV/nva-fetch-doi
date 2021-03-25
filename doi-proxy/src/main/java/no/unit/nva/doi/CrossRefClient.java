@@ -159,7 +159,7 @@ public class CrossRefClient {
 
     private Optional<String> getCrossRefApiPlusToken() {
 
-        String secretName = "CrossrefPlusAPI";
+        String secretName = "CrossRefPlusApiToken";
         String region = "eu-west-1";
 
         // Create a Secrets Manager client
