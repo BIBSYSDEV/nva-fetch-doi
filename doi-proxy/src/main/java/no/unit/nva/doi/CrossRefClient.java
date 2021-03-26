@@ -47,33 +47,32 @@ public class CrossRefClient {
     public static final String NOT_FOUND_IN_AWS_SECRETS_MANAGER =
             "CrossRef-Plus-API secret not found in AWS secretsManager ";
     public static final String CROSSREF_PLUSAPI_HEADER = "Crossref-Plus-API-Token";
+    public static final String CROSSREFPLUSAPITOKEN_NAME_ENV = "CROSSREFPLUSAPITOKEN_NAME";
+    public static final String CROSSREFPLUSAPITOKEN_KEY_ENV = "CROSSREFPLUSAPITOKEN_KEY";
+    public static final String CROSS_REF_API_PLUS_TOKEN_NOT_CONFIGURED = "CrossRef Api PLUS Token not configured";
     private static final String CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE = "Bearer %s";
     private static final String DOI_EXAMPLES = "10.1000/182, https://doi.org/10.1000/182";
     public static final String ILLEGAL_DOI_MESSAGE = "Illegal DOI:%s. Valid examples:" + DOI_EXAMPLES;
-    public static final String CROSSREFPLUSAPITOKEN_NAME_ENV = "CROSSREFPLUSAPITOKEN_NAME";
-    public static final String CROSSREFPLUSAPITOKEN_KEY_ENV = "CROSSREFPLUSAPITOKEN_KEY";
     private static final Logger logger = LoggerFactory.getLogger(CrossRefClient.class);
     private final transient HttpClient httpClient;
-    private final Optional<String> secretName;
-    private final Optional<String> secretKey;
-    private SecretsReader secretsReader;
+    private final SecretsReader secretsReader;
+    private final Environment environment;
 
     @JacocoGenerated
     private CrossRefClient() {
         this(HttpClient.newHttpClient(), new Environment());
     }
 
+    @JacocoGenerated
     public CrossRefClient(HttpClient httpClient, Environment environment) {
         this(httpClient, environment, new SecretsReader());
     }
 
     public CrossRefClient(HttpClient httpClient, Environment environment, SecretsReader secretsReader) {
+        this.environment = environment;
         this.httpClient = httpClient;
         this.secretsReader = secretsReader;
-        secretName = environment.readEnvOpt(CROSSREFPLUSAPITOKEN_NAME_ENV);
-        secretKey = environment.readEnvOpt(CROSSREFPLUSAPITOKEN_KEY_ENV);
     }
-
 
 
     /**
@@ -173,10 +172,16 @@ public class CrossRefClient {
 
     private Optional<String> getCrossRefApiPlusToken() {
         try {
+            final Optional<String> secretName = environment.readEnvOpt(CROSSREFPLUSAPITOKEN_NAME_ENV);
+            final Optional<String> secretKey = environment.readEnvOpt(CROSSREFPLUSAPITOKEN_KEY_ENV);
+            if (secretName.isPresent() && secretKey.isPresent()) {
                 return Optional.ofNullable(secretsReader.fetchSecret(secretName.get(), secretKey.get()));
+            } else {
+                logger.error(CROSS_REF_API_PLUS_TOKEN_NOT_CONFIGURED);
+            }
         } catch (ErrorReadingSecretException | SdkClientException | NoSuchElementException e) {
             logger.error(EXCEPTION_READING_API_SECRET_FROM_AWS_SECRETS_MANAGER);
-            return Optional.empty();
         }
+        return Optional.empty();
     }
 }

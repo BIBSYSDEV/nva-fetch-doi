@@ -8,8 +8,10 @@ import static no.unit.nva.doi.CrossRefClient.WORKS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -47,6 +49,8 @@ public class CrossRefClientTest {
     public static final String HTTPS = "https";
     public static final String HTTP_DOI_URI = "http://doi.dx.org/10.000/0001";
     private static final String DUMMY_TOKEN = "token";
+    public static final String SECRETNAME = "secretname";
+    public static final String SECRETKEY = "secretkey";
 
     private CrossRefClient crossRefClient;
     private Environment environment;
@@ -56,9 +60,9 @@ public class CrossRefClientTest {
     void before() throws IOException, ErrorReadingSecretException {
         environment = mock(Environment.class);
         secretsReader = mock(SecretsReader.class);
-        when(secretsReader.fetchSecret(CROSSREFPLUSAPITOKEN_NAME_ENV, CROSSREFPLUSAPITOKEN_KEY_ENV)).thenReturn(DUMMY_TOKEN);
-        when(environment.readEnvOpt(CROSSREFPLUSAPITOKEN_NAME_ENV)).thenReturn(Optional.of("secretname"));
-        when(environment.readEnvOpt(CROSSREFPLUSAPITOKEN_KEY_ENV)).thenReturn(Optional.of("secretkey"));
+        when(environment.readEnvOpt(CROSSREFPLUSAPITOKEN_NAME_ENV)).thenReturn(Optional.of(SECRETNAME));
+        when(environment.readEnvOpt(CROSSREFPLUSAPITOKEN_KEY_ENV)).thenReturn(Optional.of(SECRETKEY));
+        when(secretsReader.fetchSecret(SECRETNAME, SECRETKEY)).thenReturn(DUMMY_TOKEN);
         HttpClient httpClient = mockHttpClientWithNonEmptyResponse();
         crossRefClient = new CrossRefClient(httpClient, environment, secretsReader);
     }
@@ -144,7 +148,7 @@ public class CrossRefClientTest {
 
     @DisplayName("HTTP Requests to Crossref contains Api PLUS header when present")
     @Test
-    public void crossRefClientAddsSecretApiTokenToRequestHeaders() throws URISyntaxException {
+    public void crossRefClientAddsSecretApiTokenToRequestHeadersWhenDefined() throws URISyntaxException {
         var responseBody = IoUtils.stringFromResources(CROSS_REF_SAMPLE_PATH);
         var httpClient = new MockHttpClient<>(new HttpResponseStatus200<>(responseBody));
         var crossRefClient = new CrossRefClient(httpClient, environment, secretsReader);
@@ -153,6 +157,36 @@ public class CrossRefClientTest {
         var headers = httpRequest.headers().map();
         assertTrue(headers.containsKey(CROSSREF_PLUSAPI_HEADER));
     }
+
+    @DisplayName("HTTP Requests to Crossref does not contain Api PLUS header when not defined")
+    @Test
+    public void crossRefClientDoesNotAddSecretApiTokenToRequestHeadersWhenNotDefined() throws URISyntaxException {
+        var responseBody = IoUtils.stringFromResources(CROSS_REF_SAMPLE_PATH);
+        var httpClient = new MockHttpClient<>(new HttpResponseStatus200<>(responseBody));
+        Environment emptyEnvironment = mock(Environment.class);
+        var crossRefClient = new CrossRefClient(httpClient, emptyEnvironment, secretsReader);
+        crossRefClient.fetchDataForDoi(DOI_STRING);
+        var httpRequest = httpClient.getHttpRequest();
+        var headers = httpRequest.headers().map();
+        assertFalse(headers.containsKey(CROSSREF_PLUSAPI_HEADER));
+    }
+
+    @DisplayName("HTTP Requests to Crossref does not contain Api PLUS header when SecretsManager cannot fetch secret")
+    @Test
+    public void crossRefClientDoesNotAddSecretApiTokenToRequestHeadersWhenSecretsManagerCantFetchSecret() throws
+            URISyntaxException, ErrorReadingSecretException {
+        var responseBody = IoUtils.stringFromResources(CROSS_REF_SAMPLE_PATH);
+        var httpClient = new MockHttpClient<>(new HttpResponseStatus200<>(responseBody));
+        when(secretsReader.fetchSecret(anyString(), anyString())).thenThrow(new ErrorReadingSecretException());
+        var crossRefClient = new CrossRefClient(httpClient, environment, secretsReader);
+        crossRefClient.fetchDataForDoi(DOI_STRING);
+        var httpRequest = httpClient.getHttpRequest();
+        var headers = httpRequest.headers().map();
+        assertFalse(headers.containsKey(CROSSREF_PLUSAPI_HEADER));
+    }
+
+
+
 
     private void targetURlReturnsAValidUrlForDoiStrings(String doiPrefix)
             throws URISyntaxException {
