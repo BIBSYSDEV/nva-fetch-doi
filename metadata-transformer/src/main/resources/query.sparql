@@ -1,4 +1,4 @@
-PREFIX any23: <http://vocab.sindice.net/any23#>
+PREFIX bibo: <http://purl.org/ontology/bibo/>
 PREFIX dcterms: <http://purl.org/dc/terms/>
 PREFIX unit: <https://nva.unit.no/publication#>
 
@@ -11,7 +11,8 @@ CONSTRUCT {
     unit:abstract ?abstract ;
     unit:tag ?tag ;
     unit:contributor ?contributorNode ;
-    unit:date ?dateNode .
+    unit:date ?dateNode ;
+    unit:reference ?referenceNode .
   ?contributorNode a unit:Contributor ;
     unit:identity ?identityNode .
   ?identityNode a unit:Identity ;
@@ -20,6 +21,8 @@ CONSTRUCT {
     unit:year ?year ;
     unit:month ?month ;
     unit:day ?day .
+  ?referenceNode a unit:Reference ;
+    unit:doi ?doi .
 } WHERE {
   SELECT DISTINCT (STR(?title) AS ?mainTitle)
                   ?entityNode
@@ -34,45 +37,52 @@ CONSTRUCT {
                   ?dateNode
                   ?year
                   ?month
-                  ?day {
-
-    BIND (BNODE() AS ?entityNode)
+                  ?day
+                  ?referenceNode
+                  ?doi {
+    BIND(BNODE("entityNode") AS ?entityNode)
     {
-      <__URI__> any23:dc.title | any23:DC.title ?title .
+      SELECT ?title WHERE {
+        <__URI__> dcterms:title ?title  .
+      } ORDER BY DESC(STRLEN(STR(?title))) LIMIT 1
     } UNION {
-      <__URI__> any23:dc.creator | any23:DC.creator | any23:dc.contributor | any23:DC.contributor ?creator .
-
-      BIND(BNODE() AS ?contributorNode)
-      BIND(BNODE() AS ?identityNode)
-      FILTER (BOUND(?creator) && STRLEN(?creator)>0)
+        SELECT DISTINCT ?creator (SAMPLE(?cNode) AS ?contributorNode) (SAMPLE(?iNode) AS ?identityNode) WHERE {
+          VALUES ?contributorProperty { dcterms:creator dcterms:contributor }
+          <__URI__> ?contributorProperty ?creator .
+          BIND(BNODE() AS ?cNode)
+          BIND(BNODE() AS ?iNode)
+          FILTER (BOUND(?creator) && STRLEN(?creator)>0)
+      } GROUP BY ?creator
     }
     UNION {
-      <__URI__> any23:dc.subject | any23:DC.subject | any23:dc.coverage | any23:DC.coverage ?subject .
+      <__URI__> dcterms:subject | dcterms:coverage ?subject .
     }
     UNION {
-      <__URI__> any23:dc.date | any23:DC.date ?rawDate .
+      SELECT * WHERE {
+        <__URI__> dcterms:date ?rawDate .
 
-      BIND(BNODE() AS ?dateNode)
-      BIND(STR(?rawDate) AS ?stringDate)
-      BIND(SUBSTR(?stringDate, 0, 5) AS ?year)
-      BIND(IF(STRLEN(?stringDate) > 6, SUBSTR(?stringDate, 6, 2), "") AS ?rawMonth)
-      BIND(IF(STRLEN(?stringDate) > 8, SUBSTR(?stringDate, 9, 2), "") AS ?rawDay)
-      OPTIONAL {
-        BIND(?rawMonth AS ?month)
-        FILTER(?rawMonth != "")
-      }
-      OPTIONAL {
-        BIND(?rawDay AS ?day)
-        FILTER(?rawDay != "")
-      }
-      FILTER (BOUND(?stringDate) && REGEX(?stringDate, "^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?$"))
+        BIND(BNODE() AS ?dateNode)
+        BIND(STR(?rawDate) AS ?stringDate)
+        BIND(SUBSTR(?stringDate, 0, 5) AS ?year)
+        BIND(IF(STRLEN(?stringDate) > 6, SUBSTR(?stringDate, 6, 2), "") AS ?rawMonth)
+        BIND(IF(STRLEN(?stringDate) > 8, SUBSTR(?stringDate, 9, 2), "") AS ?rawDay)
+        OPTIONAL {
+          BIND(?rawMonth AS ?month)
+          FILTER(?rawMonth != "")
+        }
+        OPTIONAL {
+          BIND(?rawDay AS ?day)
+          FILTER(?rawDay != "")
+        }
+        FILTER (BOUND(?stringDate) && REGEX(?stringDate, "^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?$"))
+      } ORDER BY DESC(STRLEN(STR(?stringDate))) LIMIT 1
     }
     UNION {
       SELECT DISTINCT ?abstract ?description WHERE {
         {
-          <__URI__> any23:dc.description | any23:DC.description ?rawDescription .
+          <__URI__> dcterms:description ?rawDescription .
         } UNION {
-          <__URI__> any23:dcterms.abstract | any23:DCTERMS.abstract ?rawAbstract .
+          <__URI__> dcterms:abstract ?rawAbstract .
         }
 
         BIND(STR(?rawAbstract) AS ?abstract)
@@ -80,19 +90,25 @@ CONSTRUCT {
         OPTIONAL {
           BIND (STR(?rawDescription) AS ?abstract)
           FILTER NOT EXISTS {
-            <__URI__> any23:dcterms.abstract | any23:DCTERMS.abstract ?rawAbstract
+            <__URI__> dcterms:abstract ?rawAbstract
           }
         }
         OPTIONAL {
           BIND(STR(?rawDescription) AS ?description)
           FILTER EXISTS {
-            <__URI__> any23:dcterms.abstract | any23:DCTERMS.abstract ?rawAbstract
+            <__URI__> dcterms:abstract ?rawAbstract
           }
         }
       }
     }
     UNION {
-        <__URI__> any23:dc.language | any23:DC.language ?rawLanguage .
+        <__URI__> dcterms:language ?rawLanguage .
+    } UNION {
+      SELECT ?doi ?referenceNode WHERE {
+        <__URI__> bibo:doi ?doi
+          FILTER (BOUND(?doi))
+          BIND(BNODE("referenceNode") AS ?referenceNode)
+      } LIMIT 1
     }
   }
 }

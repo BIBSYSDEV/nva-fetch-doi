@@ -1,13 +1,24 @@
 dependencies {
+    def rdf4jVersion = '3.1.2'
     api group: 'org.apache.any23', name: 'apache-any23-core', version: '2.4'
     api group: 'org.apache.any23', name: 'apache-any23-api', version: '2.4'
     api group: 'com.github.jsonld-java', name: 'jsonld-java', version: '0.13.1'
+
+    implementation group: 'org.eclipse.rdf4j', name: 'rdf4j-sail-api', version: rdf4jVersion
+    implementation group: 'org.eclipse.rdf4j', name: 'rdf4j-query', version: rdf4jVersion
+    implementation group: 'org.eclipse.rdf4j', name: 'rdf4j-model', version: rdf4jVersion
+    implementation group: 'org.eclipse.rdf4j', name: 'rdf4j-repository-sail', version: rdf4jVersion
+    implementation group: 'org.eclipse.rdf4j', name: 'rdf4j-util', version: rdf4jVersion
+    implementation group: 'org.eclipse.rdf4j', name: 'rdf4j-sail-memory', version: rdf4jVersion
+    implementation group: 'org.eclipse.rdf4j', name: 'rdf4j-repository-api', version: rdf4jVersion
+    implementation group: 'org.eclipse.rdf4j', name: 'rdf4j-rio-api', version: rdf4jVersion
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.8.0-beta4'
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
-    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: project.ext.jacksonVersion
-    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: project.ext.jacksonVersion
+    runtimeOnly group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: project.ext.jacksonVersion
+    runtimeOnly group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: project.ext.jacksonVersion
 
-    implementation group: 'no.unit.nva', name: 'core', version: project.ext.nvaCoreVersion
+    implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
     implementation(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
         exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
     }

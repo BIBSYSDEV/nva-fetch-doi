@@ -3,6 +3,7 @@ package no.unit.nva.doi.fetch.model;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.UUID;
+import no.unit.nva.identifiers.SortableIdentifier;
 import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -21,7 +22,7 @@ public class SummaryTest {
 
         Summary summary = new Summary.Builder()
             .withCreatorName("creator name")
-            .withIdentifier(UUID.randomUUID())
+            .withIdentifier(SortableIdentifier.next())
             .withTitle("title")
             .withDate(date)
             .build();

@@ -6,7 +6,6 @@ dependencies {
         compileOnly(group: 'jakarta.ws.rs', name: 'jakarta.ws.rs-api', version: project.ext.jakartaVersion) {
             because 'PMD'
         }
-        testImplementation group: 'jakarta.ws.rs', name: 'jakarta.ws.rs-api', version: project.ext.jakartaVersion
     }
     implementation project(":doi-proxy")
     implementation project(":metadata-transformer")

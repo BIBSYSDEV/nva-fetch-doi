@@ -1,11 +1,10 @@
 package no.unit.nva.doi.fetch.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.Optional;
 import no.unit.nva.doi.fetch.model.PublicationDate;
 import no.unit.nva.doi.fetch.model.Summary;
-
-import java.util.Optional;
-import java.util.UUID;
+import no.unit.nva.identifiers.SortableIdentifier;
 
 public class PublicationConverter {
 
@@ -23,16 +22,24 @@ public class PublicationConverter {
      * @return summary
      */
     public Summary toSummary(JsonNode json) {
-        return new Summary.Builder().withIdentifier(
-            UUID.fromString(Optional.ofNullable(json.at(IDENTIFIER).textValue()).orElse(UUID.randomUUID().toString())))
-                                    .withCreatorName(
-                                        Optional.ofNullable(json.at(ENTITY_DESCRIPTION_CONTRIBUTORS_0_NAME).textValue())
-                                                .orElse(null)).withTitle(
+        return new Summary.Builder().withIdentifier(newIdentifier(json))
+                   .withCreatorName(
+                       Optional.ofNullable(json.at(ENTITY_DESCRIPTION_CONTRIBUTORS_0_NAME).textValue())
+                           .orElse(null)).withTitle(
                 Optional.ofNullable(json.at(ENTITY_DESCRIPTION_MAIN_TITLE).textValue()).orElse(null)).withDate(
                 new PublicationDate.Builder()
                     .withYear(Optional.ofNullable(json.at(ENTITY_DESCRIPTION_DATE_YEAR).textValue()).orElse(null))
                     .withMonth(Optional.ofNullable(json.at(ENTITY_DESCRIPTION_DATE_MONTH).textValue()).orElse(null))
                     .withDay(Optional.ofNullable(json.at(ENTITY_DESCRIPTION_DATE_DAY).textValue()).orElse(null))
                     .build()).build();
+    }
+
+    private SortableIdentifier newIdentifier(JsonNode node) {
+        String identifierString = Optional.of(node)
+                                      .map(json -> json.at(IDENTIFIER))
+                                      .map(JsonNode::textValue)
+                                      .orElse(SortableIdentifier.next().toString());
+
+        return new SortableIdentifier(identifierString);
     }
 }

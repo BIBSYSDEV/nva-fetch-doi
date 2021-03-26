@@ -8,6 +8,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteResponse;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteTypes;
 import nva.commons.core.JacocoGenerated;
@@ -41,7 +42,7 @@ public final class DataciteTypesUtil {
 
     private static boolean isTextType(DataciteTypes dataciteTypes) {
         return nonNull(dataciteTypes.getResourceTypeGeneral())
-                && dataciteTypes.getResourceTypeGeneral().equalsIgnoreCase(TYPE_TEXT);
+                && TYPE_TEXT.equalsIgnoreCase(dataciteTypes.getResourceTypeGeneral());
     }
 
     @JacocoGenerated

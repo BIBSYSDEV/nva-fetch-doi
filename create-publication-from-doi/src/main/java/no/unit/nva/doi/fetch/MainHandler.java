@@ -50,7 +50,6 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     public static final String PUBLICATION_API_HOST_ENV = "PUBLICATION_API_HOST";
     public static final String PUBLICATION_API_SCHEME_ENV = "PUBLICATION_API_SCHEME";
-
     public static final JsonPointer FEIDE_ID = JsonPointer.compile("/authorizer/claims/custom:feideId");
     public static final JsonPointer CUSTOMER_ID = JsonPointer.compile("/authorizer/claims/custom:customerId");
     public static final String NULL_DOI_URL_ERROR = "doiUrl can not be null";
@@ -70,9 +69,14 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     @JacocoGenerated
     public MainHandler() {
+        this(new Environment());
+    }
+
+    @JacocoGenerated
+    public MainHandler(Environment environment) {
         this(JsonUtils.objectMapper, new PublicationConverter(), new DoiTransformService(),
-            new DoiProxyService(), new PublicationPersistenceService(), new BareProxyClient(),
-                getMetadataService(), new Environment());
+                new DoiProxyService(environment), new PublicationPersistenceService(), new BareProxyClient(),
+                getMetadataService(), environment);
     }
 
     /**
@@ -89,7 +93,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
                        BareProxyClient bareProxyClient,
                        MetadataService metadataService,
                        Environment environment) {
-        super(RequestBody.class, environment, logger);
+        super(RequestBody.class, environment);
         this.objectMapper = objectMapper;
         this.publicationConverter = publicationConverter;
         this.doiTransformService = doiTransformService;
