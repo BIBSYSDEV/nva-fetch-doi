@@ -39,6 +39,8 @@ public class BareProxyClient {
     private static final String ORCID_EXAMPLE = "https://orcid.org/0000-0003-4902-0240";
     public static final String ILLEGAL_ORCID_MESSAGE = "Illegal Orcid:%s. Valid examples:" + ORCID_EXAMPLE;
     public static final int WANT_JUST_ONE_HIT = 1;
+    public static final String EXCEPTION_TRYING_TO_CREATE_URI_OUT_OF_ORCID =
+            "URISyntaxException trying to create URI out of {}/{} + orcid {}";
 
     private final transient HttpClient httpClient;
     private final URI apiUrl;
@@ -142,6 +144,7 @@ public class BareProxyClient {
                     .setParameter(ORCID, strippedOrcid)
                     .build();
         } catch (URISyntaxException orcidException) {
+            logger.error(EXCEPTION_TRYING_TO_CREATE_URI_OUT_OF_ORCID, apiUrl, PERSON, orcid);
             throw new IllegalArgumentException(ILLEGAL_ORCID_MESSAGE);
         }
     }
