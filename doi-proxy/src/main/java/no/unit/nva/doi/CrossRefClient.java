@@ -24,6 +24,7 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -45,27 +46,35 @@ public class CrossRefClient {
             "Exception decoding CrossRef-Plus-API secret from AWS secretsManager ";
     public static final String NOT_FOUND_IN_AWS_SECRETS_MANAGER =
             "CrossRef-Plus-API secret not found in AWS secretsManager ";
-    private static final String CROSSREF_PLUSAPI_HEADER = "Crossref-Plus-API-Token";
+    public static final String CROSSREF_PLUSAPI_HEADER = "Crossref-Plus-API-Token";
     private static final String CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE = "Bearer %s";
     private static final String DOI_EXAMPLES = "10.1000/182, https://doi.org/10.1000/182";
     public static final String ILLEGAL_DOI_MESSAGE = "Illegal DOI:%s. Valid examples:" + DOI_EXAMPLES;
-    private static final String CROSSREFPLUSAPITOKEN_NAME_ENV = "CROSSREFPLUSAPITOKEN_NAME";
-    private static final String CROSSREFPLUSAPITOKEN_KEY_ENV = "CROSSREFPLUSAPITOKEN_KEY";
+    public static final String CROSSREFPLUSAPITOKEN_NAME_ENV = "CROSSREFPLUSAPITOKEN_NAME";
+    public static final String CROSSREFPLUSAPITOKEN_KEY_ENV = "CROSSREFPLUSAPITOKEN_KEY";
     private static final Logger logger = LoggerFactory.getLogger(CrossRefClient.class);
     private final transient HttpClient httpClient;
     private final Optional<String> secretName;
     private final Optional<String> secretKey;
+    private SecretsReader secretsReader;
 
     @JacocoGenerated
-    public CrossRefClient() {
+    private CrossRefClient() {
         this(HttpClient.newHttpClient(), new Environment());
     }
 
     public CrossRefClient(HttpClient httpClient, Environment environment) {
+        this(httpClient, environment, new SecretsReader());
+    }
+
+    public CrossRefClient(HttpClient httpClient, Environment environment, SecretsReader secretsReader) {
         this.httpClient = httpClient;
+        this.secretsReader = secretsReader;
         secretName = environment.readEnvOpt(CROSSREFPLUSAPITOKEN_NAME_ENV);
         secretKey = environment.readEnvOpt(CROSSREFPLUSAPITOKEN_KEY_ENV);
     }
+
+
 
     /**
      * The method returns the object containing the metadata (title, author, etc.) of the publication with the specific
@@ -102,12 +111,14 @@ public class CrossRefClient {
                 .header(HttpHeaders.USER_AGENT, CROSSREF_USER_AGENT)
                 .timeout(Duration.ofSeconds(TIMEOUT_DURATION))
                 .GET();
-        if (getCrossRefApiPlusToken().isPresent()) {
-            logger.info(ADDING_TOKEN_IN_HEADER);
-            builder.setHeader(CROSSREF_PLUSAPI_HEADER,
-                    String.format(CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE, getCrossRefApiPlusToken().get()));
-        }
+        getCrossRefApiPlusToken().ifPresent(crossRefToken -> addCrossRefTokenHeader(builder, crossRefToken));
         return builder.build();
+    }
+
+    private void addCrossRefTokenHeader(HttpRequest.Builder builder, String crossRefToken) {
+        logger.info(ADDING_TOKEN_IN_HEADER);
+        builder.header(CROSSREF_PLUSAPI_HEADER,
+                String.format(CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE, crossRefToken));
     }
 
     private String getFromWeb(HttpRequest request)
@@ -160,11 +171,10 @@ public class CrossRefClient {
         return URLEncodedUtils.parsePathSegments(path);
     }
 
-
     private Optional<String> getCrossRefApiPlusToken() {
         try {
-            return Optional.ofNullable(new SecretsReader().fetchSecret(secretName.get(), secretKey.get()));
-        } catch (ErrorReadingSecretException | SdkClientException e) {
+                return Optional.ofNullable(secretsReader.fetchSecret(secretName.get(), secretKey.get()));
+        } catch (ErrorReadingSecretException | SdkClientException | NoSuchElementException e) {
             logger.error(EXCEPTION_READING_API_SECRET_FROM_AWS_SECRETS_MANAGER);
             return Optional.empty();
         }
