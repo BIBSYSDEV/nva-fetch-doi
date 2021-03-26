@@ -40,7 +40,7 @@ public class CrossRefClient {
     public static final String CROSSREF_USER_AGENT =
             "nva-fetch-doi/1.0 (https://github.com/BIBSYSDEV/nva-fetch-doi; mailto:support@unit.no)";
     public static final String ADDING_TOKEN_IN_HEADER =
-            "CrossRefApiPlusToken.isPresent() == true, adding token in header";
+            "CrossRef Api PLUS token is present, adding token in header";
     public static final String EXCEPTION_READING_API_SECRET_FROM_AWS_SECRETS_MANAGER =
             "Exception decoding CrossRef-Plus-API secret from AWS secretsManager ";
     public static final String NOT_FOUND_IN_AWS_SECRETS_MANAGER =
