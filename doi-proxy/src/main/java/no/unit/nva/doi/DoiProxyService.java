@@ -7,6 +7,7 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.util.Optional;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,8 +38,8 @@ public class DoiProxyService {
      * Default constructor for DoiProxyService.
      */
     @JacocoGenerated
-    public DoiProxyService() {
-        this(new CrossRefClient(HttpClient.newBuilder().build()), new DataciteClient());
+    public DoiProxyService(Environment environment) {
+        this(new CrossRefClient(HttpClient.newBuilder().build(), environment), new DataciteClient());
     }
 
     /**
@@ -71,7 +72,7 @@ public class DoiProxyService {
         if (isNull(metadataAndContentLocation)) {
             throw new MetadataNotFoundException(ERROR_READING_METADATA + SPACE + doiUrl);
         }
-
+        logger.info("metadataAndContentLocation.getJson()={}", metadataAndContentLocation.getJson());
         return metadataAndContentLocation;
     }
 }
