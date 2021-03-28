@@ -17,6 +17,7 @@ allprojects {
     apply plugin: 'jacoco'
 
     project.ext {
+        awsSdkVersion = '1.11.982'
         nvaCommonsVersion = '1.5.2'
         nvaDatamodelVersion = '0.11.7'
         nvaTestUtilsVersion = "0.1.18"
