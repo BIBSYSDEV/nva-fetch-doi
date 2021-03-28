@@ -48,6 +48,8 @@ public class CrossRefClient {
     public static final String CROSSREFPLUSAPITOKEN_KEY_ENV = "CROSSREFPLUSAPITOKEN_KEY";
     private static final Logger logger = LoggerFactory.getLogger(CrossRefClient.class);
     public static final String CROSSREF_SECRETS_NOT_FOUND = "Crossref secrets not found";
+    public static final String MISSING_ENVIRONMENT_VARIABLE_FOR_CROSSREF_API = "Missing environment variable for Crossref API ";
+    public static final String MISSING_CROSSREF_TOKENS_ERROR_MESSAGE = "One or more Crossref API secrets tokens are missing";
     private final transient HttpClient httpClient;
     private final String secretName;
     private final String secretKey;
@@ -55,11 +57,7 @@ public class CrossRefClient {
 
     @JacocoGenerated
     public CrossRefClient() {
-        this(HttpClient.newHttpClient(), new Environment());
-    }
-
-    public CrossRefClient(HttpClient httpClient, Environment environment) {
-        this(httpClient, environment, new SecretsReader());
+        this(HttpClient.newHttpClient(), new Environment(), new SecretsReader());
     }
 
     public CrossRefClient(HttpClient httpClient, Environment environment, SecretsReader secretsReader) {
@@ -67,10 +65,6 @@ public class CrossRefClient {
         this.secretsReader = secretsReader;
         secretName = getSecretName(environment, CROSSREFPLUSAPITOKEN_NAME_ENV);
         secretKey = getSecretName(environment, CROSSREFPLUSAPITOKEN_KEY_ENV);
-    }
-
-    private String getSecretName(Environment environment, String envName) {
-        return environment.readEnvOpt(envName).orElseThrow(() -> new RuntimeException("No value for " + envName));
     }
 
     /**
@@ -84,6 +78,17 @@ public class CrossRefClient {
     public Optional<MetadataAndContentLocation> fetchDataForDoi(String doi) throws URISyntaxException {
         URI targetUri = createUrlToCrossRef(doi);
         return fetchJson(targetUri);
+    }
+
+
+    private String getSecretName(Environment environment, String envName) {
+        Optional<String> secretName = environment.readEnvOpt(envName);
+        if (secretName.isPresent()) {
+            return secretName.get();
+        } else {
+            logger.error(MISSING_ENVIRONMENT_VARIABLE_FOR_CROSSREF_API + envName);
+            throw new RuntimeException(MISSING_CROSSREF_TOKENS_ERROR_MESSAGE);
+        }
     }
 
     private Optional<MetadataAndContentLocation> fetchJson(URI doiUri) {
@@ -108,11 +113,11 @@ public class CrossRefClient {
                 .header(HttpHeaders.USER_AGENT, CROSSREF_USER_AGENT)
                 .timeout(Duration.ofSeconds(TIMEOUT_DURATION))
                 .GET();
-        if (getCrossRefApiPlusToken().isPresent()) {
-            logger.info(ADDING_TOKEN_IN_HEADER);
-            builder.setHeader(CROSSREF_PLUSAPI_HEADER,
-                    String.format(CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE, getCrossRefApiPlusToken().get()));
-        }
+
+        logger.info(ADDING_TOKEN_IN_HEADER);
+        builder.setHeader(CROSSREF_PLUSAPI_HEADER,
+                String.format(CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE, getCrossRefApiPlusToken()));
+
         return builder.build();
     }
 
@@ -134,8 +139,7 @@ public class CrossRefClient {
     }
 
     private boolean responseIsSuccessful(HttpResponse<String> response) {
-        int statusCode = response.statusCode();
-        return statusCode >= HttpURLConnection.HTTP_OK && statusCode < HttpURLConnection.HTTP_MULT_CHOICE;
+        return response.statusCode() == HttpURLConnection.HTTP_OK;
     }
 
     protected URI createUrlToCrossRef(String doi)
@@ -167,9 +171,9 @@ public class CrossRefClient {
     }
 
 
-    private Optional<String> getCrossRefApiPlusToken() {
+    private String getCrossRefApiPlusToken() {
         try {
-            return Optional.ofNullable(secretsReader.fetchSecret(secretName, secretKey));
+            return secretsReader.fetchSecret(secretName, secretKey);
         } catch (ErrorReadingSecretException e) {
             throw new RuntimeException(CROSSREF_SECRETS_NOT_FOUND, e.getCause());
         }

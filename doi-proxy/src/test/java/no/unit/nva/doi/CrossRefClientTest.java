@@ -4,6 +4,8 @@ import static no.unit.nva.doi.CrossRefClient.CROSSREFPLUSAPITOKEN_KEY_ENV;
 import static no.unit.nva.doi.CrossRefClient.CROSSREFPLUSAPITOKEN_NAME_ENV;
 import static no.unit.nva.doi.CrossRefClient.CROSSREF_SECRETS_NOT_FOUND;
 import static no.unit.nva.doi.CrossRefClient.CROSSREF_USER_AGENT;
+import static no.unit.nva.doi.CrossRefClient.MISSING_CROSSREF_TOKENS_ERROR_MESSAGE;
+import static no.unit.nva.doi.CrossRefClient.MISSING_ENVIRONMENT_VARIABLE_FOR_CROSSREF_API;
 import static no.unit.nva.doi.CrossRefClient.WORKS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -18,10 +20,13 @@ import static org.mockito.Mockito.when;
 
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import no.unit.nva.doi.testdata.MissingEnvironmentVariableArgumentsProvider;
 import no.unit.nva.doi.utils.HttpResponseStatus200;
@@ -30,6 +35,8 @@ import no.unit.nva.doi.utils.HttpResponseStatus500;
 import no.unit.nva.doi.utils.MockHttpClient;
 import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
+import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.TestAppender;
 import nva.commons.secrets.ErrorReadingSecretException;
 import nva.commons.secrets.SecretsReader;
 import org.apache.http.HttpHeaders;
@@ -149,13 +156,15 @@ public class CrossRefClientTest {
     void crossrefClientThrowsRuntimeExceptionIfEnvironmentVariableIsMissing(Class<Exception> expectedExceptionType,
                                                                             List<String> missingVariables,
                                                                             List<String> presentVariables) {
+        TestAppender logUtils = LogUtils.getTestingAppender(CrossRefClient.class);
         Environment environment = mock(Environment.class);
         presentVariables.forEach(present -> when(environment.readEnvOpt(present)).thenReturn(Optional.of("anything")));
-        Executable executable = () -> new CrossRefClient(mockHttpClientWithNonEmptyResponse(), environment);
+        Executable executable = () -> new CrossRefClient(HttpClient.newHttpClient(), environment, new SecretsReader());
         Exception exception = assertThrows(expectedExceptionType, executable);
-        String expected = missingVariables.get(0);
+        String expected = MISSING_ENVIRONMENT_VARIABLE_FOR_CROSSREF_API + missingVariables.get(0);
         String actual = exception.getMessage();
-        assertThat(actual, containsString(expected));
+        assertThat(actual, containsString(MISSING_CROSSREF_TOKENS_ERROR_MESSAGE));
+        assertThat(logUtils.getMessages(), containsString(expected));
     }
 
     @Test
@@ -166,16 +175,22 @@ public class CrossRefClientTest {
         when(environment.readEnvOpt(CROSSREFPLUSAPITOKEN_KEY_ENV)).thenReturn(Optional.of("key"));
         when(secretsReader.fetchSecret("name", "key")).thenThrow(ErrorReadingSecretException.class);
 
-        Executable executable = () -> new CrossRefClient(mockHttpClientWithNonEmptyResponse(), environment, secretsReader).fetchDataForDoi(DOI_STRING);
+        Executable executable = () -> new CrossRefClient(mockHttpClientWithNonEmptyResponse(),
+                environment, secretsReader).fetchDataForDoi(DOI_STRING);
         Exception exception = assertThrows(RuntimeException.class, executable);
         String actual = exception.getMessage();
         assertThat(actual, containsString(CROSSREF_SECRETS_NOT_FOUND));
     }
 
     @Test
-    void crossrefClientConstructorExists() {
-        // Purely for coverage, unfortunate.
-        new CrossRefClient(mockHttpClientWithNonEmptyResponse(), environment);
+    void fetchDataForDoiReturnsNotFoundWhenInputDoiDoesNotDereference() throws URISyntaxException {
+        HttpClient httpClient = mock(HttpClient.class);
+        var bodyHandler = HttpResponse.BodyHandlers.ofString().getClass();
+        var httpResponse = new HttpResponseStatus404<>("Not found");
+        CompletableFuture<HttpResponse<String>> completableFuture = CompletableFuture.supplyAsync(() -> httpResponse);
+        when(httpClient.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(completableFuture);
+        Optional<MetadataAndContentLocation> actual = new CrossRefClient(httpClient, environment, secretsReader).fetchDataForDoi(DOI_STRING);
+        assertThat(actual, equalTo(Optional.empty()));
     }
 
     private void setUpPassingSecretsManager() throws ErrorReadingSecretException {
