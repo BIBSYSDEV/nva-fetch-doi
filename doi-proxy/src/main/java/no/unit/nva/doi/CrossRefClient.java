@@ -48,8 +48,10 @@ public class CrossRefClient {
     public static final String CROSSREFPLUSAPITOKEN_KEY_ENV = "CROSSREFPLUSAPITOKEN_KEY";
     private static final Logger logger = LoggerFactory.getLogger(CrossRefClient.class);
     public static final String CROSSREF_SECRETS_NOT_FOUND = "Crossref secrets not found";
-    public static final String MISSING_ENVIRONMENT_VARIABLE_FOR_CROSSREF_API = "Missing environment variable for Crossref API ";
-    public static final String MISSING_CROSSREF_TOKENS_ERROR_MESSAGE = "One or more Crossref API secrets tokens are missing";
+    public static final String MISSING_ENVIRONMENT_VARIABLE_FOR_CROSSREF_API =
+            "Missing environment variable for Crossref API ";
+    public static final String MISSING_CROSSREF_TOKENS_ERROR_MESSAGE =
+            "One or more Crossref API secrets tokens are missing";
     private final transient HttpClient httpClient;
     private final String secretName;
     private final String secretKey;

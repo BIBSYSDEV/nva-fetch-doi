@@ -205,8 +205,10 @@ public class CrossRefClientTest {
         HttpClient httpClient = mock(HttpClient.class);
         var httpResponse = new HttpResponseStatus404<>("Not found");
         CompletableFuture<HttpResponse<String>> completableFuture = CompletableFuture.supplyAsync(() -> httpResponse);
-        when(httpClient.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(completableFuture);
-        Optional<MetadataAndContentLocation> actual = new CrossRefClient(httpClient, environment, secretsReader).fetchDataForDoi(DOI_STRING);
+        when(httpClient.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+                .thenReturn(completableFuture);
+        Optional<MetadataAndContentLocation> actual = new CrossRefClient(httpClient, environment, secretsReader)
+                .fetchDataForDoi(DOI_STRING);
         assertThat(actual, equalTo(Optional.empty()));
     }
 
