@@ -88,7 +88,7 @@ public class CrossRefClient {
         if (secretName.isPresent()) {
             return secretName.get();
         } else {
-            logger.error(MISSING_ENVIRONMENT_VARIABLE_FOR_CROSSREF_API + envName);
+            logger.warn(MISSING_ENVIRONMENT_VARIABLE_FOR_CROSSREF_API + envName);
             throw new RuntimeException(MISSING_CROSSREF_TOKENS_ERROR_MESSAGE);
         }
     }
