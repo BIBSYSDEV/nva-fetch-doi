@@ -24,11 +24,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import no.unit.nva.doi.testdata.MissingEnvironmentVariableArgumentsProvider;
 import no.unit.nva.doi.utils.HttpResponseStatus200;
 import no.unit.nva.doi.utils.HttpResponseStatus404;
 import no.unit.nva.doi.utils.HttpResponseStatus500;
@@ -44,8 +42,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ArgumentsSource;
 
 public class CrossRefClientTest {
 
@@ -151,20 +147,41 @@ public class CrossRefClientTest {
         assertThrows(IllegalArgumentException.class, () -> crossRefClient.fetchDataForDoi(ILLEGAL_DOI_STRING));
     }
 
-    @ParameterizedTest(name = "CrossrefClient throws {0}, when input is lacks {1}")
-    @ArgumentsSource(MissingEnvironmentVariableArgumentsProvider.class)
-    void crossrefClientThrowsRuntimeExceptionIfEnvironmentVariableIsMissing(Class<Exception> expectedExceptionType,
-                                                                            List<String> missingVariables,
-                                                                            List<String> presentVariables) {
+    @Test
+    void crossrefClientThrowsRuntimeExceptionIfEnvironmentVariableCrossrefApiTokenNameIsMissing() {
         TestAppender logUtils = LogUtils.getTestingAppender(CrossRefClient.class);
         Environment environment = mock(Environment.class);
-        presentVariables.forEach(present -> when(environment.readEnvOpt(present)).thenReturn(Optional.of("anything")));
+        when(environment.readEnvOpt(CROSSREFPLUSAPITOKEN_KEY_ENV)).thenReturn(Optional.of("anything"));
         Executable executable = () -> new CrossRefClient(HttpClient.newHttpClient(), environment, new SecretsReader());
-        Exception exception = assertThrows(expectedExceptionType, executable);
-        String expected = MISSING_ENVIRONMENT_VARIABLE_FOR_CROSSREF_API + missingVariables.get(0);
+        Exception exception = assertThrows(RuntimeException.class, executable);
+        String expected = MISSING_ENVIRONMENT_VARIABLE_FOR_CROSSREF_API + CROSSREFPLUSAPITOKEN_NAME_ENV;
         String actual = exception.getMessage();
         assertThat(actual, containsString(MISSING_CROSSREF_TOKENS_ERROR_MESSAGE));
         assertThat(logUtils.getMessages(), containsString(expected));
+    }
+
+    @Test
+    void crossrefClientThrowsRuntimeExceptionIfEnvironmentVariableCrossrefApiTokenKeyIsMissing() {
+        TestAppender logUtils = LogUtils.getTestingAppender(CrossRefClient.class);
+        Environment environment = mock(Environment.class);
+        when(environment.readEnvOpt(CROSSREFPLUSAPITOKEN_NAME_ENV)).thenReturn(Optional.of("anything"));
+        Executable executable = () -> new CrossRefClient(HttpClient.newHttpClient(), environment, new SecretsReader());
+        Exception exception = assertThrows(RuntimeException.class, executable);
+        String expected = MISSING_ENVIRONMENT_VARIABLE_FOR_CROSSREF_API + CROSSREFPLUSAPITOKEN_KEY_ENV;
+        String actual = exception.getMessage();
+        assertThat(actual, containsString(MISSING_CROSSREF_TOKENS_ERROR_MESSAGE));
+        assertThat(logUtils.getMessages(), containsString(expected));
+    }
+
+    @Test
+    void crossrefClientThrowsRuntimeExceptionIfEnvironmentVariableCrossrefApiTokensAreMissing() {
+        TestAppender logUtils = LogUtils.getTestingAppender(CrossRefClient.class);
+        Environment environment = mock(Environment.class);
+        Executable executable = () -> new CrossRefClient(HttpClient.newHttpClient(), environment, new SecretsReader());
+        Exception exception = assertThrows(RuntimeException.class, executable);
+        String actual = exception.getMessage();
+        assertThat(actual, containsString(MISSING_CROSSREF_TOKENS_ERROR_MESSAGE));
+        assertThat(logUtils.getMessages(), containsString(MISSING_ENVIRONMENT_VARIABLE_FOR_CROSSREF_API));
     }
 
     @Test
@@ -182,10 +199,10 @@ public class CrossRefClientTest {
         assertThat(actual, containsString(CROSSREF_SECRETS_NOT_FOUND));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void fetchDataForDoiReturnsNotFoundWhenInputDoiDoesNotDereference() throws URISyntaxException {
         HttpClient httpClient = mock(HttpClient.class);
-        var bodyHandler = HttpResponse.BodyHandlers.ofString().getClass();
         var httpResponse = new HttpResponseStatus404<>("Not found");
         CompletableFuture<HttpResponse<String>> completableFuture = CompletableFuture.supplyAsync(() -> httpResponse);
         when(httpClient.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(completableFuture);
