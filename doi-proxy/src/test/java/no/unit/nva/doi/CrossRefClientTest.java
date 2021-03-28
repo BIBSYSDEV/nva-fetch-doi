@@ -154,10 +154,8 @@ public class CrossRefClientTest {
         when(mockEnvironment.readEnvOpt(CROSSREFPLUSAPITOKEN_KEY_ENV)).thenReturn(Optional.of("anything"));
         Executable executable = () -> new CrossRefClient(HttpClient.newHttpClient(), mockEnvironment,
                 new SecretsReader());
-        Exception exception = assertThrows(RuntimeException.class, executable);
+        assertThrows(RuntimeException.class, executable);
         String expected = MISSING_ENVIRONMENT_VARIABLE_FOR_CROSSREF_API + CROSSREFPLUSAPITOKEN_NAME_ENV;
-        String actual = exception.getMessage();
-        assertThat(actual, containsString(MISSING_CROSSREF_TOKENS_ERROR_MESSAGE));
         assertThat(logUtils.getMessages(), containsString(expected));
     }
 
@@ -168,10 +166,8 @@ public class CrossRefClientTest {
         when(mockEnvironment.readEnvOpt(CROSSREFPLUSAPITOKEN_NAME_ENV)).thenReturn(Optional.of("anything"));
         Executable executable = () -> new CrossRefClient(HttpClient.newHttpClient(), mockEnvironment,
                 new SecretsReader());
-        Exception exception = assertThrows(RuntimeException.class, executable);
+        assertThrows(RuntimeException.class, executable);
         String expected = MISSING_ENVIRONMENT_VARIABLE_FOR_CROSSREF_API + CROSSREFPLUSAPITOKEN_KEY_ENV;
-        String actual = exception.getMessage();
-        assertThat(actual, containsString(MISSING_CROSSREF_TOKENS_ERROR_MESSAGE));
         assertThat(logUtils.getMessages(), containsString(expected));
     }
 
@@ -181,9 +177,7 @@ public class CrossRefClientTest {
         Environment mockEnvironment = mock(Environment.class);
         Executable executable = () -> new CrossRefClient(HttpClient.newHttpClient(), mockEnvironment,
                 new SecretsReader());
-        Exception exception = assertThrows(RuntimeException.class, executable);
-        String actual = exception.getMessage();
-        assertThat(actual, containsString(MISSING_CROSSREF_TOKENS_ERROR_MESSAGE));
+        assertThrows(RuntimeException.class, executable);
         assertThat(logUtils.getMessages(), containsString(MISSING_ENVIRONMENT_VARIABLE_FOR_CROSSREF_API));
     }
 
