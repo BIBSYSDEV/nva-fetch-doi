@@ -149,36 +149,34 @@ public class CrossRefClientTest {
 
     @Test
     void crossrefClientThrowsRuntimeExceptionIfEnvironmentVariableCrossrefApiTokenNameIsMissing() {
-        TestAppender logUtils = LogUtils.getTestingAppender(CrossRefClient.class);
         Environment mockEnvironment = mock(Environment.class);
         when(mockEnvironment.readEnvOpt(CROSSREFPLUSAPITOKEN_KEY_ENV)).thenReturn(Optional.of("anything"));
         Executable executable = () -> new CrossRefClient(HttpClient.newHttpClient(), mockEnvironment,
                 new SecretsReader());
-        assertThrows(RuntimeException.class, executable);
-        String expected = MISSING_ENVIRONMENT_VARIABLE_FOR_CROSSREF_API + CROSSREFPLUSAPITOKEN_NAME_ENV;
-        assertThat(logUtils.getMessages(), containsString(expected));
+        Exception exception = assertThrows(RuntimeException.class, executable);
+        String actual = exception.getMessage();
+        assertThat(actual, containsString(MISSING_CROSSREF_TOKENS_ERROR_MESSAGE));
     }
 
     @Test
     void crossrefClientThrowsRuntimeExceptionIfEnvironmentVariableCrossrefApiTokenKeyIsMissing() {
-        TestAppender logUtils = LogUtils.getTestingAppender(CrossRefClient.class);
         Environment mockEnvironment = mock(Environment.class);
         when(mockEnvironment.readEnvOpt(CROSSREFPLUSAPITOKEN_NAME_ENV)).thenReturn(Optional.of("anything"));
         Executable executable = () -> new CrossRefClient(HttpClient.newHttpClient(), mockEnvironment,
                 new SecretsReader());
-        assertThrows(RuntimeException.class, executable);
-        String expected = MISSING_ENVIRONMENT_VARIABLE_FOR_CROSSREF_API + CROSSREFPLUSAPITOKEN_KEY_ENV;
-        assertThat(logUtils.getMessages(), containsString(expected));
+        Exception exception = assertThrows(RuntimeException.class, executable);
+        String actual = exception.getMessage();
+        assertThat(actual, containsString(MISSING_CROSSREF_TOKENS_ERROR_MESSAGE));
     }
 
     @Test
     void crossrefClientThrowsRuntimeExceptionIfEnvironmentVariableCrossrefApiTokensAreMissing() {
-        TestAppender logUtils = LogUtils.getTestingAppender(CrossRefClient.class);
         Environment mockEnvironment = mock(Environment.class);
         Executable executable = () -> new CrossRefClient(HttpClient.newHttpClient(), mockEnvironment,
                 new SecretsReader());
-        assertThrows(RuntimeException.class, executable);
-        assertThat(logUtils.getMessages(), containsString(MISSING_ENVIRONMENT_VARIABLE_FOR_CROSSREF_API));
+        Exception exception = assertThrows(RuntimeException.class, executable);
+        String actual = exception.getMessage();
+        assertThat(actual, containsString(MISSING_CROSSREF_TOKENS_ERROR_MESSAGE));
     }
 
     @Test
