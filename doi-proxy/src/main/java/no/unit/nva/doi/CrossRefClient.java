@@ -167,7 +167,7 @@ public class CrossRefClient {
     private List<String> extractPathSegmentsFromDoiUri(String doi) {
         String path = URI.create(doi).getPath();
         if (Objects.isNull(path) || path.isBlank()) {
-            throw new IllegalArgumentException(ILLEGAL_DOI_MESSAGE + doi);
+            throw new IllegalArgumentException(String.format(ILLEGAL_DOI_MESSAGE, doi));
         }
         return URLEncodedUtils.parsePathSegments(path);
     }
