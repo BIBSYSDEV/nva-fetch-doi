@@ -47,6 +47,8 @@ public class CrossRefClient {
     public static final String CROSSREFPLUSAPITOKEN_NAME_ENV = "CROSSREFPLUSAPITOKEN_NAME";
     public static final String CROSSREFPLUSAPITOKEN_KEY_ENV = "CROSSREFPLUSAPITOKEN_KEY";
     private static final Logger logger = LoggerFactory.getLogger(CrossRefClient.class);
+    public static final String CROSSREF_API_KEY_SECRET_NOT_FOUND_TEMPLATE =
+            "Crossref API token could not be found with name: {} and key: {}";
     public static final String CROSSREF_SECRETS_NOT_FOUND = "Crossref secrets not found";
     public static final String MISSING_ENVIRONMENT_VARIABLE_FOR_CROSSREF_API =
             "Missing environment variable for Crossref API ";
@@ -65,8 +67,14 @@ public class CrossRefClient {
     public CrossRefClient(HttpClient httpClient, Environment environment, SecretsReader secretsReader) {
         this.httpClient = httpClient;
         this.secretsReader = secretsReader;
-        secretName = getSecretName(environment, CROSSREFPLUSAPITOKEN_NAME_ENV);
-        secretKey = getSecretName(environment, CROSSREFPLUSAPITOKEN_KEY_ENV);
+        Optional<String> name = getSecretName(environment, CROSSREFPLUSAPITOKEN_NAME_ENV);
+        Optional<String> key = getSecretName(environment, CROSSREFPLUSAPITOKEN_KEY_ENV);
+        if (name.isPresent() && key.isPresent()) {
+            secretName = name.get();
+            secretKey = key.get();
+        } else {
+            throw new RuntimeException(MISSING_CROSSREF_TOKENS_ERROR_MESSAGE);
+        }
     }
 
     /**
@@ -83,13 +91,13 @@ public class CrossRefClient {
     }
 
 
-    private String getSecretName(Environment environment, String envName) {
+    private Optional<String> getSecretName(Environment environment, String envName) {
         Optional<String> secretName = environment.readEnvOpt(envName);
         if (secretName.isPresent()) {
-            return secretName.get();
+            return secretName;
         } else {
-            logger.warn(MISSING_ENVIRONMENT_VARIABLE_FOR_CROSSREF_API + envName);
-            throw new RuntimeException(MISSING_CROSSREF_TOKENS_ERROR_MESSAGE);
+            logger.error(MISSING_ENVIRONMENT_VARIABLE_FOR_CROSSREF_API + envName);
+            return Optional.empty();
         }
     }
 
@@ -177,6 +185,7 @@ public class CrossRefClient {
         try {
             return secretsReader.fetchSecret(secretName, secretKey);
         } catch (ErrorReadingSecretException e) {
+            logger.error(CROSSREF_API_KEY_SECRET_NOT_FOUND_TEMPLATE, secretName, secretKey);
             throw new RuntimeException(CROSSREF_SECRETS_NOT_FOUND, e.getCause());
         }
     }

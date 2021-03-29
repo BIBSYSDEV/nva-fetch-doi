@@ -2,6 +2,7 @@ package no.unit.nva.doi;
 
 import static no.unit.nva.doi.CrossRefClient.CROSSREFPLUSAPITOKEN_KEY_ENV;
 import static no.unit.nva.doi.CrossRefClient.CROSSREFPLUSAPITOKEN_NAME_ENV;
+import static no.unit.nva.doi.CrossRefClient.CROSSREF_API_KEY_SECRET_NOT_FOUND_TEMPLATE;
 import static no.unit.nva.doi.CrossRefClient.CROSSREF_SECRETS_NOT_FOUND;
 import static no.unit.nva.doi.CrossRefClient.CROSSREF_USER_AGENT;
 import static no.unit.nva.doi.CrossRefClient.ILLEGAL_DOI_MESSAGE;
@@ -28,7 +29,9 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
+import com.amazonaws.services.secretsmanager.model.GetSecretValueRequest;
 import com.amazonaws.services.secretsmanager.model.GetSecretValueResult;
+import com.amazonaws.services.secretsmanager.model.ResourceNotFoundException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.doi.utils.HttpResponseStatus200;
 import no.unit.nva.doi.utils.HttpResponseStatus404;
@@ -37,11 +40,14 @@ import no.unit.nva.doi.utils.MockHttpClient;
 import nva.commons.core.Environment;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.ioutils.IoUtils;
+import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.TestAppender;
 import nva.commons.secrets.SecretsReader;
 import org.apache.http.HttpHeaders;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.mockito.invocation.InvocationOnMock;
 
 public class CrossRefClientTest {
 
@@ -113,9 +119,7 @@ public class CrossRefClientTest {
     @Test
     @DisplayName("fetchDataForDoi returns an empty Optional for a non existing URL")
     void fetchDataForDoiReturnAnEmptyOptionalForANonExistingUrl() throws URISyntaxException, JsonProcessingException {
-
         CrossRefClient crossRefClient = crossRefClientReceives404();
-
         Optional<String> result = crossRefClient.fetchDataForDoi(DOI_STRING).map(MetadataAndContentLocation::getJson);
         assertThat(result.isEmpty(), is(true));
     }
@@ -145,11 +149,29 @@ public class CrossRefClientTest {
     }
 
     @Test
+    void crossrefClientLogsErrorIfEnvironmentVariableCrossrefApiTokenNameIsMissing() {
+        TestAppender log = LogUtils.getTestingAppender(CrossRefClient.class);
+        Executable executable = () -> getConfiguredCrossrefClient(mock(HttpClient.class), false, true, true);
+        assertThrows(RuntimeException.class, executable);
+        String actual = log.getMessages();
+        assertThat(actual, containsString("Missing environment variable for Crossref API CROSSREFPLUSAPITOKEN_NAME"));
+    }
+
+    @Test
     void crossrefClientThrowsRuntimeExceptionIfEnvironmentVariableCrossrefApiTokenKeyIsMissing() {
         Executable executable = () -> getConfiguredCrossrefClient(mock(HttpClient.class), true, false, true);
         Exception exception = assertThrows(RuntimeException.class, executable);
         String actual = exception.getMessage();
         assertThat(actual, containsString(MISSING_CROSSREF_TOKENS_ERROR_MESSAGE));
+    }
+
+    @Test
+    void crossrefClientLogsErrorIfEnvironmentVariableCrossrefApiTokenKeyIsMissing() {
+        TestAppender log = LogUtils.getTestingAppender(CrossRefClient.class);
+        Executable executable = () -> getConfiguredCrossrefClient(mock(HttpClient.class), true, false, true);
+        assertThrows(RuntimeException.class, executable);
+        String actual = log.getMessages();
+        assertThat(actual, containsString("Missing environment variable for Crossref API CROSSREFPLUSAPITOKEN_KEY"));
     }
 
     @Test
@@ -161,12 +183,33 @@ public class CrossRefClientTest {
     }
 
     @Test
+    void crossrefClientLogsErrorIfEnvironmentVariableCrossrefApiTokensAreMissing() {
+        TestAppender log = LogUtils.getTestingAppender(CrossRefClient.class);
+        Executable executable = () -> getConfiguredCrossrefClient(mock(HttpClient.class), false, false, true);
+        assertThrows(RuntimeException.class, executable);
+        String actual = log.getMessages();
+        assertThat(actual, containsString("Missing environment variable for Crossref API CROSSREFPLUSAPITOKEN_NAME"));
+        assertThat(actual, containsString("Missing environment variable for Crossref API CROSSREFPLUSAPITOKEN_KEY"));
+    }
+
+    @Test
     void crossrefClientThrowsRuntimeExceptionWhenSecretsManagerLacksSecret() {
         Executable executable = () -> getConfiguredCrossrefClient(mock(HttpClient.class), true, true, false)
                 .fetchDataForDoi(DOI_STRING);
         Exception exception = assertThrows(RuntimeException.class, executable);
         String actual = exception.getMessage();
         assertThat(actual, containsString(CROSSREF_SECRETS_NOT_FOUND));
+    }
+
+    @Test
+    void crossrefClientLogsMissingSecretsInSecretsManager() {
+        TestAppender log = LogUtils.getTestingAppender(CrossRefClient.class);
+        Executable executable = () -> getConfiguredCrossrefClient(mock(HttpClient.class), true, true, false)
+                .fetchDataForDoi(DOI_STRING);
+        assertThrows(RuntimeException.class, executable);
+        String actual = log.getMessages();
+        String expected = String.format(CROSSREF_API_KEY_SECRET_NOT_FOUND_TEMPLATE.replace("{}", "%s"), NAME, KEY);
+        assertThat(actual, containsString(expected));
     }
 
     @SuppressWarnings("unchecked")
@@ -196,7 +239,6 @@ public class CrossRefClientTest {
                                                        boolean withApiTokenName,
                                                        boolean withApiTokenKey,
                                                        boolean withApiSecret) throws JsonProcessingException {
-        AWSSecretsManager secretsManager = mock(AWSSecretsManager.class);
         Environment environment = mock(Environment.class);
         if (withApiTokenName) {
             when(environment.readEnvOpt(CROSSREFPLUSAPITOKEN_NAME_ENV)).thenReturn(Optional.of(NAME));
@@ -205,17 +247,23 @@ public class CrossRefClientTest {
             when(environment.readEnvOpt(CROSSREFPLUSAPITOKEN_KEY_ENV)).thenReturn(Optional.of(KEY));
         }
 
+        AWSSecretsManager secretsManager = mock(AWSSecretsManager.class);
         SecretsReader secretsReader = new SecretsReader(secretsManager);
         if (withApiSecret) {
             String secretString = JsonUtils.objectMapper.writeValueAsString(
                     Map.of(KEY, "irrelevant"));
             GetSecretValueResult secretValue = new GetSecretValueResult().withName(NAME)
                     .withSecretString(secretString);
-            when(secretsManager.getSecretValue(any())).thenReturn(secretValue);
+            when(secretsManager.getSecretValue(any(GetSecretValueRequest.class))).thenReturn(secretValue);
         } else {
-            when(secretsManager.getSecretValue(any())).thenReturn(null);
+            when(secretsManager.getSecretValue(any(GetSecretValueRequest.class)))
+                    .thenAnswer(this::secretValueProvider);
         }
         return new CrossRefClient(httpClient, environment, secretsReader);
+    }
+
+    private GetSecretValueResult secretValueProvider(InvocationOnMock invocation) {
+        throw new ResourceNotFoundException("irrelevant");
     }
 
     private void targetURlReturnsAValidUrlForDoiStrings(String doiPrefix) throws URISyntaxException,
