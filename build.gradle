@@ -65,6 +65,12 @@ subprojects {
         failFast = true
         testLogging {
             events ('skipped', 'passed', 'failed')
+            showExceptions true
+            exceptionFormat "full"
+            showCauses true
+            showStackTraces true
+
+            showStandardStreams = false
         }
         finalizedBy jacocoTestReport
     }
