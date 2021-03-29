@@ -145,41 +145,26 @@ public class CrossRefClientTest {
     }
 
     @Test
-    void crossrefClientThrowsRuntimeExceptionIfEnvironmentVariableCrossrefApiTokenNameIsMissing()
-            throws ErrorReadingSecretException {
-        Environment mockEnvironment = mock(Environment.class);
-        when(mockEnvironment.readEnvOpt(CROSSREFPLUSAPITOKEN_KEY_ENV)).thenReturn(Optional.of("anything"));
-        SecretsReader secretsReader = mock(SecretsReader.class);
-        when(secretsReader.fetchSecret(anyString(), anyString())).thenReturn("happy", "feet");
-        Executable executable = () -> new CrossRefClient(HttpClient.newHttpClient(), mockEnvironment,
-                secretsReader);
+    void crossrefClientThrowsRuntimeExceptionIfEnvironmentVariableCrossrefApiTokenNameIsMissing() {
+        when(environment.readEnvOpt(CROSSREFPLUSAPITOKEN_KEY_ENV)).thenReturn(Optional.of("anything"));
+        Executable executable = () -> new CrossRefClient(HttpClient.newHttpClient(), environment, mockSecretsReader());
         Exception exception = assertThrows(RuntimeException.class, executable);
         String actual = exception.getMessage();
         assertThat(actual, equalTo(MISSING_CROSSREF_TOKENS_ERROR_MESSAGE));
     }
 
     @Test
-    void crossrefClientThrowsRuntimeExceptionIfEnvironmentVariableCrossrefApiTokenKeyIsMissing()
-            throws ErrorReadingSecretException {
-        Environment mockEnvironment = mock(Environment.class);
-        when(mockEnvironment.readEnvOpt(CROSSREFPLUSAPITOKEN_NAME_ENV)).thenReturn(Optional.of("anything"));
-        SecretsReader secretsReader = mock(SecretsReader.class);
-        when(secretsReader.fetchSecret(anyString(), anyString())).thenReturn("happy", "feet");
-        Executable executable = () -> new CrossRefClient(HttpClient.newHttpClient(), mockEnvironment,
-                secretsReader);
+    void crossrefClientThrowsRuntimeExceptionIfEnvironmentVariableCrossrefApiTokenKeyIsMissing() {
+        when(environment.readEnvOpt(CROSSREFPLUSAPITOKEN_NAME_ENV)).thenReturn(Optional.of("anything"));
+        Executable executable = () -> new CrossRefClient(HttpClient.newHttpClient(), environment, mockSecretsReader());
         Exception exception = assertThrows(RuntimeException.class, executable);
         String actual = exception.getMessage();
         assertThat(actual, containsString(MISSING_CROSSREF_TOKENS_ERROR_MESSAGE));
     }
 
     @Test
-    void crossrefClientThrowsRuntimeExceptionIfEnvironmentVariableCrossrefApiTokensAreMissing()
-            throws ErrorReadingSecretException {
-        Environment mockEnvironment = mock(Environment.class);
-        SecretsReader secretsReader = mock(SecretsReader.class);
-        when(secretsReader.fetchSecret(anyString(), anyString())).thenReturn("happy", "feet");
-        Executable executable = () -> new CrossRefClient(HttpClient.newHttpClient(), mockEnvironment,
-                secretsReader);
+    void crossrefClientThrowsRuntimeExceptionIfEnvironmentVariableCrossrefApiTokensAreMissing() {
+        Executable executable = () -> new CrossRefClient(HttpClient.newHttpClient(), environment, mockSecretsReader());
         Exception exception = assertThrows(RuntimeException.class, executable);
         String actual = exception.getMessage();
         assertThat(actual, containsString(MISSING_CROSSREF_TOKENS_ERROR_MESSAGE));
@@ -210,6 +195,12 @@ public class CrossRefClientTest {
         Optional<MetadataAndContentLocation> actual = new CrossRefClient(httpClient, environment, secretsReader)
                 .fetchDataForDoi(DOI_STRING);
         assertThat(actual, equalTo(Optional.empty()));
+    }
+
+    private SecretsReader mockSecretsReader() throws ErrorReadingSecretException {
+        SecretsReader secretsReader = mock(SecretsReader.class);
+        when(secretsReader.fetchSecret(anyString(), anyString())).thenReturn("happy", "feet");
+        return secretsReader;
     }
 
     private void setUpPassingSecretsManager() throws ErrorReadingSecretException {
