@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -294,12 +295,15 @@ public class MetadataServiceTest {
         assertThat(actual, equalTo(metaTagContent));
     }
 
-    @Test
-    void getCreatePublicationRequestReturnsLongestTitleWhenInputContainsMultipleTitles() throws IOException {
-        List<MetaTagPair> metaTags = List.of(new MetaTagPair(DC_TITLE, "a short title"),
-                new MetaTagPair(CITATION_TITLE, "A medium title"));
-        String expected = "The longest title";
-        CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(expected, metaTags);
+    @ParameterizedTest
+    @CsvSource({"long, longer, longest, longest", "longest, long, longer, longest"})
+    void getCreatePublicationRequestReturnsLongestTitleWhenInputContainsMultipleTitles(String first,
+                                                                                       String second,
+                                                                                       String third,
+                                                                                       String expected)
+            throws IOException {
+        List<MetaTagPair> metaTags = List.of(new MetaTagPair(DC_TITLE, first), new MetaTagPair(CITATION_TITLE, second));
+        CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(third, metaTags);
         String actual = createPublicationRequest.getEntityDescription().getMainTitle();
         assertThat(actual, equalTo(expected));
     }
