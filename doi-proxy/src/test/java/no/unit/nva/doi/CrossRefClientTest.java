@@ -63,7 +63,6 @@ public class CrossRefClientTest {
     public static final String NAME = "name";
     public static final String KEY = "key";
     public static final String PATH_DELIMITER = "/";
-    public static final boolean WITH_API_TOKEN_NAME = true;
 
     @DisplayName("createTargetUrl returns a valid Url for DOI strings that are not DOI URLs")
     @Test
