@@ -19,6 +19,7 @@ public class TranslatorService {
 
     public static final String NVA_USER_AGENT = "NVA-user-agent";
     public static final String FAILED_TO_EXTRACT_TRIPLES_FROM_DOCUMENT = "Failed to extract triples from the document";
+    public static final boolean SUPPRESS_CSS_TRIPLES = true;
     private ByteArrayOutputStream outputStream;
 
     /**
@@ -57,6 +58,6 @@ public class TranslatorService {
     private ReportingTripleHandler createTripleHandler() {
         outputStream = new ByteArrayOutputStream();
         JSONLDWriter rdfWriterHandler = new JSONLDWriter(outputStream);
-        return new ReportingTripleHandler(new IgnoreAccidentalRDFa(rdfWriterHandler, true));
+        return new ReportingTripleHandler(new IgnoreAccidentalRDFa(rdfWriterHandler, SUPPRESS_CSS_TRIPLES));
     }
 }
