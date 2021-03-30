@@ -5,5 +5,6 @@ dependencies {
     implementation group: 'jakarta.ws.rs', name: 'jakarta.ws.rs-api', version: project.ext.jakartaVersion
     implementation group: 'com.github.bibsysdev', name: 'secrets', version: project.ext.nvaCommonsVersion
     implementation group: 'com.amazonaws', name: 'aws-java-sdk-core', version: project.ext.awsSdkVersion
-
+    testImplementation group: 'com.amazonaws', name: 'aws-java-sdk-secretsmanager', version: project.ext.awsSdkVersion
+    testImplementation group: 'com.github.bibsysdev', name:'logutils', version: project.ext.nvaCommonsVersion
 }
