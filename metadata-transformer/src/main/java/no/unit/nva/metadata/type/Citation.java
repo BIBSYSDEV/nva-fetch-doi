@@ -32,8 +32,8 @@ public enum Citation implements MetaTagSet {
     }
 
     public static Optional<Citation> getTagByString(String candidate) {
-        return Optional.of(Arrays.stream(values())
+        return Arrays.stream(values())
                 .filter(property -> property.getMetaTagName().equalsIgnoreCase(candidate))
-                .findAny()).orElse(Optional.empty());
+                .findAny();
     }
 }
