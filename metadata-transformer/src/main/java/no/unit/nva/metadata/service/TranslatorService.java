@@ -1,13 +1,8 @@
 package no.unit.nva.metadata.service;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import org.apache.any23.Any23;
 import org.apache.any23.extractor.ExtractionException;
 import org.apache.any23.filter.IgnoreAccidentalRDFa;
-import org.apache.any23.filter.IgnoreTitlesOfEmptyDocuments;
 import org.apache.any23.source.DocumentSource;
 import org.apache.any23.source.HTTPDocumentSource;
 import org.apache.any23.writer.JSONLDWriter;
@@ -15,10 +10,16 @@ import org.apache.any23.writer.ReportingTripleHandler;
 import org.apache.any23.writer.TripleHandler;
 import org.apache.any23.writer.TripleHandlerException;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+
 public class TranslatorService {
 
     public static final String NVA_USER_AGENT = "NVA-user-agent";
     public static final String FAILED_TO_EXTRACT_TRIPLES_FROM_DOCUMENT = "Failed to extract triples from the document";
+    public static final boolean SUPPRESS_CSS_TRIPLES = true;
     private ByteArrayOutputStream outputStream;
 
     /**
@@ -57,7 +58,6 @@ public class TranslatorService {
     private ReportingTripleHandler createTripleHandler() {
         outputStream = new ByteArrayOutputStream();
         JSONLDWriter rdfWriterHandler = new JSONLDWriter(outputStream);
-        return new ReportingTripleHandler(
-            new IgnoreAccidentalRDFa(new IgnoreTitlesOfEmptyDocuments(rdfWriterHandler), true));
+        return new ReportingTripleHandler(new IgnoreAccidentalRDFa(rdfWriterHandler, SUPPRESS_CSS_TRIPLES));
     }
 }

@@ -1,20 +1,22 @@
 package no.unit.nva.metadata.service;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
+import j2html.tags.ContainerTag;
 import j2html.tags.EmptyTag;
 import no.unit.nva.api.CreatePublicationRequest;
-import no.unit.nva.metadata.type.Citation;
-import no.unit.nva.metadata.type.DcTerms;
 import no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.DcContentCaseArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.LanguageArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.MetaTagPair;
+import no.unit.nva.metadata.service.testdata.MetaTagTitleProvider;
 import no.unit.nva.metadata.service.testdata.ShortDoiUriArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.UndefinedLanguageArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.ValidDateArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.ValidDoiFullUriArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.ValidDoiPseudoUrnArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.ValidDoiStringArgumentsProvider;
+import no.unit.nva.metadata.type.Citation;
+import no.unit.nva.metadata.type.DcTerms;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
@@ -24,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -45,9 +48,12 @@ import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static j2html.TagCreator.body;
 import static j2html.TagCreator.head;
 import static j2html.TagCreator.html;
 import static j2html.TagCreator.meta;
+import static j2html.TagCreator.title;
+import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider.CITATION_AUTHOR;
 import static no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider.DC_CONTRIBUTOR;
@@ -86,6 +92,7 @@ public class MetadataServiceTest {
     public static final String LOCATION = "location";
     public static final String DC_IDENTIFIER = DcTerms.IDENTIFIER.getMetaTagName();
     public static final String CITATION_DOI = Citation.DOI.getMetaTagName();
+    public static final String FAKE_TITLE = "A wonderful html head title";
 
     private WireMockServer wireMockServer;
 
@@ -98,8 +105,7 @@ public class MetadataServiceTest {
     @MethodSource({
         "provideMetadataWithLowercasePrefixes",
         "provideMetadataForTags",
-        "provideMetadataForAbstract",
-        "provideMetadataForTitle"
+        "provideMetadataForAbstract"
     })
     public void getCreatePublicationParsesHtmlAndReturnsMetadata(String testDescription, String html,
                                                                  CreatePublicationRequest expectedRequest)
@@ -272,14 +278,53 @@ public class MetadataServiceTest {
         assertThat(actual, containsInAnyOrder(expected));
     }
 
+    @Test
+    void getCreatePublicationRequestReturnsTitleWhenInputContainsOnlyHtmlHeadTitle() throws IOException {
+        CreatePublicationRequest request = getCreatePublicationRequest(FAKE_TITLE);
+        String actual = request.getEntityDescription().getMainTitle();
+        assertThat(actual, equalTo(FAKE_TITLE));
+    }
+
+    @ParameterizedTest(name = "MetaTag {0} is assessed as title")
+    @ArgumentsSource(MetaTagTitleProvider.class)
+    void getCreatePublicationRequestReturnsTitleWhenInputContainsMetaTitle(String metaTagName, String metaTagContent)
+            throws IOException, InterruptedException {
+        CreatePublicationRequest request =
+                getCreatePublicationRequest(metaTagName, metaTagContent);
+        String actual = request.getEntityDescription().getMainTitle();
+        assertThat(actual, equalTo(metaTagContent));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"long, longer, longest, longest", "longest, long, longer, longest"})
+    void getCreatePublicationRequestReturnsLongestTitleWhenInputContainsMultipleTitles(String first,
+                                                                                       String second,
+                                                                                       String third,
+                                                                                       String expected)
+            throws IOException {
+        List<MetaTagPair> metaTags = List.of(new MetaTagPair(DC_TITLE, first), new MetaTagPair(CITATION_TITLE, second));
+        CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(third, metaTags);
+        String actual = createPublicationRequest.getEntityDescription().getMainTitle();
+        assertThat(actual, equalTo(expected));
+    }
+
     private boolean isNameProperty(MetaTagPair tagPair) {
         return DC_CONTRIBUTOR.equals(tagPair.getName())
                 || DC_CREATOR.equals(tagPair.getName())
                 || CITATION_AUTHOR.equals(tagPair.getName());
     }
 
+    private CreatePublicationRequest getCreatePublicationRequest(String title) throws IOException {
+        return getCreatePublicationRequest(title, emptyList());
+    }
+
     private CreatePublicationRequest getCreatePublicationRequest(List<MetaTagPair> tagPairs) throws IOException {
-        String html = createHtml(tagPairs);
+        return getCreatePublicationRequest(null, tagPairs);
+    }
+
+    private CreatePublicationRequest getCreatePublicationRequest(String htmlTitle, List<MetaTagPair> metaTags)
+            throws IOException {
+        String html = createHtml(htmlTitle, metaTags);
         URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
         MetadataService metadataService = new MetadataService();
         Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
@@ -376,22 +421,6 @@ public class MetadataServiceTest {
         );
     }
 
-    private static Stream<Arguments> provideMetadataForTitle() {
-        String title = "Title";
-        String longerTitle = "This is a longer title";
-        CreatePublicationRequest request = createRequestWithTitle(title);
-        CreatePublicationRequest longerTitleRequest = createRequestWithTitle(longerTitle);
-
-        return Stream.of(
-            generateTestHtml("DC.title maps to mainTitle in createRequest",
-                Map.of(DC_TITLE, title), request),
-            generateTestHtml("citation.title maps to mainTitle in createRequest",
-                Map.of(CITATION_TITLE, title), request),
-            generateTestHtml("The longer title takes precedence and maps to mainTitle in createRequest",
-                Map.of(DC_TITLE, title, CITATION_TITLE, longerTitle), longerTitleRequest)
-        );
-    }
-
     private static CreatePublicationRequest createRequestWithTitle(String title) {
         EntityDescription entityDescription = new EntityDescription.Builder()
             .withMainTitle(title)
@@ -455,18 +484,22 @@ public class MetadataServiceTest {
         return Arguments.of(testDescription, createHtml(metadata), expected);
     }
 
-    private String createHtml(MetaTagPair tagPair) {
-        return html(head(getMetaTag(tagPair))).renderFormatted();
+    private static String createHtml(MetaTagPair tagPair) {
+        return createHtml(null, List.of(tagPair));
     }
 
-    private static String createHtml(List<MetaTagPair> tagPairs) {
-        return html(
-                head(
-                        tagPairs.stream()
-                                .map(MetadataServiceTest::getMetaTag)
-                                .toArray(EmptyTag[]::new)
-                )
-        ).renderFormatted();
+    private static String createHtml(String htmlTitle, List<MetaTagPair> metaTags) {
+        ContainerTag head = head();
+        EmptyTag[] headTags = metaTags.stream().map(MetadataServiceTest::getMetaTag).toArray(EmptyTag[]::new);
+        if (headTags.length > 0) {
+            head.with(headTags);
+        }
+
+        if (nonNull(htmlTitle)) {
+            head.with(title(htmlTitle));
+        }
+        ContainerTag htmlBody = body("hello");
+        return html(head, htmlBody).renderFormatted();
     }
 
     private static String createHtml(Map<String, String> metadata) {
