@@ -1,31 +1,52 @@
 package no.unit.nva.doi;
 
+import static no.unit.nva.doi.CrossRefClient.CROSSREFPLUSAPITOKEN_KEY_ENV;
+import static no.unit.nva.doi.CrossRefClient.CROSSREFPLUSAPITOKEN_NAME_ENV;
+import static no.unit.nva.doi.CrossRefClient.CROSSREF_API_KEY_SECRET_NOT_FOUND_TEMPLATE;
+import static no.unit.nva.doi.CrossRefClient.CROSSREF_SECRETS_NOT_FOUND;
 import static no.unit.nva.doi.CrossRefClient.CROSSREF_USER_AGENT;
+import static no.unit.nva.doi.CrossRefClient.ILLEGAL_DOI_MESSAGE;
 import static no.unit.nva.doi.CrossRefClient.WORKS;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.emptyString;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-
-import java.io.IOException;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+import com.amazonaws.services.secretsmanager.AWSSecretsManager;
+import com.amazonaws.services.secretsmanager.model.GetSecretValueRequest;
+import com.amazonaws.services.secretsmanager.model.GetSecretValueResult;
+import com.amazonaws.services.secretsmanager.model.ResourceNotFoundException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.Optional;
-
+import java.util.concurrent.CompletableFuture;
 import no.unit.nva.doi.utils.HttpResponseStatus200;
 import no.unit.nva.doi.utils.HttpResponseStatus404;
 import no.unit.nva.doi.utils.HttpResponseStatus500;
 import no.unit.nva.doi.utils.MockHttpClient;
 import nva.commons.core.Environment;
+import nva.commons.core.JsonUtils;
 import nva.commons.core.ioutils.IoUtils;
+import nva.commons.logutils.LogUtils;
+import nva.commons.secrets.SecretsReader;
 import org.apache.http.HttpHeaders;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
+import org.mockito.invocation.InvocationOnMock;
 
 public class CrossRefClientTest {
 
@@ -39,122 +60,232 @@ public class CrossRefClientTest {
     public static final String ILLEGAL_DOI_STRING = "doi:" + DOI_STRING;
     public static final String HTTPS = "https";
     public static final String HTTP_DOI_URI = "http://doi.dx.org/10.000/0001";
-
-    private CrossRefClient crossRefClient;
-    private Environment environment;
-
-    @BeforeEach
-    void before() throws IOException {
-        HttpClient httpClient = mockHttpClientWithNonEmptyResponse();
-        environment = mock(Environment.class);
-        crossRefClient = new CrossRefClient(httpClient, environment);
-    }
+    public static final String NAME = "name";
+    public static final String KEY = "key";
+    public static final String PATH_DELIMITER = "/";
 
     @DisplayName("createTargetUrl returns a valid Url for DOI strings that are not DOI URLs")
     @Test
-    public void createTargetUrlReturnsAValidUrlForDoiStringThatIsNotDoiURL()
-            throws URISyntaxException {
-        String expected = String.join("/", CrossRefClient.CROSSREF_LINK, WORKS, DOI_STRING);
-
-        String output = crossRefClient.createUrlToCrossRef(DOI_STRING).toString();
+    void createTargetUrlReturnsAValidUrlForDoiStringThatIsNotDoiURL()
+        throws URISyntaxException, JsonProcessingException {
+        var expected = String.join(PATH_DELIMITER, CrossRefClient.CROSSREF_LINK, WORKS, DOI_STRING);
+        var output = getConfiguredCrossrefClient().createUrlToCrossRef(DOI_STRING).toString();
         assertThat(output, is(equalTo(expected)));
     }
 
     @DisplayName("Requests to Crossref are made politely with https")
     @Test
-    public void crossRefClientIsConfiguredToUseHttps() throws URISyntaxException {
-        var crossRefUri = crossRefClient.createUrlToCrossRef(HTTP_DOI_URI);
+    void crossRefClientIsConfiguredToUseHttps() throws URISyntaxException, JsonProcessingException {
+        var crossRefUri = getConfiguredCrossrefClient().createUrlToCrossRef(HTTP_DOI_URI);
         assertThat(crossRefUri.getScheme(), equalTo(HTTPS));
     }
 
     @DisplayName("Requests to Crossref are made politely with user agent")
     @Test
-    public void crossRefHttpClientIsConfiguredToUseUserAgent() throws URISyntaxException, IOException {
+    void crossRefHttpClientIsConfiguredToUseUserAgent() throws URISyntaxException, JsonProcessingException {
         var responseBody = IoUtils.stringFromResources(CROSS_REF_SAMPLE_PATH);
         var httpClient = new MockHttpClient<>(new HttpResponseStatus200<>(responseBody));
-        var crossRefClient = new CrossRefClient(httpClient, environment);
-        crossRefClient.fetchDataForDoi(DOI_STRING);
+        getConfiguredCrossrefClient(httpClient).fetchDataForDoi(DOI_STRING);
         var httpRequest = httpClient.getHttpRequest();
-        var headers = httpRequest.headers().map();
-        assertTrue(headers.containsKey(HttpHeaders.USER_AGENT));
-        assertTrue(headers.get(HttpHeaders.USER_AGENT).contains(CROSSREF_USER_AGENT));
+        var actual = httpRequest.headers().map();
+        assertTrue(actual.containsKey(HttpHeaders.USER_AGENT));
+        assertTrue(actual.get(HttpHeaders.USER_AGENT).contains(CROSSREF_USER_AGENT));
     }
 
     @DisplayName("createTargetUrl returns a valid Url for DOI strings that are DOI DX URLs")
     @Test
-    public void createTargetUrlReturnsAValidUrlForDoiStringThatIsDoiDxUrl()
-            throws URISyntaxException {
+    void createTargetUrlReturnsAValidUrlForDoiStringThatIsDoiDxUrl() throws URISyntaxException,
+                                                                            JsonProcessingException {
         targetURlReturnsAValidUrlForDoiStrings(DOI_DX_URL_PREFIX);
     }
 
     @DisplayName("createTargetUrl returns a valid Url for DOI strings that are DOI URLs")
     @Test
-    public void createTargetUrlReturnsAValidUrlForDoiStringThatIsDoiURL()
-            throws URISyntaxException {
+    void createTargetUrlReturnsAValidUrlForDoiStringThatIsDoiURL() throws URISyntaxException, JsonProcessingException {
         targetURlReturnsAValidUrlForDoiStrings(DOI_URL_PREFIX);
     }
 
     @Test
     @DisplayName("fetchDataForDoi returns an Optional with a json object for an existing URL")
-    public void fetchDataForDoiReturnAnOptionalWithAJsonObjectForAnExistingUrl()
-            throws IOException, URISyntaxException {
-        Optional<String> result = crossRefClient.fetchDataForDoi(DOI_STRING).map(MetadataAndContentLocation::getJson);
-        String expected = IoUtils.stringFromResources(CROSS_REF_SAMPLE_PATH);
+    void fetchDataForDoiReturnAnOptionalWithAJsonObjectForAnExistingUrl() throws URISyntaxException,
+                                                                                 JsonProcessingException {
+        var result = getConfiguredCrossrefClient().fetchDataForDoi(DOI_STRING)
+                         .map(MetadataAndContentLocation::getJson);
+        var expected = IoUtils.stringFromResources(CROSS_REF_SAMPLE_PATH);
         assertThat(result.isPresent(), is(true));
         assertThat(result.get(), is(equalTo(expected)));
     }
 
     @Test
     @DisplayName("fetchDataForDoi returns an empty Optional for a non existing URL")
-    public void fetchDataForDoiReturnAnEmptyOptionalForANonExistingUrl()
-            throws URISyntaxException {
-
-        CrossRefClient crossRefClient = crossRefClientReceives404();
-
-        Optional<String> result = crossRefClient.fetchDataForDoi(DOI_STRING).map(MetadataAndContentLocation::getJson);
+    void fetchDataForDoiReturnAnEmptyOptionalForANonExistingUrl() throws URISyntaxException, JsonProcessingException {
+        var crossRefClient = crossRefClientReceives404();
+        var result = crossRefClient.fetchDataForDoi(DOI_STRING).map(MetadataAndContentLocation::getJson);
         assertThat(result.isEmpty(), is(true));
     }
 
     @Test
     @DisplayName("fetchDataForDoi returns an empty Optional for an unknown error")
-    public void fetchDataForDoiReturnAnEmptyOptionalForAnUnknownError()
-            throws URISyntaxException {
-        CrossRefClient crossRefClient = crossRefClientReceives500();
-        Optional<String> result = crossRefClient.fetchDataForDoi(DOI_STRING).map(MetadataAndContentLocation::getJson);
+    void fetchDataForDoiReturnAnEmptyOptionalForAnUnknownError() throws URISyntaxException, JsonProcessingException {
+        var crossRefClient = crossRefClientReceives500();
+        var result = crossRefClient.fetchDataForDoi(DOI_STRING).map(MetadataAndContentLocation::getJson);
         assertTrue(result.isEmpty());
     }
 
     @Test
-    public void fetchDataForDoiThrowsExceptionWhenDoiHasInvalidFormat() {
-        assertThrows(IllegalArgumentException.class, () -> crossRefClient.fetchDataForDoi(ILLEGAL_DOI_STRING));
+    void fetchDataForDoiThrowsExceptionWhenDoiHasInvalidFormat() {
+        Executable executable = () -> getConfiguredCrossrefClient().fetchDataForDoi(ILLEGAL_DOI_STRING);
+        var exception = assertThrows(IllegalArgumentException.class, executable);
+        var expected = String.format(ILLEGAL_DOI_MESSAGE, ILLEGAL_DOI_STRING);
+        assertThat(exception.getMessage(), equalTo(expected));
     }
 
-    private void targetURlReturnsAValidUrlForDoiStrings(String doiPrefix)
-            throws URISyntaxException {
-        String doiURL = String.join("/", doiPrefix, DOI_STRING);
-        String expected = String.join("/", CrossRefClient.CROSSREF_LINK, WORKS, DOI_STRING);
+    @Test
+    void crossrefClientThrowsRuntimeExceptionIfEnvironmentVariableCrossrefApiTokenNameIsMissing() {
+        Executable executable = () -> getConfiguredCrossrefClient(mock(HttpClient.class), false, true, true);
+        var exception = assertThrows(RuntimeException.class, executable);
+        var actual = exception.getMessage();
+        assertThat(actual, containsString(CROSSREFPLUSAPITOKEN_NAME_ENV));
+    }
 
-        String output = crossRefClient.createUrlToCrossRef(doiURL).toString();
+    @Test
+    void crossrefClientLogsErrorIfEnvironmentVariableCrossrefApiTokenNameIsMissing() {
+        var log = LogUtils.getTestingAppenderForRootLogger();
+        Executable executable = () -> getConfiguredCrossrefClient(mock(HttpClient.class), false, true, true);
+        assertThrows(RuntimeException.class, executable);
+        var actual = log.getMessages();
+        assertThat(actual, containsString(CROSSREFPLUSAPITOKEN_NAME_ENV));
+    }
+
+    @Test
+    void crossrefClientThrowsRuntimeExceptionIfEnvironmentVariableCrossrefApiTokenKeyIsMissing() {
+        Executable executable = () -> getConfiguredCrossrefClient(mock(HttpClient.class), true, false, true);
+        var exception = assertThrows(RuntimeException.class, executable);
+        var actual = exception.getMessage();
+        assertThat(actual, containsString(CROSSREFPLUSAPITOKEN_KEY_ENV));
+    }
+
+    @Test
+    void crossrefClientLogsErrorIfEnvironmentVariableCrossrefApiTokenKeyIsMissing() {
+        var log = LogUtils.getTestingAppenderForRootLogger();
+        Executable executable = () -> getConfiguredCrossrefClient(mock(HttpClient.class), true, false, true);
+        RuntimeException exception = assertThrows(RuntimeException.class, executable);
+        assertThat(exception.getMessage(), containsString(CROSSREFPLUSAPITOKEN_KEY_ENV));
+        var actual = log.getMessages();
+        assertThat(actual, containsString(CROSSREFPLUSAPITOKEN_KEY_ENV));
+    }
+
+    @Test
+    void crossrefClientLogsErrorIfEnvironmentVariableCrossrefApiTokensNameIsMissing() {
+        var log = LogUtils.getTestingAppenderForRootLogger();
+        Executable executable = () -> getConfiguredCrossrefClient(mock(HttpClient.class), false, false, true);
+        RuntimeException exception = assertThrows(RuntimeException.class, executable);
+        var actual = log.getMessages();
+        assertThat(actual, containsString(CROSSREFPLUSAPITOKEN_NAME_ENV));
+    }
+
+    @Test
+    void crossrefClientThrowsRuntimeExceptionWhenSecretsManagerLacksSecret() {
+        Executable executable = () -> getConfiguredCrossrefClient(mock(HttpClient.class), true, true, false)
+                                          .fetchDataForDoi(DOI_STRING);
+        RuntimeException exception = assertThrows(RuntimeException.class, executable);
+        Throwable cause = exception.getCause();
+        // assert that no information about secrets is being leaked.
+        assertThat(exception.getMessage(),is(equalTo(cause.getClass().getCanonicalName())));
+        assertThat(cause.getMessage(),is(nullValue()));
+
+    }
+
+    @Test
+    void crossrefClientLogsMissingSecretsInSecretsManager() {
+        var log = LogUtils.getTestingAppenderForRootLogger();
+        Executable executable = () -> getConfiguredCrossrefClient(mock(HttpClient.class), true, true, false)
+                                          .fetchDataForDoi(DOI_STRING);
+        assertThrows(RuntimeException.class, executable);
+        var actual = log.getMessages();
+        var expected = String.format(CROSSREF_API_KEY_SECRET_NOT_FOUND_TEMPLATE.replace("{}", "%s"), NAME, KEY);
+        assertThat(actual, containsString(expected));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void fetchDataForDoiReturnsNotFoundWhenInputDoiDoesNotDereference() throws URISyntaxException,
+                                                                               JsonProcessingException {
+        var httpClient = mock(HttpClient.class);
+        var httpResponse = new HttpResponseStatus404<>("Not found");
+        var completableFuture = CompletableFuture.supplyAsync(() -> httpResponse);
+        when(httpClient.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+            .thenReturn(completableFuture);
+        var actual = getConfiguredCrossrefClient(httpClient).fetchDataForDoi(DOI_STRING);
+        assertThat(actual, equalTo(Optional.empty()));
+    }
+
+    private CrossRefClient getConfiguredCrossrefClient() throws JsonProcessingException {
+        var httpClient = mockHttpClientWithNonEmptyResponse();
+        return getConfiguredCrossrefClient(httpClient);
+    }
+
+    private CrossRefClient getConfiguredCrossrefClient(HttpClient httpClient) throws JsonProcessingException {
+        return getConfiguredCrossrefClient(httpClient, true, true, true);
+    }
+
+    private CrossRefClient getConfiguredCrossrefClient(HttpClient httpClient,
+                                                       boolean withApiTokenName,
+                                                       boolean withApiTokenKey,
+                                                       boolean withApiSecret) throws JsonProcessingException {
+        Environment spiedEnvironment = new Environment();
+        var environment = spy(spiedEnvironment);
+        if (withApiTokenName) {
+            when(environment.readEnvOpt(CROSSREFPLUSAPITOKEN_NAME_ENV)).thenReturn(Optional.of(NAME));
+        }
+        if (withApiTokenKey) {
+            when(environment.readEnvOpt(CROSSREFPLUSAPITOKEN_KEY_ENV)).thenReturn(Optional.of(KEY));
+        }
+
+        var secretsManager = mock(AWSSecretsManager.class);
+        var secretsReader = new SecretsReader(secretsManager);
+        if (withApiSecret) {
+            var secretString = JsonUtils.objectMapper.writeValueAsString(
+                Map.of(KEY, "irrelevant"));
+            var secretValue = new GetSecretValueResult().withName(NAME)
+                                  .withSecretString(secretString);
+            when(secretsManager.getSecretValue(any(GetSecretValueRequest.class))).thenReturn(secretValue);
+        } else {
+            when(secretsManager.getSecretValue(any(GetSecretValueRequest.class)))
+                .thenAnswer(this::secretValueProvider);
+        }
+        return new CrossRefClient(httpClient, environment, secretsReader);
+    }
+
+    private GetSecretValueResult secretValueProvider(InvocationOnMock invocation) {
+        throw new ResourceNotFoundException("irrelevant");
+    }
+
+    private void targetURlReturnsAValidUrlForDoiStrings(String doiPrefix) throws URISyntaxException,
+                                                                                 JsonProcessingException {
+        var doiURL = String.join(PATH_DELIMITER, doiPrefix, DOI_STRING);
+        var expected = String.join(PATH_DELIMITER, CrossRefClient.CROSSREF_LINK, WORKS, DOI_STRING);
+        var output = getConfiguredCrossrefClient().createUrlToCrossRef(doiURL).toString();
         assertThat(output, is(equalTo(expected)));
     }
 
-    private HttpClient mockHttpClientWithNonEmptyResponse() throws IOException {
-        String responseBody = IoUtils.stringFromResources(CROSS_REF_SAMPLE_PATH);
-        HttpResponseStatus200<String> response = new HttpResponseStatus200<>(responseBody);
+    private HttpClient mockHttpClientWithNonEmptyResponse() {
+        var responseBody = IoUtils.stringFromResources(CROSS_REF_SAMPLE_PATH);
+        var response = new HttpResponseStatus200<>(responseBody);
         return new MockHttpClient<>(response);
     }
 
-    private CrossRefClient crossRefClientReceives404() {
-        HttpResponseStatus404<String> errorResponse = new HttpResponseStatus404<>(
-                ERROR_MESSAGE);
-        MockHttpClient<String> mockHttpClient = new MockHttpClient<>(errorResponse);
-        return new CrossRefClient(mockHttpClient, environment);
+    private CrossRefClient crossRefClientReceives404() throws JsonProcessingException {
+        var errorResponse = new HttpResponseStatus404<>(
+            ERROR_MESSAGE);
+        var mockHttpClient = new MockHttpClient<>(errorResponse);
+        return getConfiguredCrossrefClient(mockHttpClient);
     }
 
-    private CrossRefClient crossRefClientReceives500() {
-        HttpResponseStatus500<String> errorResponse = new HttpResponseStatus500<>(
-                ERROR_MESSAGE);
-        MockHttpClient<String> mockHttpClient = new MockHttpClient<>(errorResponse);
-        return new CrossRefClient(mockHttpClient, environment);
+    private CrossRefClient crossRefClientReceives500() throws JsonProcessingException {
+        var errorResponse = new HttpResponseStatus500<>(
+            ERROR_MESSAGE);
+        var mockHttpClient = new MockHttpClient<>(errorResponse);
+        return getConfiguredCrossrefClient(mockHttpClient);
     }
 }
