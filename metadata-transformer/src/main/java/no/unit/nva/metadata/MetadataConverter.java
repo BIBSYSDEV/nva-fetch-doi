@@ -25,9 +25,13 @@ import java.util.Optional;
 public class MetadataConverter {
 
     private final Model metadata;
+    private final EntityDescription entityDescription;
+    private final int originalHash;
 
     public MetadataConverter(Model metadata) {
         this.metadata = metadata;
+        this.entityDescription = new EntityDescription();
+        this.originalHash = entityDescription.hashCode();
     }
 
     public Optional<CreatePublicationRequest> extractPublicationRequest() throws MalformedContributorException,
@@ -36,18 +40,16 @@ public class MetadataConverter {
             return Optional.empty();
         }
         prepareDataForTransformation();
-        EntityDescription entityDescription = new EntityDescription();
-        int hash = entityDescription.hashCode();
         for (Statement statement : metadata) {
-            updateCreatePublicationRequest(entityDescription, statement);
+            updateCreatePublicationRequest(statement);
         }
 
-        return hash != entityDescription.hashCode()
-                ? Optional.of(getCreatePublicationRequest(entityDescription))
+        return originalHash != entityDescription.hashCode()
+                ? Optional.of(getCreatePublicationRequest())
                 : Optional.empty();
     }
 
-    private CreatePublicationRequest getCreatePublicationRequest(EntityDescription entityDescription) {
+    private CreatePublicationRequest getCreatePublicationRequest() {
         CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
         createPublicationRequest.setEntityDescription(entityDescription);
         return createPublicationRequest;
@@ -58,7 +60,7 @@ public class MetadataConverter {
         metadata.removeIf(statement -> FilterDuplicateContributors.apply(metadata, statement));
     }
 
-    private void updateCreatePublicationRequest(EntityDescription entityDescription, Statement statement)
+    private void updateCreatePublicationRequest(Statement statement)
             throws MalformedContributorException, InvalidIssnException, InvalidIsbnException {
         ContributorExtractor.extract(entityDescription, statement);
         DateExtractor.extract(entityDescription, statement);

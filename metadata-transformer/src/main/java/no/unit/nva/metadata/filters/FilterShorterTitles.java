@@ -7,7 +7,7 @@ import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.Value;
 
-public class FilterShorterTitles {
+public final class FilterShorterTitles {
     public static boolean apply(Model model, Statement statement) {
         if (ExtractorUtil.isNotLiteral(statement.getObject())) {
             return false;
