@@ -19,6 +19,7 @@ public final class DoiExtractor {
 
     }
 
+    @SuppressWarnings("PMD.CloseResource")
     private static EntityDescription extract(ExtractionPair extractionPair) {
         Statement statement = extractionPair.getStatement();
         EntityDescription entityDescription = extractionPair.getEntityDescription();

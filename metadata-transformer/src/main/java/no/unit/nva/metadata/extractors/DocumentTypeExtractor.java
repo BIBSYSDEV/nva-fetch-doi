@@ -48,6 +48,7 @@ public final class DocumentTypeExtractor {
         };
     }
 
+    @SuppressWarnings("PMD.CloseResource")
     private static EntityDescription extract(ExtractionPair extractionPair) throws InvalidIssnException,
             InvalidIsbnException {
         Statement statement = extractionPair.getStatement();

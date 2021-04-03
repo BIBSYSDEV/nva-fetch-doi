@@ -44,6 +44,7 @@ public final class ContributorExtractor {
         };
     }
 
+    @SuppressWarnings("PMD.CloseResource")
     private static EntityDescription extract(ExtractionPair extractionPair) throws MalformedContributorException {
         Statement statement = extractionPair.getStatement();
         EntityDescription entityDescription = extractionPair.getEntityDescription();
