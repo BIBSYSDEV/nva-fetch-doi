@@ -10,22 +10,27 @@ import org.eclipse.rdf4j.model.Value;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 
 import static java.util.Objects.nonNull;
 
 public final class TagExtractor {
     public static final Set<IRI> TAG_IRIS = Set.of(DcTerms.COVERAGE.getIri(), DcTerms.TEMPORAL.getIri(),
             DcTerms.SPATIAL.getIri(), DcTerms.SUBJECT.getIri());
+    public static final Function<ExtractionPair, EntityDescription> apply = TagExtractor::extract;
 
     @JacocoGenerated
     private TagExtractor() {
 
     }
 
-    public static void extract(EntityDescription entityDescription, Statement statement) {
+    private static EntityDescription extract(ExtractionPair extractionPair) {
+        Statement statement = extractionPair.getStatement();
+        EntityDescription entityDescription = extractionPair.getEntityDescription();
         if (isTag(statement.getPredicate())) {
             addTag(entityDescription, statement);
         }
+        return entityDescription;
     }
 
     private static boolean isTag(IRI candidate) {

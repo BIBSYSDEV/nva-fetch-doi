@@ -12,27 +12,45 @@ import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Literal;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.Value;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 
 import static java.util.Objects.isNull;
 
 public final class ContributorExtractor {
+    private static final Logger logger = LoggerFactory.getLogger(ContributorExtractor.class);
     private static final Set<IRI> CONTRIBUTOR_PROPERTIES = Set.of(DcTerms.CREATOR.getIri(),
             DcTerms.CONTRIBUTOR.getIri());
+    public static final Function<ExtractionPair, EntityDescription> apply = extractOrConsumeError();
 
     @JacocoGenerated
     private ContributorExtractor() {
 
     }
 
-    public static void extract(EntityDescription entityDescription, Statement statement)
-            throws MalformedContributorException {
+    private static Function<ExtractionPair, EntityDescription> extractOrConsumeError() {
+        return (extractionPair) -> {
+            try {
+                return ContributorExtractor.extract(extractionPair);
+            } catch (MalformedContributorException e) {
+                logger.warn("Could not create contributor for statement " + extractionPair.getStatement());
+                return extractionPair.getEntityDescription();
+            }
+        };
+    }
+
+    private static EntityDescription extract(ExtractionPair extractionPair) throws MalformedContributorException {
+        Statement statement = extractionPair.getStatement();
+        EntityDescription entityDescription = extractionPair.getEntityDescription();
         if (isContributor(statement.getPredicate())) {
             addContributor(entityDescription, statement.getObject());
         }
+        return entityDescription;
     }
 
     private static void addContributor(EntityDescription entityDescription, Value object)

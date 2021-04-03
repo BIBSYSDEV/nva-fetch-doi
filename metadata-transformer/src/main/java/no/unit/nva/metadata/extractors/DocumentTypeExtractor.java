@@ -16,27 +16,46 @@ import nva.commons.core.JacocoGenerated;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.Value;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 public final class DocumentTypeExtractor {
     private static final Set<IRI> DOCUMENT_TYPE_INDICATORS = Set.of(Bibo.ISSN.getIri(), Bibo.ISBN.getIri());
+    private static final Logger logger = LoggerFactory.getLogger(DocumentTypeExtractor.class);
+    public static final Function<ExtractionPair, EntityDescription> apply = extractOrConsumeError();
 
     @JacocoGenerated
     private DocumentTypeExtractor() {
 
     }
 
-    public static void extract(EntityDescription entityDescription, Statement statement) throws InvalidIssnException,
+    private static Function<ExtractionPair, EntityDescription> extractOrConsumeError() {
+        return (extractionPair) -> {
+            try {
+                return extract(extractionPair);
+            } catch (InvalidIssnException | InvalidIsbnException e) {
+                logger.warn("Could not extract type metadata from statement " + extractionPair.getStatement());
+                return extractionPair.getEntityDescription();
+            }
+        };
+    }
+
+    private static EntityDescription extract(ExtractionPair extractionPair) throws InvalidIssnException,
             InvalidIsbnException {
+        Statement statement = extractionPair.getStatement();
+        EntityDescription entityDescription = extractionPair.getEntityDescription();
         if (isDocumentTypeIndicator(statement.getPredicate())) {
             addDocumentTypeInformation(entityDescription, statement);
         }
+        return entityDescription;
     }
 
     private static boolean isDocumentTypeIndicator(IRI candidate) {

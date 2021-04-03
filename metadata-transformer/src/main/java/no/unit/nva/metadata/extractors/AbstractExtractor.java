@@ -7,25 +7,32 @@ import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.Value;
 
+import java.util.function.Function;
+
 public final class AbstractExtractor {
+
+    public static final Function<ExtractionPair, EntityDescription> apply = AbstractExtractor::extract;
 
     @JacocoGenerated
     private AbstractExtractor() {
 
     }
 
-    public static void extract(EntityDescription entityDescription, Statement statement, boolean noAbstract) {
-        if (isAbstract(statement.getPredicate(), noAbstract)) {
-            addAbstract(entityDescription, statement);
+    private static EntityDescription extract(ExtractionPair extractionPair) {
+        Statement statement = extractionPair.getStatement();
+        EntityDescription entityDescription = extractionPair.getEntityDescription();
+        if (isAbstract(statement.getPredicate(), extractionPair.isNoAbstract())) {
+            return addAbstract(entityDescription, statement);
         }
+        return entityDescription;
     }
 
-    private static void addAbstract(EntityDescription entityDescription, Statement statement) {
+    private static EntityDescription addAbstract(EntityDescription entityDescription, Statement statement) {
         Value object = statement.getObject();
-        if (ExtractorUtil.isNotLiteral(object)) {
-            return;
+        if (!ExtractorUtil.isNotLiteral(object)) {
+            entityDescription.setAbstract(object.stringValue());
         }
-        entityDescription.setAbstract(object.stringValue());
+        return entityDescription;
     }
 
     private static boolean isAbstract(IRI candidate, boolean noAbstract) {

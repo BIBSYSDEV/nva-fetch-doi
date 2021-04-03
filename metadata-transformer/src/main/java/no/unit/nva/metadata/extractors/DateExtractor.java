@@ -8,6 +8,7 @@ import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Statement;
 
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 public final class DateExtractor {
@@ -17,16 +18,22 @@ public final class DateExtractor {
     public static final Set<IRI> DATE_PREDICATES = Set.of(DcTerms.DATE.getIri(), DcTerms.DATE_ACCEPTED.getIri(),
             DcTerms.DATE_COPYRIGHTED.getIri(), DcTerms.DATE_SUBMITTED.getIri());
     public static final String DATE_REGEX = "^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?$";
+    public static final Function<ExtractionPair, EntityDescription> apply = DateExtractor::extract;
+
 
     @JacocoGenerated
     private DateExtractor() {
 
     }
 
-    public static void extract(EntityDescription entityDescription, Statement statement) {
+
+    private static EntityDescription extract(ExtractionPair extractionPair) {
+        Statement statement = extractionPair.getStatement();
+        EntityDescription entityDescription = extractionPair.getEntityDescription();
         if (isDate(statement)) {
             addDate(entityDescription, statement);
         }
+        return entityDescription;
     }
 
     private static boolean isDate(Statement candidate) {

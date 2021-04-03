@@ -8,15 +8,13 @@ import no.unit.nva.metadata.extractors.DescriptionExtractor;
 import no.unit.nva.metadata.extractors.DocumentTypeExtractor;
 import no.unit.nva.metadata.extractors.DoiExtractor;
 import no.unit.nva.metadata.extractors.LanguageExtractor;
+import no.unit.nva.metadata.extractors.MetadataExtractor;
 import no.unit.nva.metadata.extractors.TagExtractor;
 import no.unit.nva.metadata.extractors.TitleExtractor;
 import no.unit.nva.metadata.filters.FilterDuplicateContributors;
 import no.unit.nva.metadata.filters.FilterShorterTitles;
 import no.unit.nva.metadata.type.DcTerms;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.exceptions.InvalidIsbnException;
-import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.exceptions.MalformedContributorException;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Statement;
 
@@ -34,14 +32,15 @@ public class MetadataConverter {
         this.originalHash = entityDescription.hashCode();
     }
 
-    public Optional<CreatePublicationRequest> extractPublicationRequest() throws MalformedContributorException,
-            InvalidIssnException, InvalidIsbnException {
+    @SuppressWarnings("PMD.CloseResource")
+    public Optional<CreatePublicationRequest> extractPublicationRequest() {
         if (metadata.isEmpty()) {
             return Optional.empty();
         }
         prepareDataForTransformation();
+        MetadataExtractor extractor = configureExtractor();
         for (Statement statement : metadata) {
-            updateCreatePublicationRequest(statement);
+            extractor.extract(statement, entityDescription, noAbstractIsPresent());
         }
 
         return originalHash != entityDescription.hashCode()
@@ -60,18 +59,17 @@ public class MetadataConverter {
         metadata.removeIf(statement -> FilterDuplicateContributors.apply(metadata, statement));
     }
 
-    private void updateCreatePublicationRequest(Statement statement)
-            throws MalformedContributorException, InvalidIssnException, InvalidIsbnException {
-        ContributorExtractor.extract(entityDescription, statement);
-        DateExtractor.extract(entityDescription, statement);
-        TitleExtractor.extract(entityDescription, statement);
-        DoiExtractor.extract(entityDescription, statement);
-        LanguageExtractor.extract(entityDescription, statement);
-        boolean noAbstract = noAbstractIsPresent();
-        AbstractExtractor.extract(entityDescription, statement, noAbstract);
-        DescriptionExtractor.extract(entityDescription, statement, noAbstract);
-        TagExtractor.extract(entityDescription, statement);
-        DocumentTypeExtractor.extract(entityDescription, statement);
+    private MetadataExtractor configureExtractor() {
+        return new MetadataExtractor()
+                .register(AbstractExtractor.apply)
+                .register(ContributorExtractor.apply)
+                .register(DateExtractor.apply)
+                .register(DescriptionExtractor.apply)
+                .register(DocumentTypeExtractor.apply)
+                .register(DoiExtractor.apply)
+                .register(LanguageExtractor.apply)
+                .register(TagExtractor.apply)
+                .register(TitleExtractor.apply);
     }
 
     private boolean noAbstractIsPresent() {

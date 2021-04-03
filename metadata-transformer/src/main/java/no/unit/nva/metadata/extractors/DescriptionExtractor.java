@@ -7,17 +7,24 @@ import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.Value;
 
+import java.util.function.Function;
+
 public final class DescriptionExtractor {
+
+    public static final Function<ExtractionPair, EntityDescription> apply = DescriptionExtractor::extract;
 
     @JacocoGenerated
     private DescriptionExtractor() {
 
     }
 
-    public static void extract(EntityDescription entityDescription, Statement statement, boolean noAbstract) {
-        if (isDescription(statement.getPredicate(), noAbstract)) {
+    private static EntityDescription extract(ExtractionPair extractionPair) {
+        Statement statement = extractionPair.getStatement();
+        EntityDescription entityDescription = extractionPair.getEntityDescription();
+        if (isDescription(statement.getPredicate(), extractionPair.isNoAbstract())) {
             addDescription(entityDescription, statement);
         }
+        return entityDescription;
     }
 
     private static void addDescription(EntityDescription entityDescription, Statement statement) {

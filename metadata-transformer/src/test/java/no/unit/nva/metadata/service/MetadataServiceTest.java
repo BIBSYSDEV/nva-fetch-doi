@@ -120,11 +120,7 @@ public class MetadataServiceTest {
             throws IOException {
         URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
         MetadataService metadataService = new MetadataService();
-        var start = Instant.now();
         Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
-        var end = Instant.now();
-        var calc = end.toEpochMilli() - start.toEpochMilli();
-        System.out.println("######" + calc);
         CreatePublicationRequest actual = request.orElseThrow();
         actual.setContext(null);
 

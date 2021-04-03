@@ -7,17 +7,24 @@ import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.Value;
 
+import java.util.function.Function;
+
 public final class TitleExtractor {
+
+    public static final Function<ExtractionPair, EntityDescription> apply = TitleExtractor::extract;
 
     @JacocoGenerated
     private TitleExtractor() {
 
     }
 
-    public static void extract(EntityDescription entityDescription, Statement statement) {
+    private static EntityDescription extract(ExtractionPair extractionPair) {
+        Statement statement = extractionPair.getStatement();
+        EntityDescription entityDescription = extractionPair.getEntityDescription();
         if (isTitle(statement.getPredicate())) {
             addTitle(entityDescription, statement);
         }
+        return entityDescription;
     }
 
     private static void addTitle(EntityDescription entityDescription, Statement statement) {

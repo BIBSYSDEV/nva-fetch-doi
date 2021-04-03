@@ -13,21 +13,26 @@ import org.slf4j.LoggerFactory;
 import java.net.URI;
 import java.util.Locale;
 import java.util.MissingResourceException;
+import java.util.function.Function;
 
 public final class LanguageExtractor {
     private static final Logger logger = LoggerFactory.getLogger(LanguageExtractor.class);
     public static final String LEXVO_ORG = "https://lexvo.org/id/iso639-3/";
     public static final String ISO3_LANGUAGE_CODE_UNDEFINED = "und";
+    public static final Function<ExtractionPair, EntityDescription> apply = LanguageExtractor::extract;
 
     @JacocoGenerated
     private LanguageExtractor() {
 
     }
 
-    public static void extract(EntityDescription entityDescription, Statement statement) {
+    private static EntityDescription extract(ExtractionPair extractionPair) {
+        Statement statement = extractionPair.getStatement();
+        EntityDescription entityDescription = extractionPair.getEntityDescription();
         if (isLanguage(statement.getPredicate())) {
             addLanguage(entityDescription, statement);
         }
+        return entityDescription;
     }
 
     private static void addLanguage(EntityDescription entityDescription, Statement statement) {
