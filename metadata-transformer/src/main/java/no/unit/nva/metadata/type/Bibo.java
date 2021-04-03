@@ -1,10 +1,12 @@
 package no.unit.nva.metadata.type;
 
 import org.eclipse.rdf4j.model.IRI;
-import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 
 public enum Bibo implements OntologyProperty {
-    DOI("doi");
+    DOI("doi"),
+    ISBN("isbn"),
+    ISSN("eissn");
 
     private static final String BIBO_PREFIX = "http://purl.org/ontology/bibo/";
     private final String localName;
@@ -14,8 +16,8 @@ public enum Bibo implements OntologyProperty {
     }
 
     @Override
-    public IRI getIri(ValueFactory valueFactory) {
-        return valueFactory.createIRI(BIBO_PREFIX, localName);
+    public IRI getIri() {
+        return SimpleValueFactory.getInstance().createIRI(BIBO_PREFIX, localName);
     }
 
 }

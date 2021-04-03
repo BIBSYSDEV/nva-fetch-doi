@@ -8,6 +8,8 @@ public enum Citation implements MetaTagSet {
     COVER_DATE("cover_date", DcTerms.DATE),
     DATE("date", DcTerms.DATE),
     DOI("doi", Bibo.DOI),
+    ISBN("isbn", Bibo.ISBN),
+    ISSN("issn", Bibo.ISSN),
     LANGUAGE("language", DcTerms.LANGUAGE),
     PUBLICATION_DATE("publication_date", DcTerms.DATE),
     TITLE("title", DcTerms.TITLE);

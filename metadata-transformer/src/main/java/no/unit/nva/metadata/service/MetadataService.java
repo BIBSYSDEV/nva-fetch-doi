@@ -1,32 +1,10 @@
 package no.unit.nva.metadata.service;
 
-import static com.github.jsonldjava.core.JsonLdProcessor.frame;
-import static java.util.Objects.nonNull;
-import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.jsonldjava.core.JsonLdOptions;
-import com.github.jsonldjava.utils.JsonUtils;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import no.unit.nva.api.CreatePublicationRequest;
+import no.unit.nva.metadata.MetadataConverter;
 import no.unit.nva.metadata.type.Bibo;
 import no.unit.nva.metadata.type.Citation;
 import no.unit.nva.metadata.type.DcTerms;
-import no.unit.nva.metadata.MetadataConverter;
 import no.unit.nva.metadata.type.OntologyProperty;
 import no.unit.nva.metadata.type.RawMetaTag;
 import org.apache.any23.extractor.ExtractionException;
@@ -37,25 +15,30 @@ import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.model.impl.TreeModel;
-import org.eclipse.rdf4j.query.QueryResults;
 import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.RepositoryResult;
 import org.eclipse.rdf4j.repository.sail.SailRepository;
 import org.eclipse.rdf4j.rio.RDFFormat;
-import org.eclipse.rdf4j.rio.Rio;
 import org.eclipse.rdf4j.sail.memory.MemoryStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.Locale;
+import java.util.Optional;
+
+import static java.util.Objects.nonNull;
+
 public class MetadataService {
 
-    private static final String QUERY_SPARQL = "query.sparql";
     private static final String EMPTY_BASE_URI = "";
-    private static final String CONTEXT_JSON = "context.json";
-    private static final String MISSING_CONTEXT_OBJECT_FILE = "Missing context object file";
-    private static final String REPLACEMENT_MARKER = "__URI__";
-    private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final Logger logger = LoggerFactory.getLogger(MetadataService.class);
     private static final String DOI_DISPLAY_REGEX = "(doi:|doc:|http(s)?://(dx\\.)?doi\\.org/)?10\\.\\d{4,9}+/.*";
     private static final String SHORT_DOI_REGEX = "^http(s)?://doi.org/[^/]+(/)?$";
@@ -89,9 +72,8 @@ public class MetadataService {
     public Optional<CreatePublicationRequest> getCreatePublicationRequest(URI uri) {
         try {
             Model metadata = getMetadata(uri);
-            String jsonld = toFramedJsonLd(getModelFromQuery(metadata, uri));
-            MetadataConverter converter = new MetadataConverter(metadata, jsonld);
-            return Optional.ofNullable(converter.toRequest());
+            MetadataConverter converter = new MetadataConverter(metadata);
+            return converter.extractPublicationRequest();
         } catch (Exception e) {
             logger.error("Error mapping metadata to CreatePublicationRequest", e);
             return Optional.empty();
@@ -135,7 +117,7 @@ public class MetadataService {
         Value value = extractValue(ontologyProperty, statement.getObject());
         OntologyProperty mappedProperty = mapToSpecificProperty(ontologyProperty, value);
         if (nonNull(ontologyProperty)) {
-            model.add(statement.getSubject(), mappedProperty.getIri(valueFactory), value);
+            model.add(statement.getSubject(), mappedProperty.getIri(), value);
         }
     }
 
@@ -198,50 +180,4 @@ public class MetadataService {
         return value.matches(SHORT_DOI_REGEX);
     }
 
-    private String toFramedJsonLd(Model model) throws IOException {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        Rio.write(model, outputStream, RDFFormat.JSONLD);
-        var jsonObject = JsonUtils.fromInputStream(new ByteArrayInputStream(outputStream.toByteArray()));
-        Object framed = frame(jsonObject, loadContext(), avoidBlankNodeIdentifiersAndOmitDefaultsConfig());
-        return JsonUtils.toPrettyString(framed);
-    }
-
-    private Model getModelFromQuery(Model model, URI uri) {
-        try (RepositoryConnection repositoryConnection = db.getConnection()) {
-            repositoryConnection.add(model);
-            var query = repositoryConnection.prepareGraphQuery(getQueryAsString(uri));
-            return QueryResults.asModel(query.evaluate());
-        } finally {
-            db.shutDown();
-        }
-    }
-
-    /**
-     * Configures JSON-LD processing. Uses JSON-LD 1.1 processing to avoid the inclusion of blank node identifiers,
-     * suppresses generation of a base graph node, omits default so nulls are removed.
-     *
-     * @return JsonLdOptions
-     */
-    private JsonLdOptions avoidBlankNodeIdentifiersAndOmitDefaultsConfig() {
-        JsonLdOptions jsonLdOptions = new JsonLdOptions();
-        jsonLdOptions.setProcessingMode(JsonLdOptions.JSON_LD_1_1);
-        jsonLdOptions.setOmitGraph(true);
-        jsonLdOptions.setOmitDefault(true);
-        return jsonLdOptions;
-    }
-
-    private Map<String, Object> loadContext() {
-        try {
-            var type = new TypeReference<Map<String, Object>>() {};
-            return objectMapper.readValue(inputStreamFromResources(CONTEXT_JSON), type);
-        } catch (IOException e) {
-            throw new RuntimeException(MISSING_CONTEXT_OBJECT_FILE);
-        }
-    }
-
-    private String getQueryAsString(URI uri) {
-        var inputStream = inputStreamFromResources(MetadataService.QUERY_SPARQL);
-        return new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines()
-            .collect(Collectors.joining(System.lineSeparator())).replaceAll(REPLACEMENT_MARKER, uri.toString());
-    }
 }
