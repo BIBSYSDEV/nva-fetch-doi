@@ -1,6 +1,5 @@
 package no.unit.nva.metadata.extractors;
 
-import no.unit.nva.metadata.type.Bibo;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Book;
@@ -13,22 +12,19 @@ import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.Pages;
 import nva.commons.core.JacocoGenerated;
-import org.eclipse.rdf4j.model.IRI;
-import org.eclipse.rdf4j.model.Statement;
-import org.eclipse.rdf4j.model.Value;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Function;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static nva.commons.core.attempt.Try.attempt;
 
 public final class DocumentTypeExtractor {
-    private static final Set<IRI> DOCUMENT_TYPE_INDICATORS = Set.of(Bibo.ISSN.getIri(), Bibo.ISBN.getIri());
     private static final Logger logger = LoggerFactory.getLogger(DocumentTypeExtractor.class);
     public static final Function<ExtractionPair, EntityDescription> apply = extractOrConsumeError();
 
@@ -38,78 +34,69 @@ public final class DocumentTypeExtractor {
     }
 
     private static Function<ExtractionPair, EntityDescription> extractOrConsumeError() {
-        return (extractionPair) -> {
-            try {
-                return extract(extractionPair);
-            } catch (InvalidIssnException | InvalidIsbnException e) {
-                logger.warn("Could not extract type metadata from statement " + extractionPair.getStatement());
-                return extractionPair.getEntityDescription();
-            }
-        };
+        return (extractionPair) -> attempt(() -> extract(extractionPair))
+                .orElse(fail -> defaultValue(extractionPair));
+    }
+
+    private static EntityDescription defaultValue(ExtractionPair extractionPair) {
+        logger.warn("Could not extract type metadata from statement " + extractionPair.getStatement());
+        extractionPair.getEntityDescription().setReference(null);
+        return extractionPair.getEntityDescription();
     }
 
     @SuppressWarnings("PMD.CloseResource")
     private static EntityDescription extract(ExtractionPair extractionPair) throws InvalidIssnException,
             InvalidIsbnException {
-        Statement statement = extractionPair.getStatement();
-        EntityDescription entityDescription = extractionPair.getEntityDescription();
-        if (isDocumentTypeIndicator(statement.getPredicate())) {
-            addDocumentTypeInformation(entityDescription, statement);
+        if (extractionPair.isDocumentTypeIndicator()) {
+            addDocumentTypeInformation(extractionPair);
         }
-        return entityDescription;
+        return extractionPair.getEntityDescription();
     }
 
-    private static boolean isDocumentTypeIndicator(IRI candidate) {
-        return DOCUMENT_TYPE_INDICATORS.contains(candidate);
-    }
-
-    private static void addDocumentTypeInformation(EntityDescription entityDescription, Statement statement)
+    private static void addDocumentTypeInformation(ExtractionPair extractionPair)
             throws InvalidIsbnException, InvalidIssnException {
-        Value object = statement.getObject();
-        if (ExtractorUtil.isNotLiteral(object)) {
-            return;
-        }
-        Reference reference = ExtractorUtil.getReference(entityDescription);
-        if (Bibo.ISBN.getIri().equals(statement.getPredicate())) {
+        Reference reference = ExtractorUtil.getReference(extractionPair.getEntityDescription());
+        String object = extractionPair.getObject();
+        if (extractionPair.isBook()) {
             generateInstanceAndContextForBook(object, reference);
-        } else if (Bibo.ISSN.getIri().equals(statement.getPredicate())) {
+        } else if (extractionPair.isJournal()) {
             generateInstanceAndContextForJournal(object, reference);
         }
     }
 
-    private static void generateInstanceAndContextForJournal(Value object, Reference reference)
+    private static void generateInstanceAndContextForJournal(String issn, Reference reference)
             throws InvalidIssnException {
         PublicationInstance<? extends Pages> instance = reference.getPublicationInstance();
         if (isNull(instance)) {
             JournalArticle instanceType = new JournalArticle();
             Journal contextType = new Journal.Builder()
-                    .withOnlineIssn(object.stringValue())
+                    .withOnlineIssn(issn)
                     .build();
             reference.setPublicationInstance(instanceType);
             reference.setPublicationContext(contextType);
         }
     }
 
-    private static void generateInstanceAndContextForBook(Value object, Reference reference)
+    private static void generateInstanceAndContextForBook(String isbn, Reference reference)
             throws InvalidIsbnException {
         PublicationInstance<? extends Pages> instance = reference.getPublicationInstance();
         PublicationContext context = reference.getPublicationContext();
         if (hasExistingInstanceAndContext(instance, context)) {
             List<String> existingIsbns = ((Book) context).getIsbnList();
             List<String> isbnList = nonNull(existingIsbns) ? new ArrayList<>(existingIsbns) : new ArrayList<>();
-            addNonPreexistingIsbn(object, (Book) context, isbnList);
+            addNonPreexistingIsbn(isbn, (Book) context, isbnList);
         } else {
             BookMonograph instanceType = new BookMonograph.Builder().build();
-            Book contextType = new Book.Builder().withIsbnList(List.of(object.stringValue())).build();
+            Book contextType = new Book.Builder().withIsbnList(List.of(isbn)).build();
             reference.setPublicationInstance(instanceType);
             reference.setPublicationContext(contextType);
         }
     }
 
-    private static void addNonPreexistingIsbn(Value object, Book context, List<String> isbnList)
+    private static void addNonPreexistingIsbn(String isbn, Book context, List<String> isbnList)
             throws InvalidIsbnException {
-        if (!isbnList.contains(object.stringValue())) {
-            isbnList.add(object.stringValue());
+        if (!isbnList.contains(isbn)) {
+            isbnList.add(isbn);
             context.setIsbnList(isbnList);
         }
     }

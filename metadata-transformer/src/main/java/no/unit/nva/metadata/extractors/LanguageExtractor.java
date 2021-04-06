@@ -1,12 +1,8 @@
 package no.unit.nva.metadata.extractors;
 
-import no.unit.nva.metadata.type.DcTerms;
 import no.unit.nva.model.EntityDescription;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
-import org.eclipse.rdf4j.model.IRI;
-import org.eclipse.rdf4j.model.Statement;
-import org.eclipse.rdf4j.model.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,22 +22,15 @@ public final class LanguageExtractor {
 
     }
 
-    @SuppressWarnings("PMD.CloseResource")
     private static EntityDescription extract(ExtractionPair extractionPair) {
-        Statement statement = extractionPair.getStatement();
-        EntityDescription entityDescription = extractionPair.getEntityDescription();
-        if (isLanguage(statement.getPredicate())) {
-            addLanguage(entityDescription, statement);
+        if (extractionPair.isLanguage()) {
+            addLanguage(extractionPair);
         }
-        return entityDescription;
+        return extractionPair.getEntityDescription();
     }
 
-    private static void addLanguage(EntityDescription entityDescription, Statement statement) {
-        Value object = statement.getObject();
-        if (ExtractorUtil.isNotLiteral(object)) {
-            return;
-        }
-        entityDescription.setLanguage(toLexvoUri(object.stringValue()));
+    private static void addLanguage(ExtractionPair extractionPair) {
+        extractionPair.getEntityDescription().setLanguage(toLexvoUri(extractionPair.getObject()));
     }
 
     private static URI toLexvoUri(String language) {
@@ -55,9 +44,5 @@ public final class LanguageExtractor {
         }
 
         return URI.create(LEXVO_ORG + iso3LanguageCode);
-    }
-
-    private static boolean isLanguage(IRI candidate) {
-        return DcTerms.LANGUAGE.getIri().equals(candidate);
     }
 }

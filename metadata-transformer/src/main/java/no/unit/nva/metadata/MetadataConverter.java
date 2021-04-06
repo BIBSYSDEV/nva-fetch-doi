@@ -24,12 +24,12 @@ public class MetadataConverter {
 
     private final Model metadata;
     private final EntityDescription entityDescription;
-    private final int originalHash;
+    private final int emptyDescriptionHash;
 
     public MetadataConverter(Model metadata) {
         this.metadata = metadata;
         this.entityDescription = new EntityDescription();
-        this.originalHash = entityDescription.hashCode();
+        this.emptyDescriptionHash = entityDescription.hashCode();
     }
 
     @SuppressWarnings("PMD.CloseResource")
@@ -43,9 +43,13 @@ public class MetadataConverter {
             extractor.extract(statement, entityDescription, noAbstractIsPresent());
         }
 
-        return originalHash != entityDescription.hashCode()
+        return entityDescriptionIsPopulated()
                 ? Optional.of(getCreatePublicationRequest())
                 : Optional.empty();
+    }
+
+    private boolean entityDescriptionIsPopulated() {
+        return emptyDescriptionHash != entityDescription.hashCode();
     }
 
     private CreatePublicationRequest getCreatePublicationRequest() {

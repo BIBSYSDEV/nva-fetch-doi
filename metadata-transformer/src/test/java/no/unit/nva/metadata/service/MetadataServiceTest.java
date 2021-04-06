@@ -4,6 +4,8 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import j2html.tags.ContainerTag;
 import j2html.tags.EmptyTag;
 import no.unit.nva.api.CreatePublicationRequest;
+import no.unit.nva.metadata.extractors.DocumentTypeExtractor;
+import no.unit.nva.metadata.extractors.MetadataExtractor;
 import no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.DcContentCaseArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.LanguageArgumentsProvider;
@@ -26,6 +28,8 @@ import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.TestAppender;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,7 +46,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -70,6 +73,7 @@ import static no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.in;
 import static org.hamcrest.Matchers.instanceOf;
@@ -168,7 +172,7 @@ public class MetadataServiceTest {
         assertThat(actual, is(equalTo(expectedRequest)));
     }
 
-    @ParameterizedTest(name = "Bad date {0} is ignored in preference for shorter, valid date")
+    @ParameterizedTest(name = "Bad date {0} is ignored in preference for valid date")
     @ValueSource(strings = {"", "20111-02-01", "2011-033-11", "2010-01-011", "20100101", "First of Sept. 2010"})
     void getCreatePublicationReturnsValidDateWhenValidAndInvalidCandidatesAreAvailable(String nonsense)
             throws IOException {
@@ -381,21 +385,33 @@ public class MetadataServiceTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"dc:title,https://example.org/title", "dc:date,https://example.org/date"})
-    void getCreatePublicationRequestReturnsOptionalEmptyWhenValueIsNotLiteral(String property, String resource)
-            throws IOException {
-        Optional<CreatePublicationRequest> request =
-                getCreatePublicationRequestResponseWithRdfSource(property, resource);
-        assertTrue(request.isEmpty());
-    }
-
-    @ParameterizedTest
     @ValueSource(strings = {"dcterms.dateAccepted", "dcterms.dateCopyrighted", "dcterms.dateSubmitted"})
     void getCreatePublicationRequestReturnsOptionalEmptyWhenInputIsValidButUnmappedDate(String property)
             throws IOException, InterruptedException {
         Optional<CreatePublicationRequest> createPublicationRequest =
                 getCreatePublicationRequestResponse(property, "2002");
         assertTrue(createPublicationRequest.isEmpty());
+    }
+
+    @ParameterizedTest(name = "Non-literals are filtered for {0}")
+    @ValueSource(strings = {"dc.abstract", "dc.description", "dc.creator", "citation_isbn", "citation_issn",
+            "dc.language", "dc.subject", "dc.title"})
+    void getCreatePublicationRequestReturnsOptionalEmptyWhenExpectedInputIsStringButInputIsUri(String property)
+            throws IOException {
+        Optional<CreatePublicationRequest> createPublicationRequest =
+                getCreatePublicationRequestResponseWithRdfSource(property, "https://example.org/pool-tables");
+        assertTrue(createPublicationRequest.isEmpty());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"citation_isbn", "citation_issn"})
+    void getCreatePublicationRequestReturnsOptionalEmptyWhenExpectedInputIsInvalidIsxn(String property)
+            throws IOException, InterruptedException {
+        TestAppender logger = LogUtils.getTestingAppenderForRootLogger();
+        Optional<CreatePublicationRequest> createPublicationRequest =
+                getCreatePublicationRequestResponse(property, "2002");
+        assertTrue(createPublicationRequest.isEmpty());
+        assertThat(logger.getMessages(), containsString("Could not extract type metadata from statement "));
     }
 
     private void verifyMetaTagContentInPublicationContext(String metaTagContent, PublicationContext context) {

@@ -4,21 +4,18 @@ import no.unit.nva.metadata.type.DcTerms;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.PublicationDate;
 import nva.commons.core.JacocoGenerated;
-import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Statement;
 
-import java.util.Set;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 
 public final class DateExtractor {
     public static final String DATE_SEPARATOR = "-";
     public static final int FULL_DATE = 3;
     public static final int YEAR_ONLY = 1;
-    public static final Set<IRI> DATE_PREDICATES = Set.of(DcTerms.DATE.getIri(), DcTerms.DATE_ACCEPTED.getIri(),
-            DcTerms.DATE_COPYRIGHTED.getIri(), DcTerms.DATE_SUBMITTED.getIri());
-    public static final String DATE_REGEX = "^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?$";
     public static final Function<ExtractionPair, EntityDescription> apply = DateExtractor::extract;
+    public static final int YEAR_PART = 0;
+    public static final int MONTH_PART = 1;
+    public static final int DAY_PART = 2;
 
 
     @JacocoGenerated
@@ -26,38 +23,35 @@ public final class DateExtractor {
 
     }
 
-    @SuppressWarnings("PMD.CloseResource")
     private static EntityDescription extract(ExtractionPair extractionPair) {
-        Statement statement = extractionPair.getStatement();
-        EntityDescription entityDescription = extractionPair.getEntityDescription();
-        if (isDate(statement)) {
-            addDate(entityDescription, statement);
+        if (extractionPair.isDate()) {
+            addDate(extractionPair);
         }
-        return entityDescription;
+        return extractionPair.getEntityDescription();
     }
 
-    private static boolean isDate(Statement candidate) {
-        return DATE_PREDICATES.contains(candidate.getPredicate())
-                && Pattern.matches(DATE_REGEX, candidate.getObject().stringValue());
-    }
-
-    private static void addDate(EntityDescription entityDescription, Statement statement) {
+    @SuppressWarnings("PMD.CloseResource")
+    private static void addDate(ExtractionPair extractionPair) {
+        Statement statement = extractionPair.getStatement();
         if (!DcTerms.DATE.getIri().equals(statement.getPredicate())) {
             return; // We don't yet know what should be mapped
         }
-        String date = statement.getObject().stringValue();
+        extractionPair.getEntityDescription().setDate(extractPublicationDate(extractionPair.getObject()));
+    }
+
+    private static PublicationDate extractPublicationDate(String date) {
         String[] dateParts = date.split(DATE_SEPARATOR);
         int length = dateParts.length;
 
         PublicationDate.Builder publicationDateBuilder = new PublicationDate.Builder()
-                .withYear(dateParts[0]);
+                .withYear(dateParts[YEAR_PART]);
 
         if (length > YEAR_ONLY) {
-            publicationDateBuilder.withMonth(dateParts[1]);
+            publicationDateBuilder.withMonth(dateParts[MONTH_PART]);
         }
         if (length == FULL_DATE) {
-            publicationDateBuilder.withDay(dateParts[2]);
+            publicationDateBuilder.withDay(dateParts[DAY_PART]);
         }
-        entityDescription.setDate(publicationDateBuilder.build());
+        return publicationDateBuilder.build();
     }
 }

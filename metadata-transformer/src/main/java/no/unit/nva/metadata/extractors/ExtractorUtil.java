@@ -15,10 +15,6 @@ public final class ExtractorUtil {
 
     }
 
-    public static boolean isNotLiteral(Value value) {
-        return !(value instanceof Literal);
-    }
-
     public static Reference getReference(EntityDescription entityDescription) {
         return nonNull(entityDescription.getReference())
                 ? entityDescription.getReference()
@@ -29,5 +25,9 @@ public final class ExtractorUtil {
         Reference reference = new Reference();
         entityDescription.setReference(reference);
         return reference;
+    }
+
+    public static boolean isNotLiteral(Value object) {
+        return !(object instanceof Literal);
     }
 }
