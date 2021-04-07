@@ -153,7 +153,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - secretsmanager:GetSecretValue
-                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:CrossRefPlusApiToken:*'
+                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:CrossRefPlusApiToken*'
 
   NvaFetchDoiFunction:
     Type: AWS::Serverless::Function
