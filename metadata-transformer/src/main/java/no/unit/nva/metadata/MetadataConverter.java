@@ -40,7 +40,7 @@ public class MetadataConverter {
         prepareDataForTransformation();
         MetadataExtractor extractor = configureExtractor();
         for (Statement statement : metadata) {
-            extractor.extract(statement, entityDescription, noAbstractIsPresent());
+            extractor.extract(statement);
         }
 
         return entityDescriptionIsPopulated()
@@ -64,19 +64,19 @@ public class MetadataConverter {
     }
 
     private MetadataExtractor configureExtractor() {
-        return new MetadataExtractor()
-                .register(AbstractExtractor.apply)
-                .register(ContributorExtractor.apply)
-                .register(DateExtractor.apply)
-                .register(DescriptionExtractor.apply)
-                .register(DocumentTypeExtractor.apply)
-                .register(DoiExtractor.apply)
-                .register(LanguageExtractor.apply)
-                .register(TagExtractor.apply)
-                .register(TitleExtractor.apply);
+        return new MetadataExtractor(entityDescription, hasAbstractPropertyInDocumentModel())
+                .withExtractor(AbstractExtractor.apply)
+                .withExtractor(ContributorExtractor.apply)
+                .withExtractor(DateExtractor.apply)
+                .withExtractor(DescriptionExtractor.apply)
+                .withExtractor(DocumentTypeExtractor.apply)
+                .withExtractor(DoiExtractor.apply)
+                .withExtractor(LanguageExtractor.apply)
+                .withExtractor(TagExtractor.apply)
+                .withExtractor(TitleExtractor.apply);
     }
 
-    private boolean noAbstractIsPresent() {
-        return !metadata.contains(null, DcTerms.ABSTRACT.getIri(), null);
+    private boolean hasAbstractPropertyInDocumentModel() {
+        return metadata.contains(null, DcTerms.ABSTRACT.getIri(), null);
     }
 }

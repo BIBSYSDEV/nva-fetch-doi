@@ -49,12 +49,13 @@ public class ExtractionPair {
     public boolean isAbstract() {
         IRI predicate = statement.getPredicate();
         return hasLiteralObject() && (DcTerms.ABSTRACT.getIri().equals(predicate)
-                || DcTerms.DESCRIPTION.getIri().equals(predicate) && abstractPropertyExists);
+                || DcTerms.DESCRIPTION.getIri().equals(predicate) && !abstractPropertyExists);
     }
 
     public boolean isDescription() {
-        return DcTerms.DESCRIPTION.getIri().equals(statement.getPredicate()) && hasLiteralObject()
-                && !abstractPropertyExists;
+        return DcTerms.DESCRIPTION.getIri().equals(statement.getPredicate())
+                && hasLiteralObject()
+                && abstractPropertyExists;
     }
 
     public boolean isContributor() {
