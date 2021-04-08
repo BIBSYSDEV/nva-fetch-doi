@@ -3,8 +3,6 @@ package no.unit.nva.metadata.extractors;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Reference;
 import nva.commons.core.JacocoGenerated;
-import org.eclipse.rdf4j.model.Literal;
-import org.eclipse.rdf4j.model.Value;
 
 import static java.util.Objects.nonNull;
 
@@ -25,9 +23,5 @@ public final class ExtractorUtil {
         Reference reference = new Reference();
         entityDescription.setReference(reference);
         return reference;
-    }
-
-    public static boolean isNotLiteral(Value object) {
-        return !(object instanceof Literal);
     }
 }

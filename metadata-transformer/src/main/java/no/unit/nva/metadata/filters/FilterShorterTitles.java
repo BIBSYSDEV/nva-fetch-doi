@@ -1,7 +1,7 @@
 package no.unit.nva.metadata.filters;
 
-import no.unit.nva.metadata.extractors.ExtractorUtil;
 import no.unit.nva.metadata.type.DcTerms;
+import org.eclipse.rdf4j.model.Literal;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.Value;
@@ -31,6 +31,6 @@ public final class FilterShorterTitles {
 
     private static boolean isTitle(Statement statement) {
         return DcTerms.TITLE.getIri().equals(statement.getPredicate())
-                && !ExtractorUtil.isNotLiteral(statement.getObject());
+                && statement.getObject() instanceof Literal;
     }
 }
