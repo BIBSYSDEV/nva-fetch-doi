@@ -17,6 +17,7 @@ public class MetadataExtractor {
 
     public void extract(Statement statement, EntityDescription entityDescription, boolean noAbstract) {
         ExtractionPair extractionPair = new ExtractionPair(statement, entityDescription, noAbstract);
+
         for (Function<ExtractionPair, EntityDescription> extractor : extractorList) {
             extractor.apply(extractionPair);
         }

@@ -20,14 +20,14 @@ public class ExtractionPair {
             DcTerms.SPATIAL.getIri(), DcTerms.SUBJECT.getIri());
     private final Statement statement;
     private final EntityDescription entityDescription;
-    private final boolean noAbstractProperty;
+    private final boolean abstractPropertyExists;
 
     public ExtractionPair(Statement statement,
                           EntityDescription entityDescription,
-                          boolean noAbstract) {
+                          boolean abstractPropertyExists) {
         this.statement = statement;
         this.entityDescription = entityDescription;
-        this.noAbstractProperty = noAbstract;
+        this.abstractPropertyExists = abstractPropertyExists;
     }
 
     public Statement getStatement() {
@@ -48,13 +48,13 @@ public class ExtractionPair {
 
     public boolean isAbstract() {
         IRI predicate = statement.getPredicate();
-        return DcTerms.ABSTRACT.getIri().equals(predicate)
-                || DcTerms.DESCRIPTION.getIri().equals(predicate) && hasLiteralObject() && noAbstractProperty;
+        return hasLiteralObject() && (DcTerms.ABSTRACT.getIri().equals(predicate)
+                || DcTerms.DESCRIPTION.getIri().equals(predicate) && abstractPropertyExists);
     }
 
     public boolean isDescription() {
         return DcTerms.DESCRIPTION.getIri().equals(statement.getPredicate()) && hasLiteralObject()
-                && !noAbstractProperty;
+                && !abstractPropertyExists;
     }
 
     public boolean isContributor() {

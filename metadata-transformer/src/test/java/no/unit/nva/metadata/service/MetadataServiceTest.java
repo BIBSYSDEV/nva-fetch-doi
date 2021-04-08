@@ -4,8 +4,6 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import j2html.tags.ContainerTag;
 import j2html.tags.EmptyTag;
 import no.unit.nva.api.CreatePublicationRequest;
-import no.unit.nva.metadata.extractors.DocumentTypeExtractor;
-import no.unit.nva.metadata.extractors.MetadataExtractor;
 import no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.DcContentCaseArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.LanguageArgumentsProvider;
@@ -106,6 +104,10 @@ public class MetadataServiceTest {
     public static final String DC_IDENTIFIER = DcTerms.IDENTIFIER.getMetaTagName();
     public static final String CITATION_DOI = Citation.DOI.getMetaTagName();
     public static final String FAKE_TITLE = "A wonderful html head title";
+    public static final String INVALID_ISXN = "2002";
+
+    private static final TestAppender logger = LogUtils.getTestingAppenderForRootLogger();
+
 
     private WireMockServer wireMockServer;
 
@@ -403,13 +405,12 @@ public class MetadataServiceTest {
         assertTrue(createPublicationRequest.isEmpty());
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "Emtpy value and error logged when invalid value is passed to {0}")
     @ValueSource(strings = {"citation_isbn", "citation_issn"})
     void getCreatePublicationRequestReturnsOptionalEmptyWhenExpectedInputIsInvalidIsxn(String property)
             throws IOException, InterruptedException {
-        TestAppender logger = LogUtils.getTestingAppenderForRootLogger();
         Optional<CreatePublicationRequest> createPublicationRequest =
-                getCreatePublicationRequestResponse(property, "2002");
+                getCreatePublicationRequestResponse(property, INVALID_ISXN);
         assertTrue(createPublicationRequest.isEmpty());
         assertThat(logger.getMessages(), containsString("Could not extract type metadata from statement "));
     }
