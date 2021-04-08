@@ -107,6 +107,12 @@ public class MetadataServiceTest {
     public static final String INVALID_ISXN = "2002";
 
     private static final TestAppender logger = LogUtils.getTestingAppenderForRootLogger();
+    public static final String FIRST_ISBN_ISBN10_VARIANT = "1627050116";
+    public static final String FIRST_ISBN_ISBN13_VARIANT = "9781627050111";
+    public static final String SECOND_ISBN_ISBN10_VARIANT = "1627050124";
+    public static final String SECOND_ISBN_ISBN13_VARIANT = "9781627050128";
+    public static final String ONLINE_ISSN = "2052-2916";
+    public static final String PRINT_ISSN = "0969-0700";
 
 
     private WireMockServer wireMockServer;
@@ -135,10 +141,10 @@ public class MetadataServiceTest {
 
     @Test
     void getCreatePublicationRequestAddsTagsWhenTagsArePresent() throws IOException {
-        List<MetaTagPair> metTags = List.of(new MetaTagPair("dcterms.coverage", "Coverage"),
+        List<MetaTagPair> metaTags = List.of(new MetaTagPair("dcterms.coverage", "Coverage"),
                 new MetaTagPair("dcterms.temporal", "Temporal"), new MetaTagPair("dcterms.spatial", "Spatial"),
                 new MetaTagPair("dc.subject", "Subject"));
-        List<String> actual = getCreatePublicationRequest(metTags).getEntityDescription().getTags();
+        List<String> actual = getCreatePublicationRequest(metaTags).getEntityDescription().getTags();
         String[] expected = List.of("Coverage", "Temporal", "Spatial", "Subject").toArray(String[]::new);
         assertThat(actual, containsInAnyOrder(expected));
     }
@@ -334,19 +340,19 @@ public class MetadataServiceTest {
     @ParameterizedTest
     @ArgumentsSource(TypeInformationArgumentsProvider.class)
     void getCreatePublicationRequestReturnsTypeWhenInputIndicatesType(String metaTagName,
-                                                                      String metaTagContent,
+                                                                      String isxnImplyingContentType,
                                                                       Class<?> expectedContext,
                                                                       Class<?> expectedInstance)
             throws IOException {
         CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(List.of(
                 new MetaTagPair(CITATION_DOI, "10.0000/aaaa"),
-                new MetaTagPair(metaTagName, metaTagContent)));
+                new MetaTagPair(metaTagName, isxnImplyingContentType)));
 
         PublicationContext actualContext = createPublicationRequest.getEntityDescription()
                 .getReference().getPublicationContext();
         assertThat(actualContext, instanceOf(expectedContext));
 
-        verifyMetaTagContentInPublicationContext(metaTagContent, actualContext);
+        verifyMetaTagContentInPublicationContext(isxnImplyingContentType, actualContext);
 
         PublicationInstance<?> actualInstance = createPublicationRequest.getEntityDescription()
                 .getReference().getPublicationInstance();
@@ -357,30 +363,30 @@ public class MetadataServiceTest {
     @Test
     void getCreatePublicationRequestReturnsMultipleIsbnsWhenMultipleIsbnsArePresent() throws IOException {
         CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(List.of(
-                new MetaTagPair(Citation.ISBN.getMetaTagName(), "1627050124"),
-                new MetaTagPair(Citation.ISBN.getMetaTagName(), "1627050116"),
-                new MetaTagPair(Citation.ISBN.getMetaTagName(), "9781627050111"),
-                new MetaTagPair(Citation.ISBN.getMetaTagName(), "9781627050128")));
+                new MetaTagPair(Citation.ISBN.getMetaTagName(), FIRST_ISBN_ISBN10_VARIANT),
+                new MetaTagPair(Citation.ISBN.getMetaTagName(), SECOND_ISBN_ISBN10_VARIANT),
+                new MetaTagPair(Citation.ISBN.getMetaTagName(), FIRST_ISBN_ISBN13_VARIANT),
+                new MetaTagPair(Citation.ISBN.getMetaTagName(), SECOND_ISBN_ISBN13_VARIANT)));
 
         List<String> actual = ((Book) createPublicationRequest.getEntityDescription()
                 .getReference().getPublicationContext()).getIsbnList();
-        String[] expected = List.of("9781627050111", "9781627050128")
+        String[] expected = List.of(FIRST_ISBN_ISBN13_VARIANT, SECOND_ISBN_ISBN13_VARIANT)
                 .toArray(String[]::new);
 
         assertThat(actual, containsInAnyOrder(expected));
     }
 
     @Test
-    void getCreatePublicationRequestReturnsSingleIssnWhenMultipleIssnsArePresent() throws IOException {
+    void getCreatePublicationRequestReturnsSingleIssnWhenMultipleCandidatesArePresent() throws IOException {
         CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(List.of(
-                new MetaTagPair(Citation.ISSN.getMetaTagName(), "2052-2916"),
-                new MetaTagPair(Citation.ISSN.getMetaTagName(), "0969-0700"),
-                new MetaTagPair(Citation.ISSN.getMetaTagName(), "2052-2916"),
-                new MetaTagPair(Citation.ISSN.getMetaTagName(), "0969-0700")));
+                new MetaTagPair(Citation.ISSN.getMetaTagName(), ONLINE_ISSN),
+                new MetaTagPair(Citation.ISSN.getMetaTagName(), PRINT_ISSN),
+                new MetaTagPair(Citation.ISSN.getMetaTagName(), ONLINE_ISSN),
+                new MetaTagPair(Citation.ISSN.getMetaTagName(), PRINT_ISSN)));
 
         String actual = ((Journal) createPublicationRequest.getEntityDescription()
                 .getReference().getPublicationContext()).getOnlineIssn();
-        String[] expected = List.of("2052-2916", "0969-0700")
+        String[] expected = List.of(ONLINE_ISSN, PRINT_ISSN)
                 .toArray(String[]::new);
 
         assertThat(actual, is(in(expected)));
