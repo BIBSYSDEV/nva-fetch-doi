@@ -113,6 +113,7 @@ public class MetadataServiceTest {
     public static final String SECOND_ISBN_ISBN13_VARIANT = "9781627050128";
     public static final String ONLINE_ISSN = "2052-2916";
     public static final String PRINT_ISSN = "0969-0700";
+    public static final String ENSURE_ONLY_FILTERING_TITLES = "McLongName, Longy (Colonel (ret'd))";
 
 
     private WireMockServer wireMockServer;
@@ -331,7 +332,8 @@ public class MetadataServiceTest {
                                                                                        String third,
                                                                                        String expected)
             throws IOException {
-        List<MetaTagPair> metaTags = List.of(new MetaTagPair(DC_TITLE, first), new MetaTagPair(CITATION_TITLE, second));
+        List<MetaTagPair> metaTags = List.of(new MetaTagPair(DC_TITLE, first), new MetaTagPair(CITATION_TITLE, second),
+                new MetaTagPair(CITATION_AUTHOR, ENSURE_ONLY_FILTERING_TITLES));
         CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(third, metaTags);
         String actual = createPublicationRequest.getEntityDescription().getMainTitle();
         assertThat(actual, equalTo(expected));
