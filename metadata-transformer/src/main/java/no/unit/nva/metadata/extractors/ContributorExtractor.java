@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.function.Function;
 
 import static java.util.Objects.isNull;
+import static nva.commons.core.attempt.Try.attempt;
 
 public final class ContributorExtractor {
     private static final Logger logger = LoggerFactory.getLogger(ContributorExtractor.class);
@@ -27,14 +28,13 @@ public final class ContributorExtractor {
     }
 
     private static Function<ExtractionPair, EntityDescription> extractOrConsumeError() {
-        return (extractionPair) -> {
-            try {
-                return ContributorExtractor.extract(extractionPair);
-            } catch (MalformedContributorException e) {
-                logger.warn("Could not create contributor for statement " + extractionPair.getStatement());
-                return extractionPair.getEntityDescription();
-            }
-        };
+        return (extractionPair) -> attempt(() -> extract(extractionPair))
+                .orElse(fail -> defaultValue(extractionPair));
+    }
+
+    private static EntityDescription defaultValue(ExtractionPair extractionPair) {
+        logger.warn("Could not create contributor for statement " + extractionPair.getStatement());
+        return extractionPair.getEntityDescription();
     }
 
     private static EntityDescription extract(ExtractionPair extractionPair) throws MalformedContributorException {
