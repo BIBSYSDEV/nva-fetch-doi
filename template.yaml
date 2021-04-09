@@ -51,7 +51,7 @@ Parameters:
     Default: 1
   LambdaMemorySize:
     Type: Number
-    Default: 384
+    Default: 512
   ScaleOutUsageThreshold:
     Type: Number
     Default: 0.80
