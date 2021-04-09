@@ -1,4 +1,4 @@
-package no.unit.nva.metadata;
+package no.unit.nva.metadata.type;
 
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.ValueFactory;
@@ -86,9 +86,9 @@ public enum DcTerms implements OntologyProperty {
 
     public static Optional<DcTerms> getTermByValue(String candidate) {
         String term = replaceInternalPrefixes(candidate);
-        return Optional.of(Arrays.stream(values())
+        return Arrays.stream(values())
                 .filter(dcTerm -> dcTerm.localName.equalsIgnoreCase(term))
-                .findAny()).orElse(Optional.empty());
+                .findAny();
     }
 
     private static String replaceInternalPrefixes(String input) {

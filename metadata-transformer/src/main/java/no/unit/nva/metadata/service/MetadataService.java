@@ -23,11 +23,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import no.unit.nva.api.CreatePublicationRequest;
-import no.unit.nva.metadata.Bibo;
-import no.unit.nva.metadata.Citation;
-import no.unit.nva.metadata.DcTerms;
+import no.unit.nva.metadata.type.Bibo;
+import no.unit.nva.metadata.type.Citation;
+import no.unit.nva.metadata.type.DcTerms;
 import no.unit.nva.metadata.MetadataConverter;
-import no.unit.nva.metadata.OntologyProperty;
+import no.unit.nva.metadata.type.OntologyProperty;
+import no.unit.nva.metadata.type.RawMetaTag;
 import org.apache.any23.extractor.ExtractionException;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Model;
@@ -157,11 +158,19 @@ public class MetadataService {
 
     private OntologyProperty getMappedOntologyProperty(Statement statement) {
         String property = statement.getPredicate().getLocalName();
-        Optional<Citation> citationValue = Citation.getByProperty(property);
+        Optional<Citation> citationValue = Citation.getTagByString(property);
         Optional<DcTerms> dcTermsValue = DcTerms.getTermByValue(property);
-        return citationValue.isPresent()
-                ? citationValue.get().getMappedTerm()
-                : dcTermsValue.orElse(null);
+        Optional<RawMetaTag> rawMetaTag = RawMetaTag.getTagByString(property);
+
+        OntologyProperty ontologyProperty = null;
+        if (citationValue.isPresent()) {
+            ontologyProperty = citationValue.get().getMapping();
+        } else if (dcTermsValue.isPresent()) {
+            ontologyProperty = dcTermsValue.get();
+        } else if (rawMetaTag.isPresent()) {
+            ontologyProperty = rawMetaTag.get().getMapping();
+        }
+        return ontologyProperty;
     }
 
     private IRI extractDoi(String value) throws IOException, InterruptedException {

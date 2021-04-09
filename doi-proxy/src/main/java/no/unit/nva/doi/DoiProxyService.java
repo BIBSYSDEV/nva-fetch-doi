@@ -9,6 +9,7 @@ import java.util.Optional;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.secrets.SecretsReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +40,7 @@ public class DoiProxyService {
      */
     @JacocoGenerated
     public DoiProxyService(Environment environment) {
-        this(new CrossRefClient(HttpClient.newBuilder().build(), environment), new DataciteClient());
+        this(new CrossRefClient(HttpClient.newHttpClient(), environment, new SecretsReader()), new DataciteClient());
     }
 
     /**

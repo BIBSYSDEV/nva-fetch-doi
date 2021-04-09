@@ -1,7 +1,7 @@
 package no.unit.nva.metadata.service.testdata;
 
-import no.unit.nva.metadata.Citation;
-import no.unit.nva.metadata.DcTerms;
+import no.unit.nva.metadata.type.Citation;
+import no.unit.nva.metadata.type.DcTerms;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
