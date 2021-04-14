@@ -34,7 +34,7 @@ public class ExtractionPair {
         return statement;
     }
 
-    public String getObject() {
+    public String getStatementLiteral() {
         return statement.getObject().stringValue();
     }
 

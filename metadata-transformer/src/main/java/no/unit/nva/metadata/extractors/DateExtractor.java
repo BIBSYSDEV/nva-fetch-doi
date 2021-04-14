@@ -36,7 +36,7 @@ public final class DateExtractor {
         if (!DcTerms.DATE.getIri().equals(statement.getPredicate())) {
             return; // We don't yet know what should be mapped
         }
-        extractionPair.getEntityDescription().setDate(extractPublicationDate(extractionPair.getObject()));
+        extractionPair.getEntityDescription().setDate(extractPublicationDate(extractionPair.getStatementLiteral()));
     }
 
     private static PublicationDate extractPublicationDate(String date) {

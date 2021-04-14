@@ -30,7 +30,7 @@ public final class LanguageExtractor {
     }
 
     private static void addLanguage(ExtractionPair extractionPair) {
-        extractionPair.getEntityDescription().setLanguage(toLexvoUri(extractionPair.getObject()));
+        extractionPair.getEntityDescription().setLanguage(toLexvoUri(extractionPair.getStatementLiteral()));
     }
 
     private static URI toLexvoUri(String language) {

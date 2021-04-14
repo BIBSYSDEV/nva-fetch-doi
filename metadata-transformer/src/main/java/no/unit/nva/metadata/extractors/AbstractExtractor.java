@@ -23,7 +23,7 @@ public final class AbstractExtractor {
 
     private static EntityDescription addAbstract(ExtractionPair extractionPair) {
         EntityDescription entityDescription = extractionPair.getEntityDescription();
-        entityDescription.setAbstract(extractionPair.getObject());
+        entityDescription.setAbstract(extractionPair.getStatementLiteral());
         return entityDescription;
     }
 }

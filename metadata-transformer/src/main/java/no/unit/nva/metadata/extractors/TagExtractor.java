@@ -31,7 +31,7 @@ public final class TagExtractor {
         if (nonNull(existingTags) && !existingTags.isEmpty()) {
             tags.addAll(existingTags);
         }
-        tags.add(extractionPair.getObject());
+        tags.add(extractionPair.getStatementLiteral());
         entityDescription.setTags(List.of(tags.toArray(new String[]{})));
     }
 }

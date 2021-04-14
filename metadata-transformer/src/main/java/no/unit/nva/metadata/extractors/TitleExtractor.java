@@ -23,6 +23,6 @@ public final class TitleExtractor {
     }
 
     private static void addTitle(ExtractionPair extractionPair) {
-        extractionPair.getEntityDescription().setMainTitle(extractionPair.getObject());
+        extractionPair.getEntityDescription().setMainTitle(extractionPair.getStatementLiteral());
     }
 }

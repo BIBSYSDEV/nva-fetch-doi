@@ -17,7 +17,7 @@ public final class DescriptionExtractor {
     private static EntityDescription extract(ExtractionPair extractionPair) {
         EntityDescription entityDescription = extractionPair.getEntityDescription();
         if (extractionPair.isDescription()) {
-            entityDescription.setDescription(extractionPair.getObject());
+            entityDescription.setDescription(extractionPair.getStatementLiteral());
         }
         return entityDescription;
     }

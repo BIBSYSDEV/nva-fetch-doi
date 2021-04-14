@@ -44,7 +44,6 @@ public final class DocumentTypeExtractor {
         return extractionPair.getEntityDescription();
     }
 
-    @SuppressWarnings("PMD.CloseResource")
     private static EntityDescription extract(ExtractionPair extractionPair) throws InvalidIssnException,
             InvalidIsbnException {
         if (extractionPair.isDocumentTypeIndicator()) {
@@ -56,18 +55,17 @@ public final class DocumentTypeExtractor {
     private static void addDocumentTypeInformation(ExtractionPair extractionPair)
             throws InvalidIsbnException, InvalidIssnException {
         Reference reference = ExtractorUtil.getReference(extractionPair.getEntityDescription());
-        String object = extractionPair.getObject();
+        String isxn = extractionPair.getStatementLiteral();
         if (extractionPair.isBook()) {
-            generateInstanceAndContextForBook(object, reference);
+            generateInstanceAndContextForBook(isxn, reference);
         } else if (extractionPair.isJournal()) {
-            generateInstanceAndContextForJournal(object, reference);
+            generateInstanceAndContextForJournal(isxn, reference);
         }
     }
 
     private static void generateInstanceAndContextForJournal(String issn, Reference reference)
             throws InvalidIssnException {
-        PublicationInstance<? extends Pages> instance = reference.getPublicationInstance();
-        if (isNull(instance)) {
+        if (isNull(reference.getPublicationInstance()) && isNull(reference.getPublicationContext())) {
             JournalArticle instanceType = new JournalArticle();
             Journal contextType = new Journal.Builder()
                     .withOnlineIssn(issn)
@@ -79,9 +77,8 @@ public final class DocumentTypeExtractor {
 
     private static void generateInstanceAndContextForBook(String isbn, Reference reference)
             throws InvalidIsbnException {
-        PublicationInstance<? extends Pages> instance = reference.getPublicationInstance();
         PublicationContext context = reference.getPublicationContext();
-        if (hasExistingInstanceAndContext(instance, context)) {
+        if (hasExistingInstanceAndContext(reference.getPublicationInstance(), context)) {
             List<String> existingIsbns = ((Book) context).getIsbnList();
             List<String> isbnList = nonNull(existingIsbns) ? new ArrayList<>(existingIsbns) : new ArrayList<>();
             addNonPreexistingIsbn(isbn, (Book) context, isbnList);

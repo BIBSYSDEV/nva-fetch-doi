@@ -8,7 +8,6 @@ import java.net.URI;
 import java.util.function.Function;
 
 public final class DoiExtractor {
-
     public static final Function<ExtractionPair, EntityDescription> apply = DoiExtractor::extract;
 
     @JacocoGenerated
@@ -26,7 +25,7 @@ public final class DoiExtractor {
     private static void addDoi(ExtractionPair extractionPair) {
         EntityDescription entityDescription = extractionPair.getEntityDescription();
         Reference reference = ExtractorUtil.getReference(entityDescription);
-        reference.setDoi(URI.create(extractionPair.getObject()));
+        reference.setDoi(URI.create(extractionPair.getStatementLiteral()));
         entityDescription.setReference(reference);
     }
 }

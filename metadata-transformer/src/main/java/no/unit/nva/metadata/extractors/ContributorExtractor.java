@@ -46,7 +46,7 @@ public final class ContributorExtractor {
     private static Contributor createContributorWithoutCorrespondingAuthorInfo(ExtractionPair extractionPair) {
         return attempt(() -> new Contributor.Builder()
                 .withRole(Role.CREATOR)
-                .withIdentity(extractIdentity(extractionPair.getObject()))
+                .withIdentity(extractIdentity(extractionPair.getStatementLiteral()))
                 .build()).orElseThrow();
     }
 
