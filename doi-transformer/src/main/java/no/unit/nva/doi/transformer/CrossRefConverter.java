@@ -39,6 +39,7 @@ import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
@@ -196,6 +197,10 @@ public class CrossRefConverter extends AbstractConverter {
         return StringUtils.parsePage(document.getPage());
     }
 
+    private MonographPages extractOrDummyMonograpPages(CrossRefDocument document) {
+        return new MonographPages.Builder().withPages(extractPages(document).toString()).build();
+    }
+
 
     private PublicationContext extractPublicationContext(CrossRefDocument document)
             throws UnsupportedDocumentTypeException, InvalidIssnException, InvalidIsbnException {
@@ -347,6 +352,7 @@ public class CrossRefConverter extends AbstractConverter {
     private BookAnthology createBookAnthology(CrossRefDocument document) {
         return new BookAnthology.Builder()
                 .withPeerReviewed(hasReviews(document)) // Same as in BasicContext
+                .withPages(extractOrDummyMonograpPages(document))
                 .build();
     }
 
