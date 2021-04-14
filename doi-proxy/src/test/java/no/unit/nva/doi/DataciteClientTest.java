@@ -10,7 +10,9 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import nva.commons.core.ioutils.IoUtils;
@@ -42,7 +44,7 @@ public class DataciteClientTest {
     }
 
     @Test
-    public void testValidResponseUrl() throws IOException {
+    public void testValidResponseUrl() throws IOException, URISyntaxException {
         Path resourceAbsolutePath = Path.of(resourceAbsolutePathString(SAMPLE_RESPONSE_RESOURCE));
         DataciteClient dataciteClient = mock(DataciteClient.class);
         when(dataciteClient.readStringFromUrl(any(URL.class))).thenCallRealMethod();
@@ -53,7 +55,7 @@ public class DataciteClientTest {
     }
 
     @Test
-    public void testEmptyResponseUrl() throws IOException {
+    public void testEmptyResponseUrl() throws IOException, URISyntaxException {
         Path resourceAbsolutePath = Path.of(resourceAbsolutePathString(EMPTY_RESPONSE_RESOURCE));
         DataciteClient dataciteClient = mock(DataciteClient.class);
         when(dataciteClient.readStringFromUrl(any(URL.class))).thenCallRealMethod();
@@ -61,7 +63,8 @@ public class DataciteClientTest {
         assertEquals(EMPTY_STRING, stringFromUrl);
     }
 
-    private String resourceAbsolutePathString(String resource) {
-        return Thread.currentThread().getContextClassLoader().getResource(resource).getPath();
+    private String resourceAbsolutePathString(String resource) throws URISyntaxException {
+        URL url = Thread.currentThread().getContextClassLoader().getResource(resource);
+        return new File(url.toURI()).toPath().toString(); //is there an easier way?
     }
 }

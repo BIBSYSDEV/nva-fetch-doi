@@ -198,7 +198,12 @@ public class CrossRefConverter extends AbstractConverter {
     }
 
     private MonographPages extractOrDummyMonograpPages(CrossRefDocument document) {
-        return new MonographPages.Builder().withPages(extractPages(document).toString()).build();
+        Range pages = extractPages(document);
+        if (isNull(pages)) {
+            return new MonographPages.Builder().build();
+        } else {
+            return new MonographPages.Builder().withPages(pages.toString()).build();
+        }
     }
 
 
