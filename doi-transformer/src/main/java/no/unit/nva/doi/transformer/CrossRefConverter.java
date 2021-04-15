@@ -195,14 +195,13 @@ public class CrossRefConverter extends AbstractConverter {
     }
 
     private Pages extractPages(CrossRefDocument document) {
-        return isBookAnthology(document)
+        return isMonograph(document)
                 ? extractMonographPages(document)
                 : StringUtils.parsePage(document.getPage());
-
     }
 
-    private boolean isBookAnthology(CrossRefDocument document) {
-        return getByType(document.getType()).equals(BOOK) && hasEditor(document);
+    private boolean isMonograph(CrossRefDocument document) {
+        return getByType(document.getType()).equals(BOOK);
     }
 
     private MonographPages extractMonographPages(CrossRefDocument document) {
