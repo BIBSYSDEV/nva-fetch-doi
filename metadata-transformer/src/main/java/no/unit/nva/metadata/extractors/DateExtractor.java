@@ -30,6 +30,7 @@ public final class DateExtractor {
         return extractionPair.getEntityDescription();
     }
 
+    // Suppressing "closeResource" is necessary because of a PMD bug
     @SuppressWarnings("PMD.CloseResource")
     private static void addDate(ExtractionPair extractionPair) {
         Statement statement = extractionPair.getStatement();
@@ -41,15 +42,15 @@ public final class DateExtractor {
 
     private static PublicationDate extractPublicationDate(String date) {
         String[] dateParts = date.split(DATE_SEPARATOR);
-        int length = dateParts.length;
+        int dateKind = dateParts.length;
 
         PublicationDate.Builder publicationDateBuilder = new PublicationDate.Builder()
                 .withYear(dateParts[YEAR_PART]);
 
-        if (length > YEAR_ONLY) {
+        if (dateKind > YEAR_ONLY) {
             publicationDateBuilder.withMonth(dateParts[MONTH_PART]);
         }
-        if (length == FULL_DATE) {
+        if (dateKind == FULL_DATE) {
             publicationDateBuilder.withDay(dateParts[DAY_PART]);
         }
         return publicationDateBuilder.build();
