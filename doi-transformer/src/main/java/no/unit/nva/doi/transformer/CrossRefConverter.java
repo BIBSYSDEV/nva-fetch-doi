@@ -199,13 +199,10 @@ public class CrossRefConverter extends AbstractConverter {
 
     private MonographPages extractOrDummyMonograpPages(CrossRefDocument document) {
         Range pages = extractPages(document);
-        if (isNull(pages)) {
-            return new MonographPages.Builder().build();
-        } else {
-            return new MonographPages.Builder().withPages(pages.toString()).build();
-        }
+        return isNull(pages)
+                ? new MonographPages.Builder().build()
+                : new MonographPages.Builder().withPages(pages.toString()).build();
     }
-
 
     private PublicationContext extractPublicationContext(CrossRefDocument document)
             throws UnsupportedDocumentTypeException, InvalidIssnException, InvalidIsbnException {
@@ -589,7 +586,7 @@ public class CrossRefConverter extends AbstractConverter {
     }
 
     private URI extractFulltextLinkAsUri(CrossRefDocument document) {
-        return  extractFirstLinkToSourceDocument(document.getLink()).orElse(null);
+        return extractFirstLinkToSourceDocument(document.getLink()).orElse(null);
     }
 
     private Optional<URI> extractFirstLinkToSourceDocument(List<Link> links) {
