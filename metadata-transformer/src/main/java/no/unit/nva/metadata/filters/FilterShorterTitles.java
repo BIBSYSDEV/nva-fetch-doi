@@ -13,11 +13,12 @@ import java.util.Optional;
  */
 public final class FilterShorterTitles {
     public static boolean apply(Model documentModel, Statement statement) {
-        return getTitleLength(documentModel).map(length -> selectLongestTitle(statement, length))
+        return findOtherTitle(documentModel)
+                .map(title -> selectLongestTitle(statement, title))
                 .orElse(false);
     }
 
-    private static Optional<String> getTitleLength(Model documentModel) {
+    private static Optional<String> findOtherTitle(Model documentModel) {
         return documentModel.stream()
                 .filter(FilterShorterTitles::isTitle)
                 .map(Statement::getObject)
