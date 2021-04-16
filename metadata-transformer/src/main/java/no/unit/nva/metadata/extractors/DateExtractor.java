@@ -27,8 +27,6 @@ public final class DateExtractor {
         return extractionPair.getEntityDescription();
     }
 
-    // Suppressing "closeResource" is necessary because of a PMD bug
-    @SuppressWarnings("PMD.CloseResource")
     private static void addDate(ExtractionPair extractionPair) {
         Statement statement = extractionPair.getStatement();
         if (!DcTerms.DATE.getIri().equals(statement.getPredicate())) {
