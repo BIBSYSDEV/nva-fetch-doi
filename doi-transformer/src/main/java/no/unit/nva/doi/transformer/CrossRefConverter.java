@@ -39,6 +39,8 @@ import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.pages.MonographPages;
+import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
@@ -192,10 +194,22 @@ public class CrossRefConverter extends AbstractConverter {
         }
     }
 
-    private Range extractPages(CrossRefDocument document) {
-        return StringUtils.parsePage(document.getPage());
+    private Pages extractPages(CrossRefDocument document) {
+        return isMonograph(document)
+                ? extractMonographPages(document)
+                : StringUtils.parsePage(document.getPage());
     }
 
+    private boolean isMonograph(CrossRefDocument document) {
+        return getByType(document.getType()).equals(BOOK);
+    }
+
+    private MonographPages extractMonographPages(CrossRefDocument document) {
+        Pages pages = StringUtils.parsePage(document.getPage());
+        return isNull(pages)
+                ? new MonographPages.Builder().build()
+                : new MonographPages.Builder().withPages(pages.toString()).build();
+    }
 
     private PublicationContext extractPublicationContext(CrossRefDocument document)
             throws UnsupportedDocumentTypeException, InvalidIssnException, InvalidIsbnException {
@@ -347,6 +361,7 @@ public class CrossRefConverter extends AbstractConverter {
     private BookAnthology createBookAnthology(CrossRefDocument document) {
         return new BookAnthology.Builder()
                 .withPeerReviewed(hasReviews(document)) // Same as in BasicContext
+                .withPages((MonographPages) extractPages(document))
                 .build();
     }
 
@@ -358,7 +373,7 @@ public class CrossRefConverter extends AbstractConverter {
 
     private ChapterArticle createChapterArticle(CrossRefDocument document) {
         return new ChapterArticle.Builder()
-                .withPages(extractPages(document))
+                .withPages((Range) extractPages(document))
                 .withPeerReviewed(hasReviews(document)) // Same as in BasicContext
                 .build();
     }
@@ -367,7 +382,7 @@ public class CrossRefConverter extends AbstractConverter {
         return new JournalArticle.Builder()
                 .withVolume(document.getVolume())
                 .withIssue(document.getIssue())
-                .withPages(extractPages(document))
+                .withPages((Range) extractPages(document))
                 .build();
     }
 
@@ -578,7 +593,7 @@ public class CrossRefConverter extends AbstractConverter {
     }
 
     private URI extractFulltextLinkAsUri(CrossRefDocument document) {
-        return  extractFirstLinkToSourceDocument(document.getLink()).orElse(null);
+        return extractFirstLinkToSourceDocument(document.getLink()).orElse(null);
     }
 
     private Optional<URI> extractFirstLinkToSourceDocument(List<Link> links) {
