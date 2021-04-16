@@ -73,7 +73,7 @@ public class MetadataService {
         try {
             Model metadata = getMetadata(uri);
             MetadataConverter converter = new MetadataConverter(metadata);
-            return converter.extractPublicationRequest();
+            return converter.generateCreatePublicationRequest();
         } catch (Exception e) {
             logger.error("Error mapping metadata to CreatePublicationRequest", e);
             return Optional.empty();

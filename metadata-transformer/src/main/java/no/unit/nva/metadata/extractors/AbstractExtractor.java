@@ -4,6 +4,9 @@ import no.unit.nva.model.EntityDescription;
 
 import java.util.function.Function;
 
+/**
+ * Extractor for journal abstracts.
+ */
 public final class AbstractExtractor {
 
     public static final Function<ExtractionPair, EntityDescription> apply = AbstractExtractor::extract;
