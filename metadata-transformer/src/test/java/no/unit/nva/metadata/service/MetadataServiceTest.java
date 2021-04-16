@@ -125,7 +125,7 @@ public class MetadataServiceTest {
         throws IOException {
         URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
         MetadataService metadataService = new MetadataService();
-        Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
+        Optional<CreatePublicationRequest> request = metadataService.generateCreatePublicationRequest(uri);
         CreatePublicationRequest actual = request.orElseThrow();
         actual.setContext(null);
 
@@ -159,9 +159,8 @@ public class MetadataServiceTest {
 
     @ParameterizedTest(name = "getCreatePublication returns date when date attribute {0} with value {1}")
     @ArgumentsSource(ValidDateArgumentsProvider.class)
-    void getCreatePublicationReturnsDateWhenDateVariantIsPresent(String tagAttribute, String date) throws
-                                                                                                   IOException,
-                                                                                                   InterruptedException {
+    void getCreatePublicationReturnsDateWhenDateVariantIsPresent(String tagAttribute, String date)
+            throws IOException, InterruptedException {
 
         CreatePublicationRequest actual = getCreatePublicationRequest(tagAttribute, date);
         CreatePublicationRequest expectedRequest = getCreatePublicationRequestWithDateOnly(date);
@@ -574,14 +573,14 @@ public class MetadataServiceTest {
         String html = createHtml(htmlTitle, metaTags);
         URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
         MetadataService metadataService = new MetadataService();
-        Optional<CreatePublicationRequest> request = metadataService.getCreatePublicationRequest(uri);
+        Optional<CreatePublicationRequest> request = metadataService.generateCreatePublicationRequest(uri);
         CreatePublicationRequest actual = request.orElseThrow();
         actual.setContext(null);
         return actual;
     }
 
-    private CreatePublicationRequest getCreatePublicationRequest(String attribute, String value) throws IOException,
-                                                                                                        InterruptedException {
+    private CreatePublicationRequest getCreatePublicationRequest(String attribute, String value)
+            throws IOException, InterruptedException {
         Optional<CreatePublicationRequest> request = getCreatePublicationRequestResponse(attribute, value);
         CreatePublicationRequest actual = request.orElseThrow();
         actual.setContext(null);
@@ -604,7 +603,7 @@ public class MetadataServiceTest {
         MetadataService metadataService = nonNull(expected)
                                               ? new MetadataService(setUpMockingForShortDoi(expected))
                                               : new MetadataService();
-        return metadataService.getCreatePublicationRequest(uri);
+        return metadataService.generateCreatePublicationRequest(uri);
     }
 
     private Optional<CreatePublicationRequest> getCreatePublicationRequestResponse(String attribute, String value)
@@ -617,7 +616,7 @@ public class MetadataServiceTest {
         throws IOException {
         URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, createRdfaHtml(property, resource));
         MetadataService metadataService = new MetadataService();
-        return metadataService.getCreatePublicationRequest(uri);
+        return metadataService.generateCreatePublicationRequest(uri);
     }
 
     @SuppressWarnings("unchecked")

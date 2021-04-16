@@ -247,7 +247,7 @@ public class MainHandlerTest {
         PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
         BareProxyClient bareProxyClient = mock(BareProxyClient.class);
         MetadataService metadataService = mock(MetadataService.class);
-        when(metadataService.getCreatePublicationRequest(any())).thenReturn(Optional.empty());
+        when(metadataService.generateCreatePublicationRequest(any())).thenReturn(Optional.empty());
 
         return new MainHandler(objectMapper, publicationConverter, doiTransformService,
                                doiProxyService, publicationPersistenceService, bareProxyClient, metadataService,
@@ -302,7 +302,7 @@ public class MainHandlerTest {
         CreatePublicationRequest request = new CreatePublicationRequest();
         request.setEntityDescription(entityDescription);
 
-        when(service.getCreatePublicationRequest(any()))
+        when(service.generateCreatePublicationRequest(any()))
             .thenReturn(Optional.of(request));
         return service;
     }

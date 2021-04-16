@@ -69,7 +69,7 @@ public class MetadataService {
      * @param uri URI to dereference.
      * @return CreatePublicationRequest for selected set of metadata.
      */
-    public Optional<CreatePublicationRequest> getCreatePublicationRequest(URI uri) {
+    public Optional<CreatePublicationRequest> generateCreatePublicationRequest(URI uri) {
         try {
             Model metadata = getMetadata(uri);
             MetadataConverter converter = new MetadataConverter(metadata);
