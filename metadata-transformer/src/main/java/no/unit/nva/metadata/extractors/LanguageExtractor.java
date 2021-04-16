@@ -1,7 +1,6 @@
 package no.unit.nva.metadata.extractors;
 
 import no.unit.nva.model.EntityDescription;
-import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +16,6 @@ public final class LanguageExtractor {
     public static final String ISO3_LANGUAGE_CODE_UNDEFINED = "und";
     public static final Function<ExtractionPair, EntityDescription> apply = LanguageExtractor::extract;
 
-    @JacocoGenerated
     private LanguageExtractor() {
 
     }

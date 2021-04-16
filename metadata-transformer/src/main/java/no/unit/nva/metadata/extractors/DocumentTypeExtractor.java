@@ -11,7 +11,6 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.Pages;
-import nva.commons.core.JacocoGenerated;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +27,6 @@ public final class DocumentTypeExtractor {
     private static final Logger logger = LoggerFactory.getLogger(DocumentTypeExtractor.class);
     public static final Function<ExtractionPair, EntityDescription> apply = extractOrConsumeError();
 
-    @JacocoGenerated
     private DocumentTypeExtractor() {
 
     }

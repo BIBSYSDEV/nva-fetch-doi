@@ -3,7 +3,6 @@ package no.unit.nva.metadata.extractors;
 import no.unit.nva.metadata.type.DcTerms;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.PublicationDate;
-import nva.commons.core.JacocoGenerated;
 import org.eclipse.rdf4j.model.Statement;
 
 import java.util.function.Function;
@@ -17,8 +16,6 @@ public final class DateExtractor {
     public static final int MONTH_PART = 1;
     public static final int DAY_PART = 2;
 
-
-    @JacocoGenerated
     private DateExtractor() {
 
     }

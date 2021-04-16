@@ -2,13 +2,11 @@ package no.unit.nva.metadata.extractors;
 
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Reference;
-import nva.commons.core.JacocoGenerated;
 
 import static java.util.Objects.nonNull;
 
 public final class ExtractorUtil {
 
-    @JacocoGenerated
     private ExtractorUtil() {
 
     }

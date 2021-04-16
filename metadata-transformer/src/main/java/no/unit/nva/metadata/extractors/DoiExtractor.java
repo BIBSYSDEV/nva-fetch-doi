@@ -2,7 +2,6 @@ package no.unit.nva.metadata.extractors;
 
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Reference;
-import nva.commons.core.JacocoGenerated;
 
 import java.net.URI;
 import java.util.function.Function;
@@ -10,7 +9,6 @@ import java.util.function.Function;
 public final class DoiExtractor {
     public static final Function<ExtractionPair, EntityDescription> apply = DoiExtractor::extract;
 
-    @JacocoGenerated
     private DoiExtractor() {
 
     }

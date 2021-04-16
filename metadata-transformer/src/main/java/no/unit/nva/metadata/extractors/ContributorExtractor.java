@@ -5,7 +5,6 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.NameType;
 import no.unit.nva.model.Role;
-import nva.commons.core.JacocoGenerated;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +17,6 @@ public final class ContributorExtractor {
 
     public static final Function<ExtractionPair, EntityDescription> apply = ContributorExtractor::extract;
 
-    @JacocoGenerated
     private ContributorExtractor() {
 
     }

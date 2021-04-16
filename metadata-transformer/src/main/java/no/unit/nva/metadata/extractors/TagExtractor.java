@@ -1,7 +1,6 @@
 package no.unit.nva.metadata.extractors;
 
 import no.unit.nva.model.EntityDescription;
-import nva.commons.core.JacocoGenerated;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +11,6 @@ import static java.util.Objects.nonNull;
 public final class TagExtractor {
     public static final Function<ExtractionPair, EntityDescription> apply = TagExtractor::extract;
 
-    @JacocoGenerated
     private TagExtractor() {
 
     }
