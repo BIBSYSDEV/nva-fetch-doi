@@ -33,7 +33,7 @@ public class MetadataConverter {
     }
 
     @SuppressWarnings("PMD.CloseResource")
-    public Optional<CreatePublicationRequest> extractPublicationRequest() {
+    public Optional<CreatePublicationRequest> generateCreatePublicationRequest() {
         if (metadata.isEmpty()) {
             return Optional.empty();
         }
@@ -44,7 +44,7 @@ public class MetadataConverter {
         }
 
         return entityDescriptionIsPopulated()
-                ? Optional.of(getCreatePublicationRequest())
+                ? Optional.of(wrapEntityDescriptionWithCreatePublicationRequest())
                 : Optional.empty();
     }
 
@@ -52,7 +52,7 @@ public class MetadataConverter {
         return emptyDescriptionHash != entityDescription.hashCode();
     }
 
-    private CreatePublicationRequest getCreatePublicationRequest() {
+    private CreatePublicationRequest wrapEntityDescriptionWithCreatePublicationRequest() {
         CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
         createPublicationRequest.setEntityDescription(entityDescription);
         return createPublicationRequest;
