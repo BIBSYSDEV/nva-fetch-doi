@@ -511,11 +511,11 @@ public class CrossRefConverter extends AbstractConverter {
      *
      * @param contributor         the Contributor.
      * @param role                Assigned role for the contributor
-     * @param alternativeSequence sequence in case where the Author object does not contain a valid sequence entry
+     * @param registrationSequence sequence in case where the Author object does not contain a valid sequence entry
      * @return a Contributor object.
      * @throws MalformedContributorException when the contributor cannot be built.
      */
-    private Contributor toContributorWithRole(CrossrefContributor contributor, Role role, int alternativeSequence)
+    private Contributor toContributorWithRole(CrossrefContributor contributor, Role role, int registrationSequence)
             throws MalformedContributorException {
         Identity identity = new Identity.Builder()
                 .withName(toName(contributor.getFamilyName(), contributor.getGivenName()))
@@ -527,7 +527,7 @@ public class CrossRefConverter extends AbstractConverter {
         }
         return contributorBuilder.withIdentity(identity)
                 .withRole(role)
-                .withSequence(parseSequence(contributor.getSequence(), alternativeSequence))
+                .withSequence(registrationSequence)
                 .build();
     }
 
@@ -543,22 +543,6 @@ public class CrossRefConverter extends AbstractConverter {
         Map<String, String> labels = Map.of(DEFAULT_LANGUAGE_ENGLISH, name);
         organization.setLabels(labels);
         return organization;
-    }
-
-    /**
-     * Parses the "sequence" field of the cross-ref document, The "sequence" field shows if the author is the 1st, 2nd,
-     * etc. author
-     *
-     * @param sequence ordinal string e.g. "first"
-     * @return Ordinal in number format. "first" -> 1, "second" -> 2, etc.
-     */
-    private int parseSequence(String sequence, int alternativeSequence) {
-        RuleBasedNumberFormat nf = new RuleBasedNumberFormat(Locale.UK, RuleBasedNumberFormat.SPELLOUT);
-        try {
-            return nf.parse(sequence).intValue();
-        } catch (Exception e) {
-            return alternativeSequence;
-        }
     }
 
     private List<String> extractSubject(CrossRefDocument document) {

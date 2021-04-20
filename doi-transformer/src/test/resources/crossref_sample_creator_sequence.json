@@ -1,0 +1,127 @@
+{
+  "status": "ok",
+  "message-type": "work",
+  "message-version": "1.0.0",
+  "message": {
+    "indexed": {
+      "date-parts": [
+        [
+          2021,
+          3,
+          9
+        ]
+      ],
+      "date-time": "2021-03-09T08:45:45Z",
+      "timestamp": 1615279545418
+    },
+    "reference-count": 0,
+    "publisher": "Norwegian Medical Association",
+    "content-domain": {
+      "domain": [],
+      "crossmark-restriction": false
+    },
+    "short-container-title": [
+      "Tidsskriftet"
+    ],
+    "published-print": {
+      "date-parts": [
+        [
+          2021
+        ]
+      ]
+    },
+    "DOI": "10.4045\/tidsskr.20.0688",
+    "type": "journal-article",
+    "created": {
+      "date-parts": [
+        [
+          2021,
+          3,
+          9
+        ]
+      ],
+      "date-time": "2021-03-09T07:59:43Z",
+      "timestamp": 1615276783000
+    },
+    "source": "Crossref",
+    "is-referenced-by-count": 0,
+    "title": [
+      "Skr\u00f8pelighet blant eldre pasienter med hjemmesykepleie"
+    ],
+    "prefix": "10.4045",
+    "author": [
+      {
+        "given": "Maria",
+        "family": "Krogseth",
+        "sequence": "first",
+        "affiliation": []
+      },
+      {
+        "given": "Siri",
+        "family": "Rostoft",
+        "sequence": "first",
+        "affiliation": []
+      },
+      {
+        "given": "J\u016brat\u0117 \u0160altyt\u0117",
+        "family": "Benth",
+        "sequence": "first",
+        "affiliation": []
+      },
+      {
+        "given": "Geir",
+        "family": "Selb\u00e6k",
+        "sequence": "first",
+        "affiliation": []
+      },
+      {
+        "given": "Torgeir Bruun",
+        "family": "Wyller",
+        "sequence": "first",
+        "affiliation": []
+      }
+    ],
+    "member": "2479",
+    "container-title": [
+      "Tidsskrift for Den norske legeforening"
+    ],
+    "original-title": [],
+    "language": "no",
+    "deposited": {
+      "date-parts": [
+        [
+          2021,
+          3,
+          9
+        ]
+      ],
+      "date-time": "2021-03-09T08:00:06Z",
+      "timestamp": 1615276806000
+    },
+    "score": 1.0,
+    "subtitle": [],
+    "short-title": [],
+    "issued": {
+      "date-parts": [
+        [
+          2021
+        ]
+      ]
+    },
+    "references-count": 0,
+    "URL": "http:\/\/dx.doi.org\/10.4045\/tidsskr.20.0688",
+    "relation": {},
+    "ISSN": [
+      "0029-2001"
+    ],
+    "issn-type": [
+      {
+        "value": "0029-2001",
+        "type": "print"
+      }
+    ],
+    "subject": [
+      "General Medicine"
+    ]
+  }
+}
