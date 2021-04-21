@@ -84,7 +84,7 @@ public class DoiTransformServiceTest {
     }
 
     @Test
-    public void transFormPublicationEnumeratesContributorsAsRegistered()
+    public void transFormPublicationReturnsSequentialEnumeratedContributorsAndIgnoresSequence()
             throws URISyntaxException, InvalidIssnException,
             JsonProcessingException, InvalidIsbnException, UnsupportedDocumentTypeException {
         DoiTransformService doiTransformService = new DoiTransformService();
