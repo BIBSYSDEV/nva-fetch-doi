@@ -1,6 +1,5 @@
 package no.unit.nva.doi.transformer;
 
-import com.ibm.icu.text.RuleBasedNumberFormat;
 import no.unit.nva.doi.fetch.exceptions.UnsupportedDocumentTypeException;
 import no.unit.nva.doi.transformer.language.LanguageMapper;
 import no.unit.nva.doi.transformer.language.SimpleLanguageDetector;

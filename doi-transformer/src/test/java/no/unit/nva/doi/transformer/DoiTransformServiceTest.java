@@ -94,7 +94,8 @@ public class DoiTransformServiceTest {
 
         var contributors = publication.getEntityDescription().getContributors();
         assertNotNull(contributors);
-        IntStream.range(0, contributors.size()).forEachOrdered(i -> assertEquals(i + 1, contributors.get(i).getSequence()));
+        IntStream.range(0, contributors.size())
+                .forEachOrdered(i -> assertEquals(i + 1, contributors.get(i).getSequence()));
     }
 
 }
