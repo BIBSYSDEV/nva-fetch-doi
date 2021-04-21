@@ -100,7 +100,6 @@ public class CrossRefConverterTest extends ConversionTest {
     public static final String CONNECTING_MINUS = "-";
     public static final String SAMPLE_ISSUE = "SomeIssue";
     public static final String SOME_STRANGE_CROSSREF_TYPE = "SomeStrangeCrossrefType";
-    public static final String ORDINAL_SECOND = "second";
     public static final String FIRST_NAME_OF_JOURNAL = "Journal 1st Name";
     public static final String FIRST_PAGE_IN_RANGE = "45";
     public static final String LAST_PAGE_IN_RANGE = "89";
@@ -219,18 +218,6 @@ public class CrossRefConverterTest extends ConversionTest {
         assertThat(ordinals, contains(IntStream.range(0, numberOfAuthors)
                 .map(this::startCountingFromOne)
                 .boxed().toArray()));
-    }
-
-    @Test
-    @DisplayName("toPublication sets the correct number when the sequence ordinal is valid")
-    void toPublicationSetsCorrectNumberForValidOrdinal() {
-        CrossRefDocument sampleJournalArticle = sampleJournalArticle();
-        CrossrefContributor author = sampleJournalArticle.getAuthor().stream().findFirst().get();
-        int expected = 2;
-        author.setSequence(ORDINAL_SECOND);
-        int actual = toPublication(sampleJournalArticle)
-                .getEntityDescription().getContributors().stream().findFirst().get().getSequence();
-        assertThat(actual, is(equalTo(expected)));
     }
 
     @Test
