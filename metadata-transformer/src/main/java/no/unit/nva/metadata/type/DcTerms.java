@@ -1,7 +1,7 @@
 package no.unit.nva.metadata.type;
 
 import org.eclipse.rdf4j.model.IRI;
-import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -76,8 +76,8 @@ public enum DcTerms implements OntologyProperty {
     }
 
     @Override
-    public IRI getIri(ValueFactory valueFactory) {
-        return valueFactory.createIRI(DCTERMS_PREFIX, localName);
+    public IRI getIri() {
+        return SimpleValueFactory.getInstance().createIRI(DCTERMS_PREFIX, localName);
     }
 
     public String getMetaTagName() {

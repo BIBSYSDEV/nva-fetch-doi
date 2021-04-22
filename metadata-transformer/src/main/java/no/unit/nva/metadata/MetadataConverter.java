@@ -1,67 +1,82 @@
 package no.unit.nva.metadata;
 
-import static nva.commons.core.JsonUtils.objectMapper;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import java.net.URI;
-import java.util.Locale;
-import java.util.MissingResourceException;
-import java.util.Optional;
 import no.unit.nva.api.CreatePublicationRequest;
-import nva.commons.core.StringUtils;
+import no.unit.nva.metadata.extractors.AbstractExtractor;
+import no.unit.nva.metadata.extractors.ContributorExtractor;
+import no.unit.nva.metadata.extractors.DateExtractor;
+import no.unit.nva.metadata.extractors.DescriptionExtractor;
+import no.unit.nva.metadata.extractors.DocumentTypeExtractor;
+import no.unit.nva.metadata.extractors.DoiExtractor;
+import no.unit.nva.metadata.extractors.LanguageExtractor;
+import no.unit.nva.metadata.extractors.MetadataExtractor;
+import no.unit.nva.metadata.extractors.TagExtractor;
+import no.unit.nva.metadata.extractors.TitleExtractor;
+import no.unit.nva.metadata.filters.FilterDuplicateContributors;
+import no.unit.nva.metadata.filters.FilterShorterTitles;
+import no.unit.nva.metadata.type.DcTerms;
+import no.unit.nva.model.EntityDescription;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Statement;
-import org.eclipse.rdf4j.model.Value;
-import org.eclipse.rdf4j.model.ValueFactory;
-import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.util.Optional;
 
 public class MetadataConverter {
 
-    public static final String DCTERMS = "http://purl.org/dc/terms/";
-    public static final String LANGUAGE = "language";
-    public static final String LEXVO_ORG = "https://lexvo.org/id/iso639-3/";
-    public static final String ISO3_LANGUAGE_CODE_UNDEFINED = "und";
-    private static final Logger logger = LoggerFactory.getLogger(MetadataConverter.class);
-    private static final ValueFactory valueFactory = SimpleValueFactory.getInstance();
     private final Model metadata;
-    private final String jsonld;
+    private final EntityDescription entityDescription;
+    private final int emptyDescriptionHash;
 
-    public MetadataConverter(Model metadata, String jsonld) {
+    public MetadataConverter(Model metadata) {
         this.metadata = metadata;
-        this.jsonld = jsonld;
+        this.entityDescription = new EntityDescription();
+        this.emptyDescriptionHash = entityDescription.hashCode();
     }
 
-    public CreatePublicationRequest toRequest() throws JsonProcessingException {
-        CreatePublicationRequest request = objectMapper.readValue(jsonld, CreatePublicationRequest.class);
-        getLanguageFromMetadata(metadata).ifPresent(language -> request.getEntityDescription().setLanguage(language));
-        return request;
-    }
-
-    private Optional<URI> getLanguageFromMetadata(Model metadata) {
-        return metadata
-            .stream()
-            .filter(this::isDcLanguage)
-            .map(Statement::getObject)
-            .map(Value::stringValue)
-            .map(this::toLexvoUri)
-            .findFirst();
-    }
-
-    private boolean isDcLanguage(Statement statement) {
-        return valueFactory.createIRI(DCTERMS, LANGUAGE).equals(statement.getPredicate());
-    }
-
-    private URI toLexvoUri(String language) {
-        String iso3LanguageCode = ISO3_LANGUAGE_CODE_UNDEFINED;
-        if (!StringUtils.isEmpty(language)) {
-            try {
-                iso3LanguageCode = new Locale(language).getISO3Language();
-            } catch (MissingResourceException e) {
-                logger.warn("Could not map two-letter BCP-47 language code to three-letter ISO639-3 language code.", e);
-            }
+    @SuppressWarnings("PMD.CloseResource")
+    public Optional<CreatePublicationRequest> generateCreatePublicationRequest() {
+        if (metadata.isEmpty()) {
+            return Optional.empty();
+        }
+        prepareDataForTransformation();
+        MetadataExtractor extractor = configureExtractor();
+        for (Statement statement : metadata) {
+            extractor.extract(statement);
         }
 
-        return URI.create(LEXVO_ORG + iso3LanguageCode);
+        return entityDescriptionIsPopulated()
+                ? Optional.of(wrapEntityDescriptionWithCreatePublicationRequest())
+                : Optional.empty();
+    }
+
+    private boolean entityDescriptionIsPopulated() {
+        return emptyDescriptionHash != entityDescription.hashCode();
+    }
+
+    private CreatePublicationRequest wrapEntityDescriptionWithCreatePublicationRequest() {
+        CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
+        createPublicationRequest.setEntityDescription(entityDescription);
+        return createPublicationRequest;
+    }
+
+    private void prepareDataForTransformation() {
+        metadata.removeIf(statement -> FilterShorterTitles.apply(metadata, statement));
+        metadata.removeIf(statement -> FilterDuplicateContributors.apply(metadata, statement));
+    }
+
+    private MetadataExtractor configureExtractor() {
+        return new MetadataExtractor(entityDescription, hasAbstractPropertyInDocumentModel())
+                .withExtractor(AbstractExtractor.apply)
+                .withExtractor(ContributorExtractor.apply)
+                .withExtractor(DateExtractor.apply)
+                .withExtractor(DescriptionExtractor.apply)
+                .withExtractor(DocumentTypeExtractor.apply)
+                .withExtractor(DoiExtractor.apply)
+                .withExtractor(LanguageExtractor.apply)
+                .withExtractor(TagExtractor.apply)
+                .withExtractor(TitleExtractor.apply);
+    }
+
+    private boolean hasAbstractPropertyInDocumentModel() {
+        return metadata.contains(null, DcTerms.ABSTRACT.getIri(), null);
     }
 }

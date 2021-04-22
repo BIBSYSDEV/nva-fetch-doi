@@ -170,7 +170,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     private CreatePublicationRequest getPublicationFromOtherUrl(URL url)
             throws URISyntaxException, MetadataNotFoundException {
-        return metadataService.getCreatePublicationRequest(url.toURI())
+        return metadataService.generateCreatePublicationRequest(url.toURI())
                 .orElseThrow(() -> new MetadataNotFoundException(NO_METADATA_FOUND_FOR + url));
     }
 

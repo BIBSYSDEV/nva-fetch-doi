@@ -11,8 +11,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.util.stream.IntStream;
 
 import no.unit.nva.doi.fetch.exceptions.UnsupportedDocumentTypeException;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
@@ -25,6 +27,7 @@ public class DoiTransformServiceTest {
     public static final URI CUSTOMER_ID = URI.create("http://example.org/publisher/123");
     public static final Path CROSSREF_JSON_PATH = Path.of("crossref.json");
     public static final Path CROSSREF_BOOK_JSON_PATH = Path.of("crossref_sample_book.json");
+    public static final Path CROSSREF_SEQUENCE_SAMPLE_JSON_PATH = Path.of("crossref_sample_creator_sequence.json");
     public static final Path DATACITE_JSON_PATH = Path.of("datacite_response.json");
     private static final Path CROSSREF_WITH_XML_ASTRACT_JSON_PATH = Path.of("crossrefWithAbstract.json");
 
@@ -79,4 +82,20 @@ public class DoiTransformServiceTest {
         assertNotNull(publication);
         assertEquals(publication.getOwner(), OWNER);
     }
+
+    @Test
+    public void transFormPublicationReturnsSequentialEnumeratedContributorsAndIgnoringTextualSequence()
+            throws URISyntaxException, InvalidIssnException,
+            JsonProcessingException, InvalidIsbnException, UnsupportedDocumentTypeException {
+        DoiTransformService doiTransformService = new DoiTransformService();
+        String crossrefBody = IoUtils.stringFromResources(CROSSREF_SEQUENCE_SAMPLE_JSON_PATH);
+        Publication publication = doiTransformService.transformPublication(crossrefBody, CROSSREF_STRING, OWNER,
+                CUSTOMER_ID);
+
+        var contributors = publication.getEntityDescription().getContributors();
+        assertNotNull(contributors);
+        IntStream.range(0, contributors.size())
+                .forEachOrdered(i -> assertEquals(i + 1, contributors.get(i).getSequence()));
+    }
+
 }

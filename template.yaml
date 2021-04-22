@@ -16,7 +16,7 @@ Metadata:
 
 Globals:
   Function:
-    Timeout: 20
+    Timeout: 900
   Api:
     Cors:
       AllowMethods: "'POST,OPTIONS'"
@@ -51,7 +51,7 @@ Parameters:
     Default: 1
   LambdaMemorySize:
     Type: Number
-    Default: 512
+    Default: 1408
   ScaleOutUsageThreshold:
     Type: Number
     Default: 0.80
