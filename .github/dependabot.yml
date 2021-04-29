@@ -1,0 +1,18 @@
+version: 2
+updates:
+- package-ecosystem: gradle
+  directory: "/"
+  schedule:
+    interval: daily
+    timezone: Europe/Oslo
+  open-pull-requests-limit: 20
+  ignore:
+  - dependency-name: nebula.lint
+    versions:
+    - 16.18.0
+    - 16.19.0
+    - 16.20.0
+    - 16.22.0
+  - dependency-name: org.slf4j:slf4j-api
+    versions:
+    - 2.0.0-alpha1
