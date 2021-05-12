@@ -19,6 +19,6 @@ dependencies {
 
     testImplementation group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
     testCompileClasspath group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
-    testImplementation group: 'com.github.tomakehurst', name: 'wiremock-jre8', version: '2.27.2'
+    testImplementation group: 'com.github.tomakehurst', name: 'wiremock-jre8', version: '2.28.0'
     testImplementation group: 'com.j2html', name: 'j2html', version: '1.4.0'
 }
