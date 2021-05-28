@@ -35,6 +35,7 @@ Parameters:
   CustomDomainBasePath:
     Type: String
     Description: Base path mapping in CustomDomain
+    Default: doi-fetch
   CrossrefPlusApiTokenName:
     Type: String
     Default: CrossRefPlusApiToken
