@@ -8,7 +8,7 @@ import java.net.URI;
 import java.util.stream.Stream;
 
 public class UndefinedLanguageArgumentsProvider implements ArgumentsProvider {
-    private static final URI LEXVO_UND = URI.create("https://lexvo.org/id/iso639-3/und");
+    private static final URI LEXVO_UND = URI.create("http://lexvo.org/id/iso639-3/und");
 
     @Override
     public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
