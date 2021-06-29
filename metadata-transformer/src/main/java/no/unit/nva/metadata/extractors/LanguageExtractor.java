@@ -12,7 +12,7 @@ import java.util.function.Function;
 
 public final class LanguageExtractor {
     private static final Logger logger = LoggerFactory.getLogger(LanguageExtractor.class);
-    public static final String LEXVO_ORG = "https://lexvo.org/id/iso639-3/";
+    public static final String LEXVO_ORG = "http://lexvo.org/id/iso639-3/";
     public static final String ISO3_LANGUAGE_CODE_UNDEFINED = "und";
     public static final Function<ExtractionPair, EntityDescription> apply = LanguageExtractor::extract;
 

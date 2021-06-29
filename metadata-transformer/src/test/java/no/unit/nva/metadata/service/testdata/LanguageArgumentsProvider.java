@@ -9,7 +9,7 @@ import java.util.stream.Stream;
 
 public class LanguageArgumentsProvider implements ArgumentsProvider {
 
-    public static final URI LEXVO_DEU = URI.create("https://lexvo.org/id/iso639-3/deu");
+    public static final URI LEXVO_DEU = URI.create("http://lexvo.org/id/iso639-3/deu");
     public static final String DE = "de";
     public static final String DEU = "deu";
 
