@@ -11,6 +11,10 @@ import org.eclipse.rdf4j.model.Value;
  */
 public final class FilterShorterTitles {
 
+    private FilterShorterTitles(){
+
+    }
+
     public static boolean apply(Model documentModel, Statement statement) {
         if (isTitle(statement)) {
             String currentTitle = statement.getObject().stringValue();

@@ -11,7 +11,7 @@ import nva.commons.core.SingletonCollector;
  */
 public enum BibTexType {
     ARTICLE("article", PublicationType.JOURNAL_CONTENT),
-    BOOK("book", null),
+    BOOK("book", PublicationType.BOOK),
     BOOKLET("booklet", null),
     CONFERENCE("conference", null), // same as inproceedings
     INBOOK("inbook", null),
