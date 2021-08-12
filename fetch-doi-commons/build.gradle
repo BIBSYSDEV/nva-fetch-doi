@@ -3,16 +3,17 @@ def problemVersion = '0.24.0'
 
 dependencies {
 
-    api group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
-    api group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
-    api group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
-    api group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
-    api group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
-    api group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: project.ext.jacksonVersion
-    api group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
-    api group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: project.ext.jacksonVersion
-    api group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.13'
+    api libs.nva.core
+    api libs.nva.apigateway
+    api libs.nva.identifiers
+    api libs.jackson.core
+    api libs.jackson.databind
+    api libs.jackson.datatype.jdk8
+    api libs.jackson.datatype.jsr310
+    api libs.httpclient
 
-    runtimeOnly group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.2.1'
-    testImplementation group: 'org.zalando', name: 'jackson-datatype-problem', version: problemVersion
+    testImplementation libs.zalando.jackson.datatype.problem
+    runtimeOnly libs.aws.lambda.java.core
+
+
 }
