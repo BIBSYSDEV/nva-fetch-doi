@@ -1,25 +1,22 @@
 plugins {
-    id 'java-library'
-    id 'jacoco'
-    id 'checkstyle'
-    id 'pmd'
-    id 'base'
-    id 'nebula.lint' version '16.23.0'
+    id 'nva-fetch-doi.java-library-conventions'
 }
 
 group 'no.unit.nva'
 version '1.0-SNAPSHOT'
 
+wrapper{
+    distributionType = Wrapper.DistributionType.ALL
+    gradleVersion ='7.1.1'
+}
 
 allprojects {
-    apply plugin: 'nebula.lint'
-    apply plugin: 'base'
-    apply plugin: 'jacoco'
+    apply plugin: 'nva-fetch-doi.java-library-conventions'
 
     project.ext {
         awsSdkVersion = '1.11.982'
         nvaCommonsVersion = '1.5.12'
-        nvaDatamodelVersion = '0.11.7'
+        nvaDatamodelVersion = '0.12.3'
         nvaTestUtilsVersion = "0.1.18"
         junit5Version = '5.6.2'
         jacksonVersion = '2.10.3'
@@ -28,168 +25,23 @@ allprojects {
         rdf4jVersion = '3.1.2'
     }
 
-
-    gradleLint.rules = ['unused-dependency']
-
-    repositories {
-        mavenCentral()
-        maven { url "https://jitpack.io" }
-    }
 }
 
 subprojects {
-    apply plugin: 'java-library'
-    apply plugin: 'checkstyle'
-    apply plugin: 'pmd'
-
-    sourceCompatibility = JavaVersion.VERSION_11
-    // source-code version and must be <= targetCompatibility
-    targetCompatibility = JavaVersion.VERSION_11 // bytecode target version
-
     dependencies {
-
         compileOnly group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
         testImplementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
         testImplementation group: 'com.github.BIBSYSDEV', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
-
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: project.ext.junit5Version
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: project.ext.junit5Version
         testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: project.ext.junit5Version
         testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.9.0'
         testImplementation group: 'org.hamcrest', name: 'hamcrest', version: '2.2'
     }
-
-    test {
-        useJUnitPlatform()
-        failFast = true
-        testLogging {
-            events ('skipped', 'passed', 'failed')
-            showExceptions true
-            exceptionFormat "full"
-            showCauses true
-            showStackTraces true
-
-            showStandardStreams = false
-        }
-        finalizedBy jacocoTestReport
-    }
-
-    jacocoTestReport {
-        reports {
-            xml.enabled true
-        }
-    }
-
-    pmd {
-        ruleSetConfig = rootProject.resources.text.fromFile('config/pmd/ruleset.xml')
-        ruleSets = []
-        ignoreFailures = false
-        toolVersion = '6.32.0'
-    }
-
-    checkstyle {
-        configFile = rootProject.resources.text.fromFile('config/checkstyle/checkstyle.xml').asFile()
-        showViolations = true
-    }
-
-    wrapper {
-        distributionType = Wrapper.DistributionType.ALL
-        gradleVersion = "6.8.2"
-    }
-
-    tasks.withType(Checkstyle) {
-        reports {
-            xml.enabled false
-            html.enabled true
-            html.stylesheet rootProject.resources.text.fromFile('config/checkstyle/checkstyle-simple.xsl')
-        }
-    }
-
-    check.dependsOn jacocoTestCoverageVerification
-    jacocoTestCoverageVerification.dependsOn(jacocoTestReport)
-
-    jacocoTestCoverageVerification {
-        violationRules {
-            rule {
-                limit {
-                    counter = 'METHOD'
-                    value = 'COVEREDRATIO'
-                    minimum = 0.98
-                }
-            }
-
-            rule {
-                limit {
-                    counter = 'CLASS'
-                    value = 'COVEREDRATIO'
-                    minimum = 1.00
-                }
-            }
-        }
-    }
 }
 
-def getProjectList() {
-    // These projects are considered. Replace with a different list as needed.
-    subprojects + project
-}
-
-task jacocoMerge(type: JacocoMerge) {
-    group = LifecycleBasePlugin.VERIFICATION_GROUP
-    description = 'Merge the JaCoCo data files from all subprojects into one'
-    project.afterEvaluate {  // do it at the end of the config phase to be sure all information is present
-        FileCollection execFiles = project.objects.fileCollection()   // an empty FileCollection
-        getProjectList().each { Project subproject ->
-            if (subproject.pluginManager.hasPlugin('jacoco')) {
-                def testTasks = subproject.tasks.withType(Test)
-                dependsOn(testTasks)   // ensure that .exec files are actually present
-
-                testTasks.each { Test task ->
-                    // The JacocoTaskExtension is the source of truth for the location of the .exec file.
-                    JacocoTaskExtension extension = task.getExtensions().findByType(JacocoTaskExtension.class)
-                    if (extension != null) {
-                        execFiles.from extension.getDestinationFile()
-                    }
-                }
-            }
-        }
-        executionData = execFiles
-    }
-    doFirst {
-        // .exec files might be missing if a project has no tests. Filter in execution phase.
-        executionData = executionData.filter { it.canRead() }
-    }
-}
-
-def getReportTasks(JacocoReport pRootTask) {
-    getProjectList().collect {
-        it.tasks.withType(JacocoReport).findAll { it != pRootTask }
-    }.flatten()
-}
-
-task jacocoRootReport(type: JacocoReport, dependsOn: tasks.jacocoMerge) {
-    group = LifecycleBasePlugin.VERIFICATION_GROUP
-    description = 'Generates an aggregate report from all subprojects'
-
-    logger.lifecycle 'Using aggregated file: ' + tasks.jacocoMerge.destinationFile
-    executionData.from tasks.jacocoMerge.destinationFile
-
-    project.afterEvaluate {
-        // The JacocoReport tasks are the source of truth for class files and sources.
-        def reportTasks = getReportTasks(tasks.jacocoRootReport)
-        classDirectories.from project.files({
-            reportTasks.collect {it.classDirectories}.findAll {it != null}
-        })
-        sourceDirectories.from project.files({
-            reportTasks.collect {it.sourceDirectories}.findAll {it != null}
-        })
-    }
-
-    reports {
-        xml.enabled true
-    }
-}
 
 build {
     dependsOn jacocoRootReport
 }
+

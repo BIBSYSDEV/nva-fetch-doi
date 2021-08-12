@@ -1,8 +1,8 @@
 def var = dependencies {
     implementation project(":fetch-doi-commons")
 
-    api(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
-        exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
+    api(group: 'com.github.bibsysdev', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
+        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
     api group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
     api group: 'com.github.bibsysdev', name: 'doi', version: project.ext.nvaCommonsVersion
