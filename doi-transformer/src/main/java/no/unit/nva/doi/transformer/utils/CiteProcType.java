@@ -13,7 +13,7 @@ public enum CiteProcType {
     BILL("bill", null),
     BOOK("book", null),
     BROADCAST("broadcast", null),
-    CHAPTER("chapter", null),
+    CHAPTER("chapter", PublicationType.BOOK_CHAPTER),
     DATASET("dataset", null),
     ENTRY("entry", null),
     ENTRY_DICTIONARY("entry-dictionary", null),
