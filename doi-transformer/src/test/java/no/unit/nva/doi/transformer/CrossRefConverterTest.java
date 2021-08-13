@@ -216,6 +216,30 @@ public class CrossRefConverterTest extends ConversionTest {
     }
 
     @Test
+    public void toPublicationReturnsPublicationWithFilteredOutContributorsLackingBothNameAndSurname(){
+        CrossRefDocument crossRefDocument = sampleJournalArticle();
+
+        int initialContributorsNumber = crossRefDocument.getAuthor().size();
+        List<CrossrefContributor> newContributors = createAuthorListWithAnonymousAuthor(crossRefDocument);
+        crossRefDocument.setAuthor(newContributors);
+        assertThat(crossRefDocument.getAuthor().size(),is(equalTo(initialContributorsNumber+1)));
+
+        Publication publication = toPublication(crossRefDocument);
+        List<Contributor> actualContributors = publication.getEntityDescription().getContributors();
+        assertThat(actualContributors.size(),is(equalTo(initialContributorsNumber)));
+
+    }
+
+    private List<CrossrefContributor> createAuthorListWithAnonymousAuthor(CrossRefDocument crossRefDocument) {
+        List<CrossrefContributor> newContributors = new ArrayList<>(crossRefDocument.getAuthor());
+        CrossrefContributor anonymousContributor = new CrossrefContributor();
+        anonymousContributor.setSequence("5");
+        anonymousContributor.setAffiliation(sampleAffiliation());
+        newContributors.add(anonymousContributor);
+        return newContributors;
+    }
+
+    @Test
     @DisplayName("The creator's name in the publication contains first family and then given name")
     void creatorsNameContainsFirstFamilyAndThenGivenName()
         throws IllegalArgumentException {

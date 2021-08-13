@@ -1,5 +1,5 @@
 [versions]
-nva = { strictly = "1.7.5" }
+nva = { strictly = "1.7.6" }
 testUtils = { strictly = "0.1.22" }
 jacksonVersion = { strictly = "2.12.4" }
 jakartaVersion = { strictly = "2.1.6" }
