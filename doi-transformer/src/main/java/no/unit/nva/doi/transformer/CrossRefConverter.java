@@ -150,7 +150,7 @@ public class CrossRefConverter extends AbstractConverter {
     }
 
     protected List<Contributor> toContributorsWithRole(List<CrossrefContributor> crossrefContributors, Role role) {
-        List<CrossrefContributor> contributorsWithName = filterOutContributorsWithoutNames(crossrefContributors);
+        List<CrossrefContributor> contributorsWithName = removeContributorsWithoutNames(crossrefContributors);
         return convertCrossRefContributorsToNvaContributors(contributorsWithName, role);
     }
 
@@ -167,7 +167,7 @@ public class CrossRefConverter extends AbstractConverter {
         return nvaContributors;
     }
 
-    private List<CrossrefContributor> filterOutContributorsWithoutNames(
+    private List<CrossrefContributor> removeContributorsWithoutNames(
         List<CrossrefContributor> crossrefContributors) {
         return Optional.ofNullable(crossrefContributors)
             .stream()

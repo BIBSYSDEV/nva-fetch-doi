@@ -293,7 +293,6 @@ public class DataciteResponseConverter extends AbstractConverter {
     }
 
     private boolean creatorHasNoName(DataciteCreator dataciteCreator) {
-        System.out.println("lkfjdslkjf");
         return StringUtils.isBlank(dataciteCreator.getFamilyName())
                && StringUtils.isBlank(dataciteCreator.getGivenName());
     }
