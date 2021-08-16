@@ -57,8 +57,8 @@ class DataciteTypesUtilTest {
     @DisplayName("The mapping utility returns type JOURNAL_CONTENT when all but two types map to JOURNAL_CONTENT")
     @Test
     void mapToTypeReturnsJournalContentWhenAllButTwoTypesAreJournalContent() {
-        String firstDissentingType = BibTexType.CONFERENCE.getType();
-        String secondDissentingType = CiteProcType.PAPER_CONFERENCE.getType();
+        String firstDissentingType = BibTexType.BOOK.getType();
+        String secondDissentingType = CiteProcType.CHAPTER.getType();
 
         DataciteTypes dataciteTypes = new DataciteTypes.Builder()
                 .withBibtex(firstDissentingType)
