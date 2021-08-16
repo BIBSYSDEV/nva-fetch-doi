@@ -3,15 +3,15 @@ def problemVersion = '0.24.0'
 dependencies {
     implementation project(":fetch-doi-commons")
     implementation project(":doi-transformer") {
-        compileOnly(group: 'jakarta.ws.rs', name: 'jakarta.ws.rs-api', version: project.ext.jakartaVersion) {
+        compileOnly(libs.jakarta) {
             because 'PMD'
         }
     }
     implementation project(":doi-proxy")
     implementation project(":metadata-transformer")
 
-    testImplementation(group: 'org.zalando', name: 'problem', version: problemVersion) {
-        compileOnly(group: 'org.apiguardian', name: 'apiguardian-api', version: '1.1.1') {
+    testImplementation(libs.zalando.problem) {
+        compileOnly(libs.apiGuardian) {
             because 'Dependency has maven scope provided'
         }
     }

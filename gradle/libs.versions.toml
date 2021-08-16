@@ -1,0 +1,68 @@
+[versions]
+nva = { strictly = "1.7.5" }
+testUtils = { strictly = "0.1.22" }
+jacksonVersion = { strictly = "2.12.4" }
+jakartaVersion = { strictly = "2.1.6" }
+awsSdkVersion = { strictly = "1.11.982" }
+nvaDatamodelVersion = { strictly = "0.12.4" }
+jerseyVersion = { strictly = "2.30.1" }
+rdf4jVersion = { strictly = "3.1.2" }
+problemVersion = { strictly = "0.24.0" }
+any23core = { strictly = "2.4" }
+icu4j = { strictly = "69.1" }
+commonsValidator = { strictly = "1.7" }
+apacheHttpClient = { strictly = "4.5.13" }
+wiremock = { strictly = "2.27.2" }
+j2html = { strictly = "1.4.0" }
+apiGuardian = { strictly = "1.1.2" }
+
+[libraries]
+
+nva-core = { group = "com.github.bibsysdev", name = "core", version.ref = "nva" }
+nva-apigateway = { group = "com.github.bibsysdev", name = "apigateway", version.ref = "nva" }
+nva-secrets = { group = "com.github.bibsysdev", name = "secrets", version.ref = "nva" }
+nva-logutils = { group = "com.github.bibsysdev", name = "logutils", version.ref = "nva" }
+nva-identifiers = { group = "com.github.bibsysdev", name = "identifiers", version.ref = "nva" }
+nva-doi = { group = "com.github.bibsysdev", name = "doi", version.ref = "nva" }
+nva-datamodel = { group = "com.github.bibsysdev", name = "nva-datamodel-java", version.ref = "nvaDatamodelVersion" }
+
+testUtils = { group = "com.github.BIBSYSDEV", name = "nva-testutils", version.ref = "testUtils" }
+
+
+jackson-core = { group = "com.fasterxml.jackson.core", name = "jackson-core", version.ref = "jacksonVersion" }
+jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-databind", version.ref = "jacksonVersion" }
+jackson-datatype-jdk8 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jdk8", version.ref = "jacksonVersion" }
+jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations", version.ref = "jacksonVersion" }
+jackson-datatype-jsr310 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jsr310", version.ref = "jacksonVersion" }
+
+aws-java-sdk-core = { group = "com.amazonaws", name = "aws-java-sdk-core", version.ref = "awsSdkVersion" }
+aws-secretsmanager = { group = "com.amazonaws", name = "aws-java-sdk-secretsmanager", version.ref = "awsSdkVersion" }
+aws-lambda-java-core = { group = "com.amazonaws", name = "aws-lambda-java-core", version = { strictly = "1.2.1" } }
+jakarta = { group = "jakarta.ws.rs", name = "jakarta.ws.rs-api", version.ref = "jakartaVersion" }
+jersey-common = { group = "org.glassfish.jersey.core", name = "jersey-common", version.ref = "jerseyVersion" }
+
+zalando-problem = { group = "org.zalando", name = "problem", version.ref = "problemVersion" }
+zalando-jackson-datatype-problem = { group = "org.zalando", name = "jackson-datatype-problem", version.ref = "problemVersion" }
+
+rdf4j-sail-api = { group = "org.eclipse.rdf4j", name = "rdf4j-sail-api", version.ref = "rdf4jVersion" }
+rdf4j-model = { group = "org.eclipse.rdf4j", name = "rdf4j-model", version.ref = "rdf4jVersion" }
+rdf4j-repository-sail = { group = "org.eclipse.rdf4j", name = "rdf4j-repository-sail", version.ref = "rdf4jVersion" }
+rdf4j-sail-memory = { group = "org.eclipse.rdf4j", name = "rdf4j-sail-memory", version.ref = "rdf4jVersion" }
+rdf4j-repository-api = { group = "org.eclipse.rdf4j", name = "rdf4j-repository-api", version.ref = "rdf4jVersion" }
+rdf4j-rio-api = { group = "org.eclipse.rdf4j", name = "rdf4j-rio-api", version.ref = "rdf4jVersion" }
+
+
+apache-any23-core = { group = "org.apache.any23", name = "apache-any23-core", version.ref = "any23core" }
+apache-any23-api = { group = "org.apache.any23", name = "apache-any23-api", version.ref = "any23core" }
+
+apiGuardian = { group = "org.apiguardian", name = "apiguardian-api", version.ref = "apiGuardian" }
+ordinals-to-numbers = { group = "com.ibm.icu", name = "icu4j", version.ref = "icu4j" }
+commons-validator = { group = "commons-validator", name = "commons-validator", version.ref = "commonsValidator" }
+httpclient = { group = "org.apache.httpcomponents", name = "httpclient", version.ref = "apacheHttpClient" }
+wiremock = { group = "com.github.tomakehurst", name = "wiremock-jre8", version.ref = "wiremock" }
+j2html = { group = "com.j2html", name = "j2html", version.ref = "j2html" }
+
+
+[bundles]
+rdf4j = ["rdf4j-sail-api", "rdf4j-model", "rdf4j-repository-sail", "rdf4j-sail-memory", "rdf4j-repository-api", "rdf4j-rio-api"]
+any23 = ["apache-any23-core", "apache-any23-api"]
