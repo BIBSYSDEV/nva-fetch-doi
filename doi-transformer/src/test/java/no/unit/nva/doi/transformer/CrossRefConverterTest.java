@@ -27,6 +27,7 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -180,6 +181,20 @@ public class CrossRefConverterTest extends ConversionTest {
             new ArrayList<>(publication.getEntityDescription().getAlternativeTitles().keySet());
         assertThat(actualAlternativeTitles, hasSize(1));
         assertThat(actualAlternativeTitles.get(FIRST_LIST_ELEMENT), is(equalTo(expectedAlternativeTitle)));
+    }
+
+    @Test
+    public void toPublicationReturnsPublicationWithFilteredOutContributorsLackingBothNameAndSurname() {
+        CrossRefDocument crossRefDocument = sampleJournalArticle();
+
+        int initialContributorsNumber = crossRefDocument.getAuthor().size();
+        List<CrossrefContributor> newContributors = createAuthorListWithAnonymousAuthor(crossRefDocument);
+        crossRefDocument.setAuthor(newContributors);
+        assertThat(crossRefDocument.getAuthor().size(), is(equalTo(initialContributorsNumber + 1)));
+
+        Publication publication = toPublication(crossRefDocument);
+        List<Contributor> actualContributors = publication.getEntityDescription().getContributors();
+        assertThat(actualContributors.size(), is(equalTo(initialContributorsNumber)));
     }
 
     @Test
@@ -688,7 +703,16 @@ public class CrossRefConverterTest extends ConversionTest {
 
     private static Instant sampleCrossrefDateAsInstant() {
         LocalDate date = LocalDate.of(EXPECTED_YEAR, EXPECTED_MONTH, EXPECTED_DAY);
-        return Instant.ofEpochSecond(date.toEpochDay() * 86400L);
+        return date.atStartOfDay(ZoneId.systemDefault()).toInstant();
+    }
+
+    private List<CrossrefContributor> createAuthorListWithAnonymousAuthor(CrossRefDocument crossRefDocument) {
+        List<CrossrefContributor> newContributors = new ArrayList<>(crossRefDocument.getAuthor());
+        CrossrefContributor anonymousContributor = new CrossrefContributor();
+        anonymousContributor.setSequence("5");
+        anonymousContributor.setAffiliation(sampleAffiliation());
+        newContributors.add(anonymousContributor);
+        return newContributors;
     }
 
     private CrossRefDocument crossRefDocumentWithInvalidUrl(String invalidUri) {

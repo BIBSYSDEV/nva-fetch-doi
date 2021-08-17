@@ -149,16 +149,36 @@ public class CrossRefConverter extends AbstractConverter {
         return contributors;
     }
 
-    protected List<Contributor> toContributorsWithRole(List<CrossrefContributor> authors, Role role) {
-        List<Contributor> contributors = new ArrayList<>();
-        if (authors != null) {
-            for (int index = 0; index < authors.size(); index++) {
-                int authorSequence = index + 1;
-                Contributor currentContributor = toContributorWithRole(authors.get(index), role, authorSequence);
-                contributors.add(currentContributor);
-            }
+    protected List<Contributor> toContributorsWithRole(List<CrossrefContributor> crossrefContributors, Role role) {
+        List<CrossrefContributor> contributorsWithName = removeContributorsWithoutNames(crossrefContributors);
+        return convertCrossRefContributorsToNvaContributors(contributorsWithName, role);
+    }
+
+    private List<Contributor> convertCrossRefContributorsToNvaContributors(
+        List<CrossrefContributor> crossrefContributors,
+        Role role) {
+        List<Contributor> nvaContributors = new ArrayList<>();
+        for (int index = 0; index < crossrefContributors.size(); index++) {
+            int authorSequence = index + 1;
+            Contributor currentContributor =
+                toContributorWithRole(crossrefContributors.get(index), role, authorSequence);
+            nvaContributors.add(currentContributor);
         }
-        return contributors;
+        return nvaContributors;
+    }
+
+    private List<CrossrefContributor> removeContributorsWithoutNames(
+        List<CrossrefContributor> crossrefContributors) {
+        return Optional.ofNullable(crossrefContributors)
+            .stream()
+            .flatMap(Collection::stream)
+            .filter(this::hasName)
+            .collect(Collectors.toList());
+    }
+
+    private boolean hasName(CrossrefContributor crossrefContributor) {
+        return nva.commons.core.StringUtils.isNotBlank(crossrefContributor.getFamilyName())
+               || nva.commons.core.StringUtils.isNotBlank(crossrefContributor.getGivenName());
     }
 
     private URI extractDOI(CrossRefDocument document) {
