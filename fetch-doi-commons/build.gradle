@@ -1,6 +1,4 @@
 
-def problemVersion = '0.24.0'
-
 dependencies {
 
     api libs.nva.core
@@ -14,6 +12,4 @@ dependencies {
 
     testImplementation libs.zalando.jackson.datatype.problem
     runtimeOnly libs.aws.lambda.java.core
-
-
 }

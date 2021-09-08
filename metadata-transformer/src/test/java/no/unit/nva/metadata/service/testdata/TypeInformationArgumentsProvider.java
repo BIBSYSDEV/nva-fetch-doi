@@ -2,7 +2,7 @@ package no.unit.nva.metadata.service.testdata;
 
 import no.unit.nva.metadata.type.Citation;
 import no.unit.nva.model.contexttypes.Book;
-import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -28,7 +28,7 @@ public class TypeInformationArgumentsProvider implements ArgumentsProvider {
                 Arguments.of(
                         Citation.ISSN.getMetaTagName(),
                         VALID_ISSN_INDICATING_JOURNAL,
-                        Journal.class,
+                        UnconfirmedJournal.class,
                         JournalArticle.class
                 )
         );

@@ -8,7 +8,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -36,14 +35,13 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Contributor.Builder;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
-import no.unit.nva.model.Level;
 import no.unit.nva.model.NameType;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.contexttypes.BasicContext;
-import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
@@ -158,15 +156,11 @@ public class DataciteResponseConverter extends AbstractConverter {
         BasicContext basicContext = null;
         PublicationType type = extractPublicationType(dataciteResponse);
         if (nonNull(type) && type.equals(PublicationType.JOURNAL_CONTENT)) {
-
-            basicContext = new Journal.Builder()
-                .withPrintIssn(extractPrintIssn(dataciteResponse))
-                .withTitle(dataciteResponse.getContainer().getTitle())
-                .withOnlineIssn(extractOnlineIssn(dataciteResponse))
-                .withPeerReviewed(true)
-                .withOpenAccess(extractOpenAccess(dataciteResponse))
-                .withLevel(Level.NO_LEVEL)
-                .build();
+            basicContext = new UnconfirmedJournal(
+                    dataciteResponse.getContainer().getTitle(),
+                    extractPrintIssn(dataciteResponse),
+                    extractOnlineIssn(dataciteResponse)
+            );
         }
         return basicContext;
     }
@@ -209,14 +203,6 @@ public class DataciteResponseConverter extends AbstractConverter {
     private boolean isPartOf(DataciteRelatedIdentifier identifier) {
         return DataciteRelationType.getByRelation(identifier.getRelationType())
             .equals(DataciteRelationType.IS_PART_OF);
-    }
-
-    private boolean extractOpenAccess(DataciteResponse dataciteResponse) {
-        return Optional.ofNullable(dataciteResponse)
-            .map(DataciteResponse::getRightsList)
-            .stream()
-            .flatMap(Collection::stream)
-            .anyMatch(this::hasOpenAccessRights);
     }
 
     protected boolean hasOpenAccessRights(DataciteRights dataciteRights) {
