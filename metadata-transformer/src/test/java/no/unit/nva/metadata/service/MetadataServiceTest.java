@@ -69,6 +69,7 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
@@ -393,7 +394,7 @@ public class MetadataServiceTest {
             new MetaTagPair(Citation.ISSN.getMetaTagName(), ONLINE_ISSN),
             new MetaTagPair(Citation.ISSN.getMetaTagName(), PRINT_ISSN)));
 
-        String actual = ((Journal) createPublicationRequest.getEntityDescription()
+        String actual = ((UnconfirmedJournal) createPublicationRequest.getEntityDescription()
                                        .getReference().getPublicationContext()).getOnlineIssn();
         String[] expected = List.of(ONLINE_ISSN, PRINT_ISSN)
                                 .toArray(String[]::new);
@@ -547,8 +548,8 @@ public class MetadataServiceTest {
     }
 
     private void verifyMetaTagContentInPublicationContext(String metaTagContent, PublicationContext context) {
-        if (context instanceof Journal) {
-            assertThat(((Journal) context).getOnlineIssn(), equalTo(metaTagContent));
+        if (context instanceof UnconfirmedJournal) {
+            assertThat(((UnconfirmedJournal) context).getOnlineIssn(), equalTo(metaTagContent));
         } else {
             assertThat(((Book) context).getIsbnList(), contains(metaTagContent));
         }

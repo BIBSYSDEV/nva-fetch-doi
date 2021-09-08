@@ -14,7 +14,6 @@ import static no.unit.nva.doi.transformer.utils.CrossrefType.getByType;
 import static nva.commons.core.StringUtils.isNotEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
-import java.net.URL;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -56,8 +55,10 @@ import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.Role;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Chapter;
-import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.UnconfirmedJournal;
+import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
+import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
@@ -86,11 +87,9 @@ public class CrossRefConverter extends AbstractConverter {
         "CrossRef document does not contain required date field 'issued'";
     public static final int FIRST_MONTH_IN_YEAR = 1;
     public static final int FIRST_DAY_IN_MONTH = 1;
-    public static final String MISSING_CROSSREF_TYPE_IN_DOCUMENT = "Missing crossref type in document";
     public static final String CANNOT_CREATE_REFERENCE_FOR_PUBLICATION = ", cannot create reference for publication";
     public static final String HANDLING_ISSN_ISBN_CANNOT_CREATE_REFERENCE =
         "Error handling ISSN/ISBN" + CANNOT_CREATE_REFERENCE_FOR_PUBLICATION;
-    public static final String MALFORMED_URL_MESSAGE = "Malformed URL in CrossRef document:";
     private static final Logger logger = LoggerFactory.getLogger(CrossRefConverter.class);
     private static final String DEFAULT_LANGUAGE_ENGLISH = "en";
 
@@ -239,14 +238,14 @@ public class CrossRefConverter extends AbstractConverter {
     }
 
     private MonographPages extractMonographPages(CrossRefDocument document) {
-        Pages pages = StringUtils.parsePage(document.getPage());
+        String pages = document.getPage();
         return isNull(pages)
                    ? new MonographPages.Builder().build()
-                   : new MonographPages.Builder().withPages(pages.toString()).build();
+                   : new MonographPages.Builder().withPages(pages).build();
     }
 
     private PublicationContext extractPublicationContext(CrossRefDocument document)
-        throws UnsupportedDocumentTypeException, InvalidIssnException, InvalidIsbnException {
+            throws UnsupportedDocumentTypeException, InvalidIssnException, InvalidIsbnException {
 
         CrossrefType crossrefType = getByType(document.getType());
         return createContext(document, crossrefType.getPublicationType());
@@ -254,53 +253,45 @@ public class CrossRefConverter extends AbstractConverter {
 
     @JacocoGenerated
     private PublicationContext createContext(CrossRefDocument document, PublicationType publicationType)
-        throws UnsupportedDocumentTypeException, InvalidIssnException, InvalidIsbnException {
+            throws UnsupportedDocumentTypeException, InvalidIssnException, InvalidIsbnException {
         if (publicationType == PublicationType.JOURNAL_CONTENT) {
             return createJournalContext(document);
         } else if (publicationType == PublicationType.BOOK) {
             return createBookContext(document);
         } else if (publicationType == PublicationType.BOOK_CHAPTER) {
-            return createChapterContext(document);
+            return createChapterContext();
         } else {
             throw new UnsupportedDocumentTypeException(String.format(UNRECOGNIZED_TYPE_MESSAGE, document.getType()));
         }
     }
 
     private Book createBookContext(CrossRefDocument document) throws InvalidIsbnException {
-        return new Book.Builder()
-            .withLevel(null)
-            .withOpenAccess(false)
-            .withPeerReviewed(hasReviews(document))
-            .withSeriesTitle(extractSeriesTitle(document))
-            .withPublisher(extractPublisherName(document))
-            .withUrl(extractFulltextLinkAsUrl(document))
-            .withIsbnList(extractIsbn(document))
-            .build();
+        return new Book(
+            new UnconfirmedSeries(extractSeriesTitle(document)),
+            null,
+            new UnconfirmedPublisher(extractPublisherName(document)),
+            extractIsbnList(document)
+        );
     }
 
-    private Chapter createChapterContext(CrossRefDocument document) {
-        return new Chapter.Builder()
-            .withLinkedContext(extractFulltextLinkAsUri(document))
-            .build();
+    private Chapter createChapterContext() {
+        return new Chapter();
     }
 
-    private Journal createJournalContext(CrossRefDocument document) throws InvalidIssnException {
+    private UnconfirmedJournal createJournalContext(CrossRefDocument document) throws InvalidIssnException {
         // TODO actually call the Channel Register API and get the relevant details
-        return new Journal.Builder()
-            .withLevel(null)
-            .withTitle(extractJournalTitle(document))
-            .withOnlineIssn(extractOnlineIssn(document))
-            .withPrintIssn(extractPrintIssn(document))
-            .withOpenAccess(false)
-            .withPeerReviewed(false)
-            .build();
+        return new UnconfirmedJournal(
+                extractJournalTitle(document),
+                extractPrintIssn(document),
+                extractOnlineIssn(document)
+        );
     }
 
     private boolean hasReviews(CrossRefDocument document) {
         return nonNull(document.getReview());
     }
 
-    private List<String> extractIsbn(CrossRefDocument document) {
+    private List<String> extractIsbnList(CrossRefDocument document) {
         // Document can have both 'ISBN' and 'isbn-type'
         List<Isxn> isbnType = document.getIsbnType();
         final List<String> isbn = document.getIsbn();
@@ -398,6 +389,7 @@ public class CrossRefConverter extends AbstractConverter {
     private BookMonograph createBookMonograph(CrossRefDocument document) {
         return new BookMonograph.Builder()
             .withPeerReviewed(hasReviews(document)) // Same as in BasicContext
+            .withPages((MonographPages) extractPages(document))
             .build();
     }
 
@@ -546,22 +538,6 @@ public class CrossRefConverter extends AbstractConverter {
 
     private List<ResearchProject> createProjects() {
         return Collections.emptyList();
-    }
-
-    private URL extractFulltextLinkAsUrl(CrossRefDocument document) {
-        return extractFirstLinkToSourceDocument(document.getLink())
-            .flatMap(this::transformToUrl)
-            .orElse(null);
-    }
-
-    private Optional<URL> transformToUrl(URI uri) {
-        return attempt(uri::toURL).toOptional(failure -> uriIsNotUrl(failure, uri.toString()));
-    }
-
-    private <T> Void uriIsNotUrl(Failure<T> failure, String uriString) {
-        logger.warn(MALFORMED_URL_MESSAGE + uriString);
-        logger.warn(ExceptionUtils.stackTraceInSingleLine(failure.getException()));
-        return null;
     }
 
     private URI extractFulltextLinkAsUri(CrossRefDocument document) {

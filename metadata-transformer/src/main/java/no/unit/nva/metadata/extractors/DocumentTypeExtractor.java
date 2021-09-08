@@ -3,8 +3,8 @@ package no.unit.nva.metadata.extractors;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Book;
-import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
@@ -43,7 +43,7 @@ public final class DocumentTypeExtractor {
     }
 
     private static EntityDescription extract(ExtractionPair extractionPair) throws InvalidIssnException,
-            InvalidIsbnException {
+            InvalidIsbnException  {
         if (extractionPair.isDocumentTypeIndicator()) {
             addDocumentTypeInformation(extractionPair);
         }
@@ -51,23 +51,20 @@ public final class DocumentTypeExtractor {
     }
 
     private static void addDocumentTypeInformation(ExtractionPair extractionPair)
-            throws InvalidIsbnException, InvalidIssnException {
+            throws InvalidIsbnException, InvalidIssnException  {
         Reference reference = ExtractorUtil.getReference(extractionPair.getEntityDescription());
         String isxn = extractionPair.getStatementLiteral();
         if (extractionPair.isBook()) {
             generateInstanceAndContextForBook(isxn, reference);
-        } else if (extractionPair.isJournal()) {
-            generateInstanceAndContextForJournal(isxn, reference);
         }
+        generateInstanceAndContextForJournal(isxn, reference);
     }
 
     private static void generateInstanceAndContextForJournal(String issn, Reference reference)
             throws InvalidIssnException {
         if (isNull(reference.getPublicationInstance()) && isNull(reference.getPublicationContext())) {
             JournalArticle instanceType = new JournalArticle();
-            Journal contextType = new Journal.Builder()
-                    .withOnlineIssn(issn)
-                    .build();
+            UnconfirmedJournal contextType = new UnconfirmedJournal(null, null, issn);
             reference.setPublicationInstance(instanceType);
             reference.setPublicationContext(contextType);
         }
@@ -79,21 +76,22 @@ public final class DocumentTypeExtractor {
         if (hasExistingInstanceAndContext(reference.getPublicationInstance(), context)) {
             List<String> existingIsbns = ((Book) context).getIsbnList();
             List<String> isbnList = nonNull(existingIsbns) ? new ArrayList<>(existingIsbns) : new ArrayList<>();
-            addNonPreexistingIsbn(isbn, (Book) context, isbnList);
+            reference.setPublicationContext(addNonPreexistingIsbn(isbn, (Book) context, isbnList));
         } else {
             BookMonograph instanceType = new BookMonograph.Builder().build();
-            Book contextType = new Book.Builder().withIsbnList(List.of(isbn)).build();
+            Book contextType = new Book(null, null, null, List.of(isbn));
             reference.setPublicationInstance(instanceType);
             reference.setPublicationContext(contextType);
         }
     }
 
-    private static void addNonPreexistingIsbn(String isbn, Book context, List<String> isbnList)
-            throws InvalidIsbnException {
+    private static Book addNonPreexistingIsbn(String isbn, Book context, List<String> isbnList) throws
+            InvalidIsbnException {
         if (!isbnList.contains(isbn)) {
             isbnList.add(isbn);
-            context.setIsbnList(isbnList);
+            return new Book(context.getSeries(), context.getSeriesNumber(), context.getPublisher(), isbnList);
         }
+        return context;
     }
 
     private static boolean hasExistingInstanceAndContext(PublicationInstance<? extends Pages> instance,
