@@ -92,6 +92,7 @@ public class CrossRefConverter extends AbstractConverter {
         "Error handling ISSN/ISBN" + CANNOT_CREATE_REFERENCE_FOR_PUBLICATION;
     private static final Logger logger = LoggerFactory.getLogger(CrossRefConverter.class);
     private static final String DEFAULT_LANGUAGE_ENGLISH = "en";
+    public static final String NULL_SERIES_NUMBER = null;
 
     public CrossRefConverter() {
         super(new SimpleLanguageDetector(), new DoiConverter());
@@ -268,7 +269,7 @@ public class CrossRefConverter extends AbstractConverter {
     private Book createBookContext(CrossRefDocument document) throws InvalidIsbnException {
         return new Book(
             new UnconfirmedSeries(extractSeriesTitle(document)),
-            null,
+            NULL_SERIES_NUMBER,
             new UnconfirmedPublisher(extractPublisherName(document)),
             extractIsbnList(document)
         );
