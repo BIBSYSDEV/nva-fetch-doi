@@ -146,7 +146,7 @@ public class CrossrefDate {
                 dateParts[FROM_DATE_INDEX_IN_DATE_ARRAY][YEAR_INDEX],
                 dateParts[FROM_DATE_INDEX_IN_DATE_ARRAY][MONTH_INDEX],
                 dateParts[FROM_DATE_INDEX_IN_DATE_ARRAY][DAY_INDEX]);
-        return Instant.ofEpochSecond(date.toEpochDay() * 86_400L);
+        return date.atStartOfDay(ZoneId.systemDefault()).toInstant();
     }
 
     private boolean isaCompleteDate() {

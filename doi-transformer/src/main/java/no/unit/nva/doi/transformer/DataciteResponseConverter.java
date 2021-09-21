@@ -2,12 +2,12 @@ package no.unit.nva.doi.transformer;
 
 import static java.util.Objects.nonNull;
 import static java.util.function.Predicate.not;
-
+import static nva.commons.core.JsonUtils.objectMapperWithEmpty;
+import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -32,24 +32,27 @@ import no.unit.nva.doi.transformer.utils.LicensingIndicator;
 import no.unit.nva.doi.transformer.utils.PublicationType;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Contributor.Builder;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
-import no.unit.nva.model.Level;
 import no.unit.nva.model.NameType;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.contexttypes.BasicContext;
-import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.Range;
+import nva.commons.core.StringUtils;
 import nva.commons.doi.DoiConverter;
 
 public class DataciteResponseConverter extends AbstractConverter {
+
+    public static final String CREATOR_HAS_NO_NAME_ERROR = "Creator has no name:";
 
     public DataciteResponseConverter() {
         this(new SimpleLanguageDetector());
@@ -66,8 +69,8 @@ public class DataciteResponseConverter extends AbstractConverter {
      * @param identifier       identifier
      * @param owner            owner
      * @return publication
-     * @throws URISyntaxException       when dataciteResponse contains invalid URIs
-     * @throws InvalidIssnException     when the ISSN is invalid
+     * @throws URISyntaxException   when dataciteResponse contains invalid URIs
+     * @throws InvalidIssnException when the ISSN is invalid
      */
     public Publication toPublication(DataciteResponse dataciteResponse, Instant now, UUID identifier, String owner,
                                      URI publisherId) throws URISyntaxException, InvalidIssnException {
@@ -153,15 +156,11 @@ public class DataciteResponseConverter extends AbstractConverter {
         BasicContext basicContext = null;
         PublicationType type = extractPublicationType(dataciteResponse);
         if (nonNull(type) && type.equals(PublicationType.JOURNAL_CONTENT)) {
-
-            basicContext = new Journal.Builder()
-                .withPrintIssn(extractPrintIssn(dataciteResponse))
-                .withTitle(dataciteResponse.getContainer().getTitle())
-                .withOnlineIssn(extractOnlineIssn(dataciteResponse))
-                .withPeerReviewed(true)
-                .withOpenAccess(extractOpenAccess(dataciteResponse))
-                .withLevel(Level.NO_LEVEL)
-                .build();
+            basicContext = new UnconfirmedJournal(
+                    dataciteResponse.getContainer().getTitle(),
+                    extractPrintIssn(dataciteResponse),
+                    extractOnlineIssn(dataciteResponse)
+            );
         }
         return basicContext;
     }
@@ -204,14 +203,6 @@ public class DataciteResponseConverter extends AbstractConverter {
     private boolean isPartOf(DataciteRelatedIdentifier identifier) {
         return DataciteRelationType.getByRelation(identifier.getRelationType())
             .equals(DataciteRelationType.IS_PART_OF);
-    }
-
-    private boolean extractOpenAccess(DataciteResponse dataciteResponse) {
-        return Optional.ofNullable(dataciteResponse)
-            .map(DataciteResponse::getRightsList)
-            .stream()
-            .flatMap(Collection::stream)
-            .anyMatch(this::hasOpenAccessRights);
     }
 
     protected boolean hasOpenAccessRights(DataciteRights dataciteRights) {
@@ -257,25 +248,39 @@ public class DataciteResponseConverter extends AbstractConverter {
     }
 
     protected List<Contributor> toContributors(List<DataciteCreator> creators) {
-        return IntStream.range(0, creators.size()).mapToObj(i -> toCreator(creators.get(i), i + 1)).collect(
-            Collectors.toList());
+        return IntStream.range(0, creators.size())
+            .boxed()
+            .map(i -> toCreator(creators.get(i), i + 1))
+            .flatMap(Optional::stream)
+            .collect(Collectors.toList());
     }
 
-    protected Contributor toCreator(DataciteCreator dataciteCreator, Integer sequence) {
+    protected Optional<Contributor> toCreator(DataciteCreator dataciteCreator, Integer sequence) {
         try {
-            return new Contributor.Builder()
+            Contributor nvaContributor = new Builder()
                 .withIdentity(createCreatorIdentity(dataciteCreator))
                 .withAffiliations(toAffiliations())
                 .withSequence(sequence)
                 .build();
+            return Optional.of(nvaContributor);
         } catch (MalformedContributorException e) {
-            return null;
+            return Optional.empty();
         }
     }
 
-    private Identity createCreatorIdentity(DataciteCreator dataciteCreator) {
-        return new Identity.Builder().withName(toName(dataciteCreator.getFamilyName(), dataciteCreator.getGivenName()))
+    private Identity createCreatorIdentity(DataciteCreator dataciteCreator) throws MalformedContributorException {
+        if (creatorHasNoName(dataciteCreator)) {
+            String jsonString = attempt(() -> objectMapperWithEmpty.writeValueAsString(dataciteCreator)).orElseThrow();
+            throw new MalformedContributorException(CREATOR_HAS_NO_NAME_ERROR + jsonString);
+        }
+        return new Identity.Builder()
+            .withName(toName(dataciteCreator.getFamilyName(), dataciteCreator.getGivenName()))
             .withNameType(NameType.lookup(dataciteCreator.getNameType())).build();
+    }
+
+    private boolean creatorHasNoName(DataciteCreator dataciteCreator) {
+        return StringUtils.isBlank(dataciteCreator.getFamilyName())
+               && StringUtils.isBlank(dataciteCreator.getGivenName());
     }
 
     protected List<Organization> toAffiliations() {

@@ -8,7 +8,6 @@ import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefAffiliation;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefApiResponse;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefContributor;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate;
-import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefReview;
 import no.unit.nva.doi.transformer.model.crossrefmodel.Isxn;
 import no.unit.nva.doi.transformer.model.crossrefmodel.Isxn.IsxnType;
 import no.unit.nva.doi.transformer.model.crossrefmodel.Link;
@@ -22,11 +21,14 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Role;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Chapter;
-import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.UnconfirmedJournal;
+import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
+import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.JsonUtils;
@@ -37,12 +39,16 @@ import nva.commons.logutils.TestAppender;
 import org.apache.commons.validator.routines.ISBNValidator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -56,8 +62,11 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.doi.transformer.CrossRefConverter.UNRECOGNIZED_TYPE_MESSAGE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -67,6 +76,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.hamcrest.text.IsEmptyString.emptyString;
 import static org.hamcrest.text.MatchesPattern.matchesPattern;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -96,7 +106,6 @@ public class CrossRefConverterTest extends ConversionTest {
     public static final String SAMPLE_CONTAINER_TITLE = "Container Title";
     public static final String SAMPLE_PUBLISHER = "Sample Publisher Inc";
     public static final String SAMPLE_LINK = "https://localhost/some.link";
-    public static final String REVIEW_RECOMMENDATION = "GO";
     public static final String CONNECTING_MINUS = "-";
     public static final String SAMPLE_ISSUE = "SomeIssue";
     public static final String SOME_STRANGE_CROSSREF_TYPE = "SomeStrangeCrossrefType";
@@ -108,6 +117,8 @@ public class CrossRefConverterTest extends ConversionTest {
     public static final String EXPECTED_VOLUME = "Vol. 1";
     public static final String CROSSREF = "Crossref";
     public static final String SOURCE_URI = "http://www.something.com";
+    public static final int EXPECTED_NUMBER_OF_CONTRIBUTORS = 4;
+    public static final int FIRST_LIST_ELEMENT = 0;
     private static final int DATE_SIZE = 3;
     private static final String SAMPLE_DOCUMENT_TITLE = "Sample document title";
     private static final Integer NUMBER_OF_SAMPLE_AUTHORS = 2;
@@ -118,46 +129,103 @@ public class CrossRefConverterTest extends ConversionTest {
     private static final String SAMPLE_ORCID = "http://orcid.org/0000-1111-2222-3333";
     private static final Instant SAMPLE_CROSSREF_DATE_AS_INSTANT = sampleCrossrefDateAsInstant();
     private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
-    public static final int EXPECTED_NUMBER_OF_CONTRIBUTORS = 4;
+    private static final String ALTERNATIVE_TITLE = "Some alternative title";
+    private static final int SECOND_LIST_ELEMENT = 1;
     private final CrossRefConverter converter = new CrossRefConverter();
+
+    @Test
+    public void toPublicationReturnsObjectWithSourceLinkBeingTheFirstAvailableLinkToTheActualPublication() {
+        CrossRefDocument crossRefDocument = sampleBook();
+        assertThat(crossRefDocument.getLink(), is(not(empty())));
+        Publication publication = toPublication(crossRefDocument);
+        String actualSourceUriString = publication.getLink().toString();
+        String expectedSourceUriString = crossRefDocument.getLink().get(FIRST_LIST_ELEMENT).getUrl();
+        assertThat(actualSourceUriString, is(equalTo(expectedSourceUriString)));
+    }
+
+    @Test
+    public void toPublicationLogsWarningWhenCrossrefDocumentLinkContainsInvalidUri() {
+        TestAppender logAppender = LogUtils.getTestingAppenderForRootLogger();
+        String invalidUri = "not a uri";
+        CrossRefDocument crossRefDocument = crossRefDocumentWithInvalidUrl(invalidUri);
+        toPublication(crossRefDocument);
+        assertThat(logAppender.getMessages(), containsString(invalidUri));
+    }
+
+    @ParameterizedTest(name = "toPublicationDoesNotThrowExceptionWhenPublicationTypeIsMissingButLogsWarning")
+    @NullAndEmptySource
+    public void toPublicationDoesNotThrowExceptionWhenPublicationTypeIsMissingButLogsWarning(String crossRefType) {
+        TestAppender logAppender = LogUtils.getTestingAppenderForRootLogger();
+        CrossRefDocument crossrefDoc = sampleBook();
+        crossrefDoc.setType(crossRefType);
+        assertDoesNotThrow(() -> toPublication(crossrefDoc));
+        String expectedMessage = String.format(UNRECOGNIZED_TYPE_MESSAGE, crossRefType);
+        assertThat(logAppender.getMessages(), containsString(expectedMessage));
+    }
+
+    @Test
+    public void toPublicationReturnsObjectWithAlternativeTitlesWhenMoreThanOneTitlesExist() {
+        CrossRefDocument crossrefDoc = sampleBook();
+        assertThat(crossrefDoc.getTitle(), hasSize(2));
+        String expectedAlternativeTitle = crossrefDoc.getTitle().get(SECOND_LIST_ELEMENT);
+        Publication publication = toPublication(crossrefDoc);
+        List<String> actualAlternativeTitles =
+            new ArrayList<>(publication.getEntityDescription().getAlternativeTitles().keySet());
+        assertThat(actualAlternativeTitles, hasSize(1));
+        assertThat(actualAlternativeTitles.get(FIRST_LIST_ELEMENT), is(equalTo(expectedAlternativeTitle)));
+    }
+
+    @Test
+    public void toPublicationReturnsPublicationWithFilteredOutContributorsLackingBothNameAndSurname() {
+        CrossRefDocument crossRefDocument = sampleJournalArticle();
+
+        int initialContributorsNumber = crossRefDocument.getAuthor().size();
+        List<CrossrefContributor> newContributors = createAuthorListWithAnonymousAuthor(crossRefDocument);
+        crossRefDocument.setAuthor(newContributors);
+        assertThat(crossRefDocument.getAuthor().size(), is(equalTo(initialContributorsNumber + 1)));
+
+        Publication publication = toPublication(crossRefDocument);
+        List<Contributor> actualContributors = publication.getEntityDescription().getContributors();
+        assertThat(actualContributors.size(), is(equalTo(initialContributorsNumber)));
+    }
 
     @Test
     @DisplayName("An empty CrossRef document throws IllegalArgument exception")
     void anEmptyCrossRefDocumentThrowsIllegalArgumentException() throws IllegalArgumentException {
         CrossRefDocument crossRefDocument = new CrossRefDocument();
         IllegalArgumentException exception =
-                assertThrows(IllegalArgumentException.class, () -> toPublication(crossRefDocument));
+            assertThrows(IllegalArgumentException.class, () -> toPublication(crossRefDocument));
         assertThat(exception.getMessage(), is(CrossRefConverter.INVALID_ENTRY_ERROR));
     }
 
     @Test
     @DisplayName("An CrossRef document with unknown type logs error and continues")
     void anCrossRefDocumentWithUnknownTypeLogsErrorAndContinues()
-            throws IllegalArgumentException {
+        throws IllegalArgumentException {
         CrossRefDocument crossRefDocument = sampleCrossRefDocumentWithBasicMetadata();
         crossRefDocument.setType(SOME_STRANGE_CROSSREF_TYPE);
         TestAppender testAppender = LogUtils.getTestingAppender(CrossRefConverter.class);
         toPublication(crossRefDocument);
-        String expectedError = String.format(CrossRefConverter.UNRECOGNIZED_TYPE_MESSAGE, SOME_STRANGE_CROSSREF_TYPE);
+        String expectedError = String.format(UNRECOGNIZED_TYPE_MESSAGE, SOME_STRANGE_CROSSREF_TYPE);
         assertThat(testAppender.getMessages(), containsString(expectedError));
     }
 
     @Test
     @DisplayName("An CrossRef document without type throws IllegalArgument exception")
     void anCrossRefDocumentWithoutTypeThrowsIllegalArgumentException()
-            throws IllegalArgumentException {
+        throws IllegalArgumentException {
         CrossRefDocument crossRefDocument = sampleCrossRefDocumentWithBasicMetadata();
         crossRefDocument.setType(null);
         TestAppender testAppender = LogUtils.getTestingAppender(CrossRefConverter.class);
         toPublication(crossRefDocument);
-        String expectedError = String.format(CrossRefConverter.UNRECOGNIZED_TYPE_MESSAGE, "null");
+        String expectedError = String.format(UNRECOGNIZED_TYPE_MESSAGE, "null");
         assertThat(testAppender.getMessages(), containsString(expectedError));
     }
 
     @Test
     @DisplayName("The creator's name in the publication contains first family and then given name")
     void creatorsNameContainsFirstFamilyAndThenGivenName()
-            throws IllegalArgumentException {
+        throws IllegalArgumentException {
 
         CrossRefDocument sampleJournalArticle = sampleJournalArticle();
         Publication samplePublication = toPublication(sampleJournalArticle);
@@ -203,7 +271,7 @@ public class CrossRefConverterTest extends ConversionTest {
     void toPublicationSetsPublicationContextToJournalWhenTheInputHasTheTagJournalArticle() {
         Publication samplePublication = toPublication(sampleJournalArticle());
         assertThat(samplePublication.getEntityDescription().getReference().getPublicationContext().getClass(),
-                is(equalTo(Journal.class)));
+                   is(equalTo(UnconfirmedJournal.class)));
     }
 
     @Test
@@ -213,17 +281,17 @@ public class CrossRefConverterTest extends ConversionTest {
         int numberOfAuthors = sampleJournalArticle.getAuthor().size();
         sampleJournalArticle.getAuthor().forEach(a -> a.setSequence(INVALID_ORDINAL));
         List<Integer> ordinals = toPublication(sampleJournalArticle).getEntityDescription().getContributors().stream()
-                .map(Contributor::getSequence).collect(Collectors.toList());
+            .map(Contributor::getSequence).collect(Collectors.toList());
         assertThat(ordinals.size(), is(numberOfAuthors));
         assertThat(ordinals, contains(IntStream.range(0, numberOfAuthors)
-                .map(this::startCountingFromOne)
-                .boxed().toArray()));
+                                          .map(this::startCountingFromOne)
+                                          .boxed().toArray()));
     }
 
     @Test
     @DisplayName("toPublication sets abstract when input has non empty abstract")
     void toPublicationSetsAbstractWhenInputHasNonEmptyAbstract()
-            throws IOException {
+        throws IOException {
         String json = IoUtils.stringFromResources(Path.of(CROSSREF_WITH_ABSTRACT_JSON));
         CrossRefDocument crossRefDocument = objectMapper.readValue(json, CrossrefApiResponse.class).getMessage();
         String abstractText = toPublication(crossRefDocument).getEntityDescription().getAbstract();
@@ -235,7 +303,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @Test
     @DisplayName("toPublication sets the language to a URI when the input is an ISO639-3 entry")
     void toPublicationSetsTheLanguageToAUriWhenTheInputFollowsTheIso3Standard()
-            throws LanguageUriNotFoundException {
+        throws LanguageUriNotFoundException {
         Locale sampleLanguage = Locale.ENGLISH;
         CrossRefDocument sampleJournalArticle = sampleJournalArticle();
         sampleJournalArticle.setLanguage(sampleLanguage.getISO3Language());
@@ -257,12 +325,12 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("toPublication sets the doi of the Reference when the Crossref document has at least one"
-            + " \"Container\" value ")
+                 + " \"Container\" value ")
     void toPublicationSetsTheNameOfTheReferenceWhenTheCrossrefDocHasAtLeatOneContainterTitle() {
         CrossRefDocument sampleJournalArticle = sampleJournalArticle();
         sampleJournalArticle.setContainerTitle(Arrays.asList(FIRST_NAME_OF_JOURNAL, SECOND_NAME_OF_JOURNAL));
-        String actualJournalName = ((Journal) toPublication(sampleJournalArticle)
-                .getEntityDescription().getReference().getPublicationContext()).getTitle();
+        String actualJournalName = ((UnconfirmedJournal) toPublication(sampleJournalArticle)
+            .getEntityDescription().getReference().getPublicationContext()).getTitle();
         assertThat(actualJournalName, is(equalTo(FIRST_NAME_OF_JOURNAL)));
     }
 
@@ -272,42 +340,55 @@ public class CrossRefConverterTest extends ConversionTest {
         CrossRefDocument sampleJournalArticle = sampleJournalArticle();
         sampleJournalArticle.setVolume(EXPECTED_VOLUME);
         String actualVolume = ((JournalArticle) (toPublication(sampleJournalArticle)
-                .getEntityDescription().getReference()
-                .getPublicationInstance()))
-                .getVolume();
+            .getEntityDescription().getReference()
+            .getPublicationInstance()))
+            .getVolume();
         assertThat(actualVolume, is(equalTo(EXPECTED_VOLUME)));
     }
 
     @Test
-    @DisplayName("toPublication sets the pages of the Reference when the Crosref document has a \"Pages\" value")
+    @DisplayName("toPublication sets the pages of the Reference when the Crossref document has a \"Pages\" value")
     void toPublicationSetsThePagesOfTheReferenceWhentheCrossrefDocHasPages() {
         String pages = FIRST_PAGE_IN_RANGE + CONNECTING_MINUS + LAST_PAGE_IN_RANGE;
         CrossRefDocument sampleJournalArticle = sampleJournalArticle();
         sampleJournalArticle.setPage(pages);
         Pages actualPages = toPublication(sampleJournalArticle).getEntityDescription().getReference()
-                .getPublicationInstance()
-                .getPages();
+            .getPublicationInstance()
+            .getPages();
         Pages expectedPages = new Range.Builder().withBegin(FIRST_PAGE_IN_RANGE).withEnd(LAST_PAGE_IN_RANGE).build();
         assertThat(actualPages, is(equalTo(expectedPages)));
     }
 
     @Test
-    @DisplayName("toPublication sets the issue of the Reference when the Crosref document has a \"Issue\" value")
+    @DisplayName("toPublication sets the pages of the Reference when the Crossref document has a \"Pages\" value")
+    void toPublicationSetsTheMonographPagesOfTheReferenceWhentheCrossrefDocHasPages() {
+        String pages = "222";
+        CrossRefDocument sampleBook = sampleBook();
+        sampleBook.setPage(pages);
+        Pages actualPages = toPublication(sampleBook).getEntityDescription().getReference()
+                .getPublicationInstance()
+                .getPages();
+        Pages expectedPages = new MonographPages.Builder().withPages(pages).build();
+        assertThat(actualPages, is(equalTo(expectedPages)));
+    }
+
+    @Test
+    @DisplayName("toPublication sets the issue of the Reference when the Crossref document has a \"Issue\" value")
     void toPublicationSetsTheIssueOfTheReferenceWhentheCrossrefDocHasAnIssueValue() {
         String expectedIssue = SAMPLE_ISSUE;
         CrossRefDocument sampleJournalArticle = sampleJournalArticle();
         sampleJournalArticle.setIssue(expectedIssue);
         String actualIssue = ((JournalArticle) (toPublication(sampleJournalArticle)
-                .getEntityDescription()
-                .getReference()
-                .getPublicationInstance()))
-                .getIssue();
+            .getEntityDescription()
+            .getReference()
+            .getPublicationInstance()))
+            .getIssue();
         assertThat(actualIssue, is(equalTo(expectedIssue)));
     }
 
     @Test
     @DisplayName("toPublication sets the MetadataSource to the CrossRef URL when the Crossref "
-            + "document has a \"source\" containing the word crossref")
+                 + "document has a \"source\" containing the word crossref")
     void toPublicationSetsTheMetadataSourceToTheCrossRefUrlWhenTheCrossrefDocHasCrossrefAsSource() {
         URI expectedURI = CrossRefConverter.CROSSEF_URI;
         CrossRefDocument sampleDocumentJournalArticle = sampleJournalArticle();
@@ -318,7 +399,7 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @Test
     @DisplayName("toPublication sets the MetadataSource to the specfied URL when the Crossref "
-            + "document has as \"source\" a valid URL")
+                 + "document has as \"source\" a valid URL")
     void toPublicationSetsTheMetadataSourceToTheSourceUrlIfTheDocHasAsSourceAValidUrl() {
         URI expectedURI = URI.create(SOURCE_URI);
         CrossRefDocument sampleJournalArticle = sampleJournalArticle();
@@ -335,7 +416,7 @@ public class CrossRefConverterTest extends ConversionTest {
         CrossRefDocument sampleJournalArticle = sampleJournalArticle();
         sampleJournalArticle.setIssnType(Collections.singletonList(printIssn));
         Publication actualPublication = toPublication(sampleJournalArticle);
-        Journal actualPublicationContext = getJournalContext(actualPublication);
+        UnconfirmedJournal actualPublicationContext = getJournalContext(actualPublication);
         String onlineIssn = actualPublicationContext.getOnlineIssn();
         assertThat(onlineIssn, is(equalTo(null)));
     }
@@ -348,7 +429,7 @@ public class CrossRefConverterTest extends ConversionTest {
         CrossRefDocument sampleJournalArticle = sampleJournalArticle();
         sampleJournalArticle.setIssnType(Collections.singletonList(onlineIssn));
         Publication actualPublication = toPublication(sampleJournalArticle);
-        Journal actualPublicationContext = getJournalContext(actualPublication);
+        UnconfirmedJournal actualPublicationContext = getJournalContext(actualPublication);
         String actualPrintIssn = actualPublicationContext.getPrintIssn();
         assertThat(actualPrintIssn, is(equalTo(null)));
     }
@@ -358,9 +439,9 @@ public class CrossRefConverterTest extends ConversionTest {
     void toPublicationSetsOneOfManyOnlineIssnsWhenMultipleOfTheSameTypeAreAvailable() {
         CrossRefDocument sampleJournalArticle = sampleJournalArticle();
         List<Isxn> issns = addIssnsToJournalArticle(sampleJournalArticle, IsxnType.ELECTRONIC,
-                VALID_ISSN_A, VALID_ISSN_B).getIssnType();
+                                                    VALID_ISSN_A, VALID_ISSN_B).getIssnType();
         Publication actualPublication = toPublication(sampleJournalArticle);
-        Journal actualPublicationContext = getJournalContext(actualPublication);
+        UnconfirmedJournal actualPublicationContext = getJournalContext(actualPublication);
         String actualOnlineIssn = actualPublicationContext.getOnlineIssn();
         List<String> poolOfExpectedValues = getPoolOfExpectedValues(issns);
         assertThat(poolOfExpectedValues, hasItem(actualOnlineIssn));
@@ -371,9 +452,9 @@ public class CrossRefConverterTest extends ConversionTest {
     void toPublicationSetsOneOfManyPrintIssnsWhenMultipleOfTheSameTypeAreAvailable() {
         CrossRefDocument sampleJournalArticle = sampleJournalArticle();
         List<Isxn> issns = addIssnsToJournalArticle(sampleJournalArticle, IsxnType.PRINT,
-                VALID_ISSN_A, VALID_ISSN_B).getIssnType();
+                                                    VALID_ISSN_A, VALID_ISSN_B).getIssnType();
         Publication actualPublication = toPublication(sampleJournalArticle);
-        Journal actualPublicationContext = getJournalContext(actualPublication);
+        UnconfirmedJournal actualPublicationContext = getJournalContext(actualPublication);
         String actualPrintIssn = actualPublicationContext.getPrintIssn();
         List<String> poolOfExpectedValues = getPoolOfExpectedValues(issns);
         assertThat(poolOfExpectedValues, hasItem(actualPrintIssn));
@@ -444,10 +525,10 @@ public class CrossRefConverterTest extends ConversionTest {
         CrossRefDocument sampleJournalArticle = sampleJournalArticle();
         setAuthorWithUnauthenticatedOrcid(sampleJournalArticle);
         var orcids = toPublication(sampleJournalArticle)
-                .getEntityDescription().getContributors().stream()
-                    .map(Contributor::getIdentity)
-                    .map(Identity::getOrcId)
-                    .collect(Collectors.toList());
+            .getEntityDescription().getContributors().stream()
+            .map(Contributor::getIdentity)
+            .map(Identity::getOrcId)
+            .collect(Collectors.toList());
         assertThat(orcids, hasItem(SAMPLE_ORCID));
     }
 
@@ -455,7 +536,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @DisplayName("toPublication sets PublicationContext to Book when crossref-type is book")
     void toPublicationSetsPublicationContextToBookWhjenCrossrefDocumentHasTypeBook() {
         var publicationContext = toPublication(sampleBook())
-                .getEntityDescription().getReference().getPublicationContext();
+            .getEntityDescription().getReference().getPublicationContext();
         assertTrue(publicationContext instanceof Book);
     }
 
@@ -463,7 +544,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @DisplayName("toPublication sets ISBN when crossref-type is book")
     void toPublicationSetsIsbnWhenCrossrefDocumentIsTypeBook() {
         CrossRefDocument sampleBook = sampleBook();
-        List<Isxn> isbns = addIsbnsToBook(sampleBook, VALID_ISBN_A,VALID_ISBN_B).getIsbnType();
+        List<Isxn> isbns = addIsbnsToBook(sampleBook, VALID_ISBN_A, VALID_ISBN_B).getIsbnType();
         Book actualPublicationContext = convertAndGetBookContext(sampleBook);
         Set<String> actualValues = new HashSet<>(actualPublicationContext.getIsbnList());
         Set<String> expectedValues = constructExpectedIsbnValues(isbns);
@@ -474,7 +555,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @DisplayName("toPublication filters ISBN error and continues")
     void toPublicationFiltersIsbnErrorAndContinues() {
         CrossRefDocument sampleBook = sampleBook();
-        List<Isxn> isbns = addIsbnsToBook(sampleBook, VALID_ISBN_A,INVALID_ISBN).getIsbnType();
+        List<Isxn> isbns = addIsbnsToBook(sampleBook, VALID_ISBN_A, INVALID_ISBN).getIsbnType();
         Book actualPublicationContext = convertAndGetBookContext(sampleBook);
         Set<String> actualValues = new HashSet<>(actualPublicationContext.getIsbnList());
         Set<String> expectedValues = constructExpectedIsbnValues(isbns);
@@ -486,7 +567,7 @@ public class CrossRefConverterTest extends ConversionTest {
     void toPublicationFiltersIssnErrorAndContinues() {
         CrossRefDocument sampleJournalArticle = sampleJournalArticle();
         List<Isxn> issns = addIssnsToJournalArticle(sampleJournalArticle, IsxnType.ELECTRONIC,
-                VALID_ISSN_A, INVALID_ISSN).getIssnType();
+                                                    VALID_ISSN_A, INVALID_ISSN).getIssnType();
         Publication actualPublication = toPublication(sampleJournalArticle);
         String actualOnlineIssn = getJournalContext(actualPublication).getOnlineIssn();
         List<String> poolOfExpectedValues = getPoolOfExpectedValues(issns);
@@ -499,7 +580,7 @@ public class CrossRefConverterTest extends ConversionTest {
     void toPublicationSetsSeriesTitleInPublicationContextWhenCrossrefDocumentHasContainerTitle() {
         CrossRefDocument sampleBook = sampleBook();
         sampleBook.setContainerTitle(List.of(SAMPLE_CONTAINER_TITLE));
-        String actualSeriesTitle = convertAndGetBookContext(sampleBook).getSeriesTitle();
+        String actualSeriesTitle = ((UnconfirmedSeries)convertAndGetBookContext(sampleBook).getSeries()).getTitle();
         assertThat(actualSeriesTitle, is(equalTo(SAMPLE_CONTAINER_TITLE)));
     }
 
@@ -508,27 +589,8 @@ public class CrossRefConverterTest extends ConversionTest {
     void toPublicationSetsPublisherInPublicationContextWhenCrossrefDocumentHasPublisher() {
         CrossRefDocument sampleBook = sampleBook();
         sampleBook.setPublisher(SAMPLE_PUBLISHER);
-        String actualPublisher = convertAndGetBookContext(sampleBook).getPublisher();
+        String actualPublisher = ((UnconfirmedPublisher) convertAndGetBookContext(sampleBook).getPublisher()).getName();
         assertThat(actualPublisher, is(equalTo(SAMPLE_PUBLISHER)));
-    }
-
-    @Test
-    @DisplayName("toPublication sets PeerReviewed to True PublicationContext when CrossrefDocument has Reviewer")
-    void toPublicationSetsPeerReviewedInPublicationContextWhenCrossrefDocumentHasReviewer() {
-        CrossRefDocument sampleBook = sampleBook();
-        CrossrefReview crossrefReview = new CrossrefReview();
-        crossrefReview.setRecommendation(REVIEW_RECOMMENDATION);
-        sampleBook.setReview(crossrefReview);
-        assertTrue(convertAndGetBookContext(sampleBook).isPeerReviewed());
-    }
-
-    @Test
-    @DisplayName("toPublication sets Url in PublicationContext when CrossrefDocument has link")
-    void toPublicationSetsUrlInPublicationContextWhenCrossrefDocumentHasLink() {
-        CrossRefDocument sampleBook = sampleBook();
-        sampleBook.setLink(List.of(sampleLink()));
-        var actualLink = convertAndGetBookContext(sampleBook).getUrl();
-        assertThat(actualLink.toString(), is(equalTo(SAMPLE_LINK)));
     }
 
     @Test
@@ -553,26 +615,26 @@ public class CrossRefConverterTest extends ConversionTest {
     @DisplayName("toPublication set publicationContext when input Crossref document is BookChapter")
     void toPublicationSetsPublicationContextWhenInputCrossrefDocumentIsBookChapter() {
         assertThat(toPublication(sampleBookChapter())
-                        .getEntityDescription().getReference().getPublicationContext().getClass(),
-                is(equalTo(Chapter.class)));
+                       .getEntityDescription().getReference().getPublicationContext().getClass(),
+                   is(equalTo(Chapter.class)));
     }
 
     @Test
     @DisplayName("toPublication set publicationInstance when input Crossref document is BookChapter")
     void toPublicationSetsPublicationInstanceWhenInputCrossrefDocumentIsBookChapter() {
         assertThat(toPublication(sampleBookChapter())
-                        .getEntityDescription().getReference().getPublicationInstance().getClass(),
-                is(equalTo(ChapterArticle.class)));
+                       .getEntityDescription().getReference().getPublicationInstance().getClass(),
+                   is(equalTo(ChapterArticle.class)));
     }
 
     @Test
     @DisplayName("toPublication set pages when input Crossref document is BookChapter")
     void toPublicationSetsPagesWhenInputCrossrefDocumentIsBookChapter() {
         Pages actualPages = toPublication(sampleBookChapter())
-                .getEntityDescription()
-                .getReference()
-                .getPublicationInstance()
-                .getPages();
+            .getEntityDescription()
+            .getReference()
+            .getPublicationInstance()
+            .getPages();
         Pages expectedPages = new Range.Builder().withBegin(FIRST_PAGE_IN_RANGE).withEnd(LAST_PAGE_IN_RANGE).build();
         assertThat(actualPages, is(equalTo(expectedPages)));
     }
@@ -591,7 +653,6 @@ public class CrossRefConverterTest extends ConversionTest {
         assertThat(editors.size(), is(equalTo(sampleBook.getEditor().size())));
     }
 
-
     @Test
     @DisplayName("toPublication sets publicationInstance to BookAnthology when book has editors")
     void toPublicationSetsPublicationInstanceToBookAnthologyWhenBookHasEditors() {
@@ -599,7 +660,7 @@ public class CrossRefConverterTest extends ConversionTest {
         CrossRefDocument sampleBook = sampleBook();
         setEditors(sampleBook);
         assertThat(toPublication(sampleBook).getEntityDescription().getReference().getPublicationInstance().getClass(),
-                is(equalTo(BookAnthology.class)));
+                   is(equalTo(BookAnthology.class)));
     }
 
     @Test
@@ -608,7 +669,7 @@ public class CrossRefConverterTest extends ConversionTest {
         CrossRefDocument sampleBook = sampleBook();
         sampleBook.setEditor(null);
         assertThat(toPublication(sampleBook).getEntityDescription().getReference().getPublicationInstance().getClass(),
-                is(equalTo(BookMonograph.class)));
+                   is(equalTo(BookMonograph.class)));
     }
 
     @Test
@@ -624,6 +685,28 @@ public class CrossRefConverterTest extends ConversionTest {
 
     boolean hasRole(Contributor contributor) {
         return nonNull(contributor.getRole());
+    }
+
+    private static Instant sampleCrossrefDateAsInstant() {
+        LocalDate date = LocalDate.of(EXPECTED_YEAR, EXPECTED_MONTH, EXPECTED_DAY);
+        return date.atStartOfDay(ZoneId.systemDefault()).toInstant();
+    }
+
+    private List<CrossrefContributor> createAuthorListWithAnonymousAuthor(CrossRefDocument crossRefDocument) {
+        List<CrossrefContributor> newContributors = new ArrayList<>(crossRefDocument.getAuthor());
+        CrossrefContributor anonymousContributor = new CrossrefContributor();
+        anonymousContributor.setSequence("5");
+        anonymousContributor.setAffiliation(sampleAffiliation());
+        newContributors.add(anonymousContributor);
+        return newContributors;
+    }
+
+    private CrossRefDocument crossRefDocumentWithInvalidUrl(String invalidUri) {
+        CrossRefDocument crossRefDocument = sampleBook();
+        Link link = new Link();
+        link.setUrl(invalidUri);
+        crossRefDocument.setLink(List.of(link));
+        return crossRefDocument;
     }
 
     private boolean isEditor(Contributor contributor) {
@@ -689,7 +772,7 @@ public class CrossRefConverterTest extends ConversionTest {
         CrossRefDocument crossRefDocument = new CrossRefDocument();
         setAuthor(crossRefDocument);
         crossRefDocument.setPublisher(SAMPLE_PUBLISHER);
-        crossRefDocument.setTitle(List.of(SAMPLE_DOCUMENT_TITLE));
+        crossRefDocument.setTitle(List.of(SAMPLE_DOCUMENT_TITLE, ALTERNATIVE_TITLE));
         crossRefDocument.setDoi(SOME_DOI);
         crossRefDocument.setUrl(SOME_DOI_AS_URL.toString());
         crossRefDocument.setLink(List.of(sampleLink()));
@@ -716,47 +799,47 @@ public class CrossRefConverterTest extends ConversionTest {
 
     private void setAuthor(CrossRefDocument document) {
         CrossrefContributor author = new CrossrefContributor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
-                .withFamilyName(AUTHOR_FAMILY_NAME)
-                .withSequence(FIRST_AUTHOR).build();
+            .withFamilyName(AUTHOR_FAMILY_NAME)
+            .withSequence(FIRST_AUTHOR).build();
         CrossrefContributor secondAuthor = new CrossrefContributor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
-                .withFamilyName(AUTHOR_FAMILY_NAME)
-                .withSequence(SECOND_AUTHOR).build();
+            .withFamilyName(AUTHOR_FAMILY_NAME)
+            .withSequence(SECOND_AUTHOR).build();
         document.setAuthor(Arrays.asList(author, secondAuthor));
     }
 
     private void setAuthorWithAffiliation(CrossRefDocument document) {
         CrossrefContributor author = new CrossrefContributor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
-                .withFamilyName(AUTHOR_FAMILY_NAME)
-                .withSequence(FIRST_AUTHOR).build();
+            .withFamilyName(AUTHOR_FAMILY_NAME)
+            .withSequence(FIRST_AUTHOR).build();
         CrossrefContributor secondAuthor = new CrossrefContributor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
-                .withFamilyName(AUTHOR_FAMILY_NAME)
-                .withAffiliation(sampleAffiliation())
-                .withSequence(SECOND_AUTHOR).build();
+            .withFamilyName(AUTHOR_FAMILY_NAME)
+            .withAffiliation(sampleAffiliation())
+            .withSequence(SECOND_AUTHOR).build();
         document.setAuthor(Arrays.asList(author, secondAuthor));
     }
 
     private void setAuthorWithMultipleAffiliations(CrossRefDocument document) {
         CrossrefContributor author = new CrossrefContributor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
-                .withFamilyName(AUTHOR_FAMILY_NAME)
-                .withSequence(FIRST_AUTHOR).build();
+            .withFamilyName(AUTHOR_FAMILY_NAME)
+            .withSequence(FIRST_AUTHOR).build();
         CrossrefContributor secondAuthor = new CrossrefContributor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
-                .withFamilyName(AUTHOR_FAMILY_NAME)
-                .withAffiliation(sampleMultipleAffiliations())
-                .withSequence(SECOND_AUTHOR).build();
+            .withFamilyName(AUTHOR_FAMILY_NAME)
+            .withAffiliation(sampleMultipleAffiliations())
+            .withSequence(SECOND_AUTHOR).build();
         document.setAuthor(Arrays.asList(author, secondAuthor));
     }
 
     private void setAuthorWithUnauthenticatedOrcid(CrossRefDocument document) {
         CrossrefContributor author = new CrossrefContributor.Builder()
-                .withGivenName(AUTHOR_GIVEN_NAME)
-                .withFamilyName(AUTHOR_FAMILY_NAME)
-                .withSequence(FIRST_AUTHOR)
-                .withOrcid(SAMPLE_ORCID)
-                .withAuthenticatedOrcid(false)
-                .build();
+            .withGivenName(AUTHOR_GIVEN_NAME)
+            .withFamilyName(AUTHOR_FAMILY_NAME)
+            .withSequence(FIRST_AUTHOR)
+            .withOrcid(SAMPLE_ORCID)
+            .withAuthenticatedOrcid(false)
+            .build();
         CrossrefContributor secondAuthor = new CrossrefContributor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
-                .withFamilyName(AUTHOR_FAMILY_NAME)
-                .withSequence(SECOND_AUTHOR).build();
+            .withFamilyName(AUTHOR_FAMILY_NAME)
+            .withSequence(SECOND_AUTHOR).build();
         document.setAuthor(Arrays.asList(author, secondAuthor));
     }
 
@@ -776,17 +859,12 @@ public class CrossRefConverterTest extends ConversionTest {
 
     private void setEditors(CrossRefDocument document) {
         CrossrefContributor editor = new CrossrefContributor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
-                .withFamilyName(AUTHOR_FAMILY_NAME)
-                .withSequence(FIRST_AUTHOR).build();
+            .withFamilyName(AUTHOR_FAMILY_NAME)
+            .withSequence(FIRST_AUTHOR).build();
         CrossrefContributor secondEditor = new CrossrefContributor.Builder().withGivenName(AUTHOR_GIVEN_NAME)
-                .withFamilyName(AUTHOR_FAMILY_NAME)
-                .withSequence(SECOND_AUTHOR).build();
+            .withFamilyName(AUTHOR_FAMILY_NAME)
+            .withSequence(SECOND_AUTHOR).build();
         document.setEditor(Arrays.asList(editor, secondEditor));
-    }
-
-    private static Instant sampleCrossrefDateAsInstant() {
-        LocalDate date = LocalDate.of(EXPECTED_YEAR, EXPECTED_MONTH, EXPECTED_DAY);
-        return Instant.ofEpochSecond(date.toEpochDay() * 86400L);
     }
 
     private int startCountingFromOne(int i) {
@@ -795,23 +873,23 @@ public class CrossRefConverterTest extends ConversionTest {
 
     private Book convertAndGetBookContext(CrossRefDocument sampleBook) {
         return (Book) toPublication(sampleBook).getEntityDescription()
-                .getReference()
-                .getPublicationContext();
+            .getReference()
+            .getPublicationContext();
     }
 
     private Set<String> constructExpectedIsbnValues(List<Isxn> isbns) {
         return isbns.stream()
-                .map(Isxn::getValue)
-                .map(ISBN_VALIDATOR::validate)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+            .map(Isxn::getValue)
+            .map(ISBN_VALIDATOR::validate)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
     }
 
     private CrossRefDocument addIsbnsToBook(CrossRefDocument sampleBook, String... isxnStrings) {
         IsxnType type = IsxnType.PRINT;
         List<Isxn> isbns = Arrays.stream(isxnStrings)
-                .map(isxnString -> sampleIsxn(type, isxnString))
-                .collect(Collectors.toList());
+            .map(isxnString -> sampleIsxn(type, isxnString))
+            .collect(Collectors.toList());
         sampleBook.setIsbnType(isbns);
         return sampleBook;
     }
@@ -820,33 +898,32 @@ public class CrossRefConverterTest extends ConversionTest {
                                                       IsxnType type,
                                                       String... isxnStrings) {
         List<Isxn> issns = Arrays.stream(isxnStrings)
-                .map(isxnString -> sampleIsxn(type, isxnString))
-                .collect(Collectors.toList());
+            .map(isxnString -> sampleIsxn(type, isxnString))
+            .collect(Collectors.toList());
 
         sampleJournalArticle.setIssnType(issns);
         return sampleJournalArticle;
     }
 
-    private Journal getJournalContext(Publication actualPublication) {
-        return (Journal) actualPublication.getEntityDescription()
-                .getReference()
-                .getPublicationContext();
+    private UnconfirmedJournal getJournalContext(Publication actualPublication) {
+        return (UnconfirmedJournal) actualPublication.getEntityDescription()
+            .getReference()
+            .getPublicationContext();
     }
 
     private List<Organization> getOrganisations(List<Contributor> contributors) {
         return contributors.stream()
-                .map(Contributor::getAffiliations)
-                .filter(Objects::nonNull)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList());
+            .map(Contributor::getAffiliations)
+            .filter(Objects::nonNull)
+            .flatMap(Collection::stream)
+            .collect(Collectors.toList());
     }
 
     private List<String> getPoolOfExpectedValues(List<Isxn> issns) {
         return issns.stream()
-                .map(Isxn::getValue)
-                .map(IssnCleaner::clean)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+            .map(Isxn::getValue)
+            .map(IssnCleaner::clean)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
     }
-
 }
