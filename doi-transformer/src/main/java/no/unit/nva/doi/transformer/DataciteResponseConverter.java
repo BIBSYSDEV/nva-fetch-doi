@@ -16,6 +16,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import no.unit.nva.doi.transformer.exception.MalformedContributorException;
 import no.unit.nva.doi.transformer.language.LanguageDetector;
 import no.unit.nva.doi.transformer.language.SimpleLanguageDetector;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteContainer;
@@ -43,7 +45,6 @@ import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.contexttypes.BasicContext;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.Range;
