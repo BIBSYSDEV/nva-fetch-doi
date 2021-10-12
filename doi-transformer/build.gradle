@@ -11,5 +11,5 @@ dependencies {
     implementation libs.jakarta
     implementation libs.ordinals.to.numbers
     implementation libs.commons.validator
-    testImplementation libs.nva.logutils
+    testImplementation libs.bundles.testing
 }

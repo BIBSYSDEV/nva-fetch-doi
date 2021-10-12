@@ -1,6 +1,6 @@
 package no.unit.nva.doi.fetch.service;
 
-import static nva.commons.core.JsonUtils.objectMapper;
+import static no.unit.nva.doi.fetch.RestApiConfig.objectMapper;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.fasterxml.jackson.databind.JsonNode;

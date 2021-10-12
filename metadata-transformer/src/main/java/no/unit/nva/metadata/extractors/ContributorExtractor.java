@@ -37,7 +37,9 @@ public final class ContributorExtractor {
             newList.add(contributor);
             entityDescription.setContributors(newList);
         } else {
-            contributorList.add(contributor);
+            ArrayList<Contributor> newContributorList = new ArrayList<>(entityDescription.getContributors());
+            newContributorList.add(contributor);
+            entityDescription.setContributors(newContributorList);
         }
     }
 

@@ -1,7 +1,7 @@
 package no.unit.nva.doi.transformer;
 
-import static nva.commons.core.JsonUtils.objectMapper;
 
+import static no.unit.nva.doi.transformer.DoiTransformerConfig.objectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.net.URISyntaxException;
