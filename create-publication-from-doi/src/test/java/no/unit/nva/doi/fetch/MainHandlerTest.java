@@ -1,6 +1,6 @@
 package no.unit.nva.doi.fetch;
 
-import static no.unit.nva.doi.fetch.RestApiConfig.objectMapper;
+import static no.unit.nva.doi.fetch.RestApiConfig.restServiceObjectMapper;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static org.apache.http.HttpHeaders.AUTHORIZATION;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
@@ -329,7 +329,7 @@ public class MainHandlerTest {
 
     private MetadataAndContentLocation metadataAndContentLocation() throws JsonProcessingException {
         return new MetadataAndContentLocation("datacite",
-                                              objectMapper.writeValueAsString(getPublication()));
+                                              restServiceObjectMapper.writeValueAsString(getPublication()));
     }
 
     private Summary createSummary() {
@@ -375,7 +375,7 @@ public class MainHandlerTest {
         requestHeaders.put(AUTHORIZATION, "some api key");
         requestHeaders.putAll(TestHeaders.getRequestHeaders());
 
-        return new HandlerRequestBuilder<RequestBody>(objectMapper)
+        return new HandlerRequestBuilder<RequestBody>(restServiceObjectMapper)
             .withBody(requestBody)
             .withHeaders(requestHeaders)
             .withRequestContext(getRequestContext())
@@ -396,7 +396,7 @@ public class MainHandlerTest {
         requestHeaders.put(AUTHORIZATION, "some api key");
         requestHeaders.putAll(TestHeaders.getRequestHeaders());
 
-        return new HandlerRequestBuilder<RequestBody>(objectMapper)
+        return new HandlerRequestBuilder<RequestBody>(restServiceObjectMapper)
             .withHeaders(requestHeaders)
             .withRequestContext(getRequestContext())
             .build();
@@ -425,9 +425,9 @@ public class MainHandlerTest {
 
     private <T> GatewayResponse<T> parseGatewayResponse(String output, Class<T> responseObjectClass)
         throws JsonProcessingException {
-        JavaType typeRef = objectMapper.getTypeFactory()
+        JavaType typeRef = restServiceObjectMapper.getTypeFactory()
             .constructParametricType(GatewayResponse.class, responseObjectClass);
-        return objectMapper.readValue(output, typeRef);
+        return restServiceObjectMapper.readValue(output, typeRef);
     }
 
     private RequestBody createSampleRequest(URL url) {

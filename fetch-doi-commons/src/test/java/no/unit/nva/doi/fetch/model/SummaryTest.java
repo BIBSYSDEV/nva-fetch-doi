@@ -1,6 +1,6 @@
 package no.unit.nva.doi.fetch.model;
 
-import static no.unit.nva.doi.fetch.FetchDoiCommonsTestConfig.objectMapper;
+import static no.unit.nva.doi.fetch.FetchDoiCommonsTestConfig.fetchDoiTestingObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.identifiers.SortableIdentifier;
 import org.junit.jupiter.api.Assertions;
@@ -23,7 +23,8 @@ public class SummaryTest {
             .withDate(date)
             .build();
 
-        Summary mappedSummary = objectMapper.readValue(objectMapper.writeValueAsString(summary), Summary.class);
+        Summary mappedSummary = fetchDoiTestingObjectMapper.readValue(
+            fetchDoiTestingObjectMapper.writeValueAsString(summary), Summary.class);
 
         Assertions.assertNotNull(mappedSummary);
     }

@@ -6,7 +6,7 @@ import static no.unit.nva.doi.CrossRefClient.CROSSREF_API_KEY_SECRET_NOT_FOUND_T
 import static no.unit.nva.doi.CrossRefClient.CROSSREF_USER_AGENT;
 import static no.unit.nva.doi.CrossRefClient.ILLEGAL_DOI_MESSAGE;
 import static no.unit.nva.doi.CrossRefClient.WORKS;
-import static no.unit.nva.doi.DoiProxyConfig.objectMapper;
+import static no.unit.nva.doi.DoiProxyConfig.doiProxyObjectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.nullValue;
@@ -243,7 +243,7 @@ public class CrossRefClientTest {
         var secretsManager = mock(AWSSecretsManager.class);
         var secretsReader = new SecretsReader(secretsManager);
         if (withApiSecret) {
-            var secretString = objectMapper.writeValueAsString(
+            var secretString = doiProxyObjectMapper.writeValueAsString(
                 Map.of(KEY, "irrelevant"));
             var secretValue = new GetSecretValueResult().withName(NAME)
                                   .withSecretString(secretString);

@@ -2,7 +2,7 @@ package no.unit.nva.doi.transformer;
 
 import static java.util.Objects.nonNull;
 import static java.util.function.Predicate.not;
-import static no.unit.nva.doi.transformer.DoiTransformerConfig.objectMapper;
+import static no.unit.nva.doi.transformer.DoiTransformerConfig.doiTransformerObjectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -271,7 +271,7 @@ public class DataciteResponseConverter extends AbstractConverter {
 
     private Identity createCreatorIdentity(DataciteCreator dataciteCreator) throws MalformedContributorException {
         if (creatorHasNoName(dataciteCreator)) {
-            String jsonString = attempt(() -> objectMapper.writeValueAsString(dataciteCreator)).orElseThrow();
+            String jsonString = attempt(() -> doiTransformerObjectMapper.writeValueAsString(dataciteCreator)).orElseThrow();
             throw new MalformedContributorException(CREATOR_HAS_NO_NAME_ERROR + jsonString);
         }
         return new Identity.Builder()

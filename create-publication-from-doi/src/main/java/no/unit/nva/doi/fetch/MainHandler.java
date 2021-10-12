@@ -1,7 +1,7 @@
 package no.unit.nva.doi.fetch;
 
 import static java.util.Objects.isNull;
-import static no.unit.nva.doi.fetch.RestApiConfig.objectMapper;
+import static no.unit.nva.doi.fetch.RestApiConfig.restServiceObjectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.apache.http.HttpStatus.SC_OK;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -128,7 +128,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
             long insertEndTime = System.nanoTime();
             logger.info("Publication inserted after {} ms", (insertEndTime - insertStartTime) / 1000);
             return publicationConverter
-                .toSummary(objectMapper.convertValue(publicationResponse, JsonNode.class));
+                .toSummary(restServiceObjectMapper.convertValue(publicationResponse, JsonNode.class));
         } catch (IllegalArgumentException
                      | URISyntaxException
                      | IOException
@@ -177,7 +177,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
                                                                             getPublicationMetadataFromDoi(url, owner,
                                                                                                           URI.create(
                                                                                                               customerId)));
-        return objectMapper.convertValue(publication, CreatePublicationRequest.class);
+        return restServiceObjectMapper.convertValue(publication, CreatePublicationRequest.class);
     }
 
     private URI urlToPublicationProxy() {

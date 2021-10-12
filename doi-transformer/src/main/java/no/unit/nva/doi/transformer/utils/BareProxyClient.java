@@ -1,6 +1,6 @@
 package no.unit.nva.doi.transformer.utils;
 
-import static no.unit.nva.doi.transformer.DoiTransformerConfig.objectMapper;
+import static no.unit.nva.doi.transformer.DoiTransformerConfig.doiTransformerObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -76,7 +76,7 @@ public class BareProxyClient {
     }
 
     private Optional<String> extractArpid(Optional<String> authorityDataForOrcid) throws JsonProcessingException {
-        JsonNode node = objectMapper.readTree(authorityDataForOrcid.get());
+        JsonNode node = doiTransformerObjectMapper.readTree(authorityDataForOrcid.get());
         if (node.isArray() && ((ArrayNode) node).size() == WANT_JUST_ONE_HIT) {
             return Optional.of(node.at(AUTHORITY_ID_JSON_POINTER).asText());
         } else {

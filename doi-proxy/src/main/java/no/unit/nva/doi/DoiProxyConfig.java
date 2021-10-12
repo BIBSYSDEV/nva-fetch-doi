@@ -5,7 +5,7 @@ import nva.commons.core.JsonUtils;
 
 public final class DoiProxyConfig {
 
-    public static final ObjectMapper objectMapper = JsonUtils.dtoObjectMapper;
+    public static final ObjectMapper doiProxyObjectMapper = JsonUtils.dtoObjectMapper;
 
     private DoiProxyConfig() {
 
