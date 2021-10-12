@@ -191,6 +191,7 @@ Resources:
           BARE_PROXY_API_URI: !Sub 'https://${CustomDomain}'
           CROSSREFPLUSAPITOKEN_NAME: !Ref CrossrefPlusApiTokenName
           CROSSREFPLUSAPITOKEN_KEY:  !Ref CrossrefPlusApiTokenKey
+          ID_NAMESPACE: !Sub 'https://api.${CustomDomain}/${CustomDomainBasePath}'
       Events:
         NvaDoi:
           Type: Api
