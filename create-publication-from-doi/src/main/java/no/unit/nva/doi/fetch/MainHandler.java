@@ -1,9 +1,16 @@
 package no.unit.nva.doi.fetch;
 
+import static java.util.Objects.isNull;
+import static no.unit.nva.doi.fetch.RestApiConfig.objectMapper;
+import static nva.commons.core.attempt.Try.attempt;
+import static org.apache.http.HttpStatus.SC_OK;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import no.unit.nva.api.CreatePublicationRequest;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.doi.DataciteContentType;
@@ -30,21 +37,10 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
-import nva.commons.doi.DoiValidator;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-
-import static java.util.Objects.isNull;
-import static nva.commons.core.attempt.Try.attempt;
-import static org.apache.http.HttpStatus.SC_OK;
 
 public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
@@ -55,7 +51,6 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     public static final String NULL_DOI_URL_ERROR = "doiUrl can not be null";
     public static final String NO_METADATA_FOUND_FOR = "No metadata found for: ";
 
-    private final ObjectMapper objectMapper;
     private final transient PublicationConverter publicationConverter;
     private final transient DoiTransformService doiTransformService;
     private final transient DoiProxyService doiProxyService;
@@ -74,19 +69,17 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     @JacocoGenerated
     public MainHandler(Environment environment) {
-        this(JsonUtils.objectMapper, new PublicationConverter(), new DoiTransformService(),
-                new DoiProxyService(environment), new PublicationPersistenceService(), new BareProxyClient(),
-                getMetadataService(), environment);
+        this(new PublicationConverter(), new DoiTransformService(),
+             new DoiProxyService(environment), new PublicationPersistenceService(), new BareProxyClient(),
+             getMetadataService(), environment);
     }
 
     /**
      * Constructor for MainHandler.
      *
-     * @param objectMapper objectMapper.
      * @param environment  environment.
      */
-    public MainHandler(ObjectMapper objectMapper,
-                       PublicationConverter publicationConverter,
+    public MainHandler(PublicationConverter publicationConverter,
                        DoiTransformService doiTransformService,
                        DoiProxyService doiProxyService,
                        PublicationPersistenceService publicationPersistenceService,
@@ -94,7 +87,6 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
                        MetadataService metadataService,
                        Environment environment) {
         super(RequestBody.class, environment);
-        this.objectMapper = objectMapper;
         this.publicationConverter = publicationConverter;
         this.doiTransformService = doiTransformService;
         this.doiProxyService = doiProxyService;
@@ -104,7 +96,6 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
         this.publicationApiHost = environment.readEnv(PUBLICATION_API_HOST_ENV);
         this.publicationApiScheme = environment.readEnv(PUBLICATION_API_SCHEME_ENV);
-
     }
 
     @JacocoGenerated
@@ -139,10 +130,10 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
             return publicationConverter
                 .toSummary(objectMapper.convertValue(publicationResponse, JsonNode.class));
         } catch (IllegalArgumentException
-                | URISyntaxException
-                | IOException
-                | InvalidIssnException
-                | InvalidIsbnException e) {
+                     | URISyntaxException
+                     | IOException
+                     | InvalidIssnException
+                     | InvalidIsbnException e) {
             throw new TransformFailedException(e.getMessage());
         } catch (InterruptedException e) {
             interrupted = true;
@@ -155,10 +146,11 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     }
 
     private CreatePublicationRequest getPublicationRequest(String owner, String customerId, URL url)
-            throws URISyntaxException, IOException, InvalidIssnException,
-            MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
+        throws URISyntaxException, IOException, InvalidIssnException,
+               MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
         CreatePublicationRequest request;
-        if (DoiValidator.validate(url)) {
+
+        if (urlIsValidDoi(url)) {
             logger.info("URL is a DOI");
             request = getPublicationFromDoi(owner, customerId, url);
         } else {
@@ -168,17 +160,23 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         return request;
     }
 
+    private Boolean urlIsValidDoi(URL url) throws URISyntaxException {
+        return DoiValidator.validate(url);
+    }
+
     private CreatePublicationRequest getPublicationFromOtherUrl(URL url)
-            throws URISyntaxException, MetadataNotFoundException {
+        throws URISyntaxException, MetadataNotFoundException {
         return metadataService.generateCreatePublicationRequest(url.toURI())
-                .orElseThrow(() -> new MetadataNotFoundException(NO_METADATA_FOUND_FOR + url));
+            .orElseThrow(() -> new MetadataNotFoundException(NO_METADATA_FOUND_FOR + url));
     }
 
     private CreatePublicationRequest getPublicationFromDoi(String owner, String customerId, URL url)
-            throws URISyntaxException, IOException, InvalidIssnException,
-            MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
+        throws URISyntaxException, IOException, InvalidIssnException,
+               MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
         Publication publication = IdentityUpdater.enrichPublicationCreators(bareProxyClient,
-                getPublicationMetadataFromDoi(url, owner, URI.create(customerId)));
+                                                                            getPublicationMetadataFromDoi(url, owner,
+                                                                                                          URI.create(
+                                                                                                              customerId)));
         return objectMapper.convertValue(publication, CreatePublicationRequest.class);
     }
 
@@ -199,9 +197,9 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     }
 
     private Publication getPublicationMetadataFromDoi(URL doiUrl,
-                                               String owner, URI customerId)
-            throws URISyntaxException, IOException, InvalidIssnException,
-            MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
+                                                      String owner, URI customerId)
+        throws URISyntaxException, IOException, InvalidIssnException,
+               MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
 
         MetadataAndContentLocation metadataAndContentLocation = doiProxyService.lookupDoiMetadata(
             doiUrl.toString(), DataciteContentType.DATACITE_JSON);

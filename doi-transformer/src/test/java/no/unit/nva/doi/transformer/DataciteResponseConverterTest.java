@@ -1,6 +1,7 @@
 package no.unit.nva.doi.transformer;
 
 import static java.time.Instant.now;
+import static no.unit.nva.doi.transformer.DoiTransformerConfig.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -40,7 +41,7 @@ public class DataciteResponseConverterTest {
     private static final UUID SOME_ID = UUID.randomUUID();
     private static final String SOME_OWNER = "SomeOwner";
     private static final URI SOME_URI = URI.create("SomeUri");
-    private final ObjectMapper objectMapper = JsonUtils.objectMapper;
+
 
     @DisplayName("DataciteResponseConverter::toPublication returns valid JSON when input is valid")
     @Test

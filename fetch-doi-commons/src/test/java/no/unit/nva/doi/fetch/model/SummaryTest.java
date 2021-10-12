@@ -1,16 +1,12 @@
 package no.unit.nva.doi.fetch.model;
 
+import static no.unit.nva.doi.fetch.FetchDoiCommonsTestConfig.objectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
-import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class SummaryTest {
-
-    private ObjectMapper objectMapper = JsonUtils.objectMapper;
 
     @Test
     public void canMapSummary() throws JsonProcessingException {

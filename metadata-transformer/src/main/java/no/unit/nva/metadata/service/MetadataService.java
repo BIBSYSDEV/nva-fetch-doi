@@ -76,7 +76,7 @@ public class MetadataService {
             return converter.generateCreatePublicationRequest();
         } catch (Exception e) {
             logger.error("Error mapping metadata to CreatePublicationRequest", e);
-            return Optional.empty();
+            throw new RuntimeException(e);
         }
     }
 

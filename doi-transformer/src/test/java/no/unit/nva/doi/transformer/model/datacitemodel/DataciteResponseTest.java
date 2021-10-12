@@ -1,5 +1,6 @@
 package no.unit.nva.doi.transformer.model.datacitemodel;
 
+import static no.unit.nva.doi.transformer.DoiTransformerConfig.objectMapper;
 import static no.unit.nva.hamcrest.DoesNotHaveNullOrEmptyFields.doesNotHaveNullOrEmptyFields;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -13,7 +14,6 @@ import org.junit.jupiter.api.Test;
 
 public class DataciteResponseTest {
 
-    private ObjectMapper objectMapper = JsonUtils.objectMapper;
     private static final Path DATACITE_RESPONSE = Path.of("datacite_response.json");
 
     @Test

@@ -10,6 +10,7 @@ dependencies {
     api libs.jackson.datatype.jsr310
     api libs.httpclient
 
-    testImplementation libs.zalando.jackson.datatype.problem
+    implementation libs.bundles.problem
+
     runtimeOnly libs.aws.lambda.java.core
 }

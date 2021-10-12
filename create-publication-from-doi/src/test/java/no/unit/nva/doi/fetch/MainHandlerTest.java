@@ -1,7 +1,7 @@
 package no.unit.nva.doi.fetch;
 
+import static no.unit.nva.doi.fetch.RestApiConfig.objectMapper;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
-import static nva.commons.core.JsonUtils.objectMapper;
 import static org.apache.http.HttpHeaders.AUTHORIZATION;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
@@ -24,6 +24,7 @@ import com.amazonaws.services.lambda.runtime.CognitoIdentity;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
+import com.google.common.net.HttpHeaders;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -112,7 +113,7 @@ public class MainHandlerTest {
         GatewayResponse<Summary> gatewayResponse = parseSuccessResponse(output.toString());
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
-        assertThat(gatewayResponse.getHeaders(), hasKey(MainHandler.ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertThat(gatewayResponse.getHeaders(), hasKey(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
         Summary summary = gatewayResponse.getBodyObject(Summary.class);
         assertNotNull(summary.getIdentifier());
     }
@@ -126,7 +127,7 @@ public class MainHandlerTest {
         GatewayResponse<Summary> gatewayResponse = parseSuccessResponse(output.toString());
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
-        assertThat(gatewayResponse.getHeaders(), hasKey(MainHandler.ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertThat(gatewayResponse.getHeaders(), hasKey(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
         Summary summary = gatewayResponse.getBodyObject(Summary.class);
         assertNotNull(summary.getIdentifier());
     }
@@ -164,7 +165,7 @@ public class MainHandlerTest {
         PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
         BareProxyClient bareProxyClient = mock(BareProxyClient.class);
         MetadataService metadataService = mock(MetadataService.class);
-        MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
+        MainHandler mainHandler = new MainHandler(publicationConverter, doiTransformService,
                                                   doiProxyService, publicationPersistenceService, bareProxyClient,
                                                   metadataService, environment);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -184,7 +185,7 @@ public class MainHandlerTest {
         BareProxyClient bareProxyClient = mock(BareProxyClient.class);
         MetadataService metadataService = mock(MetadataService.class);
 
-        MainHandler mainHandler = new MainHandler(objectMapper, publicationConverter, doiTransformService,
+        MainHandler mainHandler = new MainHandler(publicationConverter, doiTransformService,
                                                   doiProxyService, publicationPersistenceService, bareProxyClient,
                                                   metadataService, environment);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -207,7 +208,7 @@ public class MainHandlerTest {
         BareProxyClient bareProxyClient = mock(BareProxyClient.class);
         MetadataService metadataService = mock(MetadataService.class);
 
-        MainHandler handler = new MainHandler(objectMapper, publicationConverter, doiTransformService, doiProxyService,
+        MainHandler handler = new MainHandler(publicationConverter, doiTransformService, doiProxyService,
                                               publicationPersistenceService, bareProxyClient, metadataService,
                                               environment);
         ByteArrayOutputStream outputStream = outputStream();
@@ -231,7 +232,7 @@ public class MainHandlerTest {
         PublicationPersistenceService publicationPersistenceService =
             mockResourcePersistenceServiceReceivingFailedResult();
 
-        MainHandler handler = new MainHandler(objectMapper, publicationConverter, doiTransformService, doiProxyService,
+        MainHandler handler = new MainHandler(publicationConverter, doiTransformService, doiProxyService,
                                               publicationPersistenceService, bareProxyClient, metadataService,
                                               environment);
         ByteArrayOutputStream outputStream = outputStream();
@@ -249,7 +250,7 @@ public class MainHandlerTest {
         MetadataService metadataService = mock(MetadataService.class);
         when(metadataService.generateCreatePublicationRequest(any())).thenReturn(Optional.empty());
 
-        return new MainHandler(objectMapper, publicationConverter, doiTransformService,
+        return new MainHandler(publicationConverter, doiTransformService,
                                doiProxyService, publicationPersistenceService, bareProxyClient, metadataService,
                                environment);
     }
@@ -274,7 +275,7 @@ public class MainHandlerTest {
         BareProxyClient bareProxyClient = mock(BareProxyClient.class);
         MetadataService metadataService = mockMetadataServiceReturningSuccessfulResult();
 
-        return new MainHandler(objectMapper, publicationConverter, doiTransformService,
+        return new MainHandler(publicationConverter, doiTransformService,
                                doiProxyService, publicationPersistenceService, bareProxyClient, metadataService,
                                environment);
     }
@@ -309,14 +310,14 @@ public class MainHandlerTest {
 
     private Publication getPublication() {
         return new Publication.Builder()
-                   .withIdentifier(new SortableIdentifier(UUID.randomUUID().toString()))
-                   .withCreatedDate(Instant.now())
-                   .withModifiedDate(Instant.now())
-                   .withStatus(PublicationStatus.DRAFT)
-                   .withPublisher(new Organization.Builder().withId(URI.create("http://example.org/123")).build())
-                   .withEntityDescription(new EntityDescription.Builder().withMainTitle("Main title").build())
-                   .withOwner("Owner")
-                   .build();
+            .withIdentifier(new SortableIdentifier(UUID.randomUUID().toString()))
+            .withCreatedDate(Instant.now())
+            .withModifiedDate(Instant.now())
+            .withStatus(PublicationStatus.DRAFT)
+            .withPublisher(new Organization.Builder().withId(URI.create("http://example.org/123")).build())
+            .withEntityDescription(new EntityDescription.Builder().withMainTitle("Main title").build())
+            .withOwner("Owner")
+            .build();
     }
 
     private DoiProxyService mockDoiProxyServiceReceivingSuccessfulResult()
@@ -333,9 +334,9 @@ public class MainHandlerTest {
 
     private Summary createSummary() {
         return new Summary.Builder().withIdentifier(SortableIdentifier.next())
-                   .withTitle("Title on publication")
-                   .withCreatorName("Name, Creator")
-                   .withDate(new PublicationDate.Builder().withYear("2020").build()).build();
+            .withTitle("Title on publication")
+            .withCreatorName("Name, Creator")
+            .withDate(new PublicationDate.Builder().withYear("2020").build()).build();
     }
 
     private PublicationPersistenceService mockResourcePersistenceServiceReceivingFailedResult()
@@ -366,7 +367,7 @@ public class MainHandlerTest {
         return context;
     }
 
-    private InputStream mainHandlerInputStream(URL url) throws MalformedURLException, JsonProcessingException {
+    private InputStream mainHandlerInputStream(URL url) throws JsonProcessingException {
 
         RequestBody requestBody = createSampleRequest(url);
 
@@ -375,10 +376,10 @@ public class MainHandlerTest {
         requestHeaders.putAll(TestHeaders.getRequestHeaders());
 
         return new HandlerRequestBuilder<RequestBody>(objectMapper)
-                   .withBody(requestBody)
-                   .withHeaders(requestHeaders)
-                   .withRequestContext(getRequestContext())
-                   .build();
+            .withBody(requestBody)
+            .withHeaders(requestHeaders)
+            .withRequestContext(getRequestContext())
+            .build();
     }
 
     private InputStream mainHandlerInputStream() throws MalformedURLException, JsonProcessingException {
@@ -396,9 +397,9 @@ public class MainHandlerTest {
         requestHeaders.putAll(TestHeaders.getRequestHeaders());
 
         return new HandlerRequestBuilder<RequestBody>(objectMapper)
-                   .withHeaders(requestHeaders)
-                   .withRequestContext(getRequestContext())
-                   .build();
+            .withHeaders(requestHeaders)
+            .withRequestContext(getRequestContext())
+            .build();
     }
 
     private ByteArrayOutputStream outputStream() {
@@ -425,7 +426,7 @@ public class MainHandlerTest {
     private <T> GatewayResponse<T> parseGatewayResponse(String output, Class<T> responseObjectClass)
         throws JsonProcessingException {
         JavaType typeRef = objectMapper.getTypeFactory()
-                               .constructParametricType(GatewayResponse.class, responseObjectClass);
+            .constructParametricType(GatewayResponse.class, responseObjectClass);
         return objectMapper.readValue(output, typeRef);
     }
 
