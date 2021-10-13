@@ -1,6 +1,6 @@
 package no.unit.nva.doi.model;
 
-import static no.unit.nva.doi.DoiProxyConfig.objectMapper;
+import static no.unit.nva.doi.DoiProxyConfig.doiProxyObjectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -15,12 +15,12 @@ public class DoiProxyResponseTest {
     @Test
     public void canMapDoiProxyResponse() throws JsonProcessingException {
         DoiProxyResponse response = new DoiProxyResponse(
-            objectMapper.createObjectNode(),
+            doiProxyObjectMapper.createObjectNode(),
             MetadataSource.DataCite.name()
         );
 
-        DoiProxyResponse mappedResponse = objectMapper.readValue(
-            objectMapper.writeValueAsString(response),
+        DoiProxyResponse mappedResponse = doiProxyObjectMapper.readValue(
+            doiProxyObjectMapper.writeValueAsString(response),
             DoiProxyResponse.class
         );
 

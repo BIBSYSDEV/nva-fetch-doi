@@ -5,7 +5,7 @@ import nva.commons.core.JsonUtils;
 
 public final class DoiTransformerConfig {
 
-    public static final ObjectMapper objectMapper = JsonUtils.dtoObjectMapper;
+    public static final ObjectMapper doiTransformerObjectMapper = JsonUtils.dtoObjectMapper;
 
     private DoiTransformerConfig(){
 

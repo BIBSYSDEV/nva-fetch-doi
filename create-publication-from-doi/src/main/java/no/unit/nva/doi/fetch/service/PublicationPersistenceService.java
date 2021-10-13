@@ -1,6 +1,6 @@
 package no.unit.nva.doi.fetch.service;
 
-import static no.unit.nva.doi.fetch.RestApiConfig.objectMapper;
+import static no.unit.nva.doi.fetch.RestApiConfig.restServiceObjectMapper;
 import static org.apache.http.HttpHeaders.AUTHORIZATION;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.entity.ContentType.APPLICATION_JSON;
@@ -47,7 +47,7 @@ public class PublicationPersistenceService extends RestClient {
      */
     public PublicationResponse createPublication(CreatePublicationRequest request, URI apiUrl, String authorization)
         throws IOException, InterruptedException, CreatePublicationException, URISyntaxException {
-        String requestBodyString = objectMapper.writeValueAsString(request);
+        String requestBodyString = restServiceObjectMapper.writeValueAsString(request);
 
         HttpRequest httpRequest = HttpRequest.newBuilder()
             .uri(createURI(apiUrl, PATH))
@@ -62,7 +62,7 @@ public class PublicationPersistenceService extends RestClient {
             throw new CreatePublicationException(insertionErrorMessage(apiUrl, requestBodyString));
         }
 
-        return objectMapper.readValue(response.body(), PublicationResponse.class);
+        return restServiceObjectMapper.readValue(response.body(), PublicationResponse.class);
     }
 
     private String insertionErrorMessage(URI apiUrl, String requestBodyString) {

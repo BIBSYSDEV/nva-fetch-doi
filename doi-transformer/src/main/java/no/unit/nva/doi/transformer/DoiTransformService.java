@@ -1,7 +1,7 @@
 package no.unit.nva.doi.transformer;
 
 
-import static no.unit.nva.doi.transformer.DoiTransformerConfig.objectMapper;
+import static no.unit.nva.doi.transformer.DoiTransformerConfig.doiTransformerObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -75,14 +75,14 @@ public class DoiTransformService {
 
     private Publication convertFromDatacite(String body, Instant now, String owner, UUID uuid, URI publisherId)
             throws JsonProcessingException, URISyntaxException, InvalidIssnException {
-        DataciteResponse dataciteResponse = objectMapper.readValue(body, DataciteResponse.class);
+        DataciteResponse dataciteResponse = doiTransformerObjectMapper.readValue(body, DataciteResponse.class);
         return dataciteConverter.toPublication(dataciteResponse, now, uuid, owner, publisherId);
     }
 
     private Publication convertFromCrossRef(String body, String owner, UUID identifier)
             throws JsonProcessingException {
 
-        CrossRefDocument document = objectMapper.readValue(body, CrossrefApiResponse.class).getMessage();
+        CrossRefDocument document = doiTransformerObjectMapper.readValue(body, CrossrefApiResponse.class).getMessage();
         return crossRefConverter.toPublication(document, owner, identifier);
     }
 }

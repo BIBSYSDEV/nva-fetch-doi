@@ -5,7 +5,7 @@ import nva.commons.core.JsonUtils;
 
 public class FetchDoiCommonsTestConfig {
 
-    public static final ObjectMapper objectMapper = JsonUtils.dtoObjectMapper;
+    public static final ObjectMapper fetchDoiTestingObjectMapper = JsonUtils.dtoObjectMapper;
 
     private FetchDoiCommonsTestConfig(){
 
