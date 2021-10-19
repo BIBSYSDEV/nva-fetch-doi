@@ -18,7 +18,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import no.unit.nva.doi.transformer.exception.MalformedContributorException;
-import no.unit.nva.doi.transformer.language.LanguageDetector;
 import no.unit.nva.doi.transformer.language.SimpleLanguageDetector;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteContainer;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteCreator;
@@ -56,11 +55,11 @@ public class DataciteResponseConverter extends AbstractConverter {
     public static final String CREATOR_HAS_NO_NAME_ERROR = "Creator has no name:";
 
     public DataciteResponseConverter() {
-        this(new SimpleLanguageDetector());
+        this(new DoiConverter());
     }
 
-    public DataciteResponseConverter(LanguageDetector languageDetector) {
-        super(languageDetector, new DoiConverter());
+    public DataciteResponseConverter(DoiConverter doiConverter) {
+        super(new SimpleLanguageDetector(), doiConverter);
     }
 
     /**
@@ -271,7 +270,8 @@ public class DataciteResponseConverter extends AbstractConverter {
 
     private Identity createCreatorIdentity(DataciteCreator dataciteCreator) throws MalformedContributorException {
         if (creatorHasNoName(dataciteCreator)) {
-            String jsonString = attempt(() -> doiTransformerObjectMapper.writeValueAsString(dataciteCreator)).orElseThrow();
+            String jsonString = attempt(() -> doiTransformerObjectMapper.writeValueAsString(dataciteCreator))
+                .orElseThrow();
             throw new MalformedContributorException(CREATOR_HAS_NO_NAME_ERROR + jsonString);
         }
         return new Identity.Builder()
@@ -286,13 +286,5 @@ public class DataciteResponseConverter extends AbstractConverter {
 
     protected List<Organization> toAffiliations() {
         return null;
-    }
-
-    protected String toName(DataciteCreator dataciteCreator) {
-        if (dataciteCreator.getName() != null) {
-            return dataciteCreator.getName();
-        } else {
-            return super.toName(dataciteCreator.getFamilyName(), dataciteCreator.getGivenName());
-        }
     }
 }

@@ -3,6 +3,7 @@ package no.unit.nva.doi.transformer;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.doi.transformer.CrossRefConverter.UNRECOGNIZED_TYPE_MESSAGE;
 import static no.unit.nva.doi.transformer.DoiTransformerConfig.doiTransformerObjectMapper;
+import static no.unit.nva.doi.transformer.utils.IsbnCleaner.ERROR_WHEN_TRYING_TO_CLEAN_ISSN;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
@@ -19,6 +20,7 @@ import static org.hamcrest.text.MatchesPattern.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
@@ -127,7 +129,17 @@ public class CrossRefConverterTest extends ConversionTest {
     private static final Instant SAMPLE_CROSSREF_DATE_AS_INSTANT = sampleCrossrefDateAsInstant();
     private static final String ALTERNATIVE_TITLE = "Some alternative title";
     private static final int SECOND_LIST_ELEMENT = 1;
-    private final CrossRefConverter converter = new CrossRefConverter();
+    private final CrossRefConverter converter = setUpConverter();
+
+    private CrossRefConverter setUpConverter() {
+        DoiConverter doiConverter = new DoiConverter(uri -> true);
+        return new CrossRefConverter(doiConverter);
+    }
+
+    @Test
+    void defaultConstructorExists() {
+        new CrossRefConverter();
+    }
 
     @Test
     public void toPublicationReturnsObjectWithSourceLinkBeingTheFirstAvailableLinkToTheActualPublication() {
@@ -289,7 +301,8 @@ public class CrossRefConverterTest extends ConversionTest {
     void toPublicationSetsAbstractWhenInputHasNonEmptyAbstract()
         throws IOException {
         String json = IoUtils.stringFromResources(Path.of(CROSSREF_WITH_ABSTRACT_JSON));
-        CrossRefDocument crossRefDocument = doiTransformerObjectMapper.readValue(json, CrossrefApiResponse.class).getMessage();
+        CrossRefDocument crossRefDocument = doiTransformerObjectMapper
+            .readValue(json, CrossrefApiResponse.class).getMessage();
         String abstractText = toPublication(crossRefDocument).getEntityDescription().getAbstract();
         assertThat(abstractText, is(not(emptyString())));
         String expectedAbstract = IoUtils.stringFromResources(Path.of(PROCESSED_ABSTRACT));
@@ -312,7 +325,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @Test
     @DisplayName("toPublication sets the doi of the Reference when the Crossref document has a \"DOI\" value ")
     void toPublicationSetsTheDoiOfTheReferenceWhenTheCrossrefDocHasADoiValue() {
-        DoiConverter doiConverter = new DoiConverter();
+        DoiConverter doiConverter = new DoiConverter(uri -> true);
         CrossRefDocument sampleJournalArticle = sampleJournalArticle();
         sampleJournalArticle.setDoi(SOME_DOI);
         URI actualDoi = toPublication(sampleJournalArticle).getEntityDescription().getReference().getDoi();
@@ -679,6 +692,16 @@ public class CrossRefConverterTest extends ConversionTest {
         assertTrue(contributors.stream().allMatch(this::hasRole));
     }
 
+    @Test
+    void toPublicationReturnsNullIsxnWhenInputIsInvalidIsxn() {
+        String invalidIsxn = "not an isxn";
+        CrossRefDocument crossRefDocument = crossRefDocumentWithInvalidIsxn(invalidIsxn);
+        Publication publication = toPublication(crossRefDocument);
+        List<String> isbnList = ((Book) publication.getEntityDescription()
+            .getReference().getPublicationContext()).getIsbnList();
+        assertThat(isbnList, is(empty()));
+    }
+
     boolean hasRole(Contributor contributor) {
         return nonNull(contributor.getRole());
     }
@@ -702,6 +725,12 @@ public class CrossRefConverterTest extends ConversionTest {
         Link link = new Link();
         link.setUrl(invalidUri);
         crossRefDocument.setLink(List.of(link));
+        return crossRefDocument;
+    }
+
+    private CrossRefDocument crossRefDocumentWithInvalidIsxn(String isxn) {
+        CrossRefDocument crossRefDocument = sampleBook();
+        crossRefDocument.setIsbn(List.of(isxn));
         return crossRefDocument;
     }
 

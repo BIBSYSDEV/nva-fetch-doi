@@ -95,7 +95,11 @@ public class CrossRefConverter extends AbstractConverter {
     public static final String NULL_SERIES_NUMBER = null;
 
     public CrossRefConverter() {
-        super(new SimpleLanguageDetector(), new DoiConverter());
+        this(new DoiConverter());
+    }
+
+    public CrossRefConverter(DoiConverter doiConverter) {
+        super(new SimpleLanguageDetector(), doiConverter);
     }
 
     /**
@@ -219,7 +223,7 @@ public class CrossRefConverter extends AbstractConverter {
                 .withPublicationInstance(instance)
                 .build();
         } catch (InvalidIssnException | InvalidIsbnException e) {
-            logger.error(HANDLING_ISSN_ISBN_CANNOT_CREATE_REFERENCE);
+            // The exceptions are logged elsewhere
             return null;
         } catch (UnsupportedDocumentTypeException e) {
             logger.error(String.format(UNRECOGNIZED_TYPE_MESSAGE + CANNOT_CREATE_REFERENCE_FOR_PUBLICATION,
@@ -338,9 +342,14 @@ public class CrossRefConverter extends AbstractConverter {
     }
 
     private Organization extractAndCreatePublisher(CrossRefDocument document) {
-        return isNotEmpty(document.getPublisher())
-                   ? new Organization.Builder().withLabels(Map.of("name", document.getPublisher())).build()
-                   : null;
+        return Optional.ofNullable(document.getPublisher())
+                .filter(nva.commons.core.StringUtils::isNotEmpty)
+                .map(this::getOrganization)
+                .orElse(null);
+    }
+
+    private Organization getOrganization(String publisher) {
+        return new Organization.Builder().withLabels(Map.of("name", publisher)).build();
     }
 
     private String extractPrintIssn(CrossRefDocument document) {

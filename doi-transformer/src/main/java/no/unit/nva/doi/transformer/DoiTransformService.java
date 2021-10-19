@@ -15,6 +15,7 @@ import no.unit.nva.doi.transformer.model.datacitemodel.DataciteResponse;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
+import nva.commons.core.JacocoGenerated;
 
 public class DoiTransformService {
 
@@ -22,6 +23,7 @@ public class DoiTransformService {
     private final CrossRefConverter crossRefConverter;
 
 
+    @JacocoGenerated
     public DoiTransformService() {
         this(new DataciteResponseConverter(),new CrossRefConverter());
     }
