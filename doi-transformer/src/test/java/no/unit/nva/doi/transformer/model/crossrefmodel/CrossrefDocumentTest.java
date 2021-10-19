@@ -23,9 +23,11 @@ public class CrossrefDocumentTest {
     public void testSettersAndGetters() throws IOException {
 
         String resourceString = IoUtils.stringFromResources(CROSSREF_RESOURCE);
-        CrossrefApiResponse crossRefResponse = doiTransformerObjectMapper.readValue(resourceString, CrossrefApiResponse.class);
+        CrossrefApiResponse crossRefResponse = doiTransformerObjectMapper
+            .readValue(resourceString, CrossrefApiResponse.class);
         String serializedObject = doiTransformerObjectMapper.writeValueAsString(crossRefResponse);
-        CrossrefApiResponse deserializedObject = doiTransformerObjectMapper.readValue(serializedObject, CrossrefApiResponse.class);
+        CrossrefApiResponse deserializedObject = doiTransformerObjectMapper
+            .readValue(serializedObject, CrossrefApiResponse.class);
 
         assertThat(crossRefResponse, doesNotHaveNullOrEmptyFields());
         assertThat(doiTransformerObjectMapper.convertValue(deserializedObject, JsonNode.class),
@@ -36,29 +38,30 @@ public class CrossrefDocumentTest {
     public void testSettersAndGettersCrossrefBook() throws IOException {
 
         String resourceString = IoUtils.stringFromResources(CROSSREF_BOOK_RESOURCE);
-        CrossrefApiResponse crossRefResponse = doiTransformerObjectMapper.readValue(resourceString, CrossrefApiResponse.class);
+        CrossrefApiResponse crossRefResponse = doiTransformerObjectMapper
+            .readValue(resourceString, CrossrefApiResponse.class);
         String serializedObject = doiTransformerObjectMapper.writeValueAsString(crossRefResponse);
-        CrossrefApiResponse deserializedObject = doiTransformerObjectMapper.readValue(serializedObject, CrossrefApiResponse.class);
+        CrossrefApiResponse deserializedObject = doiTransformerObjectMapper
+            .readValue(serializedObject, CrossrefApiResponse.class);
 
         assertThat(crossRefResponse, doesNotHaveNullOrEmptyFields());
         assertThat(doiTransformerObjectMapper.convertValue(deserializedObject, JsonNode.class),
                    is(equalTo(doiTransformerObjectMapper.convertValue(crossRefResponse, JsonNode.class))));
-
     }
 
     @Test
     public void testSettersAndGettersCrossrefBookChapter() throws IOException {
 
         String resourceString = IoUtils.stringFromResources(CROSSREF_BOOK_CHAPTER_RESOURCE);
-        CrossrefApiResponse crossRefResponse = doiTransformerObjectMapper.readValue(resourceString, CrossrefApiResponse.class);
+        CrossrefApiResponse crossRefResponse = doiTransformerObjectMapper
+            .readValue(resourceString, CrossrefApiResponse.class);
         String serializedObject = doiTransformerObjectMapper.writeValueAsString(crossRefResponse);
-        CrossrefApiResponse deserializedObject = doiTransformerObjectMapper.readValue(serializedObject, CrossrefApiResponse.class);
+        CrossrefApiResponse deserializedObject = doiTransformerObjectMapper
+            .readValue(serializedObject, CrossrefApiResponse.class);
 
         assertThat(crossRefResponse, doesNotHaveNullOrEmptyFields());
         assertThat(doiTransformerObjectMapper.convertValue(deserializedObject, JsonNode.class),
                    is(equalTo(doiTransformerObjectMapper.convertValue(crossRefResponse, JsonNode.class))));
 
     }
-
-
 }
