@@ -42,10 +42,10 @@ import no.unit.nva.doi.transformer.utils.IssnCleaner;
 import no.unit.nva.doi.transformer.utils.PublicationType;
 import no.unit.nva.doi.transformer.utils.StringUtils;
 import no.unit.nva.doi.transformer.utils.TextLang;
+import no.unit.nva.file.model.FileSet;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -88,8 +88,6 @@ public class CrossRefConverter extends AbstractConverter {
     public static final int FIRST_MONTH_IN_YEAR = 1;
     public static final int FIRST_DAY_IN_MONTH = 1;
     public static final String CANNOT_CREATE_REFERENCE_FOR_PUBLICATION = ", cannot create reference for publication";
-    public static final String HANDLING_ISSN_ISBN_CANNOT_CREATE_REFERENCE =
-        "Error handling ISSN/ISBN" + CANNOT_CREATE_REFERENCE_FOR_PUBLICATION;
     private static final Logger logger = LoggerFactory.getLogger(CrossRefConverter.class);
     private static final String DEFAULT_LANGUAGE_ENGLISH = "en";
     public static final String NULL_SERIES_NUMBER = null;
@@ -127,7 +125,7 @@ public class CrossRefConverter extends AbstractConverter {
                 .withIndexedDate(extractInstantFromCrossrefDate(document.getIndexed()))
                 .withLink(extractFulltextLinkAsUri(document))
                 .withProjects(createProjects())
-                .withFileSet(createFilseSet())
+                .withFileSet(createFileSet())
                 .withEntityDescription(new EntityDescription.Builder()
                                            .withContributors(toContributors(document))
                                            .withDate(extractIssuedDate(document))
@@ -545,7 +543,7 @@ public class CrossRefConverter extends AbstractConverter {
         return null;
     }
 
-    private FileSet createFilseSet() {
+    private FileSet createFileSet() {
         return null;
     }
 
