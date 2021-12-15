@@ -1,7 +1,7 @@
 package no.unit.nva.doi.transformer;
 
-import static nva.commons.core.JsonUtils.objectMapper;
 
+import static no.unit.nva.doi.transformer.DoiTransformerConfig.doiTransformerObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -15,6 +15,7 @@ import no.unit.nva.doi.transformer.model.datacitemodel.DataciteResponse;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
+import nva.commons.core.JacocoGenerated;
 
 public class DoiTransformService {
 
@@ -22,6 +23,7 @@ public class DoiTransformService {
     private final CrossRefConverter crossRefConverter;
 
 
+    @JacocoGenerated
     public DoiTransformService() {
         this(new DataciteResponseConverter(),new CrossRefConverter());
     }
@@ -75,14 +77,14 @@ public class DoiTransformService {
 
     private Publication convertFromDatacite(String body, Instant now, String owner, UUID uuid, URI publisherId)
             throws JsonProcessingException, URISyntaxException, InvalidIssnException {
-        DataciteResponse dataciteResponse = objectMapper.readValue(body, DataciteResponse.class);
+        DataciteResponse dataciteResponse = doiTransformerObjectMapper.readValue(body, DataciteResponse.class);
         return dataciteConverter.toPublication(dataciteResponse, now, uuid, owner, publisherId);
     }
 
     private Publication convertFromCrossRef(String body, String owner, UUID identifier)
             throws JsonProcessingException {
 
-        CrossRefDocument document = objectMapper.readValue(body, CrossrefApiResponse.class).getMessage();
+        CrossRefDocument document = doiTransformerObjectMapper.readValue(body, CrossrefApiResponse.class).getMessage();
         return crossRefConverter.toPublication(document, owner, identifier);
     }
 }

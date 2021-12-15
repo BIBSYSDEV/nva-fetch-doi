@@ -1,20 +1,9 @@
 package no.unit.nva.doi.transformer.utils;
 
+import static no.unit.nva.doi.transformer.DoiTransformerConfig.doiTransformerObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import nva.commons.core.Environment;
-import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
-import org.apache.http.client.utils.URIBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -25,6 +14,15 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import nva.commons.core.Environment;
+import nva.commons.core.JacocoGenerated;
+import org.apache.http.client.utils.URIBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BareProxyClient {
 
@@ -44,7 +42,6 @@ public class BareProxyClient {
 
     private final transient HttpClient httpClient;
     private final URI apiUrl;
-    private static final ObjectMapper mapper = JsonUtils.objectMapper;
     private static final Logger logger = LoggerFactory.getLogger(BareProxyClient.class);
 
 
@@ -79,7 +76,7 @@ public class BareProxyClient {
     }
 
     private Optional<String> extractArpid(Optional<String> authorityDataForOrcid) throws JsonProcessingException {
-        JsonNode node = mapper.readTree(authorityDataForOrcid.get());
+        JsonNode node = doiTransformerObjectMapper.readTree(authorityDataForOrcid.get());
         if (node.isArray() && ((ArrayNode) node).size() == WANT_JUST_ONE_HIT) {
             return Optional.of(node.at(AUTHORITY_ID_JSON_POINTER).asText());
         } else {

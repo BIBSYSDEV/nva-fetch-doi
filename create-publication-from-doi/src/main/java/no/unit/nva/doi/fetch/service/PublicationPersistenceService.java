@@ -1,10 +1,9 @@
 package no.unit.nva.doi.fetch.service;
 
+import static no.unit.nva.doi.fetch.RestApiConfig.restServiceObjectMapper;
 import static org.apache.http.HttpHeaders.AUTHORIZATION;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.entity.ContentType.APPLICATION_JSON;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -17,7 +16,6 @@ import no.unit.nva.api.CreatePublicationRequest;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.doi.fetch.exceptions.CreatePublicationException;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
 
 public class PublicationPersistenceService extends RestClient {
 
@@ -25,7 +23,6 @@ public class PublicationPersistenceService extends RestClient {
     public static final String WARNING_MESSAGE = "Inserting publication failed.";
     public static final String INSERTING_PUBLICATION_FAILED = WARNING_MESSAGE + "\nAPI-URL:%s\nRequestBody:%s\n";
     private final HttpClient client;
-    private final ObjectMapper objectMapper = JsonUtils.objectMapper;
 
     public PublicationPersistenceService(HttpClient client) {
         super();
@@ -50,7 +47,7 @@ public class PublicationPersistenceService extends RestClient {
      */
     public PublicationResponse createPublication(CreatePublicationRequest request, URI apiUrl, String authorization)
         throws IOException, InterruptedException, CreatePublicationException, URISyntaxException {
-        String requestBodyString = objectMapper.writeValueAsString(request);
+        String requestBodyString = restServiceObjectMapper.writeValueAsString(request);
 
         HttpRequest httpRequest = HttpRequest.newBuilder()
             .uri(createURI(apiUrl, PATH))
@@ -65,7 +62,7 @@ public class PublicationPersistenceService extends RestClient {
             throw new CreatePublicationException(insertionErrorMessage(apiUrl, requestBodyString));
         }
 
-        return objectMapper.readValue(response.body(), PublicationResponse.class);
+        return restServiceObjectMapper.readValue(response.body(), PublicationResponse.class);
     }
 
     private String insertionErrorMessage(URI apiUrl, String requestBodyString) {

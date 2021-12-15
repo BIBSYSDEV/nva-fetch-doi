@@ -8,7 +8,6 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Role;
-import no.unit.nva.model.exceptions.MalformedContributorException;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
@@ -35,8 +34,8 @@ class IdentityUpdaterTest {
     public static final String ILLEGAL_ORCID = "hts:sdbox.orcid.org?0'0-1111-2222-3333";
 
     @Test
-    public void enrichPublicationCreatorsUpdatesPublicationWithCreatorHavingOrcidAndNoArpid() throws URISyntaxException,
-            MalformedContributorException {
+    public void enrichPublicationCreatorsUpdatesPublicationWithCreatorHavingOrcidAndNoArpid() throws
+            URISyntaxException {
         Identity identity = createIdentityWithOrcid();
         BareProxyClient bareProxyClient = mock(BareProxyClient.class);
         when(bareProxyClient.lookupArpidForOrcid(any())).thenReturn(Optional.of(SAMPLE_ARPID));
@@ -62,8 +61,7 @@ class IdentityUpdaterTest {
 
 
     @Test
-    public void enrichPublicationCreatorsDoesNotAlterPublicationWithoutOrcid() throws URISyntaxException,
-            MalformedContributorException {
+    public void enrichPublicationCreatorsDoesNotAlterPublicationWithoutOrcid() {
         Identity identity = new Identity();
         BareProxyClient bareProxyClient = mock(BareProxyClient.class);
         Publication publication = createPublicationWithIdentity(identity);
@@ -74,8 +72,7 @@ class IdentityUpdaterTest {
     }
 
     @Test
-    public void enrichPublicationCreatorsDoesNotAlterPublicationWithoutEntityDescription() throws URISyntaxException,
-            MalformedContributorException {
+    public void enrichPublicationCreatorsDoesNotAlterPublicationWithoutEntityDescription() {
         Identity identity = new Identity();
         BareProxyClient bareProxyClient = mock(BareProxyClient.class);
         Publication publication = createPublicationWithIdentity(identity);
@@ -87,8 +84,7 @@ class IdentityUpdaterTest {
 
 
     @Test
-    public void enrichPublicationCreatorsDoesUpdatePublicationCreatorWithOrcid() throws URISyntaxException,
-            MalformedContributorException {
+    public void enrichPublicationCreatorsDoesUpdatePublicationCreatorWithOrcid() {
         Identity identity = createIdentityWithOrcid();
         BareProxyClient bareProxyClient = mock(BareProxyClient.class);
         Publication publication = createPublicationWithIdentity(identity);
@@ -98,8 +94,7 @@ class IdentityUpdaterTest {
     }
 
     @Test
-    public void enrichPublicationCreatorsDoesThrowExceptionWhenOrcidHasErrors() throws URISyntaxException,
-            MalformedContributorException {
+    public void enrichPublicationCreatorsDoesThrowExceptionWhenOrcidHasErrors() throws URISyntaxException {
         Identity identity = new Identity();
         identity.setOrcId(ILLEGAL_ORCID);
         BareProxyClient bareProxyClient = mock(BareProxyClient.class);
@@ -118,7 +113,7 @@ class IdentityUpdaterTest {
     }
 
 
-    private Publication createPublicationWithIdentity(Identity identity) throws MalformedContributorException {
+    private Publication createPublicationWithIdentity(Identity identity) {
         Contributor contributor = new Contributor.Builder()
                 .withRole(Role.CREATOR)
                 .withIdentity(identity)

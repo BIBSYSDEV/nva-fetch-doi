@@ -1,6 +1,46 @@
 package no.unit.nva.doi.transformer;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import static java.util.Objects.nonNull;
+import static no.unit.nva.doi.transformer.CrossRefConverter.UNRECOGNIZED_TYPE_MESSAGE;
+import static no.unit.nva.doi.transformer.DoiTransformerConfig.doiTransformerObjectMapper;
+import static no.unit.nva.doi.transformer.utils.IsbnCleaner.ERROR_WHEN_TRYING_TO_CLEAN_ISSN;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.collection.IsEmptyCollection.empty;
+import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.hamcrest.text.IsEmptyString.emptyString;
+import static org.hamcrest.text.MatchesPattern.matchesPattern;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Path;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import no.unit.nva.doi.transformer.language.LanguageMapper;
 import no.unit.nva.doi.transformer.language.exceptions.LanguageUriNotFoundException;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossRefDocument;
@@ -31,7 +71,6 @@ import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.doi.DoiConverter;
 import nva.commons.logutils.LogUtils;
@@ -41,46 +80,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
-
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Path;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import static java.util.Objects.nonNull;
-import static no.unit.nva.doi.transformer.CrossRefConverter.UNRECOGNIZED_TYPE_MESSAGE;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.collection.IsEmptyCollection.empty;
-import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.IsNull.nullValue;
-import static org.hamcrest.core.StringContains.containsString;
-import static org.hamcrest.text.IsEmptyString.emptyString;
-import static org.hamcrest.text.MatchesPattern.matchesPattern;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CrossRefConverterTest extends ConversionTest {
 
@@ -128,10 +127,19 @@ public class CrossRefConverterTest extends ConversionTest {
     private static final String PROCESSED_ABSTRACT = "processedAbstract.txt";
     private static final String SAMPLE_ORCID = "http://orcid.org/0000-1111-2222-3333";
     private static final Instant SAMPLE_CROSSREF_DATE_AS_INSTANT = sampleCrossrefDateAsInstant();
-    private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
     private static final String ALTERNATIVE_TITLE = "Some alternative title";
     private static final int SECOND_LIST_ELEMENT = 1;
-    private final CrossRefConverter converter = new CrossRefConverter();
+    private final CrossRefConverter converter = setUpConverter();
+
+    private CrossRefConverter setUpConverter() {
+        DoiConverter doiConverter = new DoiConverter(uri -> true);
+        return new CrossRefConverter(doiConverter);
+    }
+
+    @Test
+    void defaultConstructorExists() {
+        new CrossRefConverter();
+    }
 
     @Test
     public void toPublicationReturnsObjectWithSourceLinkBeingTheFirstAvailableLinkToTheActualPublication() {
@@ -293,7 +301,8 @@ public class CrossRefConverterTest extends ConversionTest {
     void toPublicationSetsAbstractWhenInputHasNonEmptyAbstract()
         throws IOException {
         String json = IoUtils.stringFromResources(Path.of(CROSSREF_WITH_ABSTRACT_JSON));
-        CrossRefDocument crossRefDocument = objectMapper.readValue(json, CrossrefApiResponse.class).getMessage();
+        CrossRefDocument crossRefDocument = doiTransformerObjectMapper
+            .readValue(json, CrossrefApiResponse.class).getMessage();
         String abstractText = toPublication(crossRefDocument).getEntityDescription().getAbstract();
         assertThat(abstractText, is(not(emptyString())));
         String expectedAbstract = IoUtils.stringFromResources(Path.of(PROCESSED_ABSTRACT));
@@ -316,7 +325,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @Test
     @DisplayName("toPublication sets the doi of the Reference when the Crossref document has a \"DOI\" value ")
     void toPublicationSetsTheDoiOfTheReferenceWhenTheCrossrefDocHasADoiValue() {
-        DoiConverter doiConverter = new DoiConverter();
+        DoiConverter doiConverter = new DoiConverter(uri -> true);
         CrossRefDocument sampleJournalArticle = sampleJournalArticle();
         sampleJournalArticle.setDoi(SOME_DOI);
         URI actualDoi = toPublication(sampleJournalArticle).getEntityDescription().getReference().getDoi();
@@ -683,6 +692,16 @@ public class CrossRefConverterTest extends ConversionTest {
         assertTrue(contributors.stream().allMatch(this::hasRole));
     }
 
+    @Test
+    void toPublicationReturnsNullIsxnWhenInputIsInvalidIsxn() {
+        String invalidIsxn = "not an isxn";
+        CrossRefDocument crossRefDocument = crossRefDocumentWithInvalidIsxn(invalidIsxn);
+        Publication publication = toPublication(crossRefDocument);
+        List<String> isbnList = ((Book) publication.getEntityDescription()
+            .getReference().getPublicationContext()).getIsbnList();
+        assertThat(isbnList, is(empty()));
+    }
+
     boolean hasRole(Contributor contributor) {
         return nonNull(contributor.getRole());
     }
@@ -706,6 +725,12 @@ public class CrossRefConverterTest extends ConversionTest {
         Link link = new Link();
         link.setUrl(invalidUri);
         crossRefDocument.setLink(List.of(link));
+        return crossRefDocument;
+    }
+
+    private CrossRefDocument crossRefDocumentWithInvalidIsxn(String isxn) {
+        CrossRefDocument crossRefDocument = sampleBook();
+        crossRefDocument.setIsbn(List.of(isxn));
         return crossRefDocument;
     }
 

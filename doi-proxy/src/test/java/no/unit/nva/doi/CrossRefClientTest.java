@@ -3,13 +3,12 @@ package no.unit.nva.doi;
 import static no.unit.nva.doi.CrossRefClient.CROSSREFPLUSAPITOKEN_KEY_ENV;
 import static no.unit.nva.doi.CrossRefClient.CROSSREFPLUSAPITOKEN_NAME_ENV;
 import static no.unit.nva.doi.CrossRefClient.CROSSREF_API_KEY_SECRET_NOT_FOUND_TEMPLATE;
-import static no.unit.nva.doi.CrossRefClient.CROSSREF_SECRETS_NOT_FOUND;
 import static no.unit.nva.doi.CrossRefClient.CROSSREF_USER_AGENT;
 import static no.unit.nva.doi.CrossRefClient.ILLEGAL_DOI_MESSAGE;
 import static no.unit.nva.doi.CrossRefClient.WORKS;
+import static no.unit.nva.doi.DoiProxyConfig.doiProxyObjectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -38,7 +37,6 @@ import no.unit.nva.doi.utils.HttpResponseStatus404;
 import no.unit.nva.doi.utils.HttpResponseStatus500;
 import no.unit.nva.doi.utils.MockHttpClient;
 import nva.commons.core.Environment;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
 import nva.commons.secrets.SecretsReader;
@@ -245,7 +243,7 @@ public class CrossRefClientTest {
         var secretsManager = mock(AWSSecretsManager.class);
         var secretsReader = new SecretsReader(secretsManager);
         if (withApiSecret) {
-            var secretString = JsonUtils.objectMapper.writeValueAsString(
+            var secretString = doiProxyObjectMapper.writeValueAsString(
                 Map.of(KEY, "irrelevant"));
             var secretValue = new GetSecretValueResult().withName(NAME)
                                   .withSecretString(secretString);

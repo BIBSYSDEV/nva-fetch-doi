@@ -1,6 +1,6 @@
 package no.unit.nva.doi.fetch.service;
 
-import static nva.commons.core.JsonUtils.objectMapper;
+import static no.unit.nva.doi.fetch.RestApiConfig.restServiceObjectMapper;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -18,7 +18,7 @@ public class PublicationConverterTest {
 
     @Test
     public void publicationConverterReturnsSummaryForValidJsonObject() throws IOException {
-        JsonNode json = objectMapper.readTree(IoUtils.inputStreamFromResources(TEST_FILE));
+        JsonNode json = restServiceObjectMapper.readTree(IoUtils.inputStreamFromResources(TEST_FILE));
         PublicationConverter converter = new PublicationConverter();
 
         Summary summary = converter.toSummary(json);
