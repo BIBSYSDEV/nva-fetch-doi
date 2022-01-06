@@ -9,8 +9,6 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -22,7 +20,7 @@ public class ScopusHandler extends ApiGatewayHandler<RequestBody, Summary> {
     private final transient PublicationPersistenceService publicationPersistenceService;
     private final transient MetadataService metadataService;
 
-    private static final Logger logger = LoggerFactory.getLogger(ScopusHandler.class);
+//    private static final Logger logger = LoggerFactory.getLogger(ScopusHandler.class);
 
     @JacocoGenerated
     public ScopusHandler() {
@@ -60,6 +58,9 @@ public class ScopusHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     @Override
     protected Summary processInput(RequestBody input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+        metadataService.toString();
+        publicationConverter.toString();
+        publicationPersistenceService.toString();
         return null;
     }
 

@@ -7,36 +7,27 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.net.HttpHeaders;
 import no.unit.nva.api.CreatePublicationRequest;
-import no.unit.nva.doi.DoiProxyService;
-import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
-import no.unit.nva.doi.fetch.exceptions.UnsupportedDocumentTypeException;
 import no.unit.nva.doi.fetch.model.Summary;
-import no.unit.nva.doi.transformer.DoiTransformService;
-import no.unit.nva.doi.transformer.utils.BareProxyClient;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.exceptions.InvalidIsbnException;
-import no.unit.nva.model.exceptions.InvalidIssnException;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.core.Environment;
 import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.zalando.problem.Problem;
 
-import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.Optional;
 
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
-import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasKey;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -68,6 +59,8 @@ class ScopusHandlerTest {
         assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertNull(handler.processInput(null, null, null));
+        assertNull(handler.getSuccessStatusCode(null, null));
     }
 
     private GatewayResponse<Summary> parseSuccessResponse(String output) throws JsonProcessingException {
@@ -107,8 +100,7 @@ class ScopusHandlerTest {
     }
 
     private PublicationConverter mockPublicationConverter() {
-        PublicationConverter publicationConverter = mock(PublicationConverter.class);
-        return publicationConverter;
+        return mock(PublicationConverter.class);
     }
 
     private Context getMockContext() {
