@@ -1,7 +1,6 @@
 package no.sikt.nva.scopus;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import no.unit.nva.doi.fetch.model.RequestBody;
 import no.unit.nva.doi.fetch.model.Summary;
 import no.unit.nva.metadata.service.MetadataService;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -11,11 +10,12 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 import java.io.IOException;
+import java.io.InputStream;
 
-//Todo: find our own Request object
 //Todo: find our own Response object
-public class ScopusHandler extends ApiGatewayHandler<RequestBody, Summary> {
+public class ScopusHandler extends ApiGatewayHandler<Void, Summary> {
 
+    private final transient ScopusS3Client s3Client;
     private final transient PublicationConverter publicationConverter;
     private final transient PublicationPersistenceService publicationPersistenceService;
     private final transient MetadataService metadataService;
@@ -29,7 +29,7 @@ public class ScopusHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     @JacocoGenerated
     public ScopusHandler(Environment environment) {
-        this(new PublicationConverter(), new PublicationPersistenceService(), getMetadataService(), environment);
+        this(new ScopusS3Client(), new PublicationConverter(), new PublicationPersistenceService(), getMetadataService(), environment);
     }
 
     /**
@@ -37,11 +37,13 @@ public class ScopusHandler extends ApiGatewayHandler<RequestBody, Summary> {
      *
      * @param environment  environment.
      */
-    public ScopusHandler(PublicationConverter publicationConverter,
+    public ScopusHandler(ScopusS3Client s3Client,
+                       PublicationConverter publicationConverter,
                        PublicationPersistenceService publicationPersistenceService,
                        MetadataService metadataService,
                        Environment environment) {
-        super(RequestBody.class, environment);
+        super(Void.class, environment);
+        this.s3Client = s3Client;
         this.publicationConverter = publicationConverter;
         this.publicationPersistenceService = publicationPersistenceService;
         this.metadataService = metadataService;
@@ -57,7 +59,8 @@ public class ScopusHandler extends ApiGatewayHandler<RequestBody, Summary> {
     }
 
     @Override
-    protected Summary processInput(RequestBody input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+    protected Summary processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+        InputStream inputStream = s3Client.getFile("full_format.xml");
         metadataService.toString();
         publicationConverter.toString();
         publicationPersistenceService.toString();
@@ -65,7 +68,7 @@ public class ScopusHandler extends ApiGatewayHandler<RequestBody, Summary> {
     }
 
     @Override
-    protected Integer getSuccessStatusCode(RequestBody input, Summary output) {
+    protected Integer getSuccessStatusCode(Void input, Summary output) {
         return null;
     }
 }

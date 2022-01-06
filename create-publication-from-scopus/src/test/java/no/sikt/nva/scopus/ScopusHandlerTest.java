@@ -80,11 +80,12 @@ class ScopusHandlerTest {
     }
 
     private ScopusHandler createHandler(Environment environment) {
+        ScopusS3Client s3Client = mockScopusS3Client();
         PublicationConverter publicationConverter = mockPublicationConverter();
         PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
         MetadataService metadataService = mockMetadataServiceReturningSuccessfulResult();
 
-        return new ScopusHandler(publicationConverter, publicationPersistenceService, metadataService, environment);
+        return new ScopusHandler(s3Client, publicationConverter, publicationPersistenceService, metadataService, environment);
     }
 
     private MetadataService mockMetadataServiceReturningSuccessfulResult() {
@@ -101,6 +102,10 @@ class ScopusHandlerTest {
 
     private PublicationConverter mockPublicationConverter() {
         return mock(PublicationConverter.class);
+    }
+
+    private ScopusS3Client mockScopusS3Client() {
+        return mock(ScopusS3Client.class);
     }
 
     private Context getMockContext() {

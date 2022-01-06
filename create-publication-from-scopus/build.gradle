@@ -9,6 +9,7 @@ dependencies {
     }
     implementation project(":doi-proxy")
     implementation project(":metadata-transformer")
+    implementation libs.aws.java.sdk.s3
 
     testImplementation(libs.zalando.problem) {
         compileOnly(libs.apiGuardian) {

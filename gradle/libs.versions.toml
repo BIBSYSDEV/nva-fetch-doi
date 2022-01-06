@@ -3,7 +3,7 @@ nva = { strictly = "1.16.30" }
 testUtils = { strictly = "0.1.24" }
 jacksonVersion = { strictly = "2.13.0" }
 jakartaVersion = { strictly = "2.1.6" }
-awsSdkVersion = { strictly = "1.12.129" }
+awsSdkVersion = { strictly = "1.12.134" }
 nvaDatamodelVersion = { strictly = "0.14.12" }
 jerseyVersion = { strictly = "2.30.1" }
 rdf4jVersion = { strictly = "3.1.2" }
@@ -39,6 +39,7 @@ jackson-datatype-jdk8 = { group = "com.fasterxml.jackson.datatype", name = "jack
 jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations", version.ref = "jacksonVersion" }
 jackson-datatype-jsr310 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jsr310", version.ref = "jacksonVersion" }
 
+aws-java-sdk-s3 = { group = "com.amazonaws", name = "aws-java-sdk-s3", version.ref = "awsSdkVersion" }
 aws-java-sdk-core = { group = "com.amazonaws", name = "aws-java-sdk-core", version.ref = "awsSdkVersion" }
 aws-secretsmanager = { group = "com.amazonaws", name = "aws-java-sdk-secretsmanager", version.ref = "awsSdkVersion" }
 aws-lambda-java-core = { group = "com.amazonaws", name = "aws-lambda-java-core", version = { strictly = "1.2.1" } }
