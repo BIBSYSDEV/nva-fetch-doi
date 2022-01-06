@@ -74,9 +74,6 @@ class ScopusHandlerTest {
         return parseGatewayResponse(output, Summary.class);
     }
 
-    private GatewayResponse<Problem> parseFailureResponse(OutputStream output) throws JsonProcessingException {
-        return parseGatewayResponse(output.toString(), Problem.class);
-    }
 
     private <T> GatewayResponse<T> parseGatewayResponse(String output, Class<T> responseObjectClass)
             throws JsonProcessingException {
