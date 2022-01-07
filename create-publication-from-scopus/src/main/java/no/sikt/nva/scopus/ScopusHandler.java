@@ -67,7 +67,9 @@ public class ScopusHandler extends ApiGatewayHandler<Void, Summary> {
         // iterate over listOfLatestFiles
         for (String filename : filenames) {
             InputStream inputStream = s3Client.getFile(filename);
-            // parse every single file to a ScopusPublication
+            if (inputStream != null) {
+                // parse every single file to a ScopusPublication
+            }
         }
         // enrich contributors with help of nva-cristin-service
         // enrich organizations with help of nva-cristin-service
