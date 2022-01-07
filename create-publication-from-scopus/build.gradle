@@ -1,5 +1,13 @@
 def problemVersion = '0.24.0'
 
+project.ext {
+    jaxbTargetDir = file("src/main/java")
+}
+
+configurations {
+    xsd2java
+}
+
 dependencies {
     implementation project(":fetch-doi-commons")
     implementation project(":doi-transformer") {
@@ -15,5 +23,40 @@ dependencies {
         compileOnly(libs.apiGuardian) {
             because 'Dependency has maven scope provided'
         }
+    }
+
+    xsd2java group: 'com.sun.xml.bind', name: 'jaxb-xjc', version: '3.0.2'
+    xsd2java group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '3.0.2'
+    xsd2java group: 'javax.xml.bind', name: 'jaxb-api', version: '2.4.0-b180830.0359'
+    xsd2java group: 'javax.activation', name:'javax.activation-api', version: '1.2.0'
+}
+
+
+
+task xsd2java() {
+    doLast {
+        jaxbTargetDir.mkdirs()
+        ant.taskdef(name: 'xjc', classname: 'com.sun.tools.xjc.XJCTask', classpath: configurations.xsd2java.asPath)
+        ant.jaxbTargetDir = jaxbTargetDir
+        ant.xjc(
+                destdir: '${jaxbTargetDir}',
+                package: 'no.scopus.generated',
+                schema: 'src/main/resources/schema.scopus.xocs-ani514/xocs-ani514-xml.xsd'
+        )
+    }
+}
+compileJava.dependsOn xsd2java
+
+tasks.withType(Checkstyle) {
+    exclude { 'no/scopus/generated/*' }
+}
+
+jacocoTestCoverageVerification {
+    afterEvaluate {
+        getClassDirectories().setFrom(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                    'no/scopus/generated/*'
+            ])
+        })
     }
 }
