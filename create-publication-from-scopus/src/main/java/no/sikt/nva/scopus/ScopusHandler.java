@@ -60,6 +60,16 @@ public class ScopusHandler extends ApiGatewayHandler<Void, Summary> {
 
     @Override
     protected Summary processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+        // Todo: do we have to unzip here først? Or is that done in seperate routine?
+        // read S3 and get a list of all latest Files
+        // iterate over listOfLatestFiles
+        // parse every single file to a ScopusPublication
+        // enrich contributors with help of nva-cristin-service
+        // enrich organizations with help of nva-cristin-service
+        // enrich journal with help of nva-publication-channels
+        // enrich publisher with help of nva-publication-channels
+        // metadataTransform ScopusPublication into CreatePublicationRequest
+        // send CreatePublicationRequest to nva-publication-service
         InputStream inputStream = s3Client.getFile("full_format.xml");
         metadataService.toString();
         publicationConverter.toString();
