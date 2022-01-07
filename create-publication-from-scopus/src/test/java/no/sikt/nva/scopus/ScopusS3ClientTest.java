@@ -6,6 +6,7 @@ import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -13,7 +14,9 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -22,14 +25,23 @@ class ScopusS3ClientTest {
     public static final String PREFIX_FILENAME_1 = "prefixFilename1";
     public static final String PREFIX_FILENAME_2 = "prefixFilename2";
     public static final String FAILING = "I am failing!";
-    private AmazonS3 amazonS3Client;
     private final String bucketName = "bucketName";
     private final String filename = "filename";
     private final String prefix = "prefix";
+    private AmazonS3 amazonS3Client;
+    private Environment environment;
 
     @BeforeEach
     public void setUp() {
         amazonS3Client = mock(AmazonS3.class);
+        environment = mock(Environment.class);
+        when(environment.readEnv(ScopusS3Client.BUCKET_NAME)).thenReturn(bucketName);
+        when(environment.readEnv(ScopusS3Client.AWS_REGION)).thenReturn("eu-west-1");
+    }
+
+    @Test
+    public void testConstructorsForCodeCoverage() {
+        ScopusS3Client client = new ScopusS3Client(environment);
     }
 
     @Test

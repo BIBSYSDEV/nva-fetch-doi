@@ -21,7 +21,7 @@ public class ScopusHandler extends ApiGatewayHandler<Void, Summary> {
     private final transient PublicationPersistenceService publicationPersistenceService;
     private final transient MetadataService metadataService;
 
-//    private static final Logger logger = LoggerFactory.getLogger(ScopusHandler.class);
+    //private static final Logger logger = LoggerFactory.getLogger(ScopusHandler.class);
 
     @JacocoGenerated
     public ScopusHandler() {
@@ -30,7 +30,8 @@ public class ScopusHandler extends ApiGatewayHandler<Void, Summary> {
 
     @JacocoGenerated
     public ScopusHandler(Environment environment) {
-        this(new ScopusS3Client(), new PublicationConverter(), new PublicationPersistenceService(), getMetadataService(), environment);
+        this(new ScopusS3Client(), new PublicationConverter(), new PublicationPersistenceService(),
+                getMetadataService(), environment);
     }
 
     /**

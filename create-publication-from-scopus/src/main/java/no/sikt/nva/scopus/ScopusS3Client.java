@@ -24,14 +24,16 @@ public class ScopusS3Client {
 
     private String bucketName;
     private AmazonS3 amazonS3Client;
-    private static final String AWS_REGION = "AWS_REGION";
-    private static final String BUCKET_NAME = "BUCKET_NAME";
+    static final String AWS_REGION = "AWS_REGION";
+    static final String BUCKET_NAME = "BUCKET_NAME";
     public static final String CANNOT_CONNECT_TO_S3 = "Cannot connect to S3";
 
+    @JacocoGenerated
     public ScopusS3Client() {
         initS3Client(new Environment());
     }
 
+    @JacocoGenerated
     public ScopusS3Client(Environment environment) {
         initS3Client(environment);
     }
@@ -61,14 +63,14 @@ public class ScopusS3Client {
     }
 
     /**
-     * Get single file from s3 by filename
+     * Get single file from s3 by filename.
      * @param filename name of the file to be retrieved
      * @return file as inputStream
      */
     protected InputStream getFile(String filename) {
         try {
-            S3Object xFile = amazonS3Client.getObject(bucketName, filename);
-            return xFile.getObjectContent();
+            S3Object object = amazonS3Client.getObject(bucketName, filename);
+            return object.getObjectContent();
         } catch (SdkClientException e) {
             logger.error(COULD_NOT_GET_FILE, filename, e);
         }
@@ -76,7 +78,7 @@ public class ScopusS3Client {
     }
 
     /**
-     * Get a list of files from s3 by given prefix (structured path on s3)
+     * Get a list of files from s3 by given prefix (structured path on s3).
      * @param prefix structured path on s3 binding files together
      * @return list of filenames
      */
