@@ -8,6 +8,8 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,7 +23,7 @@ public class ScopusHandler extends ApiGatewayHandler<Void, Summary> {
     private final transient PublicationPersistenceService publicationPersistenceService;
     private final transient MetadataService metadataService;
 
-    //private static final Logger logger = LoggerFactory.getLogger(ScopusHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(ScopusHandler.class);
 
     @JacocoGenerated
     public ScopusHandler() {
@@ -67,9 +69,10 @@ public class ScopusHandler extends ApiGatewayHandler<Void, Summary> {
         List<String> filenames = s3Client.listFiles("latest?");
         // iterate over listOfLatestFiles
         for (String filename : filenames) {
-            InputStream inputStream = s3Client.getFile(filename);
-            if (inputStream != null) {
+            try (InputStream inputStream = s3Client.getFile(filename)) {
                 // parse every single file to a ScopusPublication
+            } catch (IOException e) {
+                logger.error("Could not deal with inputStream for file: {}", filename, e);
             }
         }
         // enrich contributors with help of nva-cristin-service

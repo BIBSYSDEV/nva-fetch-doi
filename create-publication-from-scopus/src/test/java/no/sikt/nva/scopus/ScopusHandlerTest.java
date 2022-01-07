@@ -85,7 +85,8 @@ class ScopusHandlerTest {
         PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
         MetadataService metadataService = mockMetadataServiceReturningSuccessfulResult();
 
-        return new ScopusHandler(s3Client, publicationConverter, publicationPersistenceService, metadataService, environment);
+        return new ScopusHandler(s3Client, publicationConverter, publicationPersistenceService, metadataService,
+                environment);
     }
 
     private MetadataService mockMetadataServiceReturningSuccessfulResult() {

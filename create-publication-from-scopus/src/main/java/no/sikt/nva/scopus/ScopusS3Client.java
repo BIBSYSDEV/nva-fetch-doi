@@ -4,6 +4,7 @@ import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,8 +25,8 @@ public class ScopusS3Client {
 
     private String bucketName;
     private AmazonS3 amazonS3Client;
-    static final String AWS_REGION = "AWS_REGION";
-    static final String BUCKET_NAME = "BUCKET_NAME";
+    protected static final String AWS_REGION = "AWS_REGION";
+    protected static final String BUCKET_NAME = "BUCKET_NAME";
     public static final String CANNOT_CONNECT_TO_S3 = "Cannot connect to S3";
 
     @JacocoGenerated
@@ -68,10 +69,9 @@ public class ScopusS3Client {
      * @return file as inputStream
      */
     protected InputStream getFile(String filename) {
-        try {
-            S3Object object = amazonS3Client.getObject(bucketName, filename);
+        try (S3Object object = amazonS3Client.getObject(bucketName, filename)) {
             return object.getObjectContent();
-        } catch (SdkClientException e) {
+        } catch (SdkClientException | IOException e) {
             logger.error(COULD_NOT_GET_FILE, filename, e);
         }
         return null;
