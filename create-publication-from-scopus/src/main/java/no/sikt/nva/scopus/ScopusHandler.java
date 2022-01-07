@@ -11,6 +11,7 @@ import nva.commons.core.JacocoGenerated;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 //Todo: find our own Response object
 public class ScopusHandler extends ApiGatewayHandler<Void, Summary> {
@@ -60,17 +61,20 @@ public class ScopusHandler extends ApiGatewayHandler<Void, Summary> {
 
     @Override
     protected Summary processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
-        // Todo: do we have to unzip here først? Or is that done in seperate routine?
+        // Todo: do we have to unzip here first? Or is that done in separate routine?
         // read S3 and get a list of all latest Files
+        List<String> filenames = s3Client.listFiles("latest?");
         // iterate over listOfLatestFiles
-        // parse every single file to a ScopusPublication
+        for (String filename : filenames) {
+            InputStream inputStream = s3Client.getFile(filename);
+            // parse every single file to a ScopusPublication
+        }
         // enrich contributors with help of nva-cristin-service
         // enrich organizations with help of nva-cristin-service
         // enrich journal with help of nva-publication-channels
         // enrich publisher with help of nva-publication-channels
         // metadataTransform ScopusPublication into CreatePublicationRequest
         // send CreatePublicationRequest to nva-publication-service
-        InputStream inputStream = s3Client.getFile("full_format.xml");
         metadataService.toString();
         publicationConverter.toString();
         publicationPersistenceService.toString();

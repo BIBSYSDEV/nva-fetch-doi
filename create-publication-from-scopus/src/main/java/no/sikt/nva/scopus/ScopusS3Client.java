@@ -5,8 +5,12 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.util.ArrayList;
+import java.util.List;
 
+import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
@@ -60,6 +64,14 @@ public class ScopusS3Client {
     protected InputStream getFile(String filename) {
         S3Object xFile = amazonS3Client.getObject(bucketName, filename);
         return xFile.getObjectContent();
+    }
+
+    protected List<String> listFiles(String prefix) {
+        List<String> fileNames = new ArrayList<>();
+        ObjectListing result = amazonS3Client.listObjects(bucketName, prefix);
+        List<S3ObjectSummary> objects = result.getObjectSummaries();
+        objects.forEach(obj -> fileNames.add(obj.getKey()));
+        return fileNames;
     }
 
 
