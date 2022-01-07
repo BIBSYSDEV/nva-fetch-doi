@@ -5,8 +5,10 @@ project.ext {
 }
 
 configurations {
-    xsd2java
+    jaxb
 }
+
+//compileJava.dependsOn jaxb
 
 dependencies {
     implementation project(":fetch-doi-commons")
@@ -18,34 +20,28 @@ dependencies {
     implementation project(":doi-proxy")
     implementation project(":metadata-transformer")
     implementation libs.aws.java.sdk.s3
+    jaxb libs.bundles.xsd2java
 
     testImplementation(libs.zalando.problem) {
         compileOnly(libs.apiGuardian) {
             because 'Dependency has maven scope provided'
         }
     }
-
-    xsd2java group: 'com.sun.xml.bind', name: 'jaxb-xjc', version: '3.0.2'
-    xsd2java group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '3.0.2'
-    xsd2java group: 'javax.xml.bind', name: 'jaxb-api', version: '2.4.0-b180830.0359'
-    xsd2java group: 'javax.activation', name:'javax.activation-api', version: '1.2.0'
 }
 
-
-
-task xsd2java() {
+task jaxb() {
     doLast {
         jaxbTargetDir.mkdirs()
-        ant.taskdef(name: 'xjc', classname: 'com.sun.tools.xjc.XJCTask', classpath: configurations.xsd2java.asPath)
+        ant.taskdef(name: 'xjc', classname: 'com.sun.tools.xjc.XJC2Task', classpath: configurations.jaxb.asPath)
         ant.jaxbTargetDir = jaxbTargetDir
         ant.xjc(
                 destdir: '${jaxbTargetDir}',
                 package: 'no.scopus.generated',
-                schema: 'src/main/resources/schema.scopus.xocs-ani514/xocs-ani514-xml.xsd'
+                schema: 'src/main/resources/schema.scopus.xocs-ani514/xocs-ani514.xsd',
+                binding: 'src/main/resources/schema.scopus.xocs-ani514/xocs-ani514.xjb'
         )
     }
 }
-compileJava.dependsOn xsd2java
 
 tasks.withType(Checkstyle) {
     exclude { 'no/scopus/generated/*' }
