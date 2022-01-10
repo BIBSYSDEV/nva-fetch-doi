@@ -8,8 +8,6 @@ configurations {
     jaxb
 }
 
-//compileJava.dependsOn jaxb
-
 dependencies {
     implementation project(":fetch-doi-commons")
     implementation project(":doi-transformer") {
@@ -17,10 +15,10 @@ dependencies {
             because 'PMD'
         }
     }
+    implementation(libs.bundles.xsd2java)
     implementation project(":doi-proxy")
     implementation project(":metadata-transformer")
     implementation libs.aws.java.sdk.s3
-    jaxb libs.bundles.xsd2java
 
     testImplementation(libs.zalando.problem) {
         compileOnly(libs.apiGuardian) {
@@ -44,14 +42,18 @@ task jaxb() {
 }
 
 tasks.withType(Checkstyle) {
-    exclude { 'no/scopus/generated/*' }
+    exclude { '**/generated/*' }
+}
+
+tasks.withType(Pmd) {
+    exclude { '**/generated/*' }
 }
 
 jacocoTestCoverageVerification {
     afterEvaluate {
         getClassDirectories().setFrom(classDirectories.files.collect {
             fileTree(dir: it, exclude: [
-                    'no/scopus/generated/*'
+                    '**/generated/*'
             ])
         })
     }
