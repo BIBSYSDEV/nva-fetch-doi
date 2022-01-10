@@ -64,7 +64,7 @@ public class ScopusHandler extends ApiGatewayHandler<Void, Summary> {
 
     @Override
     protected Summary processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
-        // Todo: do we have to unzip here first? Or is that done in separate routine?
+        // Todo: listFiles kan droppes. Det gjør vi i et eget Lambda, som sender oss hvert filnavn som må prosesseres
         // read S3 and get a list of all latest Files
         List<String> filenames = s3Client.listFiles("latest?");
         // iterate over listOfLatestFiles
