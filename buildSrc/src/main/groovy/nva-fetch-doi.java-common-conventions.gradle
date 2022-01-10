@@ -64,11 +64,16 @@ checkstyle {
 }
 
 tasks.withType(Checkstyle) {
+    exclude { '**/generated/*' }
     reports {
         xml.enabled false
         html.enabled true
         html.stylesheet rootProject.resources.text.fromFile('config/checkstyle/checkstyle-simple.xsl')
     }
+}
+
+tasks.withType(Pmd) {
+    exclude { '**/generated/*' }
 }
 
 check.dependsOn jacocoTestCoverageVerification
@@ -91,6 +96,13 @@ jacocoTestCoverageVerification {
                 minimum = 1.000
             }
         }
+    }
+    afterEvaluate {
+        getClassDirectories().setFrom(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                    '**/generated/*'
+            ])
+        })
     }
 }
 

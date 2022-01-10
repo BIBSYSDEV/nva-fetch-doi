@@ -9,6 +9,7 @@ configurations {
 }
 
 dependencies {
+    //TODO: sjekke om vi trenger alle disse sub-modules inn her
     implementation project(":fetch-doi-commons")
     implementation project(":doi-transformer") {
         compileOnly(libs.jakarta) {
@@ -38,23 +39,5 @@ task jaxb() {
                 schema: 'src/main/resources/schema.scopus.xocs-ani514/xocs-ani514.xsd',
                 binding: 'src/main/resources/schema.scopus.xocs-ani514/xocs-ani514.xjb'
         )
-    }
-}
-
-tasks.withType(Checkstyle) {
-    exclude { '**/generated/*' }
-}
-
-tasks.withType(Pmd) {
-    exclude { '**/generated/*' }
-}
-
-jacocoTestCoverageVerification {
-    afterEvaluate {
-        getClassDirectories().setFrom(classDirectories.files.collect {
-            fileTree(dir: it, exclude: [
-                    '**/generated/*'
-            ])
-        })
     }
 }
