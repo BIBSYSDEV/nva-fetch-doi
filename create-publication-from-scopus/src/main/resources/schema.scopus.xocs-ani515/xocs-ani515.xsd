@@ -21,7 +21,7 @@
  GnanaSGX	5/17/2012	Updated to add xocs:fulltext-eid
  weltersk   04/30/2013  SC XF 13-2 BOOKSUI add  doctype to xocs:meta
  zgheibbs	10/10/2013	SC 13-3B SCUDD add xocs:doi and xocs:pmid to xocs:meta
- xunx       01/30/2014  Updated the following fields based on changes in 
+ xunx       01/30/2014  Updated the following fields based on changes in
                         Elsevier shared OpsBank schema elements Version 5.12p8:
 						Citation types; Descriptor types; Classification types;
 						Chemical source types; Source Types;  pubdateType;
@@ -51,10 +51,10 @@ xunx	      08/01/2018    CONT-4159:
 							Added minOccurs="0" for ce:indexed-name in personalnameType
 			    Added xocs namespace for pui-match-type
 
-Bassem			09/07/2018 CONT-4271 
+Bassem			09/07/2018 CONT-4271
 							added the needed element to the open-access node related to oaDOI (upw)
 							upw-open-access element
-Bassem Zgheib   01/10/2019    Updat to new schema version 514	
+Bassem Zgheib   01/10/2019    Updat to new schema version 514
                               xs:enumeration value="dp"
 			      <xs:element minOccurs="0" ref="ce:alias"/>
 			      <xs:element minOccurs="0" ref="ce:source-text"/>
@@ -62,21 +62,37 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 			      <xs:element minOccurs="0" ref="ce:conflict-of-interest"/>
                               <xs:element minOccurs="0" ref="ce:data-availability"/>
 			      <xs:element minOccurs="0" ref="ce:ern"/>
-			      <xs:element minOccurs="0" maxOccurs="unbounded" ref="ce:short-title"/> 
+			      <xs:element minOccurs="0" maxOccurs="unbounded" ref="ce:short-title"/>
 			      <xs:element minOccurs="0" ref="ce:source-text"/>
 			      <xs:attribute name="reference-instance-id" type="xs:NMTOKEN"/>
 			      <xs:element minOccurs="0" ref="ce:ern"/>
-			      
-			            						 
-======================================================================= -->
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified" targetNamespace="http://www.elsevier.com/xml/xocs/dtd" xmlns:ait="http://www.elsevier.com/xml/ani/ait"
-           xmlns:ani="http://www.elsevier.com/xml/ani/ani" xmlns:xocs="http://www.elsevier.com/xml/xocs/dtd" xmlns:cto="http://www.elsevier.com/xml/cto/dtd" xmlns:ce="http://www.elsevier.com/xml/ani/common">
 
-	<xs:import namespace="http://www.elsevier.com/xml/ani/ait" schemaLocation="xocs-ani514-ait.xsd"/>
-	<xs:import namespace="http://www.elsevier.com/xml/ani/common" schemaLocation="xocs-ani514-ce.xsd"/>
-	<xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xocs-ani514-xml.xsd"/>
-	<xs:import namespace="http://www.elsevier.com/xml/ani/ani" schemaLocation="xocs-ani514-ani-ce.xsd"/>
-	<xs:import namespace="http://www.elsevier.com/xml/cto/dtd" schemaLocation="xocs-ani514-cto.xsd"/>
+xunx		10/11/2019   add description for citation types: ba, rf and dp
+armen		17/02/2020   Updated schema to 515 version
+							- added citationtype.att "mm", "pp"
+							- added gencitationtype.att "ba"
+							- added descriptortype.att "CTA", "MDA", "TRA", "TAM", "TAV", "MAF", "MAV", "CSX"
+							- added tradenametype.att "TAM", "TAV"
+							- added manufacturertype.att "MAF", "MAV"
+							- added sourcetype.att "l"
+							- added MathML support to author-keyword-tp, titletext, ref-fulltext-tp
+							- added "member-name" element to collaboration
+							- added "conceptGroup" attribute-group to mainterm and subsublink
+							- added "label-id" attribute to manufacturer and tradename
+							- added "aii:was-generated-by" to reference-tp
+jayaprh1  29/10/2020   Added free-to-read-status attribute to oa-article-status element
+
+======================================================================= -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified" targetNamespace="http://www.elsevier.com/xml/xocs/dtd"
+		   xmlns:ait="http://www.elsevier.com/xml/ani/ait" xmlns:aii="http://www.elsevier.com/xml/ani/internal"
+		   xmlns:ani="http://www.elsevier.com/xml/ani/ani" xmlns:xocs="http://www.elsevier.com/xml/xocs/dtd" xmlns:cto="http://www.elsevier.com/xml/cto/dtd" xmlns:ce="http://www.elsevier.com/xml/ani/common">
+
+	<xs:import namespace="http://www.elsevier.com/xml/ani/ait" schemaLocation="xocs-ani515-ait.xsd"/>
+	<xs:import namespace="http://www.elsevier.com/xml/ani/common" schemaLocation="xocs-ani515-ce.xsd"/>
+	<xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xocs-ani515-xml.xsd"/>
+	<xs:import namespace="http://www.elsevier.com/xml/ani/ani" schemaLocation="xocs-ani515-ani-ce.xsd"/>
+	<xs:import namespace="http://www.elsevier.com/xml/cto/dtd" schemaLocation="xocs-ani515-cto.xsd"/>
+	<xs:import namespace="http://www.elsevier.com/xml/ani/internal" schemaLocation="xocs-ani515-ani-internal.xsd"/>
 
 	<xs:element name="doc" type="xocs:doc-tp"/>
 
@@ -178,7 +194,7 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 	<!-- ========== Citation types ==========
         ab  Abstract Report
         ar  Article
-        ba
+        ba  Chapter with Book Abstracts
         bk  Book
         br  Book Review
         bz  Business Article
@@ -187,15 +203,18 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
         cp  Conference Paper
         cr  Conference Review
         di  Dissertation
+		dp  Data Paper
         ed  Editorial
         er  Erratum
         ip  Article in Press
         le  Letter
+        mm  Multimedia
         no  Note
         pa  Patent
+        pp  Preprint
         pr  Press Release
         re  Review
-        rf
+        rf  Chapter with References Only
         rp  Report
         sh  Short Survey
         tb  Tombstone
@@ -214,13 +233,15 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 			<xs:enumeration value="cp"/>
 			<xs:enumeration value="cr"/>
 			<xs:enumeration value="di"/>
-                        <xs:enumeration value="dp"/>
+			<xs:enumeration value="dp"/>
 			<xs:enumeration value="ed"/>
 			<xs:enumeration value="er"/>
 			<xs:enumeration value="ip"/>
 			<xs:enumeration value="le"/>
+			<xs:enumeration value="mm"><!-- will only be present in Compendex records, and will indicate that multimedia content is available via a hyperlinked URL --></xs:enumeration>
 			<xs:enumeration value="no"/>
 			<xs:enumeration value="pa"/>
+			<xs:enumeration value="pp"><!--2019-09-23 --></xs:enumeration>
 			<xs:enumeration value="pr"/>
 			<xs:enumeration value="re"/>
 			<xs:enumeration value="rf"/>
@@ -247,6 +268,7 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
     -->
 	<xs:simpleType name="gencitationtype.att">
 		<xs:restriction base="xs:token">
+			<xs:enumeration value="ba"><!-- 2019-10-11 Chapter with Book Abstracts --></xs:enumeration>
 			<xs:enumeration value="bk"/>
 			<xs:enumeration value="ch"/>
 			<xs:enumeration value="co"/>
@@ -304,7 +326,7 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 			<xs:enumeration value="GDE"/>
 			<xs:enumeration value="GLY"/>
 			<xs:enumeration value="KWD"/>
-                        <xs:enumeration value="MDV"/>
+			<xs:enumeration value="MDV"/>
 			<xs:enumeration value="MEA"/>
 			<xs:enumeration value="MED"/>
 			<xs:enumeration value="MGS"/>
@@ -330,7 +352,19 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 			<xs:enumeration value="IBT"/>
 			<xs:enumeration value="IGI"/>
 			<xs:enumeration value="SCC"/>
-	
+			<!-- 2019-09-23 -->
+
+			<!-- part of embase.xsd. must be present here otherwise restriction won't work-->
+			<xs:enumeration value="CTA"></xs:enumeration>
+			<xs:enumeration value="MDA"></xs:enumeration>
+			<xs:enumeration value="TRA"></xs:enumeration>
+			<xs:enumeration value="TAM"></xs:enumeration>
+			<xs:enumeration value="TAV"></xs:enumeration>
+			<xs:enumeration value="MAF"></xs:enumeration>
+			<xs:enumeration value="MAV"></xs:enumeration>
+
+			<!-- part of compendex.xsd must be present here otherwise restriction won't work-->
+			<xs:enumeration value="CSX"></xs:enumeration>
 		</xs:restriction>
 	</xs:simpleType>
 
@@ -372,6 +406,10 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 			<xs:enumeration value="TNM"/>
 			<xs:enumeration value="TNV"/>
 			<xs:enumeration value="TNW"/>
+			<!-- 2019-10-09 -->
+			<!-- these values are also part of descriptor types above -->
+			<xs:enumeration value="TAM"/>
+			<xs:enumeration value="TAV"/>
 		</xs:restriction>
 	</xs:simpleType>
 
@@ -382,6 +420,10 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 			<xs:enumeration value="MNF"/>
 			<xs:enumeration value="MNV"/>
 			<xs:enumeration value="MNW"/>
+			<!-- 2019-10-09 -->
+			<!-- these values are also part of descriptor types above -->
+			<xs:enumeration value="MAF"/>
+			<xs:enumeration value="MAV"/>
 		</xs:restriction>
 	</xs:simpleType>
 
@@ -405,6 +447,8 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
         r  Report
         n  Newsletter
         w  Newspaper
+        l  Press Release
+        x  Preprint-archives
     -->
 	<xs:simpleType name="sourcetype.att">
 		<xs:restriction base="xs:token">
@@ -417,6 +461,8 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 			<xs:enumeration value="r"/>
 			<xs:enumeration value="n"/>
 			<xs:enumeration value="w"/>
+			<xs:enumeration value="l"/>
+			<xs:enumeration value="x"/>
 		</xs:restriction>
 	</xs:simpleType>
 
@@ -449,6 +495,16 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 			<xs:enumeration value="n"/>
 		</xs:restriction>
 	</xs:simpleType>
+
+	<!-- complex types -->
+
+	<xs:complexType name="richstringType" mixed="true">
+		<xs:group minOccurs="0" maxOccurs="unbounded" ref="ani:richstring.data"/>
+	</xs:complexType>
+
+	<xs:complexType name="richstringWithMMLType" mixed="true">
+		<xs:group minOccurs="0" maxOccurs="unbounded" ref="ani:richstringWithMML.data"/>
+	</xs:complexType>
 
 	<xs:group name="pubdateType">
 		<xs:sequence>
@@ -492,7 +548,7 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 					<xs:element minOccurs="0" ref="ce:given-name"/>
 					<xs:element minOccurs="0" ref="ce:suffix"/>
 					<xs:element minOccurs="0" ref="ce:alt-name"/>
-                                        <xs:element minOccurs="0" ref="ce:alias"/>
+					<xs:element minOccurs="0" ref="ce:alias"/>
 				</xs:sequence>
 				<xs:element name="nametext" type="xs:string" form="unqualified"/>
 			</xs:choice>
@@ -521,7 +577,7 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 							<xs:element name="postal-code" type="xocs:postal-code-tp" minOccurs="0" maxOccurs="unbounded" form="unqualified"/>
 						</xs:sequence>
 					</xs:choice>
-                                        <xs:element minOccurs="0" ref="ce:source-text"/>
+					<xs:element minOccurs="0" ref="ce:source-text"/>
 				</xs:sequence>
 			</xs:choice>
 			<xs:element name="affiliation-id" minOccurs="0" maxOccurs="unbounded" type="xocs:affiliationIdType" form="unqualified"/>
@@ -602,7 +658,7 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 		<xs:sequence>
 			<xs:element ref="ce:pii" minOccurs="0" maxOccurs="1"/>
 			<xs:element ref="ce:doi" minOccurs="0" maxOccurs="1"/>
-                        <xs:element ref="ce:ern" minOccurs="0" maxOccurs="1"/>
+			<xs:element ref="ce:ern" minOccurs="0" maxOccurs="1"/>
 			<xs:element name="itemid" type="xocs:itemid-tp" maxOccurs="unbounded" form="unqualified"/>
 		</xs:sequence>
 	</xs:complexType>
@@ -657,12 +713,12 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 			<xs:element name="related-item" type="xocs:related-item-tp" minOccurs="0" maxOccurs="unbounded" form="unqualified"/>
 			<xs:element name="citation-title" type="xocs:citation-title-tp" minOccurs="0" form="unqualified"/>
 			<xs:element name="author-group" type="xocs:author-group-tp" minOccurs="0" maxOccurs="unbounded" form="unqualified"/>
-			<xs:element name="correspondence" type="xocs:correspondence-tp" minOccurs="0" form="unqualified"/>
+			<xs:element name="correspondence" type="xocs:correspondence-tp" minOccurs="0" maxOccurs="unbounded" form="unqualified"/>
 			<xs:element name="grantlist" type="xocs:grantlist-tp" minOccurs="0" form="unqualified"/>
 			<xs:element name="abstracts" type="xocs:abstracts-tp" minOccurs="0" form="unqualified"/>
-                        <xs:element minOccurs="0" ref="ce:conflict-of-interest"/>
-                        <xs:element minOccurs="0" ref="ce:data-availability"/>
-                        <xs:element name="source" type="xocs:source-tp" minOccurs="0" form="unqualified"/>
+			<xs:element minOccurs="0" ref="ce:conflict-of-interest"/>
+			<xs:element minOccurs="0" ref="ce:data-availability"/>
+			<xs:element name="source" type="xocs:source-tp" minOccurs="0" form="unqualified"/>
 			<xs:element name="enhancement" type="xocs:enhancement-tp" minOccurs="0" form="unqualified"/>
 		</xs:sequence>
 	</xs:complexType>
@@ -697,10 +753,13 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 		</xs:sequence>
 	</xs:complexType>
 	<xs:complexType name="author-keyword-tp" mixed="true">
-		<xs:group minOccurs="0" maxOccurs="unbounded" ref="ani:richstring.data"/>
-		<xs:attribute name="perspective"/>
-		<xs:attribute ref="xml:lang" default="eng"/>
-		<xs:attribute name="original" type="xocs:yesno.att"/>
+		<xs:complexContent>
+			<xs:extension base="xocs:richstringWithMMLType">
+				<xs:attribute name="perspective"/>
+				<xs:attribute ref="xml:lang" default="eng"/>
+				<xs:attribute name="original" type="xocs:yesno.att"/>
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 	<xs:complexType name="dummy-link-tp">
 		<xs:sequence>
@@ -717,7 +776,7 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 		<xs:sequence>
 			<xs:element minOccurs="0" ref="ce:pii"/>
 			<xs:element minOccurs="0" ref="ce:doi"/>
-                        <xs:element minOccurs="0" ref="ce:ern"/>
+			<xs:element minOccurs="0" ref="ce:ern"/>
 			<xs:element name="itemid" type="xocs:itemid-tp" minOccurs="0" maxOccurs="unbounded" form="unqualified"/>
 			<xs:element name="citation-info" type="xocs:citation-info-tp" minOccurs="0" form="unqualified"/>
 			<xs:element name="citation-title" type="xocs:citation-title-tp" minOccurs="0" form="unqualified"/>
@@ -729,16 +788,20 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 	<xs:complexType name="citation-title-tp">
 		<xs:sequence>
 			<xs:element name="titletext" type="xocs:titletext-tp" maxOccurs="unbounded" form="unqualified"/>
-                        <xs:element minOccurs="0" maxOccurs="unbounded" ref="ce:short-title"/>
+			<xs:element minOccurs="0" maxOccurs="unbounded" ref="ce:short-title"/>
 		</xs:sequence>
 	</xs:complexType>
 
 	<xs:complexType name="titletext-tp" mixed="true">
-		<xs:group minOccurs="0" maxOccurs="unbounded" ref="ani:richstring.data"/>
-		<xs:attribute name="perspective"/>
-		<xs:attribute ref="xml:lang" default="eng"/>
-		<xs:attribute name="language" type="xs:string"/>
-		<xs:attribute name="original" type="xocs:yesno.att"/>
+		<xs:complexContent>
+			<xs:extension base="xocs:richstringWithMMLType">
+				<xs:attribute name="perspective"/>
+				<xs:attribute name="use-type" type="xs:token"/>
+				<xs:attribute ref="xml:lang"/>
+				<xs:attribute name="language" type="xs:string"/>
+				<xs:attribute name="original" type="xocs:yesno.att"/>
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 	<xs:complexType name="contributor-group-tp">
 		<xs:sequence>
@@ -793,12 +856,37 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 	</xs:complexType>
 	<xs:complexType name="collaboration-tp">
 		<xs:sequence>
-			<xs:element ref="ce:indexed-name"/>
-			<xs:element ref="ce:text"/>
+			<xs:element ref="ce:indexed-name" minOccurs="0"/>
+			<xs:element ref="ce:text"><!-- string for the collaboration itself --></xs:element>
+			<!-- 2019-10-11 -->
+			<!-- reuse of ani:author in 2019-09-23 change was seen as too detailed for collaboration
+			<xs:element ref="ani:author" minOccurs="0" maxOccurs="unbounded"/>-->
+			<!-- 2019-10-11 -->
+			<!-- element et-al in 2019-09-23 too detailed for collaboration <xs:element minOccurs="0" ref="ani:et-al"/>-->
+			<!-- remove affiliation because it is not expected to be useful within the context of a collaboration element
+			<xs:element ref="ani:affiliation" minOccurs="0"/> -->
+			<!-- 2019-10-11 -->
+			<xs:element name="member-name" minOccurs="0" maxOccurs="unbounded" type="xocs:collaborationMemberType" form="unqualified"/>
 		</xs:sequence>
 		<xs:attribute name="seq" use="required"/>
 		<xs:attribute name="collaboration-instance-id" type="xs:NMTOKEN"/>
 	</xs:complexType>
+
+	<!-- 2019-10-11 -->
+	<xs:complexType name="collaborationMemberType">
+		<!-- preferably name is structured, but if not possible then entire string in ce:text element -->
+		<xs:choice>
+			<xs:sequence>
+				<xs:element ref="ce:surname" />
+				<xs:element ref="ce:initials" minOccurs="0" />
+				<xs:element ref="ce:given-name" minOccurs="0" />
+			</xs:sequence>
+			<xs:element ref="ce:text">
+				<!-- string for the collaboration member -->
+			</xs:element>
+		</xs:choice>
+	</xs:complexType>
+
 	<xs:complexType name="et-al-tp"/>
 	<xs:complexType name="affiliation-tp">
 		<xs:complexContent>
@@ -1305,10 +1393,12 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 		<xs:attribute name="candidate" type="xocs:yesno.att" default="n"/>
 		<xs:attribute name="sort-pos"/>
 		<xs:attribute name="code"/>
+		<xs:attributeGroup ref="xocs:conceptGroup"/>
 	</xs:complexType>
 	<xs:complexType name="link-tp" mixed="true">
 		<xs:group minOccurs="0" maxOccurs="unbounded" ref="ani:richstring.data"/>
 		<xs:attribute name="linknr"/>
+		<xs:attributeGroup ref="xocs:conceptGroup"/>
 	</xs:complexType>
 	<xs:complexType name="sublink-tp" mixed="true">
 		<xs:group minOccurs="0" maxOccurs="unbounded" ref="ani:richstring.data"/>
@@ -1322,10 +1412,12 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 				</xs:restriction>
 			</xs:simpleType>
 		</xs:attribute>
+		<xs:attributeGroup ref="xocs:conceptGroup"/>
 	</xs:complexType>
 	<xs:complexType name="subsublink-tp" mixed="true">
 		<xs:group minOccurs="0" maxOccurs="unbounded" ref="ani:richstring.data"/>
 		<xs:attribute name="linknr"/>
+		<xs:attributeGroup ref="xocs:conceptGroup"/>
 	</xs:complexType>
 
 	<!-- API descriptor group elements -->
@@ -1537,6 +1629,7 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 	</xs:complexType>
 	<xs:complexType name="manufacturer-tp" mixed="true">
 		<xs:attribute name="country"/>
+		<xs:attribute name="label-id"/>
 	</xs:complexType>
 
 	<!-- Tradename elements -->
@@ -1554,9 +1647,16 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 	</xs:complexType>
 	<xs:complexType name="trademanuitem-tp">
 		<xs:sequence>
-			<xs:element name="tradename" type="xs:string" form="unqualified"/>
+			<xs:element name="tradename" type="xocs:tradename-tp" form="unqualified"/>
 			<xs:element name="manufacturer" type="xocs:manufacturer-tp" minOccurs="0" form="unqualified"/>
 		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="tradename-tp">
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="label-id"/>
+			</xs:extension>
+		</xs:simpleContent>
 	</xs:complexType>
 
 	<!-- SequenceBankList elements -->
@@ -1628,13 +1728,15 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 	<xs:complexType name="reference-tp">
 		<xs:sequence>
 			<xs:element name="ref-info" type="xocs:ref-info-tp" form="unqualified"/>
-			<xs:element name="ref-fulltext" type="xocs:ref-fulltext-tp" minOccurs="0" form="unqualified"/>
-                        <xs:element minOccurs="0" ref="ce:source-text"/>
-			<!--xs:element name="refd-itemcitation" type="xocs:refd-itemcitation-tp" minOccurs="0" form="unqualified"/ -->
+			<xs:element name="ref-fulltext" type="xocs:richstringWithMMLType" minOccurs="0" form="unqualified"/>
+			<xs:element minOccurs="0" ref="ce:source-text"/>
+			<xs:element name="refd-itemcitation" type="xocs:refd-itemcitation-tp" minOccurs="0" form="unqualified"/>
 		</xs:sequence>
 		<xs:attribute name="id" type="xs:NMTOKEN"/>
 		<xs:attribute name="date-locked" type="xs:dateTime"/>
-                <xs:attribute name="reference-instance-id" type="xs:NMTOKEN"/>
+		<xs:attribute name="reference-instance-id" type="xs:NMTOKEN"/>
+		<!-- 2019-10-11 OPTIONAL internal attribute was-generated-by -->
+		<xs:attribute ref="aii:was-generated-by"/>
 	</xs:complexType>
 
 	<xs:complexType name="ref-info-tp">
@@ -1651,11 +1753,8 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 	</xs:complexType>
 	<xs:complexType name="ref-title-tp">
 		<xs:sequence>
-			<xs:element name="ref-titletext" type="xocs:ref-titletext-tp" maxOccurs="unbounded" form="unqualified"/>
+			<xs:element name="ref-titletext" type="xocs:richstringWithMMLType" maxOccurs="unbounded" form="unqualified"/>
 		</xs:sequence>
-	</xs:complexType>
-	<xs:complexType name="ref-titletext-tp" mixed="true">
-		<xs:group minOccurs="0" maxOccurs="unbounded" ref="ani:richstring.data"/>
 	</xs:complexType>
 	<xs:complexType name="refd-itemidlist-tp">
 		<xs:sequence>
@@ -1700,17 +1799,14 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 	<xs:complexType name="ref-text-tp" mixed="true">
 		<xs:group minOccurs="0" maxOccurs="unbounded" ref="ani:richstring.data"/>
 	</xs:complexType>
-	<xs:complexType name="ref-fulltext-tp" mixed="true">
-		<xs:group minOccurs="0" maxOccurs="unbounded" ref="ani:richstring.data"/>
-	</xs:complexType>
 	<xs:complexType name="refd-itemcitation-tp">
 		<xs:choice>
 			<xs:sequence>
 				<xs:element minOccurs="0" ref="ce:pii"/>
 				<xs:element minOccurs="0" ref="ce:doi"/>
-                                <xs:element minOccurs="0" ref="ce:ern"/>
+				<xs:element minOccurs="0" ref="ce:ern"/>
 				<xs:element name="citation-title" type="xocs:citation-title-tp" minOccurs="0" form="unqualified"/>
-				<xs:element name="author-group" type="xocs:author-group-tp" minOccurs="0" form="unqualified"/>
+				<xs:element name="author-group" type="xocs:author-group-tp" minOccurs="0" maxOccurs="unbounded" form="unqualified"/>
 				<xs:element name="sourcetitle" type="xocs:sourcetitle-tp" minOccurs="0" form="unqualified"/>
 				<xs:element name="sourcetitle-abbrev" type="xocs:sourcetitle-abbrev-tp" minOccurs="0" form="unqualified"/>
 				<xs:element name="issn" type="xocs:issn-tp" minOccurs="0" maxOccurs="unbounded" form="unqualified"/>
@@ -1844,7 +1940,7 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 	<xs:complexType name="open-access-type">
 		<xs:annotation>
 			<xs:documentation>Contains the open-access information obtained from CrossRef.
-			                  Changed the "is-open-access type to string so '2' is allowed.</xs:documentation>
+				Changed the "is-open-access type to string so '2' is allowed.</xs:documentation>
 		</xs:annotation>
 		<xs:sequence>
 			<xs:element name="oa-access-effective-date" minOccurs="0" type="xs:string"/>
@@ -1853,6 +1949,7 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 					<xs:simpleContent>
 						<xs:extension base="xs:string">
 							<xs:attribute name="is-open-access" type="xs:string" use="required"/>
+							<xs:attribute name="free-to-read-status" type="xs:string"/>
 						</xs:extension>
 					</xs:simpleContent>
 				</xs:complexType>
@@ -1883,7 +1980,6 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 			<xs:element name="upw-oa_location" minOccurs="0" maxOccurs="unbounded" type="xocs:upw-oa_location-type"/>
 		</xs:sequence>
 	</xs:complexType>
-
 	<xs:complexType name="upw-oa_location-type">
 
 		<xs:sequence>
@@ -1899,4 +1995,11 @@ Bassem Zgheib   01/10/2019    Updat to new schema version 514
 			<xs:element name="upw-url_for_landing_page" minOccurs="0" type="xs:string"/>
 		</xs:sequence>
 	</xs:complexType>
+
+	<!-- 2019-09-23 -->
+	<xs:attributeGroup name="conceptGroup">
+		<xs:attribute name="concept-id"/>
+		<xs:attribute name="concept-url"/>
+		<xs:attribute name="label-id"/>
+	</xs:attributeGroup>
 </xs:schema>
