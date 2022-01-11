@@ -5,7 +5,7 @@ project.ext {
 }
 
 configurations {
-    xsd2java
+    jaxb
 }
 
 dependencies {
@@ -16,7 +16,8 @@ dependencies {
             because 'PMD'
         }
     }
-    implementation(libs.bundles.xsd2java)
+    jaxb libs.bundles.xsd2java
+    implementation libs.bundles.xsd2java
     implementation project(":doi-proxy")
     implementation project(":metadata-transformer")
     implementation libs.aws.java.sdk.s3
@@ -31,7 +32,7 @@ dependencies {
 task xsd2java() {
     doLast {
         jaxbTargetDir.mkdirs()
-        ant.taskdef(name: 'xjc', classname: 'com.sun.tools.xjc.XJC2Task', classpath: configurations.xsd2java.asPath)
+        ant.taskdef(name: 'xjc', classname: 'com.sun.tools.xjc.XJC2Task', classpath: configurations.jaxb.asPath)
         ant.jaxbTargetDir = jaxbTargetDir
         ant.xjc(
                 destdir: '${jaxbTargetDir}',
