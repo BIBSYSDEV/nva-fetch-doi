@@ -2,7 +2,7 @@
           xmlns:xsi="http://www.w3.org/2000/10/XMLSchema-instance"
           xmlns:xs="http://www.w3.org/2001/XMLSchema"
           version="3.0">
-    <bindings schemaLocation="xocs-ani514.xsd" version="1.0">
+    <bindings schemaLocation="xocs-ani515.xsd" version="1.0">
         <!-- Customise the package name -->
         <schemaBindings>
             <package name="no.scopus.generated"/>

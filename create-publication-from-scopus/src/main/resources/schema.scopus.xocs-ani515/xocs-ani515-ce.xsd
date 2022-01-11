@@ -26,8 +26,8 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://www.elsevier.com/xml/ani/common" 
 xmlns:ani="http://www.elsevier.com/xml/ani/ani" xmlns:ce="http://www.elsevier.com/xml/ani/common">
 
-    <xs:import namespace="http://www.elsevier.com/xml/ani/ani" schemaLocation="xocs-ani514-ani-ce.xsd"/>
-	<xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xocs-ani514-xml.xsd"/>
+    <xs:import namespace="http://www.elsevier.com/xml/ani/ani" schemaLocation="xocs-ani515-ani-ce.xsd"/>
+	<xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xocs-ani515-xml.xsd"/>
 	
     
     <xs:element name="initials" type="xs:string"/>
@@ -55,7 +55,7 @@ xmlns:ani="http://www.elsevier.com/xml/ani/ani" xmlns:ce="http://www.elsevier.co
     </xs:element>
     <xs:element name="para">
         <xs:complexType mixed="true">
-            <xs:group minOccurs="0" maxOccurs="unbounded" ref="ani:richstring.data"/>
+            <xs:group minOccurs="0" maxOccurs="unbounded" ref="ani:richstringWithMML.data"/>
         </xs:complexType>
     </xs:element>
 

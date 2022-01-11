@@ -16,7 +16,8 @@ dependencies {
             because 'PMD'
         }
     }
-    implementation(libs.bundles.xsd2java)
+    jaxb libs.bundles.xsd2java
+    implementation libs.bundles.xsd2java
     implementation project(":doi-proxy")
     implementation project(":metadata-transformer")
     implementation libs.aws.java.sdk.s3
@@ -28,7 +29,7 @@ dependencies {
     }
 }
 
-task jaxb() {
+task xsd2java() {
     doLast {
         jaxbTargetDir.mkdirs()
         ant.taskdef(name: 'xjc', classname: 'com.sun.tools.xjc.XJC2Task', classpath: configurations.jaxb.asPath)
@@ -36,8 +37,8 @@ task jaxb() {
         ant.xjc(
                 destdir: '${jaxbTargetDir}',
                 package: 'no.scopus.generated',
-                schema: 'src/main/resources/schema.scopus.xocs-ani514/xocs-ani514.xsd',
-                binding: 'src/main/resources/schema.scopus.xocs-ani514/xocs-ani514.xjb'
+                schema: 'src/main/resources/schema.scopus.xocs-ani515/xocs-ani515.xsd',
+                binding: 'src/main/resources/schema.scopus.xocs-ani515/xocs-ani515.xjb'
         )
     }
 }

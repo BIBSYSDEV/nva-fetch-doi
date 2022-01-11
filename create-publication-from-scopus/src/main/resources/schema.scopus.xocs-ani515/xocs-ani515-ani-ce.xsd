@@ -22,14 +22,27 @@
  Nan Xu         11/07/2016  Update to version 513
  Bassem Zgheib  01/10/2019  Update to version 514
  ======================================================================= -->
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="unqualified" targetNamespace="http://www.elsevier.com/xml/ani/ani"
- xmlns:ait="http://www.elsevier.com/xml/ani/ait" xmlns:ani="http://www.elsevier.com/xml/ani/ani">
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://www.elsevier.com/xml/ani/ani"
+		   xmlns:ait="http://www.elsevier.com/xml/ani/ait" xmlns:ani="http://www.elsevier.com/xml/ani/ani" xmlns:mml="http://www.w3.org/1998/Math/MathML">
+
+
+	<xs:import namespace="http://www.w3.org/1998/Math/MathML" schemaLocation="./mathml3/mathml3.xsd"/>
 
 	<xs:group name="richstring.data">
 		<xs:sequence>
 			<xs:choice minOccurs="0">
 				<xs:element name="sup" type="ani:sup-tp" form="unqualified"/>
 				<xs:element name="inf" type="ani:inf-tp" form="unqualified"/>
+			</xs:choice>
+		</xs:sequence>
+	</xs:group>
+
+	<xs:group name="richstringWithMML.data">
+		<xs:sequence>
+			<xs:choice minOccurs="0">
+				<xs:element name="sup" type="ani:sup-tp" form="unqualified"/>
+				<xs:element name="inf" type="ani:inf-tp" form="unqualified"/>
+				<xs:element ref="mml:math"/>
 			</xs:choice>
 		</xs:sequence>
 	</xs:group>
