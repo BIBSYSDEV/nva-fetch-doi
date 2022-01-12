@@ -1,8 +1,10 @@
 def problemVersion = '0.24.0'
 
 project.ext {
-    jaxbTargetDir = file("src/main/java")
+    jaxbTargetDir = file("$buildDir/generated/sources/xjc")
 }
+
+sourceSets.main.java.srcDirs += jaxbTargetDir
 
 configurations {
     jaxb
