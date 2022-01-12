@@ -18,7 +18,6 @@ dependencies {
     }
     jaxb libs.bundles.xsd2java
     implementation libs.bundles.xsd2java
-    implementation project(":doi-proxy")
     implementation project(":metadata-transformer")
     implementation libs.aws.java.sdk.s3
 
@@ -37,7 +36,7 @@ task xsd2java() {
         ant.xjc(
                 destdir: '${jaxbTargetDir}',
                 package: 'no.scopus.generated',
-                schema: 'src/main/resources/schema.scopus.xocs-ani515/xocs-ani515.xsd',
+                schema: 'https://schema.elsevier.com/dtds/document/abstracts/xocs-ani515.xsd',
                 binding: 'src/main/resources/schema.scopus.xocs-ani515/xocs-ani515.xjb'
         )
     }
