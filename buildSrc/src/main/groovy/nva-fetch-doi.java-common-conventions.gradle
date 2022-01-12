@@ -76,6 +76,10 @@ tasks.withType(Pmd) {
     exclude { '**/generated/*' }
 }
 
+tasks.withType(JavaCompile) {
+
+}
+
 check.dependsOn jacocoTestCoverageVerification
 jacocoTestCoverageVerification.dependsOn(jacocoTestReport)
 

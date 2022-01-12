@@ -42,3 +42,7 @@ task xsd2java() {
         )
     }
 }
+
+tasks.withType(JavaCompile) {
+    dependsOn(xsd2java)
+}
