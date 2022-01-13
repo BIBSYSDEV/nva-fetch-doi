@@ -14,7 +14,9 @@ class PublicationConverterTest {
     private final static String SCOPUS_XML_85020959898_SMALL = "/2-s2.0-85020959898.xml";
     private final static String SCOPUS_XML_85021139537_LARGE = "/2-s2.0-85021139537.xml";
     private final static String SCOPUS_XML_85019990935_SUP_TITLE = "/2-s2.0-85019990935.xml";
-    private final static String SCOPUS_XML_85041615872 = "/2-s2.0-85041615872.xml";
+    private final static String SCOPUS_XML_85041615872_SUPPELEMENT_IN_CHANNEL = "/2-s2.0-85041615872.xml";
+    //find xml with pagecount in channel: grep -H -r -l  "<volisspag><voliss.*<pagecount.*<\/volisspag>" .
+    private final static String SCOPUS_XML_0016778795_PAGECOUNT_IN_CHANNEL ="/2-s2.0-0016778795.xml";
 
     @Test
     public void testConvert() throws JAXBException {
@@ -51,8 +53,16 @@ class PublicationConverterTest {
     @Test
     public void canConvertPublicationWithSupplementsInChannel() throws JAXBException {
         PublicationConverter publicationConverter = new PublicationConverter();
-        InputStream xmlInput = getClass().getResourceAsStream(SCOPUS_XML_85041615872);
+        InputStream xmlInput = getClass().getResourceAsStream(SCOPUS_XML_85041615872_SUPPELEMENT_IN_CHANNEL);
         ScopusPublication scopusPub = publicationConverter.convert(xmlInput);
         assertEquals("Supplement 1", scopusPub.getChannel().getSupplement() );
+    }
+
+    @Test
+    public void canConvertPublicationWithPagecountInChannel() throws JAXBException {
+        PublicationConverter publicationConverter = new PublicationConverter();
+        InputStream xmlInput = getClass().getResourceAsStream(SCOPUS_XML_0016778795_PAGECOUNT_IN_CHANNEL);
+        ScopusPublication scopusPub = publicationConverter.convert(xmlInput);
+        assertEquals(25, scopusPub.getChannel().getNumberOfPages() );
     }
 }

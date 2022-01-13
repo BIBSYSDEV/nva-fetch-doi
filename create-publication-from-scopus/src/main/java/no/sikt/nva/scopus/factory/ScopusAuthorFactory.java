@@ -7,7 +7,6 @@ import no.scopus.generated.PersonalnameType;
 import no.sikt.nva.scopus.model.Author;
 import no.sikt.nva.scopus.model.Institution;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.StringUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -37,9 +36,8 @@ public class ScopusAuthorFactory {
                         "FORFATTER",
                         sequenceNr,author.getSurname(),
                         author.getGivenName(),
-                        buildAuthorName(author.getIndexedName(), author.getGivenName(), author.getSurname()),
-                        author.getPreferredName() != null ?
-                        buildAuthorName(author.getPreferredName().getIndexedName(), author.getPreferredName().getGivenName(), author.getPreferredName().getSurname()) : null,
+                        author.getIndexedName(),
+                        author.getPreferredName() != null ? author.getPreferredName().getIndexedName() : null,
                         author.getOrcid(),
                         null));
 
@@ -69,7 +67,7 @@ public class ScopusAuthorFactory {
                     null,
                     person.getSurname(),
                     person.getGivenName(),
-                    buildAuthorName(person.getIndexedName(), person.getGivenName(), person.getSurname()),
+                    person.getIndexedName(),
                     null,
                     null,
                     Collections.singletonList(new Institution(correspondenceTp.getAffiliation())));
@@ -140,16 +138,5 @@ public class ScopusAuthorFactory {
         }
 
         return null;
-    }
-
-
-    private static String buildAuthorName(String indexedName, String givenName, String surname) {
-        if (!StringUtils.isEmpty(indexedName)) {
-            return indexedName;
-        } else if (givenName != null && surname != null) {
-            return surname + ", " + givenName;
-        } else {
-            return surname;
-        }
     }
 }
