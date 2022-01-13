@@ -1,6 +1,7 @@
 package no.sikt.nva.scopus;
 
 import com.amazonaws.services.lambda.runtime.Context;
+import jakarta.xml.bind.JAXBException;
 import no.unit.nva.doi.fetch.model.Summary;
 import no.unit.nva.metadata.service.MetadataService;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -71,9 +72,13 @@ public class ScopusHandler extends ApiGatewayHandler<Void, Summary> {
         for (String filename : filenames) {
             try (InputStream inputStream = s3Client.getFile(filename)) {
                 // parse every single file to a ScopusPublication
-//              ScopusPublication scopusPublication = publicationConverter.convert(inputStream);
+             ScopusPublication scopusPublication = publicationConverter.convert(inputStream);
             } catch (IOException e) {
                 logger.error("Could not deal with inputStream for file: {}", filename, e);
+            } catch (JAXBException e) {
+                logger.error("Could not deal withd  inputStream for file: {}", filename, e);
+            } catch (Exception e) {
+                logger.error("Could not deal with  jlk inputStream for file: {}", filename, e);
             }
         }
         // enrich contributors with help of nva-cristin-service
