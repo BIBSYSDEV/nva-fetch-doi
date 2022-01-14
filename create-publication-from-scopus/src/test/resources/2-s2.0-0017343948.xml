@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xocs:doc content-type="Abstract" dbname="scopusbase" xsi:schemaLocation="http://www.elsevier.com/xml/xocs/dtd xocs-ani515.xsd" xmlns:xocs="http://www.elsevier.com/xml/xocs/dtd" xmlns:ce="http://www.elsevier.com/xml/ani/common" xmlns:ait="http://www.elsevier.com/xml/ani/ait" xmlns:cto="http://www.elsevier.com/xml/cto/dtd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><xocs:meta>
+    <xocs:eid>2-s2.0-0017343948</xocs:eid>
+    <xocs:oeid>2-s1.0-49C1-6FF0-TWC1-C143-00000-00</xocs:oeid>
+    <xocs:online-status>available</xocs:online-status>
+    <xocs:pui>8078709</xocs:pui>
+    <xocs:sdfullavail>0</xocs:sdfullavail>
+    <xocs:issn>00291455</xocs:issn>
+    <xocs:volume>31</xocs:volume>
+    <xocs:issue>2</xocs:issue>
+    <xocs:author-surname>Dalgard</xocs:author-surname>
+    <xocs:author-fi>O</xocs:author-fi>
+    <xocs:firstpage>73</xocs:firstpage>
+    <xocs:lastpage>89</xocs:lastpage>
+    <xocs:sort-year>1977</xocs:sort-year>
+    <xocs:sort-yyyymm>197701</xocs:sort-yyyymm>
+    <xocs:pub-year>1977</xocs:pub-year>
+    <xocs:timestamp yyyymmdd="20210925">2021-09-25T06:20:47.185479Z</xocs:timestamp>
+    <xocs:orig-load-date yyyymmdd="20120103">2012-01-03</xocs:orig-load-date>
+    <xocs:datesort>19770101</xocs:datesort>
+    <xocs:indexeddate epoch="1325623118">2012-01-03T20:38:38.000001Z</xocs:indexeddate>
+    <xocs:absavail>0</xocs:absavail>
+    <xocs:suppressdummy>no</xocs:suppressdummy>
+    <xocs:srctype>j</xocs:srctype>
+    <xocs:subjareas><xocs:subjarea>MEDI</xocs:subjarea></xocs:subjareas>
+    <xocs:srctitle>Nordisk Psykiatrisk Tidsskrift</xocs:srctitle>
+    <xocs:countries><xocs:country>Norway</xocs:country></xocs:countries>
+    <xocs:languages><xocs:language>Norwegian</xocs:language></xocs:languages>
+    <xocs:prefnameauids><xocs:prefnameauid>Dalgard, O.S.#57214513517</xocs:prefnameauid><xocs:prefnameauid>Berg Larsen, R.#6602908573</xocs:prefnameauid><xocs:prefnameauid>Ropstad, O.#6506242005</xocs:prefnameauid></xocs:prefnameauids>
+    <cto:doctype>ar</cto:doctype>
+    <cto:group-id>0017343948</cto:group-id>
+    <cto:unique-author seq="1"><cto:auth-initials>O.S.</cto:auth-initials><cto:auth-indexed-name>Dalgard O.S.</cto:auth-indexed-name><cto:auth-surname>Dalgard</cto:auth-surname><cto:auth-id>57214513517</cto:auth-id></cto:unique-author>
+    <cto:unique-author seq="2"><cto:auth-initials>R.</cto:auth-initials><cto:auth-indexed-name>Berg Larsen R.</cto:auth-indexed-name><cto:auth-surname>Berg Larsen</cto:auth-surname><cto:auth-id>6602908573</cto:auth-id></cto:unique-author>
+    <cto:unique-author seq="3"><cto:auth-initials>O.</cto:auth-initials><cto:auth-indexed-name>Ropstad O.</cto:auth-indexed-name><cto:auth-surname>Ropstad</cto:auth-surname><cto:auth-id>6506242005</cto:auth-id></cto:unique-author>
+    <cto:unique-auth-count>3</cto:unique-auth-count>
+  </xocs:meta><xocs:item><item><ait:process-info><ait:date-delivered day="24" month="09" timestamp="2021-09-24T22:56:49.000049-04:00" year="2021"/><ait:date-sort day="01" month="01" year="1977"/><ait:status state="update" type="core" stage="S300"/></ait:process-info><bibrecord><item-info><copyright type="Elsevier">Copyright 2004 Elsevier B.V., All rights reserved.</copyright><itemidlist><itemid idtype="PUI">8078709</itemid><itemid idtype="EMBASE">1978079269</itemid><itemid idtype="SCP">0017343948</itemid><itemid idtype="SGR">0017343948</itemid></itemidlist><history><date-created day="26" month="07" year="1977"/></history><dbcollection>EMBASE</dbcollection><dbcollection>SCOPUS</dbcollection><dbcollection>Scopusbase</dbcollection></item-info><head><citation-info><citation-language xml:lang="nor" language="Norwegian"/></citation-info><citation-title><titletext original="y" xml:lang="eng" language="English">Evaluation of a psychiatric treatment programme (Norwegian)</titletext></citation-title><author-group><author auid="57214513517" seq="1"><ce:initials>O.S.</ce:initials><ce:indexed-name>Dalgard O.S.</ce:indexed-name><ce:surname>Dalgard</ce:surname><preferred-name><ce:initials>O.S.</ce:initials><ce:indexed-name>Dalgard O.S.</ce:indexed-name><ce:surname>Dalgard</ce:surname><ce:given-name>O. S.</ce:given-name></preferred-name></author><author auid="6602908573" seq="2"><ce:initials>R.</ce:initials><ce:indexed-name>Berg Larsen R.</ce:indexed-name><ce:surname>Berg Larsen</ce:surname><preferred-name><ce:initials>R.</ce:initials><ce:indexed-name>Berg Larsen R.</ce:indexed-name><ce:surname>Berg Larsen</ce:surname><ce:given-name>R.</ce:given-name></preferred-name></author><author auid="6506242005" seq="3"><ce:initials>O.</ce:initials><ce:indexed-name>Ropstad O.</ce:indexed-name><ce:surname>Ropstad</ce:surname><preferred-name><ce:initials>O.</ce:initials><ce:indexed-name>Ropstad O.</ce:indexed-name><ce:surname>Ropstad</ce:surname><ce:given-name>O.</ce:given-name></preferred-name></author><affiliation afid="60010348" country="nor" date-locked="2021-07-30T00:55:38.305"><ce:text>Univ. Psykiat. Inst., Oslo</ce:text><affiliation-id afid="60010348"/><country>Norway</country></affiliation></author-group><correspondence><affiliation country="nor"><ce:text>Univ. Psykiat. Inst., Oslo</ce:text><country>Norway</country></affiliation></correspondence><source country="swe" srcid="38593" type="j"><sourcetitle>Nordisk Psykiatrisk Tidsskrift</sourcetitle><sourcetitle-abbrev>NORD. PSYKIATR. TIDSSKR.</sourcetitle-abbrev><issn>00291455</issn><codencode>NPSTB</codencode><volisspag><voliss issue="2" volume="31"/><pagerange first="73" last="89"/></volisspag><publicationyear first="1977"/><publicationdate><year>1977</year><date-text xfab-added="true">1977</date-text></publicationdate></source><enhancement><descriptorgroup><descriptors controlled="y" type="MED"><descriptor><mainterm weight="b" candidate="n">methodology</mainterm></descriptor><descriptor><mainterm weight="a" candidate="n">psychotherapy</mainterm></descriptor><descriptor><mainterm weight="b" candidate="n">therapy</mainterm></descriptor></descriptors></descriptorgroup><classificationgroup><classifications type="EMCLASS"><classification>32</classification></classifications><classifications type="SUBJECT"><classification>Health</classification><classification>Life Sciences</classification></classifications><classifications type="ASJC"><classification>2738</classification></classifications><classifications type="SUBJABBR"><classification>MEDI</classification></classifications></classificationgroup></enhancement></head></bibrecord></item></xocs:item></xocs:doc>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xocs:doc content-type="Abstract" dbname="scopusbase" xsi:schemaLocation="http://www.elsevier.com/xml/xocs/dtd xocs-ani515.xsd" xmlns:xocs="http://www.elsevier.com/xml/xocs/dtd" xmlns:ce="http://www.elsevier.com/xml/ani/common" xmlns:ait="http://www.elsevier.com/xml/ani/ait" xmlns:cto="http://www.elsevier.com/xml/cto/dtd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><xocs:meta>
+    <xocs:eid>2-s2.0-84861463231</xocs:eid>
+    <xocs:oeid/>
+    <xocs:online-status>available</xocs:online-status>
+    <xocs:pui>364881665</xocs:pui>
+    <xocs:sdfullavail>0</xocs:sdfullavail>
+    <xocs:issn>00292176</xocs:issn>
+    <xocs:volume/>
+    <xocs:issue>3-4</xocs:issue>
+    <xocs:author-surname>Wyller</xocs:author-surname>
+    <xocs:author-fi>T</xocs:author-fi>
+    <xocs:firstpage>283</xocs:firstpage>
+    <xocs:lastpage>293</xocs:lastpage>
+    <xocs:sort-year>2011</xocs:sort-year>
+    <xocs:sort-yyyymm>201112</xocs:sort-yyyymm>
+    <xocs:pub-year>2011</xocs:pub-year>
+    <xocs:timestamp yyyymmdd="20210925">2021-09-25T02:49:28.204789Z</xocs:timestamp>
+    <xocs:orig-load-date yyyymmdd="20120704">2012-07-04</xocs:orig-load-date>
+    <xocs:datesort>20111201</xocs:datesort>
+    <xocs:indexeddate epoch="1341392729">2012-07-04T09:05:29.000001Z</xocs:indexeddate>
+    <xocs:absavail>0</xocs:absavail>
+    <xocs:suppressdummy>no</xocs:suppressdummy>
+    <xocs:srctype>j</xocs:srctype>
+    <xocs:subjareas><xocs:subjarea>ARTS</xocs:subjarea></xocs:subjareas>
+    <xocs:srctitle>Norsk Teologisk Tidsskrift</xocs:srctitle>
+    <xocs:countries><xocs:country>Norway</xocs:country></xocs:countries>
+    <xocs:languages><xocs:language>Norwegian</xocs:language></xocs:languages>
+    <xocs:prefnameauids><xocs:prefnameauid>Wyller, T.#54390296700</xocs:prefnameauid></xocs:prefnameauids>
+    <cto:doctype>re</cto:doctype>
+    <cto:group-id>84861463231</cto:group-id>
+    <cto:ref-id>84889694620</cto:ref-id>
+    <cto:unique-author seq="1"><cto:auth-initials>T.</cto:auth-initials><cto:auth-indexed-name>Wyller T.</cto:auth-indexed-name><cto:auth-surname>Wyller</cto:auth-surname><cto:auth-id>54390296700</cto:auth-id></cto:unique-author>
+    <cto:unique-auth-count>1</cto:unique-auth-count>
+  </xocs:meta><xocs:item><item><ait:process-info><ait:date-delivered year="2021" month="09" day="24" timestamp="2021-09-24T13:49:50.000050-04:00"/><ait:date-sort year="2011" month="12" day="01"/><ait:status type="core" state="update" stage="S300"/></ait:process-info><bibrecord><item-info><copyright>Copyright 2013 Elsevier B.V., All rights reserved.</copyright><itemidlist><itemid idtype="PUI">364881665</itemid><itemid idtype="SNARHU">2012023100</itemid><itemid idtype="SCP">84861463231</itemid><itemid idtype="SGR">84861463231</itemid></itemidlist><history><date-created year="2012" month="05" day="30"/></history><dbcollection>SNARHU</dbcollection><dbcollection>SCOPUS</dbcollection><dbcollection>Scopusbase</dbcollection></item-info><head><citation-info><citation-type code="re"/><citation-language xml:lang="nor" language="Norwegian"/></citation-info><citation-title><titletext xml:lang="nor" original="y" language="Norwegian">Den skjulte og den synlige folkekirke<sup>I</sup>: En aktuell ekklesiologisk og politisk utfordring</titletext></citation-title><author-group><author auid="54390296700" seq="1"><ce:initials>T.</ce:initials><ce:indexed-name>Wyller T.</ce:indexed-name><ce:surname>Wyller</ce:surname><ce:given-name>Trygve</ce:given-name><preferred-name><ce:initials>T.</ce:initials><ce:indexed-name>Wyller T.</ce:indexed-name><ce:surname>Wyller</ce:surname><ce:given-name>Trygve</ce:given-name></preferred-name></author><affiliation afid="60010348" country="nor" date-locked="2021-07-30T00:55:38.305"><organization>TF</organization><organization>UIO</organization><affiliation-id afid="60010348"/><country>Norway</country></affiliation></author-group><correspondence><person><ce:initials>T.</ce:initials><ce:indexed-name>Wyller T.</ce:indexed-name><ce:degrees>Prof.</ce:degrees><ce:surname>Wyller</ce:surname></person><affiliation country="nor"><organization>TF</organization><organization>UIO</organization><country>Norway</country></affiliation></correspondence><source srcid="21100202728" type="j" country="nor"><sourcetitle>Norsk Teologisk Tidsskrift</sourcetitle><sourcetitle-abbrev>Nor. Teol. Tidsskr.</sourcetitle-abbrev><issn type="print">00292176</issn><issn type="electronic">15042479</issn><volisspag><voliss issue="3-4"/><pagerange first="283" last="293"/></volisspag><publicationyear first="2011"/><publicationdate><year>2011</year><date-text xfab-added="true">2011</date-text></publicationdate><website><ce:e-address type="url">http://www.idunn.no/file/ci/50742155/ntt_2011_03-04_pdf.pdf</ce:e-address></website></source><enhancement><classificationgroup><classifications type="ASJC"><classification>1212</classification></classifications><classifications type="SUBJABBR"><classification>ARTS</classification></classifications></classificationgroup></enhancement></head><tail><bibliography refcount="1"><reference id="1"><ref-info><refd-itemidlist><itemid idtype="SGR">84889694620</itemid></refd-itemidlist><ref-authors><author seq="1"><ce:initials>W.</ce:initials><ce:indexed-name>Grab W.</ce:indexed-name><ce:surname>Gräb</ce:surname></author></ref-authors><ref-sourcetitle>Sinnfragen</ref-sourcetitle><ref-publicationyear first="2006"/><ref-text>Transformationen des religiösen in der modernen Kultur, Berlin</ref-text></ref-info><ref-fulltext>Wilhelm Gräb, Sinnfragen. Transformationen des religiösen in der modernen Kultur, Berlin 2006</ref-fulltext></reference></bibliography></tail></bibrecord></item></xocs:item></xocs:doc>

@@ -181,12 +181,11 @@ public class ScopusPublication {
     }
 
 
-    @JacocoGenerated
     public Map<String, String> getAlternativeIds() {
         return alternativeIds;
     }
 
-    @JacocoGenerated
+
     public Map<String, String> getCopyrights() {
         return copyrights;
     }

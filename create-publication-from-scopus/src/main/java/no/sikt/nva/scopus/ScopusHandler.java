@@ -73,6 +73,7 @@ public class ScopusHandler extends ApiGatewayHandler<Void, Summary> {
             try (InputStream inputStream = s3Client.getFile(filename)) {
                 // parse every single file to a ScopusPublication
              ScopusPublication scopusPublication = publicationConverter.convert(inputStream);
+             System.out.println(scopusPublication);
             } catch (IOException e) {
                 logger.error("Could not deal with inputStream for file: {}", filename, e);
             } catch (JAXBException e) {
