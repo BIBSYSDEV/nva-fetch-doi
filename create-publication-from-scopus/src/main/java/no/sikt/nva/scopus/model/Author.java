@@ -82,7 +82,7 @@ public class Author {
         this.institutions = institutions;
     }
 
-
+    @JacocoGenerated
     public Integer getCristinId() {
         return cristinId;
     }
@@ -92,12 +92,12 @@ public class Author {
         return externalId;
     }
 
-
+    @JacocoGenerated
     public String getRoleCode() {
         return roleCode;
     }
 
-
+    @JacocoGenerated
     public Integer getSequenceNr() {
         return sequenceNr;
     }
@@ -107,7 +107,7 @@ public class Author {
         return surname;
     }
 
-
+    @JacocoGenerated
     public String getFirstname() {
         return firstname;
     }
@@ -117,7 +117,7 @@ public class Author {
         return authorName;
     }
 
-
+    @JacocoGenerated
     public String getAuthorNamePreferred() {
         return authorNamePreferred;
     }

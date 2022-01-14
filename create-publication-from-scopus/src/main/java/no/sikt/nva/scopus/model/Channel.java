@@ -104,27 +104,27 @@ public class Channel {
         this.publisherName = publisherName;
     }
 
-
+    @JacocoGenerated
     public Integer getCristinTidsskriftNr() {
         return cristinTidsskriftNr;
     }
 
-
+    @JacocoGenerated
     public String getExternalId() {
         return externalId;
     }
 
-
+    @JacocoGenerated
     public String getExternalName() {
         return externalName;
     }
 
-
+    @JacocoGenerated
     public String getIssn() {
         return issn;
     }
 
-
+    @JacocoGenerated
     public String getEissn() {
         return eissn;
     }
@@ -155,27 +155,27 @@ public class Channel {
         return supplement;
     }
 
-
+    @JacocoGenerated
     public String getPageFrom() {
         return pageFrom;
     }
 
-
+    @JacocoGenerated
     public String getPageTo() {
         return pageTo;
     }
 
-
+    @JacocoGenerated
     public String getCountry() {
         return country;
     }
 
-
+    @JacocoGenerated
     public String getArticleNr() {
         return articleNr;
     }
 
-
+    @JacocoGenerated
     public String getPublisherName() {
         return publisherName;
     }

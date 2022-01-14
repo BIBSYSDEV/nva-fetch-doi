@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xocs:doc content-type="Abstract" dbname="scopusbase" xsi:schemaLocation="http://www.elsevier.com/xml/xocs/dtd xocs-ani515.xsd" xmlns:xocs="http://www.elsevier.com/xml/xocs/dtd" xmlns:ce="http://www.elsevier.com/xml/ani/common" xmlns:ait="http://www.elsevier.com/xml/ani/ait" xmlns:cto="http://www.elsevier.com/xml/cto/dtd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><xocs:meta>
+    <xocs:eid>2-s2.0-0018609584</xocs:eid>
+    <xocs:oeid>2-s1.0-49NH-F650-TWC1-C0DT-00000-00</xocs:oeid>
+    <xocs:online-status>available</xocs:online-status>
+    <xocs:pui>10169850</xocs:pui>
+    <xocs:sdfullavail>0</xocs:sdfullavail>
+    <xocs:issn>00016772</xocs:issn>
+    <xocs:volume>107</xocs:volume>
+    <xocs:issue>473</xocs:issue>
+    <xocs:author-surname>Sand</xocs:author-surname>
+    <xocs:author-fi>O</xocs:author-fi>
+    <xocs:firstpage/>
+    <xocs:lastpage/>
+    <xocs:sort-year>1979</xocs:sort-year>
+    <xocs:sort-yyyymm>197901</xocs:sort-yyyymm>
+    <xocs:pub-year>1979</xocs:pub-year>
+    <xocs:timestamp yyyymmdd="20210925">2021-09-25T06:47:21.758964Z</xocs:timestamp>
+    <xocs:orig-load-date yyyymmdd="20120225">2012-02-25</xocs:orig-load-date>
+    <xocs:datesort>19790101</xocs:datesort>
+    <xocs:indexeddate epoch="1330142978">2012-02-25T04:09:38.000001Z</xocs:indexeddate>
+    <xocs:absavail>0</xocs:absavail>
+    <xocs:suppressdummy>no</xocs:suppressdummy>
+    <xocs:srctype>j</xocs:srctype>
+    <xocs:subjareas><xocs:subjarea>BIOC</xocs:subjarea></xocs:subjareas>
+    <xocs:srctitle>Acta Physiologica Scandinavica</xocs:srctitle>
+    <xocs:countries><xocs:country>Norway</xocs:country></xocs:countries>
+    <xocs:languages><xocs:language>English</xocs:language></xocs:languages>
+    <xocs:prefnameauids><xocs:prefnameauid>Sand, O.#7005296595</xocs:prefnameauid><xocs:prefnameauid>Gautvik, K.M.#7004961263</xocs:prefnameauid><xocs:prefnameauid>Haug, E.#7101755712</xocs:prefnameauid></xocs:prefnameauids>
+    <cto:doctype>ar</cto:doctype>
+    <cto:group-id>0018609584</cto:group-id>
+    <cto:unique-author seq="1"><cto:auth-initials>O.</cto:auth-initials><cto:auth-indexed-name>Sand O.</cto:auth-indexed-name><cto:auth-surname>Sand</cto:auth-surname><cto:auth-id>7005296595</cto:auth-id></cto:unique-author>
+    <cto:unique-author seq="2"><cto:auth-initials>K.M.</cto:auth-initials><cto:auth-indexed-name>Gautvik K.M.</cto:auth-indexed-name><cto:auth-surname>Gautvik</cto:auth-surname><cto:auth-id>7004961263</cto:auth-id></cto:unique-author>
+    <cto:unique-author seq="3"><cto:auth-initials>E.</cto:auth-initials><cto:auth-indexed-name>Haug E.</cto:auth-indexed-name><cto:auth-surname>Haug</cto:auth-surname><cto:auth-id>7101755712</cto:auth-id></cto:unique-author>
+    <cto:unique-auth-count>3</cto:unique-auth-count>
+  </xocs:meta><xocs:item><item><ait:process-info><ait:date-delivered day="24" month="09" timestamp="2021-09-24T22:56:49.000049-04:00" year="2021"/><ait:date-sort day="01" month="01" year="1979"/><ait:status stage="S300" state="update" type="core"/></ait:process-info><bibrecord><item-info><copyright type="Elsevier">Copyright 2017 Elsevier B.V., All rights reserved.</copyright><itemidlist><itemid idtype="PUI">10169850</itemid><itemid idtype="CAR-ID">11512271</itemid><itemid idtype="EMBASE">1980076051</itemid><itemid idtype="SCP">0018609584</itemid><itemid idtype="SGR">0018609584</itemid></itemidlist><history><date-created day="18" month="10" timestamp="BST 10:19:16" year="2017"/></history><dbcollection>EMBASE</dbcollection><dbcollection>SCOPUS</dbcollection><dbcollection>Scopusbase</dbcollection></item-info><head><citation-info><citation-type code="ar"/><citation-language xml:lang="eng" language="English"/></citation-info><citation-title><titletext original="n" xml:lang="eng" language="English">Effects of 4-aminopyridine on hormone release and action potentials of anterior pituitary cells</titletext></citation-title><author-group><author auid="7005296595" seq="1" type="auth"><ce:initials>O.</ce:initials><ce:indexed-name>Sand O.</ce:indexed-name><ce:surname>Sand</ce:surname><preferred-name><ce:initials>O.</ce:initials><ce:indexed-name>Sand O.</ce:indexed-name><ce:surname>Sand</ce:surname><ce:given-name>O.</ce:given-name></preferred-name></author><author auid="7004961263" seq="2" type="auth"><ce:initials>K.M.</ce:initials><ce:indexed-name>Gautvik K.M.</ce:indexed-name><ce:surname>Gautvik</ce:surname><preferred-name><ce:initials>K.M.</ce:initials><ce:indexed-name>Gautvik K.M.</ce:indexed-name><ce:surname>Gautvik</ce:surname><ce:given-name>K. M.</ce:given-name></preferred-name></author><author auid="7101755712" seq="3" type="auth"><ce:initials>E.</ce:initials><ce:indexed-name>Haug E.</ce:indexed-name><ce:surname>Haug</ce:surname><preferred-name><ce:initials>E.</ce:initials><ce:indexed-name>Haug E.</ce:indexed-name><ce:surname>Haug</ce:surname><ce:given-name>E.</ce:given-name></preferred-name></author><affiliation afid="60007008" country="nor" date-locked="2021-06-30T02:56:57.858" dptid="126479222"><ce:text>Dept. Physiol., Veter. Coll. Norway, Oslo</ce:text><affiliation-id afid="60007008" dptid="126479222"/><country>Norway</country></affiliation></author-group><source country="swe" srcid="23302" type="j"><sourcetitle>Acta Physiologica Scandinavica</sourcetitle><sourcetitle-abbrev>ACTA PHYSIOL. SCAND.</sourcetitle-abbrev><issn type="print">00016772</issn><codencode>APSCA</codencode><volisspag><voliss issue="Suppl. 473" volume="107"/><pages>No. 134</pages></volisspag><publicationyear first="1979"/><publicationdate><year>1979</year><date-text xfab-added="true">1979</date-text></publicationdate></source><enhancement><descriptorgroup><descriptors controlled="y" type="DRG"><descriptor><mainterm weight="a" candidate="n">4 aminopyridine</mainterm></descriptor><descriptor><mainterm weight="a" candidate="n">protirelin</mainterm></descriptor></descriptors><descriptors controlled="y" type="MED"><descriptor><mainterm weight="b" candidate="n">abstract report</mainterm></descriptor><descriptor><mainterm weight="a" candidate="n">adenohypophysis</mainterm></descriptor><descriptor><mainterm weight="b" candidate="n">cell culture</mainterm></descriptor><descriptor><mainterm weight="b" candidate="n">central nervous system</mainterm></descriptor><descriptor><mainterm weight="b" candidate="n">endocrine system</mainterm></descriptor><descriptor><mainterm weight="a" candidate="n">hypophysis</mainterm></descriptor><descriptor><mainterm weight="b" candidate="n">in vitro study</mainterm></descriptor></descriptors></descriptorgroup><classificationgroup><classifications type="EMCLASS"><classification> <classification-code>37</classification-code> <classification-description>Drug Literature Index</classification-description> </classification></classifications><classifications type="ASJC"><classification>1314</classification></classifications><classifications type="SUBJABBR"><classification>BIOC</classification></classifications></classificationgroup><chemicalgroup><chemicals source="esbd"><chemical><chemical-name>protirelin</chemical-name><cas-registry-number>24305-27-9</cas-registry-number></chemical></chemicals></chemicalgroup></enhancement></head></bibrecord></item></xocs:item></xocs:doc>

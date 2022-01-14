@@ -1,6 +1,7 @@
 package no.sikt.nva.scopus;
 
 import jakarta.xml.bind.JAXBException;
+import no.sikt.nva.scopus.model.Language;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
@@ -21,6 +22,7 @@ class PublicationConverterTest {
 
     private final static String SCOPUS_ARTIFICIAL_NO_COPYRIGHT = "/scopus-artificial_no_copyright.xml";
     private final static String SCOPUS_ARTIFICIAL_NO_COPYRIGHT_TYPE = "/scopus-artificial-no-copyright-type.xml";
+    private final static String SCOPUS_ARTIFICIAL_NO_ORIGINAL_LANGUAGE = "/scopus_artificial_no_original_language_abstract.xml";
 
     @Test
     public void testConvert() throws JAXBException {
@@ -97,5 +99,13 @@ class PublicationConverterTest {
         InputStream xmlInput = getClass().getResourceAsStream(SCOPUS_XML_0017343948_NO_CITATION_TYPE);
         ScopusPublication scopusPub = publicationConverter.convert(xmlInput);
         assertNull(scopusPub.getExternalCategory());
+    }
+
+    @Test
+    public void handlesNoOriginalLanguage() throws JAXBException {
+        PublicationConverter publicationConverter = new PublicationConverter();
+        InputStream xmlInput = getClass().getResourceAsStream(SCOPUS_ARTIFICIAL_NO_ORIGINAL_LANGUAGE);
+        ScopusPublication scopusPub = publicationConverter.convert(xmlInput);
+        assertFalse(scopusPub.getLanguages().stream().noneMatch(Language::isOriginal));
     }
 }

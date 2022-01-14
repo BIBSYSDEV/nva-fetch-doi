@@ -35,7 +35,7 @@ public class Language {
         this.original = original;
     }
 
-
+    @JacocoGenerated
     public String getLang() {
         return lang;
     }
@@ -45,7 +45,7 @@ public class Language {
         return title;
     }
 
-
+    @JacocoGenerated
     public String getSummary() {
         return summary;
     }

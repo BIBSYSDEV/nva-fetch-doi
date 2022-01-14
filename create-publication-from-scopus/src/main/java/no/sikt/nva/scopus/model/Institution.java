@@ -17,9 +17,6 @@ public class Institution {
     private Integer cristinInstitutionNr;
 
 
-    public Institution(){}
-
-
     public Institution(AffiliationTp affiliationTp) {
         if (affiliationTp == null) return;
         externalId = affiliationTp.getAfid();
@@ -81,12 +78,12 @@ public class Institution {
         return unitId;
     }
 
-
+    @JacocoGenerated
     public String getUnitName() {
         return unitName;
     }
 
-
+    @JacocoGenerated
     public String getCountryCode() {
         return countryCode;
     }
@@ -96,17 +93,17 @@ public class Institution {
         return institutionName;
     }
 
-
+    @JacocoGenerated
     public String getCity() {
         return city;
     }
 
-
+    @JacocoGenerated
     public String getCityGroup() {
         return cityGroup;
     }
 
-
+    @JacocoGenerated
     public Integer getCristinInstitutionNr() {
         return cristinInstitutionNr;
     }
