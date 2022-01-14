@@ -21,7 +21,8 @@ dependencies {
     implementation libs.nva.s3
     implementation libs.nva.core
     implementation libs.nva.apigateway
-    implementation group: 'com.amazonaws', name: 'aws-lambda-java-events', version: '3.11.0'
+    implementation libs.aws.lambda.java.core
+    implementation libs.aws.lambda.events
     testImplementation libs.nva.testutils
 
     testImplementation(libs.zalando.problem) {
