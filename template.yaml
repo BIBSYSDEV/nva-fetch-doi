@@ -49,11 +49,11 @@ Parameters:
     Default: 0.80
   ScopusZipBucketName:
     Type: String
-    Default: "ScopusZipBucket"
+    Default: "scopus-zip-files"
     Description: Name of bucket for incoming zip-files to be unzipped (containing scopus xml-files)
   ScopusXmlBucketName:
     Type: String
-    Default: "ScopusXmlBucket"
+    Default: "scopus-xml-files"
     Description: Name of bucket for unzipped scopus xml files
 
 Resources:
