@@ -2,28 +2,31 @@ package no.sikt.nva.scopus;
 
 import com.amazonaws.services.lambda.runtime.CognitoIdentity;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.net.HttpHeaders;
 import no.unit.nva.api.CreatePublicationRequest;
-import no.unit.nva.doi.fetch.model.Summary;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.s3.S3Driver;
+import no.unit.nva.stubs.FakeContext;
+import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.core.Environment;
 import nva.commons.core.JsonUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
+import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasKey;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -45,43 +48,32 @@ class ScopusHandlerTest {
     @BeforeEach
     public void setUp() {
         environment = mock(Environment.class);
-        context = getMockContext();
+        context = new FakeContext();
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALL_ORIGINS);
     }
 
     @Test
     public void testResponseWithEmptyRequest()
             throws Exception {
-        ScopusHandler handler = createHandler(environment);
+        HandlerRequestBuilder<Map<String, String>> handlerRequestBuilder = new HandlerRequestBuilder<>(restServiceObjectMapper);
+        String generatedString = RandomStringUtils.randomAlphanumeric(10);
+        Map<String, String> queryParams = new HashMap<>();
+        queryParams.put(ScopusHandler.FILE_IDENTIFIER, generatedString);
+        handlerRequestBuilder.withQueryParameters(queryParams);
+        InputStream inputStream = handlerRequestBuilder.build();
+        ScopusHandler handler = createHandler();
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        handler.handleRequest(handlerInputStream(), output, context);
-        GatewayResponse<Summary> gatewayResponse = parseSuccessResponse(output.toString());
-        assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
+        handler.handleRequest(inputStream, output, context);
+        GatewayResponse<String> gatewayResponse = GatewayResponse.fromOutputStream(output);
+        assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
-        assertNull(handler.processInput(null, null, null));
         assertNull(handler.getSuccessStatusCode(null, null));
     }
 
-    private GatewayResponse<Summary> parseSuccessResponse(String output) throws JsonProcessingException {
-        return parseGatewayResponse(output, Summary.class);
-    }
-
-
-    private <T> GatewayResponse<T> parseGatewayResponse(String output, Class<T> responseObjectClass)
-            throws JsonProcessingException {
-        JavaType typeRef = restServiceObjectMapper.getTypeFactory()
-                .constructParametricType(GatewayResponse.class, responseObjectClass);
-        return restServiceObjectMapper.readValue(output, typeRef);
-    }
-
-    private InputStream handlerInputStream() {
-        return new ByteArrayInputStream("string".getBytes());
-    }
-
-    private ScopusHandler createHandler(Environment environment) {
-        ScopusS3Client s3Client = mockScopusS3Client();
-        PublicationConverter publicationConverter = mockPublicationConverter();
+    private ScopusHandler createHandler() {
+        S3Driver s3Client = mock(S3Driver.class);
+        PublicationConverter publicationConverter = mock(PublicationConverter.class);
         PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
         MetadataService metadataService = mockMetadataServiceReturningSuccessfulResult();
 
@@ -99,14 +91,6 @@ class ScopusHandlerTest {
 
         when(service.generateCreatePublicationRequest(any())).thenReturn(Optional.of(request));
         return service;
-    }
-
-    private PublicationConverter mockPublicationConverter() {
-        return mock(PublicationConverter.class);
-    }
-
-    private ScopusS3Client mockScopusS3Client() {
-        return mock(ScopusS3Client.class);
     }
 
     private Context getMockContext() {

@@ -11,17 +11,17 @@ configurations {
 }
 
 dependencies {
-    //TODO: sjekke om vi trenger alle disse sub-modules inn her
-    implementation project(":fetch-doi-commons")
-    implementation project(":doi-transformer") {
-        compileOnly(libs.jakarta) {
-            because 'PMD'
-        }
-    }
     jaxb libs.bundles.xsd2java
     implementation libs.bundles.xsd2java
+    api (libs.nva.datamodel) {
+        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
+    }
     implementation project(":metadata-transformer")
-    implementation libs.aws.java.sdk.s3
+    implementation libs.aws.java.sdk2.s3
+    implementation libs.nva.s3
+    implementation libs.nva.core
+    implementation libs.nva.apigateway
+    testImplementation libs.nva.testutils
 
     testImplementation(libs.zalando.problem) {
         compileOnly(libs.apiGuardian) {
