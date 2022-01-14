@@ -213,9 +213,7 @@ Resources:
           Type: S3
           Properties:
             Bucket: !Ref ScopusXmlBucket
-            Path: /
-            Method: post
-            RestApiId: !Ref NvaFetchDoiFunctionApi
+            Events: 's3:ObjectCreated:*'
 
   NvaFetchDoiFunctionScalableTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
