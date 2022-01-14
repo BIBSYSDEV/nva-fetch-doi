@@ -49,9 +49,11 @@ Parameters:
     Default: 0.80
   ScopusZipBucketName:
     Type: String
+    Default: "ScopusZipBucket"
     Description: Name of bucket for incoming zip-files to be unzipped (containing scopus xml-files)
   ScopusXmlBucketName:
     Type: String
+    Default: "ScopusXmlBucket"
     Description: Name of bucket for unzipped scopus xml files
 
 Resources:
@@ -197,13 +199,6 @@ Resources:
             Method: post
             RestApiId: !Ref NvaFetchDoiFunctionApi
 
-  ScopusBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: "ScopusTempBucket"
-      AccessControl: Private
-      VersioningConfiguration:
-        Status: Suspended
 
   NvaScopusFunction:
     Type: AWS::Serverless::Function
@@ -217,7 +212,7 @@ Resources:
         Scopus:
           Type: S3
           Properties:
-            Bucket: !Ref ScopusBucket
+            Bucket: !Ref ScopusXmlBucket
             Path: /
             Method: post
             RestApiId: !Ref NvaFetchDoiFunctionApi
@@ -324,7 +319,7 @@ Resources:
       Runtime: python3.8
       Environment:
         Variables:
-          XML_BUCKET_NAME: !Ref ScopusXmlBucketName
+          XML_BUCKET_NAME: !Ref ScopusXmlBucket
       PackageType: Zip
       InlineCode: |
         import boto3, zipfile, os
@@ -346,11 +341,11 @@ Resources:
             )
       Policies:
         - S3ReadPolicy:
-            BucketName: !Ref ScopusZipBucketName
+            BucketName: !Ref ScopusZipBucket
         - S3WritePolicy:
-            BucketName: !Ref ScopusZipBucketName
+            BucketName: !Ref ScopusZipBucket
         - S3WritePolicy:
-            BucketName: !Ref ScopusXmlBucketName
+            BucketName: !Ref ScopusXmlBucket
       Events:
         UnzipEvent:
           Type: S3
@@ -367,7 +362,7 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       AccessControl: Private
-      BucketName: !Ref ScopusZipBucketName
+      BucketName: !Sub "${ScopusZipBucketName}-${AWS::AccountId}"
       LifecycleConfiguration:
         Rules:
           - Id: DeleteContentAfter3Days
@@ -379,7 +374,7 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       AccessControl: Private
-      BucketName: !Ref ScopusXmlBucketName
+      BucketName: !Sub "${ScopusXmlBucketName}-${AWS::AccountId}"
       LifecycleConfiguration:
         Rules:
           - Id: DeleteContentAfter3Days
