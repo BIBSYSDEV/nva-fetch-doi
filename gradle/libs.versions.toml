@@ -3,7 +3,8 @@ nva = { strictly = "1.16.30" }
 testUtils = { strictly = "0.1.24" }
 jacksonVersion = { strictly = "2.13.0" }
 jakartaVersion = { strictly = "2.1.6" }
-awsSdkVersion = { strictly = "1.12.134" }
+awsSdkVersion = { strictly = "1.12.129" }
+awsSdk2Version = { strictly = "2.17.99" }
 nvaDatamodelVersion = { strictly = "0.14.12" }
 jerseyVersion = { strictly = "2.30.1" }
 rdf4jVersion = { strictly = "3.1.2" }
@@ -22,12 +23,14 @@ slf4j = {strictly = '1.8.0-beta4'}
 
 [libraries]
 
+nva-s3 = { group = "com.github.bibsysdev", name = "s3", version.ref = "nva" }
 nva-core = { group = "com.github.bibsysdev", name = "core", version.ref = "nva" }
 nva-apigateway = { group = "com.github.bibsysdev", name = "apigateway", version.ref = "nva" }
 nva-secrets = { group = "com.github.bibsysdev", name = "secrets", version.ref = "nva" }
 nva-logutils = { group = "com.github.bibsysdev", name = "logutils", version.ref = "nva" }
 nva-identifiers = { group = "com.github.bibsysdev", name = "identifiers", version.ref = "nva" }
 nva-doi = { group = "com.github.bibsysdev", name = "doi", version.ref = "nva" }
+nva-testutils = { group = "com.github.bibsysdev", name = "nvatestutils", version.ref = "nva" }
 nva-datamodel = { group = "com.github.bibsysdev", name = "nva-datamodel-java", version.ref = "nvaDatamodelVersion" }
 
 testUtils = { group = "com.github.BIBSYSDEV", name = "nva-testutils", version.ref = "testUtils" }
@@ -40,6 +43,7 @@ jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-an
 jackson-datatype-jsr310 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jsr310", version.ref = "jacksonVersion" }
 
 aws-java-sdk-s3 = { group = "com.amazonaws", name = "aws-java-sdk-s3", version.ref = "awsSdkVersion" }
+aws-java-sdk2-s3 = { group = "software.amazon.awssdk", name = "s3", version.ref = "awsSdk2Version" }
 aws-java-sdk-core = { group = "com.amazonaws", name = "aws-java-sdk-core", version.ref = "awsSdkVersion" }
 aws-secretsmanager = { group = "com.amazonaws", name = "aws-java-sdk-secretsmanager", version.ref = "awsSdkVersion" }
 aws-lambda-java-core = { group = "com.amazonaws", name = "aws-lambda-java-core", version = { strictly = "1.2.1" } }
