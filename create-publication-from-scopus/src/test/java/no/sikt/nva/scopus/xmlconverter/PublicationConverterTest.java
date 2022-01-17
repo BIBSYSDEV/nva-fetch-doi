@@ -1,7 +1,9 @@
-package no.sikt.nva.scopus;
+package no.sikt.nva.scopus.xmlconverter;
 
 import jakarta.xml.bind.JAXBException;
-import no.sikt.nva.scopus.model.Language;
+import no.sikt.nva.scopus.xmlconverter.ScopusPublication;
+import no.sikt.nva.scopus.xmlconverter.model.Language;
+import no.sikt.nva.scopus.xmlconverter.PublicationConverter;
 import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.io.InputStream;

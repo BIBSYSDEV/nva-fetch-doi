@@ -1,7 +1,7 @@
-package no.sikt.nva.scopus.factory;
+package no.sikt.nva.scopus.xmlconverter.factory;
 
 import no.scopus.generated.*;
-import no.sikt.nva.scopus.model.Channel;
+import no.sikt.nva.scopus.xmlconverter.model.Channel;
 import nva.commons.core.JacocoGenerated;
 
 public class ScopusChannelFactory {

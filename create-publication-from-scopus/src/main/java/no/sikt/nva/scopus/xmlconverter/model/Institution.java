@@ -1,4 +1,4 @@
-package no.sikt.nva.scopus.model;
+package no.sikt.nva.scopus.xmlconverter.model;
 
 import no.scopus.generated.AffiliationTp;
 import no.scopus.generated.OrganizationTp;

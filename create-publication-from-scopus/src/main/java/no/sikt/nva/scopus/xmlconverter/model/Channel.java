@@ -1,4 +1,4 @@
-package no.sikt.nva.scopus.model;
+package no.sikt.nva.scopus.xmlconverter.model;
 
 import nva.commons.core.JacocoGenerated;
 

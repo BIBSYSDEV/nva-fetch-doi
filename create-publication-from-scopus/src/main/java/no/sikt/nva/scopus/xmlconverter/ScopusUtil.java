@@ -1,4 +1,4 @@
-package no.sikt.nva.scopus;
+package no.sikt.nva.scopus.xmlconverter;
 
 import jakarta.xml.bind.JAXBElement;
 import no.scopus.generated.InfTp;

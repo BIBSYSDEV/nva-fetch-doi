@@ -1,11 +1,11 @@
-package no.sikt.nva.scopus.factory;
+package no.sikt.nva.scopus.xmlconverter.factory;
 
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.PersonalnameType;
-import no.sikt.nva.scopus.model.Author;
-import no.sikt.nva.scopus.model.Institution;
+import no.sikt.nva.scopus.xmlconverter.model.Author;
+import no.sikt.nva.scopus.xmlconverter.model.Institution;
 import nva.commons.core.JacocoGenerated;
 
 import java.util.*;

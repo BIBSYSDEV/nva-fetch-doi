@@ -1,8 +1,8 @@
-package no.sikt.nva.scopus.factory;
+package no.sikt.nva.scopus.xmlconverter.factory;
 
 import no.scopus.generated.*;
-import no.sikt.nva.scopus.ScopusUtil;
-import no.sikt.nva.scopus.model.Language;
+import no.sikt.nva.scopus.xmlconverter.ScopusUtil;
+import no.sikt.nva.scopus.xmlconverter.model.Language;
 import nva.commons.core.JacocoGenerated;
 
 import java.util.LinkedHashMap;

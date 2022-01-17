@@ -1,4 +1,4 @@
-package no.sikt.nva.scopus;
+package no.sikt.nva.scopus.xmlconverter;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -8,12 +8,12 @@ import java.util.List;
 import java.util.Map;
 
 import no.scopus.generated.*;
-import no.sikt.nva.scopus.factory.ScopusAuthorFactory;
-import no.sikt.nva.scopus.factory.ScopusChannelFactory;
-import no.sikt.nva.scopus.factory.ScopusLanguageFactory;
-import no.sikt.nva.scopus.model.Author;
-import no.sikt.nva.scopus.model.Channel;
-import no.sikt.nva.scopus.model.Language;
+import no.sikt.nva.scopus.xmlconverter.factory.ScopusAuthorFactory;
+import no.sikt.nva.scopus.xmlconverter.factory.ScopusChannelFactory;
+import no.sikt.nva.scopus.xmlconverter.factory.ScopusLanguageFactory;
+import no.sikt.nva.scopus.xmlconverter.model.Author;
+import no.sikt.nva.scopus.xmlconverter.model.Channel;
+import no.sikt.nva.scopus.xmlconverter.model.Language;
 import nva.commons.core.JacocoGenerated;
 
 public class ScopusPublication {
