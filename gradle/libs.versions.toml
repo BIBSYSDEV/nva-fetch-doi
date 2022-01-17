@@ -5,6 +5,8 @@ jacksonVersion = { strictly = "2.13.0" }
 jakartaVersion = { strictly = "2.1.6" }
 awsSdkVersion = { strictly = "1.12.129" }
 awsSdk2Version = { strictly = "2.17.99" }
+awsLambdaEvents = { strictly = '3.11.0' }
+awsLambdaCore = { strictly = '1.2.1' }
 nvaDatamodelVersion = { strictly = "0.14.12" }
 jerseyVersion = { strictly = "2.30.1" }
 rdf4jVersion = { strictly = "3.1.2" }
@@ -46,7 +48,8 @@ aws-java-sdk-s3 = { group = "com.amazonaws", name = "aws-java-sdk-s3", version.r
 aws-java-sdk2-s3 = { group = "software.amazon.awssdk", name = "s3", version.ref = "awsSdk2Version" }
 aws-java-sdk-core = { group = "com.amazonaws", name = "aws-java-sdk-core", version.ref = "awsSdkVersion" }
 aws-secretsmanager = { group = "com.amazonaws", name = "aws-java-sdk-secretsmanager", version.ref = "awsSdkVersion" }
-aws-lambda-java-core = { group = "com.amazonaws", name = "aws-lambda-java-core", version = { strictly = "1.2.1" } }
+aws-lambda-java-core = { group = "com.amazonaws", name = "aws-lambda-java-core", version.ref = "awsLambdaCore" }
+aws-lambda-events = { group = 'com.amazonaws', name = 'aws-lambda-java-events', version.ref = 'awsLambdaEvents' }
 jakarta = { group = "jakarta.ws.rs", name = "jakarta.ws.rs-api", version.ref = "jakartaVersion" }
 jersey-common = { group = "org.glassfish.jersey.core", name = "jersey-common", version.ref = "jerseyVersion" }
 
