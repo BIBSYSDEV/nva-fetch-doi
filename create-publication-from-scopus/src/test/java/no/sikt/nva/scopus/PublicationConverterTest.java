@@ -2,12 +2,7 @@ package no.sikt.nva.scopus;
 
 import jakarta.xml.bind.JAXBException;
 import no.sikt.nva.scopus.model.Language;
-import nva.commons.logutils.LogUtils;
-import nva.commons.logutils.TestAppender;
-import org.junit.Rule;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.ExpectedException;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
@@ -29,6 +24,7 @@ class PublicationConverterTest {
     private final static String SCOPUS_ARTIFICIAL_NO_COPYRIGHT = "scopus-artificial_no_copyright.xml";
     private final static String SCOPUS_ARTIFICIAL_NO_COPYRIGHT_TYPE = "scopus-artificial-no-copyright-type.xml";
     private final static String SCOPUS_ARTIFICIAL_NO_ORIGINAL_LANGUAGE = "scopus_artificial_no_original_language_abstract.xml";
+    private final static String SCOPUS_ARTIFICIAL_INDEXED_AUTHOR_NAME_NO_MATCHING_AUTHOR = "scopus_artificial_author_name_tampering.xml";
 
     private String readFileAsString(String filename){
         StringBuilder contentBuilder = new StringBuilder();
@@ -134,19 +130,20 @@ class PublicationConverterTest {
         assertFalse(scopusPub.getLanguages().stream().noneMatch(Language::isOriginal));
     }
 
-    @Rule
-    public ExpectedException thrown= ExpectedException.none();
 
     @Test
     public void shouldThrowError() {
-        final TestAppender appender = LogUtils.getTestingAppender(ScopusHandler.class);
-
-        JAXBException thrown = assertThrows(JAXBException.class, () -> {
+        assertThrows(JAXBException.class, () -> {
             PublicationConverter publicationConverter = new PublicationConverter();
             publicationConverter.convert(new StringReader("<xml //>"));
-            assertEquals("Invalid xml format", appender.getMessages());
         });
-        assertNotNull(thrown);
-        assertTrue(thrown.getLinkedException().getMessage().contains("Element type \"xml\" must be followed by either attribute"));
+    }
+
+    @Test
+    public void itShouldFindMatchingAuthorsWithoutMatchingIndexName() throws JAXBException {
+        PublicationConverter publicationConverter = new PublicationConverter();
+        String xmlContent = readFileAsString(SCOPUS_ARTIFICIAL_INDEXED_AUTHOR_NAME_NO_MATCHING_AUTHOR);
+        ScopusPublication scopusPub = publicationConverter.convert(new StringReader(xmlContent));
+        assertEquals("36549128800", scopusPub.getAuthors().get(0).getExternalId());
     }
 }
