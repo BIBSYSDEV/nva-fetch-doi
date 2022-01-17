@@ -25,6 +25,7 @@ class PublicationConverterTest {
     private final static String SCOPUS_ARTIFICIAL_NO_COPYRIGHT_TYPE = "scopus-artificial-no-copyright-type.xml";
     private final static String SCOPUS_ARTIFICIAL_NO_ORIGINAL_LANGUAGE = "scopus_artificial_no_original_language_abstract.xml";
     private final static String SCOPUS_ARTIFICIAL_INDEXED_AUTHOR_NAME_NO_MATCHING_AUTHOR = "scopus_artificial_author_name_tampering.xml";
+    private final static String SCOPUS_ARTIFICIAL_SEVERAL_ORIGINAL_LANGUAGES_NO_ENGLISH = "scopus_artificial_several_original_languages_no_english.xml";
 
     private String readFileAsString(String filename){
         StringBuilder contentBuilder = new StringBuilder();
@@ -145,5 +146,14 @@ class PublicationConverterTest {
         String xmlContent = readFileAsString(SCOPUS_ARTIFICIAL_INDEXED_AUTHOR_NAME_NO_MATCHING_AUTHOR);
         ScopusPublication scopusPub = publicationConverter.convert(new StringReader(xmlContent));
         assertEquals("36549128800", scopusPub.getAuthors().get(0).getExternalId());
+    }
+
+    @Test
+    public void itShouldSetFirstLanguageToOriginalIfThereIsMoreThanOneOriginal() throws JAXBException {
+        PublicationConverter publicationConverter = new PublicationConverter();
+        String xmlContent = readFileAsString(SCOPUS_ARTIFICIAL_SEVERAL_ORIGINAL_LANGUAGES_NO_ENGLISH);
+        ScopusPublication scopusPub = publicationConverter.convert(new StringReader(xmlContent));
+        assertTrue(scopusPub.getLanguages().get(0).isOriginal());
+        assertFalse(scopusPub.getLanguages().get(1).isOriginal());
     }
 }
