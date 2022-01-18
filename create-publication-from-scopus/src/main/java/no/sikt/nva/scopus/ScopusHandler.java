@@ -6,6 +6,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import java.net.URI;
 import no.unit.nva.s3.S3Driver;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +20,11 @@ public class ScopusHandler implements RequestHandler<S3Event, String> {
     public static final String S3_EVENT_WITHOUT_RECORDS_WARNING = "S3 event without records";
     private static final Logger logger = LoggerFactory.getLogger(ScopusHandler.class);
     private final S3Client s3Client;
+
+    @JacocoGenerated
+    public ScopusHandler() {
+        this(S3Driver.defaultS3Client().build());
+    }
 
     public ScopusHandler(S3Client s3Client) {
         this.s3Client = s3Client;
