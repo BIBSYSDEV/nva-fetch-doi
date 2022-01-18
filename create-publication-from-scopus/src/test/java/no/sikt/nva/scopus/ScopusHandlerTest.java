@@ -18,9 +18,13 @@ import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotificatio
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3ObjectEntity;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.UserIdentityEntity;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringReader;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
+
+import no.scopus.generated.DocTp;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.ioutils.IoUtils;
@@ -29,6 +33,11 @@ import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.s3.S3Client;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 
 class ScopusHandlerTest {
 
@@ -68,11 +77,32 @@ class ScopusHandlerTest {
         assertThat(fileContentsAsReadByHandler, is(equalTo(fileContents)));
     }
 
-    @Test
-    void shouldParseScopusXmlFileWhenInputIsEventWithS3UriPointingToScopusXmlFile(){
-        var hardCodedDoiInResourceFile = HARD_CODED_DOI_IN_RESOURCE_FILE;
-        var scopusFile = IoUtils.stringFromFile(Path.of("2-s2.0-0000469852.xml"));
+    private String readFileAsString(String filename){
+        StringBuilder contentBuilder = new StringBuilder();
+        int i;
+        try (InputStream stream = getClass().getClassLoader().getResourceAsStream(filename)) {
+            if (stream != null) {
+                while ((i = stream.read()) != -1) {
+                    contentBuilder.append((char) i);
+                }
+            }
 
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return  contentBuilder.toString();
+
+    }
+
+    @Test
+    void shouldParseScopusXmlFileWhenInputIsEventWithS3UriPointingToScopusXmlFile() throws JAXBException {
+        var hardCodedDoiInResourceFile = HARD_CODED_DOI_IN_RESOURCE_FILE;
+        var scopusFile = readFileAsString("2-s2.0-0019171142.xml");
+        JAXBContext jaxbContext = JAXBContext.newInstance(DocTp.class);
+        Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+        JAXBElement element = (JAXBElement) unmarshaller.unmarshal(new StringReader(scopusFile));
+        DocTp docTp = (DocTp) element.getValue();
+        assertThat(docTp.getMeta().getDoi(), is(equalTo(hardCodedDoiInResourceFile)));
     }
 
     private void insertFileToFakeS3Bucket(String fileContents, String filename) throws IOException {
