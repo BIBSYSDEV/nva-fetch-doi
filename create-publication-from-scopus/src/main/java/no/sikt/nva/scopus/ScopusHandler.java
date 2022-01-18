@@ -19,8 +19,6 @@ public class ScopusHandler implements RequestHandler<S3Event, String> {
 
     public static final int SINGLE_EXPECTED_RECORD = 0;
     public static final String S3_URI_TEMPLATE = "s3://%s/%s";
-    public static final String EMPTY_STRING = "";
-    public static final String S3_EVENT_WITHOUT_RECORDS_WARNING = "S3 event without records";
     private static final Logger logger = LoggerFactory.getLogger(ScopusHandler.class);
     private final S3Client s3Client;
 
