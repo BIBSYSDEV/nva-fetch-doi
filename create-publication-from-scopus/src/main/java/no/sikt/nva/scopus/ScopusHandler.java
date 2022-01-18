@@ -59,8 +59,7 @@ public class ScopusHandler implements RequestHandler<S3Event, String> {
     private String readFile(S3Event event) {
         var s3Driver = new S3Driver(s3Client, extractBucketName(event));
         var fileUri = createS3BucketUri(event);
-        var x= s3Driver.getFile(new UriWrapper(fileUri).toS3bucketPath());
-        return x;
+        return s3Driver.getFile(new UriWrapper(fileUri).toS3bucketPath());
     }
 
     private String extractBucketName(S3Event event) {
