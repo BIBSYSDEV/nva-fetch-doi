@@ -207,7 +207,7 @@ Resources:
       Handler: no.sikt.nva.scopus.ScopusHandler::handleRequest
       Runtime: java11
       MemorySize: !Ref LambdaMemorySize
-      Role: !GetAtt NvaFetchDoiFunctionRole.Arn
+      Role: !GetAtt ReadFromScopusBucketsRole.Arn
       Events:
         Scopus:
           Type: S3
@@ -309,30 +309,30 @@ Resources:
       Timestamp: '${BUILD_TIMESTAMP}'
       AuthorizerArn: !Ref CognitoAuthorizerArn
 
-#  ReadFromScopusBucketsRole:
-#    Type: AWS::IAM::Role
-#    Properties:
-#      AssumeRolePolicyDocument:
-#        Version: '2012-10-17'
-#        Statement:
-#          - Effect: Allow
-#            Principal:
-#              Service: lambda.amazonaws.com
-#            Action: sts:AssumeRole
-#      Path: /
-#      ManagedPolicyArns:
-#        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
-#      Policies:
-#        - PolicyName: ScopusBucketAccess
-#          PolicyDocument:
-#            Version: '2012-10-17'
-#            Statement:
-#              - Effect: Allow
-#                Action:
-#                  - s3:*
-#                Resources:
-#                  - !Sub 'arn:aws:s3:::${ScopusZipBucket}/*'
-#                  - !Sub 'arn:aws:s3:::${ScopusXmlBucket}/*'
+  ReadFromScopusBucketsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+      Policies:
+        - PolicyName: ScopusBucketAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:*
+                Resources:
+                  - !Sub 'arn:aws:s3:::${ScopusZipBucket}/*'
+                  - !Sub 'arn:aws:s3:::${ScopusXmlBucket}/*'
 
 
 #  ScopusUnzipperFunction:
