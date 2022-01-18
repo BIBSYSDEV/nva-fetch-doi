@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 
+import jakarta.xml.bind.JAXB;
 import no.scopus.generated.DocTp;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
@@ -77,31 +78,11 @@ class ScopusHandlerTest {
         assertThat(fileContentsAsReadByHandler, is(equalTo(fileContents)));
     }
 
-    private String readFileAsString(String filename){
-        StringBuilder contentBuilder = new StringBuilder();
-        int i;
-        try (InputStream stream = getClass().getClassLoader().getResourceAsStream(filename)) {
-            if (stream != null) {
-                while ((i = stream.read()) != -1) {
-                    contentBuilder.append((char) i);
-                }
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return  contentBuilder.toString();
-
-    }
-
     @Test
-    void shouldParseScopusXmlFileWhenInputIsEventWithS3UriPointingToScopusXmlFile() throws JAXBException {
+    void shouldParseScopusXmlFileWhenInputIsEventWithS3UriPointingToScopusXmlFile() {
         var hardCodedDoiInResourceFile = HARD_CODED_DOI_IN_RESOURCE_FILE;
-        var scopusFile = readFileAsString("2-s2.0-0019171142.xml");
-        JAXBContext jaxbContext = JAXBContext.newInstance(DocTp.class);
-        Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-        JAXBElement element = (JAXBElement) unmarshaller.unmarshal(new StringReader(scopusFile));
-        DocTp docTp = (DocTp) element.getValue();
+        var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
+        DocTp docTp = JAXB.unmarshal(new StringReader(scopusFile), DocTp.class);
         assertThat(docTp.getMeta().getDoi(), is(equalTo(hardCodedDoiInResourceFile)));
     }
 
