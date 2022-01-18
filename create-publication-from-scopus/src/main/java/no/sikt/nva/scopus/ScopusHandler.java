@@ -40,9 +40,18 @@ public class ScopusHandler implements RequestHandler<S3Event, String> {
 
     @Override
     public String handleRequest(S3Event event, Context context) {
-        var content =  attempt(() -> readFile(event)).orElse(fail -> logErrorAndReturnEmptyString());
-        DocTp docTp = JAXB.unmarshal(new StringReader(content), DocTp.class);
+        return  attempt(() -> readFile(event))
+                .map(this::parseXmlFile)
+                .map(this::getDoi)
+                .orElse(fail -> logErrorAndReturnEmptyString());
+    }
+
+    private String getDoi(DocTp docTp) {
         return docTp.getMeta().getDoi();
+    }
+
+    private DocTp parseXmlFile(String file) {
+        return JAXB.unmarshal(new StringReader(file), DocTp.class);
     }
 
     private String logErrorAndReturnEmptyString() {
