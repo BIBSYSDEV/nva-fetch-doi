@@ -7,13 +7,11 @@ import com.amazonaws.services.lambda.runtime.events.S3Event;
 
 import java.io.StringReader;
 import java.net.URI;
-import java.nio.file.Path;
 
 import jakarta.xml.bind.JAXB;
 import no.scopus.generated.DocTp;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

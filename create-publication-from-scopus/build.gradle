@@ -6,6 +6,7 @@ dependencies {
     }
     implementation project(":scopus-generate")
     implementation project(":metadata-transformer")
+    implementation libs.xsd2java.jakarta
     implementation libs.aws.java.sdk2.s3
     implementation libs.nva.s3
     implementation libs.nva.core
