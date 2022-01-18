@@ -16,7 +16,7 @@ public class ScopusHandler implements RequestHandler<S3Event, String> {
     public String handleRequest(S3Event event, Context context) {
         String key = event.getRecords().get(0).getS3().getObject().getKey();
         String bucket = event.getRecords().get(0).getS3().getBucket().getName();
-        var uri= URI.create(String.format("s3://%s/%s", bucket, key)).toString();
+        var uri = URI.create(String.format("s3://%s/%s", bucket, key)).toString();
         System.out.println(uri);
         return uri;
     }
