@@ -31,6 +31,14 @@ tasks.withType(JavaCompile) {
     dependsOn(xsd2java)
 }
 
+tasks.withType(Checkstyle) {
+    exclude { '**/generated/*' }
+}
+
+tasks.withType(Pmd) {
+    exclude { '**/generated/*' }
+}
+
 test {
     environment "BUCKET_NAME", "bucketName"
     environment "ALLOWED_ORIGIN", "*"
