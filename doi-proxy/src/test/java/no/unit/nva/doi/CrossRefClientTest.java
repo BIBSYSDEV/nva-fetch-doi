@@ -18,10 +18,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
-import com.amazonaws.services.secretsmanager.AWSSecretsManager;
-import com.amazonaws.services.secretsmanager.model.GetSecretValueRequest;
-import com.amazonaws.services.secretsmanager.model.GetSecretValueResult;
-import com.amazonaws.services.secretsmanager.model.ResourceNotFoundException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -45,6 +41,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.invocation.InvocationOnMock;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
+import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
+import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
 
 public class CrossRefClientTest {
 
@@ -108,7 +107,7 @@ public class CrossRefClientTest {
     void fetchDataForDoiReturnAnOptionalWithAJsonObjectForAnExistingUrl() throws URISyntaxException,
                                                                                  JsonProcessingException {
         var result = getConfiguredCrossrefClient().fetchDataForDoi(DOI_STRING)
-                         .map(MetadataAndContentLocation::getJson);
+            .map(MetadataAndContentLocation::getJson);
         var expected = IoUtils.stringFromResources(CROSS_REF_SAMPLE_PATH);
         assertThat(result.isPresent(), is(true));
         assertThat(result.get(), is(equalTo(expected)));
@@ -185,20 +184,19 @@ public class CrossRefClientTest {
     @Test
     void crossrefClientThrowsRuntimeExceptionWhenSecretsManagerLacksSecret() {
         Executable executable = () -> getConfiguredCrossrefClient(mock(HttpClient.class), true, true, false)
-                                          .fetchDataForDoi(DOI_STRING);
+            .fetchDataForDoi(DOI_STRING);
         RuntimeException exception = assertThrows(RuntimeException.class, executable);
         Throwable cause = exception.getCause();
         // assert that no information about secrets is being leaked.
-        assertThat(exception.getMessage(),is(equalTo(cause.getClass().getCanonicalName())));
-        assertThat(cause.getMessage(),is(nullValue()));
-
+        assertThat(exception.getMessage(), is(equalTo(cause.getClass().getCanonicalName())));
+        assertThat(cause.getMessage(), is(nullValue()));
     }
 
     @Test
     void crossrefClientLogsMissingSecretsInSecretsManager() {
         var log = LogUtils.getTestingAppenderForRootLogger();
         Executable executable = () -> getConfiguredCrossrefClient(mock(HttpClient.class), true, true, false)
-                                          .fetchDataForDoi(DOI_STRING);
+            .fetchDataForDoi(DOI_STRING);
         assertThrows(RuntimeException.class, executable);
         var actual = log.getMessages();
         var expected = String.format(CROSSREF_API_KEY_SECRET_NOT_FOUND_TEMPLATE.replace("{}", "%s"), NAME, KEY);
@@ -240,13 +238,14 @@ public class CrossRefClientTest {
             when(environment.readEnvOpt(CROSSREFPLUSAPITOKEN_KEY_ENV)).thenReturn(Optional.of(KEY));
         }
 
-        var secretsManager = mock(AWSSecretsManager.class);
+        var secretsManager = mock(SecretsManagerClient.class);
         var secretsReader = new SecretsReader(secretsManager);
         if (withApiSecret) {
             var secretString = doiProxyObjectMapper.writeValueAsString(
                 Map.of(KEY, "irrelevant"));
-            var secretValue = new GetSecretValueResult().withName(NAME)
-                                  .withSecretString(secretString);
+            var secretValue = GetSecretValueResponse.builder().name(NAME)
+                .secretString(secretString)
+                .build();
             when(secretsManager.getSecretValue(any(GetSecretValueRequest.class))).thenReturn(secretValue);
         } else {
             when(secretsManager.getSecretValue(any(GetSecretValueRequest.class)))
@@ -255,8 +254,8 @@ public class CrossRefClientTest {
         return new CrossRefClient(httpClient, environment, secretsReader);
     }
 
-    private GetSecretValueResult secretValueProvider(InvocationOnMock invocation) {
-        throw new ResourceNotFoundException("irrelevant");
+    private GetSecretValueResponse secretValueProvider(InvocationOnMock invocation) {
+        throw new RuntimeException("irrelevant");
     }
 
     private void targetURlReturnsAValidUrlForDoiStrings(String doiPrefix) throws URISyntaxException,
