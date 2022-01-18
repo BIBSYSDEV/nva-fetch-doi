@@ -4,9 +4,16 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
+
+import java.io.StringReader;
 import java.net.URI;
+import java.nio.file.Path;
+
+import jakarta.xml.bind.JAXB;
+import no.scopus.generated.DocTp;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,11 +35,14 @@ public class ScopusHandler implements RequestHandler<S3Event, String> {
 
     public ScopusHandler(S3Client s3Client) {
         this.s3Client = s3Client;
+
     }
 
     @Override
     public String handleRequest(S3Event event, Context context) {
-        return attempt(() -> readFile(event)).orElse(fail -> logErrorAndReturnEmptyString());
+        var content =  attempt(() -> readFile(event)).orElse(fail -> logErrorAndReturnEmptyString());
+        DocTp docTp = JAXB.unmarshal(new StringReader(content), DocTp.class);
+        return docTp.getMeta().getDoi();
     }
 
     private String logErrorAndReturnEmptyString() {
