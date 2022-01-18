@@ -1,6 +1,16 @@
 package no.unit.nva.metadata.service;
 
-import no.unit.nva.api.CreatePublicationRequest;
+import static java.util.Objects.nonNull;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.Locale;
+import java.util.Optional;
+import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.MetadataConverter;
 import no.unit.nva.metadata.type.Bibo;
 import no.unit.nva.metadata.type.Citation;
@@ -23,18 +33,6 @@ import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.sail.memory.MemoryStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.util.Locale;
-import java.util.Optional;
-
-import static java.util.Objects.nonNull;
 
 public class MetadataService {
 
