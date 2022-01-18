@@ -18,10 +18,12 @@ import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotificatio
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3ObjectEntity;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.UserIdentityEntity;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
+import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,6 +37,7 @@ class ScopusHandlerTest {
     public static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;
     public static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     public static final long SOME_FILE_SIZE = 100L;
+    public static final String HARD_CODED_DOI_IN_RESOURCE_FILE = "10.1017/S0960428600000743";
     private S3Client s3Client;
     private S3Driver s3Driver;
 
@@ -63,6 +66,13 @@ class ScopusHandlerTest {
         ScopusHandler scopusHandler = new ScopusHandler(s3Client);
         String fileContentsAsReadByHandler = scopusHandler.handleRequest(s3Event, CONTEXT);
         assertThat(fileContentsAsReadByHandler, is(equalTo(fileContents)));
+    }
+
+    @Test
+    void shouldParseScopusXmlFileWhenInputIsEventWithS3UriPointingToScopusXmlFile(){
+        var hardCodedDoiInResourceFile = HARD_CODED_DOI_IN_RESOURCE_FILE;
+        var scopusFile = IoUtils.stringFromFile(Path.of("2-s2.0-0000469852.xml"));
+
     }
 
     private void insertFileToFakeS3Bucket(String fileContents, String filename) throws IOException {
