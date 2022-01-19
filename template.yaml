@@ -319,16 +319,6 @@ Resources:
             Principal:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
-      Path: /
-      Policies:
-        - PolicyName: ScopusBucketAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:*
-                Resources: '*'
 
   DefaultLambdaPermissions:
     Type: AWS::IAM::Policy
@@ -347,6 +337,19 @@ Resources:
               - lambda:InvokeFunction
             Resource: "*"
 
+  ScopusBucketsAccessPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub DefaultLambdaPermissions-${AWS::StackName}
+      Roles:
+        - !Ref ReadFromScopusBucketsRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - 's3:*'
+            Resource: "*"
 
 #  ScopusUnzipperFunction:
 #    Type: AWS::Serverless::Function
