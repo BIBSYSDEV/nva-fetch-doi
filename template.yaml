@@ -199,6 +199,7 @@ Resources:
             Method: post
             RestApiId: !Ref NvaFetchDoiFunctionApi
 
+
   NvaScopusFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -319,8 +320,6 @@ Resources:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
       Path: /
-      ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
       Policies:
         - PolicyName: NvaScopusBucketAccess
           PolicyDocument:
@@ -343,8 +342,6 @@ Resources:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
       Path: /
-      ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
       Policies:
         - PolicyName: ScopusUnzipperBucketAccess
           PolicyDocument:

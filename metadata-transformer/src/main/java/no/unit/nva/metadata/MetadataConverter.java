@@ -1,6 +1,6 @@
 package no.unit.nva.metadata;
 
-import no.unit.nva.api.CreatePublicationRequest;
+import java.util.Optional;
 import no.unit.nva.metadata.extractors.AbstractExtractor;
 import no.unit.nva.metadata.extractors.ContributorExtractor;
 import no.unit.nva.metadata.extractors.DateExtractor;
@@ -17,8 +17,6 @@ import no.unit.nva.metadata.type.DcTerms;
 import no.unit.nva.model.EntityDescription;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Statement;
-
-import java.util.Optional;
 
 public class MetadataConverter {
 

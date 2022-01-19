@@ -1,5 +1,5 @@
 [versions]
-nva = { strictly = "1.16.30" }
+nva = { strictly = "1.18.6" }
 testUtils = { strictly = "0.1.24" }
 jacksonVersion = { strictly = "2.13.0" }
 jakartaVersion = { strictly = "2.1.6" }
@@ -7,7 +7,7 @@ awsSdkVersion = { strictly = "1.12.129" }
 awsSdk2Version = { strictly = "2.17.99" }
 awsLambdaEvents = { strictly = '3.11.0' }
 awsLambdaCore = { strictly = '1.2.1' }
-nvaDatamodelVersion = { strictly = "0.14.12" }
+nvaDatamodelVersion = { strictly = "0.14.23" }
 jerseyVersion = { strictly = "2.30.1" }
 rdf4jVersion = { strictly = "3.1.2" }
 problemVersion = { strictly = "0.26.0" }
@@ -18,10 +18,11 @@ apacheHttpClient = { strictly = "4.5.13" }
 wiremock = { strictly = "2.27.2" }
 j2html = { strictly = "1.4.0" }
 apiGuardian = { strictly = "1.1.2" }
-hamcrest = {strictly='2.2'}
-junit5 = {strictly='5.7.2'}
-mockito = {strictly='3.9.0'}
-slf4j = {strictly = '1.8.0-beta4'}
+hamcrest = { strictly = '2.2' }
+junit5 = { strictly = '5.7.2' }
+mockito = { strictly = '3.9.0' }
+log4j = { strictly = '2.17.1' }
+slf4j = { strictly = '1.8.0-beta4' }
 
 [libraries]
 
@@ -48,6 +49,7 @@ aws-java-sdk-s3 = { group = "com.amazonaws", name = "aws-java-sdk-s3", version.r
 aws-java-sdk2-s3 = { group = "software.amazon.awssdk", name = "s3", version.ref = "awsSdk2Version" }
 aws-java-sdk-core = { group = "com.amazonaws", name = "aws-java-sdk-core", version.ref = "awsSdkVersion" }
 aws-secretsmanager = { group = "com.amazonaws", name = "aws-java-sdk-secretsmanager", version.ref = "awsSdkVersion" }
+aws-sdk2-secrets = { group = 'software.amazon.awssdk', name = 'secretsmanager', version.ref = 'awsSdk2Version' }
 aws-lambda-java-core = { group = "com.amazonaws", name = "aws-lambda-java-core", version.ref = "awsLambdaCore" }
 aws-lambda-events = { group = 'com.amazonaws', name = 'aws-lambda-java-events', version.ref = 'awsLambdaEvents' }
 jakarta = { group = "jakarta.ws.rs", name = "jakarta.ws.rs-api", version.ref = "jakartaVersion" }
@@ -74,24 +76,30 @@ httpclient = { group = "org.apache.httpcomponents", name = "httpclient", version
 wiremock = { group = "com.github.tomakehurst", name = "wiremock-jre8", version.ref = "wiremock" }
 j2html = { group = "com.j2html", name = "j2html", version.ref = "j2html" }
 
-slf4j-api = {group= 'org.slf4j', name= 'slf4j-api', version.ref="slf4j"}
 mockito-core = {group = 'org.mockito', name = 'mockito-core', version.ref = 'mockito'}
 hamcrest-base = {group = 'org.hamcrest', name = 'hamcrest', version.ref = 'hamcrest'}
 hamcrest-core = {group = 'org.hamcrest', name = 'hamcrest-core', version.ref = 'hamcrest'}
-junit-jupiter-engine = {group = 'org.junit.jupiter', name = 'junit-jupiter-engine', version.ref = 'junit5'}
-junit-jupiter-params = {group = 'org.junit.jupiter', name = 'junit-jupiter-params', version.ref = 'junit5'}
-junit-jupiter-api = {group = 'org.junit.jupiter', name = 'junit-jupiter-api', version.ref = 'junit5'}
-junit-vintage-engine = {group = 'org.junit.vintage', name = 'junit-vintage-engine', version.ref = 'junit5'}
+junit-jupiter-engine = { group = 'org.junit.jupiter', name = 'junit-jupiter-engine', version.ref = 'junit5' }
+junit-jupiter-params = { group = 'org.junit.jupiter', name = 'junit-jupiter-params', version.ref = 'junit5' }
+junit-jupiter-api = { group = 'org.junit.jupiter', name = 'junit-jupiter-api', version.ref = 'junit5' }
+junit-vintage-engine = { group = 'org.junit.vintage', name = 'junit-vintage-engine', version.ref = 'junit5' }
 
-xsd2java-xjc = {group = 'com.sun.xml.bind', name = 'jaxb-xjc', version = '3.0.2'}
-xsd2java-impl = {group = 'com.sun.xml.bind', name = 'jaxb-impl', version = '3.0.2'}
-xsd2java-api = {group = 'javax.xml.bind', name = 'jaxb-api', version = '2.4.0-b180830.0359'}
-xsd2java-activation = {group = 'javax.activation', name ='javax.activation-api', version = '1.2.0'}
-xsd2java-jakarta = {group = 'jakarta.xml.bind', name = 'jakarta.xml.bind-api', version = '3.0.1'}
+xsd2java-xjc = { group = 'com.sun.xml.bind', name = 'jaxb-xjc', version = '3.0.2' }
+xsd2java-impl = { group = 'com.sun.xml.bind', name = 'jaxb-impl', version = '3.0.2' }
+xsd2java-api = { group = 'javax.xml.bind', name = 'jaxb-api', version = '2.4.0-b180830.0359' }
+xsd2java-activation = { group = 'javax.activation', name = 'javax.activation-api', version = '1.2.0' }
+xsd2java-jakarta = { group = 'jakarta.xml.bind', name = 'jakarta.xml.bind-api', version = '3.0.1' }
+
+log4j-core = { group = 'org.apache.logging.log4j', name = 'log4j-core', version.ref = 'log4j' }
+log4j-api = { group = 'org.apache.logging.log4j', name = 'log4j-api', version.ref = 'log4j' }
+log4j-slf4j18-impl = { group = 'org.apache.logging.log4j', name = 'log4j-slf4j18-impl', version.ref = 'log4j' }
+slf4j-api = { group = 'org.slf4j', name = 'slf4j-api', version.ref = 'slf4j' }
+
 
 [bundles]
 rdf4j = ["rdf4j-sail-api", "rdf4j-model", "rdf4j-repository-sail", "rdf4j-sail-memory", "rdf4j-repository-api", "rdf4j-rio-api"]
 any23 = ["apache-any23-core", "apache-any23-api"]
-testing = ["mockito-core","hamcrest-base","hamcrest-core","junit-jupiter-engine","junit-jupiter-params","junit-jupiter-api","junit-vintage-engine","testUtils","nva-logutils"]
-problem = ["zalando-jackson-datatype-problem","zalando-problem"]
+testing = ["mockito-core", "hamcrest-base", "hamcrest-core", "junit-jupiter-engine", "junit-jupiter-params", "junit-jupiter-api", "junit-vintage-engine", "testUtils", "nva-logutils"]
+problem = ["zalando-jackson-datatype-problem", "zalando-problem"]
 xsd2java = ["xsd2java-xjc", "xsd2java-impl", "xsd2java-api", "xsd2java-activation", "xsd2java-jakarta"]
+logging = ['log4j-core', 'log4j-api', 'log4j-slf4j18-impl', 'slf4j-api']
