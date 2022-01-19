@@ -40,7 +40,9 @@ public class ScopusHandler implements RequestHandler<S3Event, String> {
     }
 
     private String getDoi(DocTp docTp) {
-        return docTp.getMeta().getDoi();
+        var doi= docTp.getMeta().getDoi();
+        logger.info("The publication doi:"+doi);
+        return doi;
     }
 
     private DocTp parseXmlFile(String file) {

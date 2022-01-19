@@ -349,7 +349,9 @@ Resources:
           - Effect: Allow
             Action:
               - 's3:*'
-            Resource: "*"
+            Resource:
+              - !Sub '${ScopusXmlBucket.Arn}/*'
+              - !Sub '${ScopusZipBucket.Arn}/*'
 
 #  ScopusUnzipperFunction:
 #    Type: AWS::Serverless::Function
