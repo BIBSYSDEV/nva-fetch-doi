@@ -328,7 +328,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - s3:GetObject
-                Resources:
+                Resource:
                   - !Sub 'arn:aws:s3:::${ScopusXmlBucket}/*'
 
   ScopusUnzipperFunctionRole:
@@ -350,13 +350,13 @@ Resources:
               - Effect: Allow
                 Action:
                   - s3:PutObject
-                Resources:
+                Resource:
                   - !Sub 'arn:aws:s3:::${ScopusZipBucket}/*'
                   - !Sub 'arn:aws:s3:::${ScopusXmlBucket}/*'
               - Effect: Allow
                 Action:
                   - s3:GetObject
-                Resources:
+                Resource:
                   - !Sub 'arn:aws:s3:::${ScopusZipBucket}/*'
 
   ScopusUnzipperFunction:
