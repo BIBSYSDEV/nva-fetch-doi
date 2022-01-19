@@ -350,8 +350,8 @@ Resources:
             Action:
               - 's3:*'
             Resource:
-              - !GetAtt ScopusXmlBucket.Arn
-              - !GetAtt ScopusZipBucket.Arn
+              - !Sub '${ScopusXmlBucket.Arn}/*'
+              - !Sub '${ScopusZipBucket.Arn}/*'
 
 #  ScopusUnzipperFunction:
 #    Type: AWS::Serverless::Function
