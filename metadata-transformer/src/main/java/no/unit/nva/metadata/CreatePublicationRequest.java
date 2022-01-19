@@ -82,7 +82,6 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
         this.context = context;
     }
 
-
     @JacocoGenerated
     @Override
     public int hashCode() {
