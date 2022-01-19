@@ -38,8 +38,3 @@ tasks.withType(Checkstyle) {
 tasks.withType(Pmd) {
     exclude { '**/generated/*' }
 }
-
-test {
-    environment "BUCKET_NAME", "bucketName"
-    environment "ALLOWED_ORIGIN", "*"
-}
