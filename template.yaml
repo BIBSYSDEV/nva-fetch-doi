@@ -329,7 +329,7 @@ Resources:
                 Action:
                   - s3:GetObject
                 Resources:
-                  - !Sub 'arn:aws:s3:::${ScopusXmlBucket}-${AWS::AccountId}/*'
+                  - !Sub 'arn:aws:s3:::${ScopusXmlBucket}/*'
 
   ScopusUnzipperFunctionRole:
     Type: AWS::IAM::Role
@@ -351,13 +351,13 @@ Resources:
                 Action:
                   - s3:PutObject
                 Resources:
-                  - !Sub 'arn:aws:s3:::${ScopusZipBucket}-${AWS::AccountId}/*'
-                  - !Sub 'arn:aws:s3:::${ScopusXmlBucket}-${AWS::AccountId}/*'
+                  - !Sub 'arn:aws:s3:::${ScopusZipBucket}/*'
+                  - !Sub 'arn:aws:s3:::${ScopusXmlBucket}/*'
               - Effect: Allow
                 Action:
                   - s3:GetObject
                 Resources:
-                  - !Sub 'arn:aws:s3:::${ScopusZipBucket}-${AWS::AccountId}/*'
+                  - !Sub 'arn:aws:s3:::${ScopusZipBucket}/*'
 
   ScopusUnzipperFunction:
     Type: AWS::Serverless::Function
