@@ -43,11 +43,11 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     public CreatePublicationRequest handleRequest(S3Event event, Context context) {
         return attempt(() -> readFile(event))
                 .map(this::parseXmlFile)
-                .map(this::generateCreatePublicationRequestJson)
+                .map(this::generateCreatePublicationRequest)
                 .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
     }
 
-    private CreatePublicationRequest generateCreatePublicationRequestJson(DocTp docTp) {
+    private CreatePublicationRequest generateCreatePublicationRequest(DocTp docTp) {
         CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
         createPublicationRequest.setAdditionalIdentifiers(generateAdditionalIds(docTp));
         return createPublicationRequest;
