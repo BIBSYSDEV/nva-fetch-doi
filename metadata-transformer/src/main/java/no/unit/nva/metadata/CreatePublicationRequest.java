@@ -12,7 +12,6 @@ import no.unit.nva.WithMetadata;
 import no.unit.nva.file.model.FileSet;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ResearchProject;
-import no.unit.nva.model.contexttypes.PublishingHouse;
 
 import nva.commons.core.JacocoGenerated;
 
@@ -24,7 +23,6 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
     private JsonNode context;
     private List<ResearchProject> projects;
     private List<URI> subjects;
-    private PublishingHouse publisher;
 
     @JacocoGenerated
     @Override
@@ -87,20 +85,10 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
     }
 
     @JacocoGenerated
-    public PublishingHouse getPublisher() {
-        return publisher;
-    }
-
-    @JacocoGenerated
-    public void setPublisher(PublishingHouse publisher) {
-        this.publisher = publisher;
-    }
-
-    @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(getEntityDescription(), getFileSet(), getContext(), getProjects(),
-                            getSubjects(), getPublisher());
+                            getSubjects());
     }
 
     @JacocoGenerated
@@ -117,7 +105,6 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
                && Objects.equals(getFileSet(), that.getFileSet())
                && Objects.equals(getContext(), that.getContext())
                && Objects.equals(getProjects(), that.getProjects())
-               && Objects.equals(getSubjects(), that.getSubjects())
-               && Objects.equals(getPublisher(), that.getPublisher());
+               && Objects.equals(getSubjects(), that.getSubjects());
     }
 }
