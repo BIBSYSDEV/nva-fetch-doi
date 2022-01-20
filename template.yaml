@@ -340,7 +340,7 @@ Resources:
   ScopusBucketsAccessPolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: !Sub DefaultLambdaPermissions-${AWS::StackName}
+      PolicyName: !Sub ScopusBucketsAccessPolicy-${AWS::StackName}
       Roles:
         - !Ref ReadFromScopusBucketsRole
       PolicyDocument:
