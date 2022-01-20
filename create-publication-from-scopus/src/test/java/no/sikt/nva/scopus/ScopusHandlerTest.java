@@ -54,11 +54,11 @@ class ScopusHandlerTest {
 
     @Test
     void shouldLogExceptionMessageWhenExceptionOccurs() {
-        var appender = LogUtils.getTestingAppenderForRootLogger();
         S3Event s3Event = createS3Event(randomString());
         var expectedMessage = randomString();
         s3Client = new FakeS3ClientThrowingException(expectedMessage);
         scopusHandler = new ScopusHandler(s3Client);
+        var appender = LogUtils.getTestingAppenderForRootLogger();
         assertThrows(RuntimeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
     }
