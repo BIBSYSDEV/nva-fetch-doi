@@ -64,7 +64,6 @@ checkstyle {
 }
 
 tasks.withType(Checkstyle) {
-    exclude { '**/generated/*' }
     reports {
         xml.enabled false
         html.enabled true
@@ -72,13 +71,6 @@ tasks.withType(Checkstyle) {
     }
 }
 
-tasks.withType(Pmd) {
-    exclude { '**/generated/*' }
-}
-
-tasks.withType(JavaCompile) {
-
-}
 
 check.dependsOn jacocoTestCoverageVerification
 jacocoTestCoverageVerification.dependsOn(jacocoTestReport)
@@ -100,13 +92,6 @@ jacocoTestCoverageVerification {
                 minimum = 1.000
             }
         }
-    }
-    afterEvaluate {
-        getClassDirectories().setFrom(classDirectories.files.collect {
-            fileTree(dir: it, exclude: [
-                    '**/generated/*'
-            ])
-        })
     }
 }
 
