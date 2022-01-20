@@ -13,6 +13,7 @@ import no.unit.nva.file.model.FileSet;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.contexttypes.PublishingHouse;
+
 import nva.commons.core.JacocoGenerated;
 
 public class CreatePublicationRequest implements WithMetadata, WithFile, WithContext {
@@ -99,7 +100,7 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
     @Override
     public int hashCode() {
         return Objects.hash(getEntityDescription(), getFileSet(), getContext(), getProjects(),
-                            getSubjects());
+                            getSubjects(), getPublisher());
     }
 
     @JacocoGenerated
@@ -116,6 +117,7 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
                && Objects.equals(getFileSet(), that.getFileSet())
                && Objects.equals(getContext(), that.getContext())
                && Objects.equals(getProjects(), that.getProjects())
-               && Objects.equals(getSubjects(), that.getSubjects());
+               && Objects.equals(getSubjects(), that.getSubjects())
+               && Objects.equals(getPublisher(), that.getPublisher());
     }
 }
