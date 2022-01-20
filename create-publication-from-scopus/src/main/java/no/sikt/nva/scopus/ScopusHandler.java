@@ -1,13 +1,12 @@
 package no.sikt.nva.scopus;
 
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import jakarta.xml.bind.JAXB;
-import java.io.StringReader;
-import java.net.URI;
 import no.scopus.generated.DocTp;
+import no.unit.nva.metadata.CreatePublicationRequest;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -15,10 +14,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class ScopusHandler implements RequestHandler<S3Event, String> {
+import java.io.StringReader;
+import java.net.URI;
+import java.util.HashSet;
+import java.util.Set;
+
+import static nva.commons.core.attempt.Try.attempt;
+
+public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationRequest> {
 
     public static final int SINGLE_EXPECTED_RECORD = 0;
     public static final String S3_URI_TEMPLATE = "s3://%s/%s";
+    public static final String ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME = "ScopusId";
+    private final String SCOPUS_ITEM_ID_SCP_FIELD_NAME = "scp";
     private static final Logger logger = LoggerFactory.getLogger(ScopusHandler.class);
     private final S3Client s3Client;
 
@@ -32,16 +40,27 @@ public class ScopusHandler implements RequestHandler<S3Event, String> {
     }
 
     @Override
-    public String handleRequest(S3Event event, Context context) {
+    public CreatePublicationRequest handleRequest(S3Event event, Context context) {
         return attempt(() -> readFile(event))
-            .map(this::parseXmlFile)
-            .map(this::getDoi)
-            .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
+                .map(this::parseXmlFile)
+                .map(this::generateCreatePublicationRequestJson)
+                .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
     }
 
-    private String getDoi(DocTp docTp) {
-        return docTp.getMeta().getDoi();
+    private CreatePublicationRequest generateCreatePublicationRequestJson(DocTp docTp) {
+        CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
+        createPublicationRequest.setAdditionalIdentifiers(generateAdditionalIds(docTp));
+        return createPublicationRequest;
     }
+
+    private Set<AdditionalIdentifier> generateAdditionalIds(DocTp docTp) {
+        Set<AdditionalIdentifier> additionalIdentifiers = new HashSet<>();
+        docTp.getItem().getItem().getBibrecord().getItemInfo().getItemidlist().getItemid().stream().filter(itemIdTp -> itemIdTp.getIdtype().equals(SCOPUS_ITEM_ID_SCP_FIELD_NAME) ).forEach(itemIdTp -> {
+            additionalIdentifiers.add(new AdditionalIdentifier(ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME, itemIdTp.getValue()));
+        });
+        return additionalIdentifiers;
+    }
+
 
     private DocTp parseXmlFile(String file) {
         return JAXB.unmarshal(new StringReader(file), DocTp.class);
@@ -50,8 +69,8 @@ public class ScopusHandler implements RequestHandler<S3Event, String> {
     private RuntimeException logErrorAndThrowException(Exception exception) {
         logger.error(exception.getMessage());
         return exception instanceof RuntimeException
-                   ? (RuntimeException) exception
-                   : new RuntimeException(exception);
+                ? (RuntimeException) exception
+                : new RuntimeException(exception);
     }
 
     private String readFile(S3Event event) {
