@@ -75,7 +75,12 @@ class ScopusHandlerTest {
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         S3Event s3Event = createS3Event(uri);
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
-        assertThat(createPublicationRequest.getAdditionalIdentifiers(), contains(new AdditionalIdentifier(ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME, SCP_ID_IN_0000469852)));
+        assertThat(
+                createPublicationRequest.getAdditionalIdentifiers(),
+                contains(new AdditionalIdentifier(
+                        ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME,
+                        SCP_ID_IN_0000469852)
+                ));
         assertEquals(1, createPublicationRequest.getAdditionalIdentifiers().toArray().length);
     }
 
@@ -103,7 +108,7 @@ class ScopusHandlerTest {
     private S3Entity createS3Entity(String expectedObjectKey) {
         S3BucketEntity bucket = new S3BucketEntity(randomString(), EMPTY_USER_IDENTITY, randomString());
         S3ObjectEntity object = new S3ObjectEntity(expectedObjectKey, SOME_FILE_SIZE, randomString(), randomString(),
-                                                   randomString());
+                randomString());
         String schemaVersion = randomString();
         return new S3Entity(randomString(), bucket, object, schemaVersion);
     }
