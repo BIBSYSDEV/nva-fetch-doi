@@ -7,6 +7,8 @@ import jakarta.xml.bind.JAXB;
 import no.scopus.generated.DocTp;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Reference;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -16,6 +18,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import java.io.StringReader;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -47,10 +50,27 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
                 .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
     }
 
-    private CreatePublicationRequest generateCreatePublicationRequest(DocTp docTp) {
+    private CreatePublicationRequest generateCreatePublicationRequest(DocTp docTp) throws URISyntaxException {
         CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
         createPublicationRequest.setAdditionalIdentifiers(generateAdditionalIds(docTp));
+        createPublicationRequest.setEntityDescription(generateEntityDescription(docTp));
         return createPublicationRequest;
+    }
+
+    private EntityDescription generateEntityDescription(DocTp docTp) throws URISyntaxException {
+        EntityDescription entityDescription = new EntityDescription();
+        entityDescription.setReference(generateReference(docTp));
+        return  entityDescription;
+    }
+
+    private Reference generateReference(DocTp docTp) throws URISyntaxException {
+        Reference reference = new Reference();
+        reference.setDoi(extractDOI(docTp));
+        return reference;
+    }
+
+    private URI extractDOI(DocTp docTp) throws URISyntaxException {
+            return new URI("" +docTp.getMeta().getDoi() );
     }
 
     private Set<AdditionalIdentifier> generateAdditionalIds(DocTp docTp) {
