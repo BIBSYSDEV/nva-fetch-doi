@@ -1,22 +1,12 @@
 def problemVersion = '0.24.0'
 
-project.ext {
-    jaxbTargetDir = file("$buildDir/generated/sources/xjc")
-}
-
-sourceSets.main.java.srcDirs += jaxbTargetDir
-
-configurations {
-    jaxb
-}
-
 dependencies {
-    jaxb libs.bundles.xsd2java
-    implementation libs.bundles.xsd2java
     api (libs.nva.datamodel) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
+    implementation project(":scopus-generate")
     implementation project(":metadata-transformer")
+    implementation libs.xsd2java.jakarta
     implementation libs.aws.java.sdk2.s3
     implementation libs.nva.s3
     implementation libs.nva.core
@@ -31,27 +21,4 @@ dependencies {
             because 'Dependency has maven scope provided'
         }
     }
-}
-
-task xsd2java() {
-    doLast {
-        jaxbTargetDir.mkdirs()
-        ant.taskdef(name: 'xjc', classname: 'com.sun.tools.xjc.XJC2Task', classpath: configurations.jaxb.asPath)
-        ant.jaxbTargetDir = jaxbTargetDir
-        ant.xjc(
-                destdir: '${jaxbTargetDir}',
-                package: 'no.scopus.generated',
-                schema: 'https://schema.elsevier.com/dtds/document/abstracts/xocs-ani515.xsd',
-                binding: 'src/main/resources/xocs-ani515.xjb'
-        )
-    }
-}
-
-tasks.withType(JavaCompile) {
-    dependsOn(xsd2java)
-}
-
-test {
-    environment "BUCKET_NAME", "bucketName"
-    environment "ALLOWED_ORIGIN", "*"
 }
