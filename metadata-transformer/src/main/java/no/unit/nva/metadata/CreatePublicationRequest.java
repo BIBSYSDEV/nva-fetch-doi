@@ -102,7 +102,7 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
     @Override
     public int hashCode() {
         return Objects.hash(getEntityDescription(), getFileSet(), getContext(), getProjects(),
-                getSubjects());
+                getSubjects(), getAdditionalIdentifiers());
     }
 
     @JacocoGenerated
@@ -119,6 +119,7 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
                 && Objects.equals(getFileSet(), that.getFileSet())
                 && Objects.equals(getContext(), that.getContext())
                 && Objects.equals(getProjects(), that.getProjects())
-                && Objects.equals(getSubjects(), that.getSubjects());
+                && Objects.equals(getSubjects(), that.getSubjects())
+                && Objects.equals(getAdditionalIdentifiers(), that.getAdditionalIdentifiers());
     }
 }
