@@ -7,13 +7,10 @@ import com.amazonaws.services.lambda.runtime.events.S3Event;
 import jakarta.xml.bind.JAXB;
 import java.io.StringReader;
 import java.net.URI;
-import java.util.HashSet;
-import java.util.Set;
 
 import no.scopus.generated.DocTp;
 import no.scopus.generated.SourceTp;
 import no.unit.nva.metadata.CreatePublicationRequest;
-import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.s3.S3Driver;
@@ -51,9 +48,6 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     private CreatePublicationRequest extractMetadata(DocTp docTp) {
         var doi = docTp.getMeta().getDoi();
         CreatePublicationRequest request = new CreatePublicationRequest();
-        Set identifiers = new HashSet<AdditionalIdentifier>();
-        identifiers.add(new AdditionalIdentifier("doi", doi));
-        request.setAdditionalIdentifiers(identifiers);
         StringBuilder publisherName = new StringBuilder();
         SourceTp sourceTp = docTp.getItem().getItem().getBibrecord().getHead().getSource();
         sourceTp.getSourcetitle().getContent().stream().forEach(publisherName::append);

@@ -70,17 +70,8 @@ class ScopusHandlerTest {
     }
 
     @Test
-    void shouldReturnCreatePublicationRequestContainingCorrectDoiWhenEventWithS3UriThatPointsToScopusXmlWithDOi() throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
-        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
-        S3Event s3Event = createS3Event(uri);
-        CreatePublicationRequest request = scopusHandler.handleRequest(s3Event, CONTEXT);
-        AdditionalIdentifier doi = new AdditionalIdentifier("doi", HARD_CODED_DOI_IN_RESOURCE_FILE);
-        assertThat(request.getAdditionalIdentifiers(), hasItem(doi));
-    }
-
-    @Test
-    void shouldReturnCreatePublicationRequestContainingCorrectPublisherInfoWhenEventWithS3UriThatPointsToScopusXml() throws IOException {
+    void shouldReturnCreatePublicationRequestContainingCorrectPublisherInfoWhenEventWithS3UriThatPointsToScopusXml()
+            throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         S3Event s3Event = createS3Event(uri);
