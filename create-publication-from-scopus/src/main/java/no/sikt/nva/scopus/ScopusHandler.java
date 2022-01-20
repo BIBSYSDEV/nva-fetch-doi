@@ -25,8 +25,6 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
 
     public static final int SINGLE_EXPECTED_RECORD = 0;
     public static final String S3_URI_TEMPLATE = "s3://%s/%s";
-    public static final String ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME = "ScopusId";
-    private static final String SCOPUS_ITEM_ID_SCP_FIELD_NAME = "scp";
     private static final Logger logger = LoggerFactory.getLogger(ScopusHandler.class);
     private final S3Client s3Client;
 
@@ -63,8 +61,8 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
                 .getItemidlist()
                 .getItemid()
                 .stream()
-                .filter(itemIdTp -> itemIdTp.getIdtype().equalsIgnoreCase(SCOPUS_ITEM_ID_SCP_FIELD_NAME))
-                .forEach(itemIdTp -> additionalIdentifiers.add(new AdditionalIdentifier(ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME, itemIdTp.getValue())));
+                .filter(itemIdTp -> itemIdTp.getIdtype().equalsIgnoreCase(ScopusConstants.SCOPUS_ITEM_ID_SCP_FIELD_NAME))
+                .forEach(itemIdTp -> additionalIdentifiers.add(new AdditionalIdentifier(ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME, itemIdTp.getValue())));
         return additionalIdentifiers;
     }
 
