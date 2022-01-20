@@ -5,12 +5,16 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+
 import no.unit.nva.WithContext;
 import no.unit.nva.WithFile;
 import no.unit.nva.WithMetadata;
 import no.unit.nva.file.model.FileSet;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.contexttypes.PublishingHouse;
 import nva.commons.core.JacocoGenerated;
 
 public class CreatePublicationRequest implements WithMetadata, WithFile, WithContext {
@@ -21,6 +25,8 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
     private JsonNode context;
     private List<ResearchProject> projects;
     private List<URI> subjects;
+    private Set<AdditionalIdentifier> additionalIdentifiers;
+    private PublishingHouse publisher;
 
     @JacocoGenerated
     @Override
@@ -80,6 +86,26 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
     @Override
     public void setContext(JsonNode context) {
         this.context = context;
+    }
+
+    @JacocoGenerated
+    public Set<AdditionalIdentifier> getAdditionalIdentifiers() {
+        return additionalIdentifiers;
+    }
+
+    @JacocoGenerated
+    public void setAdditionalIdentifiers(Set<AdditionalIdentifier> additionalIdentifiers) {
+        this.additionalIdentifiers = additionalIdentifiers;
+    }
+
+    @JacocoGenerated
+    public PublishingHouse getPublisher() {
+        return publisher;
+    }
+
+    @JacocoGenerated
+    public void setPublisher(PublishingHouse publisher) {
+        this.publisher = publisher;
     }
 
     @JacocoGenerated

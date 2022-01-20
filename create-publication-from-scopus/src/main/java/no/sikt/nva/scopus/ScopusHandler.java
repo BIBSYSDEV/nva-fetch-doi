@@ -7,7 +7,12 @@ import com.amazonaws.services.lambda.runtime.events.S3Event;
 import jakarta.xml.bind.JAXB;
 import java.io.StringReader;
 import java.net.URI;
+import java.util.HashSet;
+import java.util.Set;
+
 import no.scopus.generated.DocTp;
+import no.unit.nva.metadata.CreatePublicationRequest;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -15,7 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class ScopusHandler implements RequestHandler<S3Event, String> {
+public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationRequest> {
 
     public static final int SINGLE_EXPECTED_RECORD = 0;
     public static final String S3_URI_TEMPLATE = "s3://%s/%s";
@@ -32,17 +37,21 @@ public class ScopusHandler implements RequestHandler<S3Event, String> {
     }
 
     @Override
-    public String handleRequest(S3Event event, Context context) {
+    public CreatePublicationRequest handleRequest(S3Event event, Context context) {
         return attempt(() -> readFile(event))
             .map(this::parseXmlFile)
             .map(this::getDoi)
             .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
     }
 
-    private String getDoi(DocTp docTp) {
+    private CreatePublicationRequest getDoi(DocTp docTp) {
         var doi = docTp.getMeta().getDoi();
+        CreatePublicationRequest request = new CreatePublicationRequest();
+        Set identifiers = new HashSet<AdditionalIdentifier>();
+        identifiers.add(new AdditionalIdentifier("doi", doi));
+        request.setAdditionalIdentifiers(identifiers);
         logger.info("The publication doi:" + doi);
-        return doi;
+        return request;
     }
 
     private DocTp parseXmlFile(String file) {

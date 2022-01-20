@@ -4,8 +4,11 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsIterableContaining.hasItem;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
@@ -21,12 +24,17 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
+
+import no.unit.nva.metadata.CreatePublicationRequest;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
+import org.hamcrest.core.IsCollectionContaining;
+import org.hamcrest.core.IsIterableContaining;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
@@ -64,12 +72,13 @@ class ScopusHandlerTest {
     }
 
     @Test
-    void shouldReturnCorrectDoiWhenEventWithS3UriThatPointsToScopusXmlWithDOi() throws IOException {
+    void shouldReturnCreatePublicationRequestContainingCorrectDoiWhenEventWithS3UriThatPointsToScopusXmlWithDOi() throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         S3Event s3Event = createS3Event(uri);
-        String content = scopusHandler.handleRequest(s3Event, CONTEXT);
-        assertThat(content, is(equalTo(HARD_CODED_DOI_IN_RESOURCE_FILE)));
+        CreatePublicationRequest request = scopusHandler.handleRequest(s3Event, CONTEXT);
+        AdditionalIdentifier doi = new AdditionalIdentifier("doi", HARD_CODED_DOI_IN_RESOURCE_FILE);
+        assertThat(request.getAdditionalIdentifiers(), hasItem(doi));
     }
 
     private S3Event createS3Event(String expectedObjectKey) {
