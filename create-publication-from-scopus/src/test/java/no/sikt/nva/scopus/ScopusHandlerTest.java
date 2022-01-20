@@ -3,12 +3,10 @@ package no.sikt.nva.scopus;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsIterableContaining.hasItem;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.anySet;
-import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
@@ -27,14 +25,13 @@ import java.util.List;
 
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
-import org.hamcrest.core.IsCollectionContaining;
-import org.hamcrest.core.IsIterableContaining;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
@@ -49,6 +46,7 @@ class ScopusHandlerTest {
     public static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     public static final long SOME_FILE_SIZE = 100L;
     public static final String HARD_CODED_DOI_IN_RESOURCE_FILE = "10.1017/S0960428600000743";
+    public static final String HARD_CODED_PUBLISHER_NAME_IN_RESOURCE_FILE = "Edinburgh Journal of Botany";
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
     private ScopusHandler scopusHandler;
@@ -79,6 +77,17 @@ class ScopusHandlerTest {
         CreatePublicationRequest request = scopusHandler.handleRequest(s3Event, CONTEXT);
         AdditionalIdentifier doi = new AdditionalIdentifier("doi", HARD_CODED_DOI_IN_RESOURCE_FILE);
         assertThat(request.getAdditionalIdentifiers(), hasItem(doi));
+    }
+
+    @Test
+    void shouldReturnCreatePublicationRequestContainingCorrectPublisherInfoWhenEventWithS3UriThatPointsToScopusXml() throws IOException {
+        var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
+        S3Event s3Event = createS3Event(uri);
+        CreatePublicationRequest request = scopusHandler.handleRequest(s3Event, CONTEXT);
+        assertThat(request.getPublisher(), instanceOf(UnconfirmedPublisher.class));
+        String actualPublisherName = ((UnconfirmedPublisher) request.getPublisher()).getName();
+        assertThat(actualPublisherName, is(HARD_CODED_PUBLISHER_NAME_IN_RESOURCE_FILE));
     }
 
     private S3Event createS3Event(String expectedObjectKey) {

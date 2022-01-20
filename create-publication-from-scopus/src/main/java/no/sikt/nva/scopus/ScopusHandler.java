@@ -11,8 +11,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 import no.scopus.generated.DocTp;
+import no.scopus.generated.SourceTp;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.contexttypes.PublishingHouse;
+import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -38,18 +41,24 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
 
     @Override
     public CreatePublicationRequest handleRequest(S3Event event, Context context) {
-        return attempt(() -> readFile(event))
-            .map(this::parseXmlFile)
-            .map(this::getDoi)
-            .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
+        CreatePublicationRequest request = attempt(() -> readFile(event))
+                .map(this::parseXmlFile)
+                .map(this::extractMetadata)
+                .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
+        return request;
     }
 
-    private CreatePublicationRequest getDoi(DocTp docTp) {
+    private CreatePublicationRequest extractMetadata(DocTp docTp) {
         var doi = docTp.getMeta().getDoi();
         CreatePublicationRequest request = new CreatePublicationRequest();
         Set identifiers = new HashSet<AdditionalIdentifier>();
         identifiers.add(new AdditionalIdentifier("doi", doi));
         request.setAdditionalIdentifiers(identifiers);
+        StringBuilder publisherName = new StringBuilder();
+        SourceTp sourceTp = docTp.getItem().getItem().getBibrecord().getHead().getSource();
+        sourceTp.getSourcetitle().getContent().stream().forEach(publisherName::append);
+        PublishingHouse publisher = new UnconfirmedPublisher(publisherName.toString());
+        request.setPublisher(publisher);
         logger.info("The publication doi:" + doi);
         return request;
     }
