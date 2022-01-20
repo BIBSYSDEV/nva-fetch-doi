@@ -340,7 +340,7 @@ Resources:
   ScopusBucketsAccessPolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: !Sub DefaultLambdaPermissions-${AWS::StackName}
+      PolicyName: !Sub ScopusBucketsAccessPolicy-${AWS::StackName}
       Roles:
         - !Ref ReadFromScopusBucketsRole
       PolicyDocument:
@@ -353,46 +353,46 @@ Resources:
               - !Sub '${ScopusXmlBucket.Arn}/*'
               - !Sub '${ScopusZipBucket.Arn}/*'
 
-#  ScopusUnzipperFunction:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      Handler: index.lambda_handler
-#      MemorySize: !Ref LambdaMemorySize
-#      Runtime: python3.8
-#      Environment:
-#        Variables:
-#          XML_BUCKET_NAME: !Ref ScopusXmlBucket
-#      PackageType: Zip
-#      InlineCode: |
-#        import boto3, zipfile, os
-#        from io import BytesIO
-#        def lambda_handler(event, context):
-#          XML_BUCKET = os.environ['XML_BUCKET_NAME']
-#          ZIP_BUCKET = event['Records'][0]['s3']['bucket']['name']
-#          ZIP_FILE = event['Records'][0]['s3']['object']['key']
-#          client = boto3.client('s3')
-#          resource=boto3.resource('s3')
-#          zip_object = resource.Object(bucket_name=ZIP_BUCKET, key=ZIP_FILE)
-#          buffer = BytesIO(zip_object.get()["Body"].read())
-#          z = zipfile.ZipFile(buffer)
-#          for filename in z.namelist():
-#            response = client.put_object(
-#              Body=z.open(filename).read(),
-#              Bucket=ZIP_BUCKET if filename.endswith(".zip") else XML_BUCKET,
-#              Key=f'unzipped/{filename}' if filename.endswith(".zip") else filename
-#            )
-#      Role: !GetAtt ReadFromScopusBucketsRole.Arn
-#      Events:
-#        UnzipEvent:
-#          Type: S3
-#          Properties:
-#            Bucket: !Ref ScopusZipBucket
-#            Events: s3:ObjectCreated:*
-#            Filter:
-#              S3Key:
-#                Rules:
-#                  - Name: suffix
-#                    Value: '.zip'
+  ScopusUnzipperFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.lambda_handler
+      MemorySize: !Ref LambdaMemorySize
+      Runtime: python3.8
+      Environment:
+        Variables:
+          XML_BUCKET_NAME: !Ref ScopusXmlBucket
+      PackageType: Zip
+      InlineCode: |
+        import boto3, zipfile, os
+        from io import BytesIO
+        def lambda_handler(event, context):
+            xml_bucket = os.environ['XML_BUCKET_NAME']
+            zip_bucket = event['Records'][0]['s3']['bucket']['name']
+            zip_file = event['Records'][0]['s3']['object']['key']
+            client = boto3.client('s3')
+            resource = boto3.resource('s3')
+            zip_object = resource.Object(bucket_name=zip_bucket, key=zip_file)
+            buffer = BytesIO(zip_object.get()['Body'].read())
+            z = zipfile.ZipFile(buffer)
+            for fname in z.namelist():
+                client.put_object(
+                    Body=z.open(fname).read(),
+                    Bucket=zip_bucket if fname.endswith('.zip') else xml_bucket,
+                    Key=f'unzipped/{fname}' if fname.endswith('.zip') else fname
+                )
+      Role: !GetAtt ReadFromScopusBucketsRole.Arn
+      Events:
+        UnzipEvent:
+          Type: S3
+          Properties:
+            Bucket: !Ref ScopusZipBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: '.zip'
 
   ScopusZipBucket:
     Type: AWS::S3::Bucket
