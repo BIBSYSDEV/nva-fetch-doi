@@ -16,7 +16,6 @@ import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.scopus.generated.IssnTp;
 import no.scopus.generated.SourceTp;
-import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.PublicationContext;
@@ -29,13 +28,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import java.io.StringReader;
-import java.net.URI;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static nva.commons.core.attempt.Try.attempt;
 
 public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationRequest> {
 
@@ -68,6 +63,9 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     private CreatePublicationRequest generateCreatePublicationRequest(DocTp docTp) {
         CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
         createPublicationRequest.setAdditionalIdentifiers(generateAdditionalIdentifiers(docTp));
+        Reference reference = new Reference.Builder().withPublishingContext(getPublicationContext(docTp)).build();
+        EntityDescription entityDescription = new EntityDescription.Builder().withReference(reference).build();
+        createPublicationRequest.setEntityDescription(entityDescription);
         return createPublicationRequest;
     }
 
@@ -93,16 +91,8 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     }
 
     private AdditionalIdentifier toAdditionalIdentifier(ItemidTp itemIdTp) {
-        return new AdditionalIdentifier(ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME, itemIdTp.getValue());
-    }
-
-
-    private CreatePublicationRequest extractMetadata(DocTp docTp) {
-        Reference reference = new Reference.Builder().withPublishingContext(getPublicationContext(docTp)).build();
-        EntityDescription entityDescription = new EntityDescription.Builder().withReference(reference).build();
-        CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
-        createPublicationRequest.setEntityDescription(entityDescription);
-        return createPublicationRequest;
+        return new AdditionalIdentifier(ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME,
+                itemIdTp.getValue());
     }
 
     private PublicationContext getPublicationContext(DocTp docTp) {
@@ -131,6 +121,7 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
             }
         }
         return publicationContext;
+    }
 
     private DocTp parseXmlFile(String file) {
         return JAXB.unmarshal(new StringReader(file), DocTp.class);

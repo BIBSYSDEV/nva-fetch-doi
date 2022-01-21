@@ -96,7 +96,7 @@ class ScopusHandlerTest {
     }
 
     @Test
-    void shouldReturnCreatePublicationRequestContainingUnconfirmedPulicationContextWhenEventWithS3UriThatPointsToScopusXml()
+    void shouldReturnCreatePublicationRequestWithUnconfirmedPublicationContextWhenEventWithS3UriThatPointsToScopusXml()
             throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
