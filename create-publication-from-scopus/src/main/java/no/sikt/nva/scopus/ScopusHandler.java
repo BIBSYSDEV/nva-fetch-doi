@@ -5,6 +5,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import jakarta.xml.bind.JAXB;
 import no.scopus.generated.DocTp;
+import no.scopus.generated.ItemidTp;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.s3.S3Driver;
@@ -17,7 +18,9 @@ import software.amazon.awssdk.services.s3.S3Client;
 import java.io.StringReader;
 import java.net.URI;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static nva.commons.core.attempt.Try.attempt;
 
@@ -47,23 +50,33 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
 
     private CreatePublicationRequest generateCreatePublicationRequest(DocTp docTp) {
         CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
-        createPublicationRequest.setAdditionalIdentifiers(generateAdditionalIds(docTp));
+        createPublicationRequest.setAdditionalIdentifiers(generateAdditionalIdentifiers(docTp));
         return createPublicationRequest;
     }
 
-    private Set<AdditionalIdentifier> generateAdditionalIds(DocTp docTp) {
-        Set<AdditionalIdentifier> additionalIdentifiers = new HashSet<>();
-        docTp
-                .getItem()
+    private Set<AdditionalIdentifier> generateAdditionalIdentifiers(DocTp docTp) {
+        return extractItemIdentifiers(docTp)
+                .stream()
+                .filter(this::isScopusIdentifier)
+                .map(this::toAdditionalIdentifier)
+                .collect(Collectors.toSet());
+    }
+
+    private List<ItemidTp> extractItemIdentifiers(DocTp docTp) {
+        return docTp.getItem()
                 .getItem()
                 .getBibrecord()
                 .getItemInfo()
                 .getItemidlist()
-                .getItemid()
-                .stream()
-                .filter(itemIdTp -> itemIdTp.getIdtype().equalsIgnoreCase(ScopusConstants.SCOPUS_ITEM_ID_SCP_FIELD_NAME))
-                .forEach(itemIdTp -> additionalIdentifiers.add(new AdditionalIdentifier(ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME, itemIdTp.getValue())));
-        return additionalIdentifiers;
+                .getItemid();
+    }
+
+    private boolean isScopusIdentifier(ItemidTp itemIdTp) {
+        return itemIdTp.getIdtype().equalsIgnoreCase(ScopusConstants.SCOPUS_ITEM_ID_SCP_FIELD_NAME);
+    }
+
+    private AdditionalIdentifier toAdditionalIdentifier(ItemidTp itemIdTp) {
+        return new AdditionalIdentifier(ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME, itemIdTp.getValue());
     }
 
 
