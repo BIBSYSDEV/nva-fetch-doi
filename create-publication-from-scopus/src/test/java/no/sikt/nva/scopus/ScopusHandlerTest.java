@@ -70,7 +70,7 @@ class ScopusHandlerTest {
     }
 
     @Test
-    void shouldReturnCreatePublicationRequestContainingCorrectPublisherInfoWhenEventWithS3UriThatPointsToScopusXml()
+    void shouldReturnCreatePublicationRequestContainingUnconfirmedPulicationContextWhenEventWithS3UriThatPointsToScopusXml()
             throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
@@ -82,6 +82,7 @@ class ScopusHandlerTest {
         String actualJournalName = ((UnconfirmedJournal) actualPublicationContext).getTitle();
         assertThat(actualJournalName, is(HARD_CODED_JOURNAL_NAME_IN_RESOURCE_FILE));
     }
+
 
     private S3Event createS3Event(String expectedObjectKey) {
         var eventNotification = new S3EventNotificationRecord(randomString(),
