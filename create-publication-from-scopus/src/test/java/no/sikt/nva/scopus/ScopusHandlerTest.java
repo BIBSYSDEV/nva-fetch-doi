@@ -30,10 +30,13 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 
+import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.equalToObject;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 class ScopusHandlerTest {
@@ -75,8 +78,10 @@ class ScopusHandlerTest {
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         S3Event s3Event = createS3Event(uri);
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
-        assertTrue(createPublicationRequest.getAdditionalIdentifiers().contains(new AdditionalIdentifier(ScopusHandler.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME, SCP_ID_IN_0000469852)));
-        assertEquals(1, createPublicationRequest.getAdditionalIdentifiers().toArray().length);
+        var actualAdditionalIdentifiers = createPublicationRequest.getAdditionalIdentifiers();
+        var expectedIdentifier =
+                new AdditionalIdentifier(ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME, SCP_ID_IN_0000469852);
+        assertThat(actualAdditionalIdentifiers, contains(expectedIdentifier));
     }
 
     @Test
@@ -85,7 +90,7 @@ class ScopusHandlerTest {
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         S3Event s3Event = createS3Event(uri);
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
-        assertEquals(createPublicationRequest.getEntityDescription().getReference().getDoi(), new URI(DOI_IN_0000469852));
+        assertThat(createPublicationRequest.getEntityDescription().getReference().getDoi(), equalToObject( new URI(DOI_IN_0000469852)));
     }
 
     private S3Event createS3Event(String expectedObjectKey) {
@@ -112,7 +117,7 @@ class ScopusHandlerTest {
     private S3Entity createS3Entity(String expectedObjectKey) {
         S3BucketEntity bucket = new S3BucketEntity(randomString(), EMPTY_USER_IDENTITY, randomString());
         S3ObjectEntity object = new S3ObjectEntity(expectedObjectKey, SOME_FILE_SIZE, randomString(), randomString(),
-                                                   randomString());
+                randomString());
         String schemaVersion = randomString();
         return new S3Entity(randomString(), bucket, object, schemaVersion);
     }

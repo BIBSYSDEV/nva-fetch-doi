@@ -5,6 +5,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import jakarta.xml.bind.JAXB;
 import no.scopus.generated.DocTp;
+import no.scopus.generated.ItemidTp;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
@@ -19,17 +20,17 @@ import software.amazon.awssdk.services.s3.S3Client;
 import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static nva.commons.core.attempt.Try.attempt;
 
 public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationRequest> {
 
     public static final int SINGLE_EXPECTED_RECORD = 0;
     public static final String S3_URI_TEMPLATE = "s3://%s/%s";
-    public static final String ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME = "ScopusId";
-    private static final String SCOPUS_ITEM_ID_SCP_FIELD_NAME = "scp";
     private static final Logger logger = LoggerFactory.getLogger(ScopusHandler.class);
     private final S3Client s3Client;
 
@@ -52,9 +53,26 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
 
     private CreatePublicationRequest generateCreatePublicationRequest(DocTp docTp) throws URISyntaxException {
         CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
-        createPublicationRequest.setAdditionalIdentifiers(generateAdditionalIds(docTp));
+        createPublicationRequest.setAdditionalIdentifiers(generateAdditionalIdentifiers(docTp));
         createPublicationRequest.setEntityDescription(generateEntityDescription(docTp));
         return createPublicationRequest;
+    }
+
+    private Set<AdditionalIdentifier> generateAdditionalIdentifiers(DocTp docTp) {
+        return extractItemIdentifiers(docTp)
+                .stream()
+                .filter(this::isScopusIdentifier)
+                .map(this::toAdditionalIdentifier)
+                .collect(Collectors.toSet());
+    }
+
+    private List<ItemidTp> extractItemIdentifiers(DocTp docTp) {
+        return docTp.getItem()
+                .getItem()
+                .getBibrecord()
+                .getItemInfo()
+                .getItemidlist()
+                .getItemid();
     }
 
     private EntityDescription generateEntityDescription(DocTp docTp) throws URISyntaxException {
@@ -70,22 +88,15 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     }
 
     private URI extractDOI(DocTp docTp) throws URISyntaxException {
-            return new URI("https:/doi.org/" + docTp.getMeta().getDoi() );
+        return new URI(DOI_OPEN_URL_FORMAT + "/" + docTp.getMeta().getDoi() );
     }
 
-    private Set<AdditionalIdentifier> generateAdditionalIds(DocTp docTp) {
-        Set<AdditionalIdentifier> additionalIdentifiers = new HashSet<>();
-        docTp
-                .getItem()
-                .getItem()
-                .getBibrecord()
-                .getItemInfo()
-                .getItemidlist()
-                .getItemid()
-                .stream()
-                .filter(itemIdTp -> itemIdTp.getIdtype().equalsIgnoreCase(SCOPUS_ITEM_ID_SCP_FIELD_NAME))
-                .forEach(itemIdTp -> additionalIdentifiers.add(new AdditionalIdentifier(ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME, itemIdTp.getValue())));
-        return additionalIdentifiers;
+    private boolean isScopusIdentifier(ItemidTp itemIdTp) {
+        return itemIdTp.getIdtype().equalsIgnoreCase(ScopusConstants.SCOPUS_ITEM_IDENTIFIER_SCP_FIELD_NAME);
+    }
+
+    private AdditionalIdentifier toAdditionalIdentifier(ItemidTp itemIdTp) {
+        return new AdditionalIdentifier(ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME, itemIdTp.getValue());
     }
 
 
