@@ -4,16 +4,16 @@ public enum ScopusSourceType {
 
     JOURNAL("j");
 
-    public final String tag;
+    public final String code;
 
-    ScopusSourceType(String tag) {
-        this.tag = tag;
+    ScopusSourceType(String code) {
+        this.code = code;
     }
 
-    public static ScopusSourceType valueOfTag(String tag) {
-        for (ScopusSourceType t : values()) {
-            if (t.tag.equals(tag)) {
-                return t;
+    public static ScopusSourceType valueOfCode(String code) {
+        for (ScopusSourceType c : values()) {
+            if (c.code.equals(code)) {
+                return c;
             }
         }
         return null;

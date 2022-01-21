@@ -67,7 +67,7 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
 
     private PublicationContext getPublicationContext(DocTp docTp) {
         PublicationContext publicationContext = null;
-        ScopusSourceType scopusSourceType = ScopusSourceType.valueOfTag(docTp.getMeta().getSrctype());
+        ScopusSourceType scopusSourceType = ScopusSourceType.valueOfCode(docTp.getMeta().getSrctype());
         if (Objects.requireNonNull(scopusSourceType) == JOURNAL) {
             StringBuilder publisherName = new StringBuilder();
             SourceTp sourceTp = docTp.getItem().getItem().getBibrecord().getHead().getSource();
