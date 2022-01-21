@@ -2,13 +2,17 @@ package no.unit.nva.metadata;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+
 import no.unit.nva.WithContext;
 import no.unit.nva.WithFile;
 import no.unit.nva.WithMetadata;
 import no.unit.nva.file.model.FileSet;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ResearchProject;
 import nva.commons.core.JacocoGenerated;
@@ -21,6 +25,7 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
     private JsonNode context;
     private List<ResearchProject> projects;
     private List<URI> subjects;
+    private Set<AdditionalIdentifier> additionalIdentifiers;
 
     @JacocoGenerated
     @Override
@@ -83,10 +88,21 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
     }
 
     @JacocoGenerated
+    public void setAdditionalIdentifiers(Set<AdditionalIdentifier> additionalIdentifiers) {
+        this.additionalIdentifiers = additionalIdentifiers;
+    }
+
+    @JacocoGenerated
+    public Set<AdditionalIdentifier> getAdditionalIdentifiers() {
+        return additionalIdentifiers;
+    }
+
+
+    @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(getEntityDescription(), getFileSet(), getContext(), getProjects(),
-                            getSubjects());
+                getSubjects(), getAdditionalIdentifiers());
     }
 
     @JacocoGenerated
@@ -100,9 +116,10 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
         }
         CreatePublicationRequest that = (CreatePublicationRequest) o;
         return Objects.equals(getEntityDescription(), that.getEntityDescription())
-               && Objects.equals(getFileSet(), that.getFileSet())
-               && Objects.equals(getContext(), that.getContext())
-               && Objects.equals(getProjects(), that.getProjects())
-               && Objects.equals(getSubjects(), that.getSubjects());
+                && Objects.equals(getFileSet(), that.getFileSet())
+                && Objects.equals(getContext(), that.getContext())
+                && Objects.equals(getProjects(), that.getProjects())
+                && Objects.equals(getSubjects(), that.getSubjects())
+                && Objects.equals(getAdditionalIdentifiers(), that.getAdditionalIdentifiers());
     }
 }

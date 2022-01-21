@@ -1,12 +1,5 @@
 package no.sikt.nva.scopus;
 
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.RequestParametersEntity;
@@ -16,11 +9,8 @@ import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotificatio
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3EventNotificationRecord;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3ObjectEntity;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.UserIdentityEntity;
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Path;
-import java.time.Instant;
-import java.util.List;
+import no.unit.nva.metadata.CreatePublicationRequest;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.ioutils.IoUtils;
@@ -33,6 +23,20 @@ import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Path;
+import java.time.Instant;
+import java.util.List;
+
+import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+
 class ScopusHandlerTest {
 
     public static final Context CONTEXT = mock(Context.class);
@@ -40,10 +44,11 @@ class ScopusHandlerTest {
     public static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;
     public static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     public static final long SOME_FILE_SIZE = 100L;
-    public static final String HARD_CODED_DOI_IN_RESOURCE_FILE = "10.1017/S0960428600000743";
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
     private ScopusHandler scopusHandler;
+    private static final String SCOPUS_XML_0000469852 = "2-s2.0-0000469852.xml";
+    private static final String SCP_ID_IN_0000469852 = "0000469852";
 
     @BeforeEach
     public void init() {
@@ -63,25 +68,29 @@ class ScopusHandlerTest {
         assertThat(appender.getMessages(), containsString(expectedMessage));
     }
 
+
     @Test
-    void shouldReturnCorrectDoiWhenEventWithS3UriThatPointsToScopusXmlWithDOi() throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
+    void shouldExtractScopusIdentifierAndPlaceItInsideAdditionalIdentifiersObject() throws IOException {
+        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000469852));
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         S3Event s3Event = createS3Event(uri);
-        String content = scopusHandler.handleRequest(s3Event, CONTEXT);
-        assertThat(content, is(equalTo(HARD_CODED_DOI_IN_RESOURCE_FILE)));
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualAdditionalIdentifiers = createPublicationRequest.getAdditionalIdentifiers();
+        var expectedIdentifier =
+                new AdditionalIdentifier(ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME, SCP_ID_IN_0000469852);
+        assertThat(actualAdditionalIdentifiers, contains(expectedIdentifier));
     }
 
     private S3Event createS3Event(String expectedObjectKey) {
         var eventNotification = new S3EventNotificationRecord(randomString(),
-                                                              randomString(),
-                                                              randomString(),
-                                                              randomDate(),
-                                                              randomString(),
-                                                              EMPTY_REQUEST_PARAMETERS,
-                                                              EMPTY_RESPONSE_ELEMENTS,
-                                                              createS3Entity(expectedObjectKey),
-                                                              EMPTY_USER_IDENTITY);
+                randomString(),
+                randomString(),
+                randomDate(),
+                randomString(),
+                EMPTY_REQUEST_PARAMETERS,
+                EMPTY_RESPONSE_ELEMENTS,
+                createS3Entity(expectedObjectKey),
+                EMPTY_USER_IDENTITY);
         return new S3Event(List.of(eventNotification));
     }
 
@@ -96,7 +105,7 @@ class ScopusHandlerTest {
     private S3Entity createS3Entity(String expectedObjectKey) {
         S3BucketEntity bucket = new S3BucketEntity(randomString(), EMPTY_USER_IDENTITY, randomString());
         S3ObjectEntity object = new S3ObjectEntity(expectedObjectKey, SOME_FILE_SIZE, randomString(), randomString(),
-                                                   randomString());
+                randomString());
         String schemaVersion = randomString();
         return new S3Entity(randomString(), bucket, object, schemaVersion);
     }
