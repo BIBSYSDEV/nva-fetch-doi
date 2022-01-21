@@ -70,7 +70,7 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     }
 
     private URI extractDOI(DocTp docTp) throws URISyntaxException {
-            return new URI("" +docTp.getMeta().getDoi() );
+            return new URI("https:/doi.org/" + docTp.getMeta().getDoi() );
     }
 
     private Set<AdditionalIdentifier> generateAdditionalIds(DocTp docTp) {
