@@ -71,7 +71,7 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     }
 
     private boolean isScopusIdentifier(ItemidTp itemIdTp) {
-        return itemIdTp.getIdtype().equalsIgnoreCase(ScopusConstants.SCOPUS_ITEM_ID_SCP_FIELD_NAME);
+        return itemIdTp.getIdtype().equalsIgnoreCase(ScopusConstants.SCOPUS_ITEM_IDENTIFIER_SCP_FIELD_NAME);
     }
 
     private AdditionalIdentifier toAdditionalIdentifier(ItemidTp itemIdTp) {
