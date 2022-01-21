@@ -31,6 +31,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
+import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -51,7 +52,7 @@ class ScopusHandlerTest {
     private ScopusHandler scopusHandler;
     private static final String SCOPUS_XML_0000469852 = "2-s2.0-0000469852.xml";
     private static final String SCP_ID_IN_0000469852 = "0000469852";
-    private static final String DOI_IN_0000469852 = "https://doi.org/10.1017/S0960428600000743";
+    private static final String DOI_IN_0000469852 = "10.1017/S0960428600000743";
 
     @BeforeEach
     public void init() {
@@ -90,7 +91,7 @@ class ScopusHandlerTest {
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         S3Event s3Event = createS3Event(uri);
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
-        assertThat(createPublicationRequest.getEntityDescription().getReference().getDoi(), equalToObject( new URI(DOI_IN_0000469852)));
+        assertThat(createPublicationRequest.getEntityDescription().getReference().getDoi(), equalToObject( new URI( DOI_OPEN_URL_FORMAT+ "/" +DOI_IN_0000469852)));
     }
 
     private S3Event createS3Event(String expectedObjectKey) {
