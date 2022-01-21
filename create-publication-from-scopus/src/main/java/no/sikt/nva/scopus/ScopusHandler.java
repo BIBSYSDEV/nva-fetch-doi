@@ -48,21 +48,18 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
 
     @Override
     public CreatePublicationRequest handleRequest(S3Event event, Context context) {
-        CreatePublicationRequest request = attempt(() -> readFile(event))
+        return attempt(() -> readFile(event))
                 .map(this::parseXmlFile)
                 .map(this::extractMetadata)
                 .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
-        return request;
     }
 
     private CreatePublicationRequest extractMetadata(DocTp docTp) {
-        CreatePublicationRequest request = new CreatePublicationRequest();
-        EntityDescription entityDescription = new EntityDescription();
-        request.setEntityDescription(entityDescription);
-        Reference reference = new Reference();
-        entityDescription.setReference(reference);
-        reference.setPublicationContext(getPublicationContext(docTp));
-        return request;
+        Reference reference = new Reference.Builder().withPublishingContext(getPublicationContext(docTp)).build();
+        EntityDescription entityDescription = new EntityDescription.Builder().withReference(reference).build();
+        CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
+        createPublicationRequest.setEntityDescription(entityDescription);
+        return createPublicationRequest;
     }
 
     private PublicationContext getPublicationContext(DocTp docTp) {
