@@ -25,7 +25,6 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
@@ -72,7 +71,6 @@ class ScopusHandlerTest {
         assertThat(appender.getMessages(), containsString(expectedMessage));
     }
 
-
     @Test
     void shouldExtractScopusIdentifierAndPlaceItInsideAdditionalIdentifiersObject() throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000469852));
@@ -81,29 +79,30 @@ class ScopusHandlerTest {
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualAdditionalIdentifiers = createPublicationRequest.getAdditionalIdentifiers();
         var expectedIdentifier =
-                new AdditionalIdentifier(ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME, SCP_ID_IN_0000469852);
+            new AdditionalIdentifier(ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME, SCP_ID_IN_0000469852);
         assertThat(actualAdditionalIdentifiers, contains(expectedIdentifier));
     }
 
     @Test
-    void shouldExtractDoiAndPlaceItInsideReferenceObject() throws IOException, URISyntaxException {
+    void shouldExtractDoiAndPlaceItInsideReferenceObject() throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000469852));
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         S3Event s3Event = createS3Event(uri);
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
-        assertThat(createPublicationRequest.getEntityDescription().getReference().getDoi(), equalToObject( new URI( DOI_OPEN_URL_FORMAT+ "/" +DOI_IN_0000469852)));
+        URI expectedURI = new UriWrapper(DOI_OPEN_URL_FORMAT).addChild(DOI_IN_0000469852).getUri();
+        assertThat(createPublicationRequest.getEntityDescription().getReference().getDoi(), equalToObject(expectedURI));
     }
 
     private S3Event createS3Event(String expectedObjectKey) {
         var eventNotification = new S3EventNotificationRecord(randomString(),
-                randomString(),
-                randomString(),
-                randomDate(),
-                randomString(),
-                EMPTY_REQUEST_PARAMETERS,
-                EMPTY_RESPONSE_ELEMENTS,
-                createS3Entity(expectedObjectKey),
-                EMPTY_USER_IDENTITY);
+                                                              randomString(),
+                                                              randomString(),
+                                                              randomDate(),
+                                                              randomString(),
+                                                              EMPTY_REQUEST_PARAMETERS,
+                                                              EMPTY_RESPONSE_ELEMENTS,
+                                                              createS3Entity(expectedObjectKey),
+                                                              EMPTY_USER_IDENTITY);
         return new S3Event(List.of(eventNotification));
     }
 
@@ -118,7 +117,7 @@ class ScopusHandlerTest {
     private S3Entity createS3Entity(String expectedObjectKey) {
         S3BucketEntity bucket = new S3BucketEntity(randomString(), EMPTY_USER_IDENTITY, randomString());
         S3ObjectEntity object = new S3ObjectEntity(expectedObjectKey, SOME_FILE_SIZE, randomString(), randomString(),
-                randomString());
+                                                   randomString());
         String schemaVersion = randomString();
         return new S3Entity(randomString(), bucket, object, schemaVersion);
     }
