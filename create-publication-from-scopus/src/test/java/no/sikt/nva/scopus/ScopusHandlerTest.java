@@ -54,7 +54,7 @@ class ScopusHandlerTest {
     private static final String SCP_ID_IN_0000469852 = "0000469852";
     private static final String DOI_IN_0000469852 = "10.1017/S0960428600000743";
     private static final String SCOPUS_XML_0000833530 = "2-s2.0-0000833530.xml";
-    private static final String HARDCODED_EXPECTED_TITLE_IN_0000833530 = "Measurement of A<sup>bb̄</sup><inf>FB</inf>"
+    private static final String HARDCODED_EXPECTED_TITLE_IN_0000833530 = "Measurement of A<sup>bb</sup><inf>FB</inf>"
                                                                          + " in hadronic Z decays using a jet charge "
                                                                          + "technique";
 
