@@ -199,6 +199,24 @@ Resources:
             Method: post
             RestApiId: !Ref NvaFetchDoiFunctionApi
 
+  NvaScopusDeleteFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: delete-publication-from-scopus
+      Handler: no.sikt.nva.scopus.ScopusDeleteHandler::handleRequest
+      Runtime: java11
+      MemorySize: !Ref LambdaMemorySize
+      Role: !GetAtt ReadFromScopusBucketsRole.Arn
+      Events:
+        Scopus:
+          Type: S3
+          Properties:
+            Bucket: !Ref ScopusXmlBucket
+            Events: 's3:ObjectCreated:*'
+            S3Key:
+              Rules:
+                - Name: suffix
+                  Value: '.txt'
 
   NvaScopusFunction:
     Type: AWS::Serverless::Function
@@ -214,6 +232,10 @@ Resources:
           Properties:
             Bucket: !Ref ScopusXmlBucket
             Events: 's3:ObjectCreated:*'
+            S3Key:
+              Rules:
+                - Name: suffix
+                  Value: '.xml'
 
   NvaFetchDoiFunctionScalableTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
