@@ -4,8 +4,12 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import jakarta.xml.bind.JAXB;
+import jakarta.xml.bind.JAXBElement;
 import no.scopus.generated.DocTp;
+import no.scopus.generated.InfTp;
 import no.scopus.generated.ItemidTp;
+import no.scopus.generated.SupTp;
+import no.scopus.generated.YesnoAtt;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
@@ -32,6 +36,7 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     public static final String S3_URI_TEMPLATE = "s3://%s/%s";
     private static final Logger logger = LoggerFactory.getLogger(ScopusHandler.class);
     private final S3Client s3Client;
+    private final String XML_TAG_BUILDER = "<%s>%s</%s>";
 
     @JacocoGenerated
     public ScopusHandler() {
@@ -77,6 +82,7 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     private EntityDescription generateEntityDescription(DocTp docTp) {
         EntityDescription entityDescription = new EntityDescription();
         entityDescription.setReference(generateReference(docTp));
+        entityDescription.setMainTitle(extractMainTitle(docTp));
         return entityDescription;
     }
 
@@ -84,6 +90,41 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
         Reference reference = new Reference();
         reference.setDoi(extractDOI(docTp));
         return reference;
+    }
+
+    private String extractMainTitle(DocTp docTp){
+        var originalTitle =
+            docTp.getItem().getItem().getBibrecord().getHead().getCitationTitle().getTitletext().stream().filter(titleTextTp -> titleTextTp.getOriginal().equals(
+                YesnoAtt.Y)).findFirst();
+        if (originalTitle.isPresent()){
+            var originalTitleContent = originalTitle.get().getContent();
+            return getContentWithXMLtags(originalTitleContent);
+        }
+        return null;
+    }
+
+    private String getContentWithXMLtags ( List<Object> contents ){
+        StringBuilder contentStringBuilder = new StringBuilder();
+        contents.forEach(content -> {
+            if (content instanceof String) {
+                contentStringBuilder.append(content);
+            }else if (content instanceof JAXBElement<?>) {
+                String contentText = "";
+                var element = (JAXBElement<?>) content;
+                if (element.getValue() instanceof SupTp) {
+                    contentText = ((SupTp) element.getValue()).getContent().stream().collect(StringBuilder::new,
+                                                                                             StringBuilder::append,
+                                                                                             (a, b) -> a.append(",").append(b)).toString();
+                }else if (element.getValue() instanceof InfTp) {
+                    contentText = ( ((InfTp) element.getValue()).getContent()).stream().collect(StringBuilder::new,
+                                                                                                StringBuilder::append,
+                                                                                               (a, b) -> a.append(",").append(b)).toString();
+                }
+                contentStringBuilder.append(String.format(XML_TAG_BUILDER, element.getName(),
+                                                          contentText, element.getName()));
+            }
+        });
+        return contentStringBuilder.toString();
     }
 
     private URI extractDOI(DocTp docTp) {

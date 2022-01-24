@@ -36,6 +36,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalToObject;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
@@ -52,6 +53,10 @@ class ScopusHandlerTest {
     private static final String SCOPUS_XML_0000469852 = "2-s2.0-0000469852.xml";
     private static final String SCP_ID_IN_0000469852 = "0000469852";
     private static final String DOI_IN_0000469852 = "10.1017/S0960428600000743";
+    private static final String SCOPUS_XML_0000833530 = "2-s2.0-0000833530.xml";
+    private static final String HARDCODED_EXPECTED_TITLE_IN_0000833530 = "Measurement of A<sup>bb̄</sup><inf>FB</inf>"
+                                                                         + " in hadronic Z decays using a jet charge "
+                                                                         + "technique";
 
     @BeforeEach
     public void init() {
@@ -91,6 +96,16 @@ class ScopusHandlerTest {
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         URI expectedURI = new UriWrapper(DOI_OPEN_URL_FORMAT).addChild(DOI_IN_0000469852).getUri();
         assertThat(createPublicationRequest.getEntityDescription().getReference().getDoi(), equalToObject(expectedURI));
+    }
+
+    @Test
+    void shouldExtractMainTitleAndPlaceItInsideEntityDescriptionObject() throws IOException {
+        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000833530));
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
+        S3Event s3Event = createS3Event(uri);
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        String actualMainTitle = createPublicationRequest.getEntityDescription().getMainTitle();
+        assertEquals(HARDCODED_EXPECTED_TITLE_IN_0000833530, actualMainTitle);
     }
 
     private S3Event createS3Event(String expectedObjectKey) {
