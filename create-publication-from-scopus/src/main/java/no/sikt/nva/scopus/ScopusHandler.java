@@ -8,6 +8,8 @@ import no.scopus.generated.DocTp;
 import no.scopus.generated.ItemidTp;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Reference;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -21,6 +23,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static nva.commons.core.attempt.Try.attempt;
 
 public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationRequest> {
@@ -42,32 +45,49 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     @Override
     public CreatePublicationRequest handleRequest(S3Event event, Context context) {
         return attempt(() -> readFile(event))
-                .map(this::parseXmlFile)
-                .map(this::generateCreatePublicationRequest)
-                .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
+            .map(this::parseXmlFile)
+            .map(this::generateCreatePublicationRequest)
+            .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
     }
 
     private CreatePublicationRequest generateCreatePublicationRequest(DocTp docTp) {
         CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
         createPublicationRequest.setAdditionalIdentifiers(generateAdditionalIdentifiers(docTp));
+        createPublicationRequest.setEntityDescription(generateEntityDescription(docTp));
         return createPublicationRequest;
     }
 
     private Set<AdditionalIdentifier> generateAdditionalIdentifiers(DocTp docTp) {
         return extractItemIdentifiers(docTp)
-                .stream()
-                .filter(this::isScopusIdentifier)
-                .map(this::toAdditionalIdentifier)
-                .collect(Collectors.toSet());
+            .stream()
+            .filter(this::isScopusIdentifier)
+            .map(this::toAdditionalIdentifier)
+            .collect(Collectors.toSet());
     }
 
     private List<ItemidTp> extractItemIdentifiers(DocTp docTp) {
         return docTp.getItem()
-                .getItem()
-                .getBibrecord()
-                .getItemInfo()
-                .getItemidlist()
-                .getItemid();
+            .getItem()
+            .getBibrecord()
+            .getItemInfo()
+            .getItemidlist()
+            .getItemid();
+    }
+
+    private EntityDescription generateEntityDescription(DocTp docTp) {
+        EntityDescription entityDescription = new EntityDescription();
+        entityDescription.setReference(generateReference(docTp));
+        return entityDescription;
+    }
+
+    private Reference generateReference(DocTp docTp) {
+        Reference reference = new Reference();
+        reference.setDoi(extractDOI(docTp));
+        return reference;
+    }
+
+    private URI extractDOI(DocTp docTp) {
+        return new UriWrapper(DOI_OPEN_URL_FORMAT).addChild(docTp.getMeta().getDoi()).getUri();
     }
 
     private boolean isScopusIdentifier(ItemidTp itemIdTp) {
@@ -75,9 +95,9 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     }
 
     private AdditionalIdentifier toAdditionalIdentifier(ItemidTp itemIdTp) {
-        return new AdditionalIdentifier(ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME, itemIdTp.getValue());
+        return new AdditionalIdentifier(ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME,
+                                        itemIdTp.getValue());
     }
-
 
     private DocTp parseXmlFile(String file) {
         return JAXB.unmarshal(new StringReader(file), DocTp.class);
@@ -86,8 +106,8 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     private RuntimeException logErrorAndThrowException(Exception exception) {
         logger.error(exception.getMessage());
         return exception instanceof RuntimeException
-                ? (RuntimeException) exception
-                : new RuntimeException(exception);
+                   ? (RuntimeException) exception
+                   : new RuntimeException(exception);
     }
 
     private String readFile(S3Event event) {
