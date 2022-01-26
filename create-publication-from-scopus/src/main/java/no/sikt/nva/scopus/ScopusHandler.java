@@ -83,7 +83,7 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     private EntityDescription generateEntityDescription(DocTp docTp) {
         EntityDescription entityDescription = new EntityDescription();
         entityDescription.setReference(generateReference(docTp));
-        entityDescription.setContributors(extractContributors(docTp));
+        entityDescription.setContributors(generateContributors(docTp));
         return entityDescription;
     }
 
@@ -93,7 +93,7 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
         return reference;
     }
 
-    private List<Contributor> extractContributors(DocTp docTp) {
+    private List<Contributor> generateContributors(DocTp docTp) {
         List<Contributor> contributors = new ArrayList<>();
         extractAuthorGroup(docTp).forEach(authorGroupTp -> contributors.addAll(generateContributorsFromAuthorGroup(authorGroupTp)));
         return contributors;
