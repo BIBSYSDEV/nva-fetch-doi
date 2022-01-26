@@ -11,8 +11,6 @@ import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotificatio
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.UserIdentityEntity;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.model.AdditionalIdentifier;
-import no.unit.nva.model.NameType;
-import no.unit.nva.model.Role;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.ioutils.IoUtils;
