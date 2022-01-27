@@ -4,13 +4,10 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import jakarta.xml.bind.JAXB;
-import jakarta.xml.bind.JAXBElement;
-import java.io.Serializable;
-import java.util.ArrayList;
+import java.io.StringWriter;
+import java.util.Optional;
 import no.scopus.generated.DocTp;
-import no.scopus.generated.InfTp;
 import no.scopus.generated.ItemidTp;
-import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
 import no.unit.nva.metadata.CreatePublicationRequest;
@@ -39,7 +36,6 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     public static final String S3_URI_TEMPLATE = "s3://%s/%s";
     private static final Logger logger = LoggerFactory.getLogger(ScopusHandler.class);
     private final S3Client s3Client;
-    private static final String XML_TAG_BUILDER = "<%s>%s</%s>";
 
     @JacocoGenerated
     public ScopusHandler() {
@@ -100,42 +96,26 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     }
 
     private String extractMainTitle(DocTp docTp) {
-        StringBuilder mainTitleBuilder = new StringBuilder();
-        getTitleText(docTp)
-            .stream()
-            .filter(this::isTitleOriginal)
-            .findFirst()
-            .ifPresent(part -> mainTitleBuilder.append(getContentWithXmlTags(part.getContent())));
-        return mainTitleBuilder.toString();
+        return getMainTitleTextTp(docTp)
+            .map(this::marshalMainTitleToXmlStringInOrderToPreserveUnderlyingSupAndInfTags)
+            .orElse(null);
     }
 
-    private boolean isTitleOriginal(TitletextTp titletextTp){
+    private Optional<TitletextTp> getMainTitleTextTp(DocTp docTp) {
+        return getTitleText(docTp)
+            .stream()
+            .filter(this::isTitleOriginal)
+            .findFirst();
+    }
+
+    private boolean isTitleOriginal(TitletextTp titletextTp) {
         return titletextTp.getOriginal().equals(YesnoAtt.Y);
     }
 
-    private String getContentWithXmlTags(List<Object> contents) {
-        StringBuilder contentStringBuilder = new StringBuilder();
-        contents.forEach(content -> {
-            if (content instanceof String) {
-                contentStringBuilder.append(content);
-            } else if (content instanceof JAXBElement<?>) {
-                var element = (JAXBElement<?>) content;
-                String contentText = getContent(element).stream().map(Object::toString).collect(Collectors.joining());
-                contentStringBuilder.append(String.format(XML_TAG_BUILDER, element.getName(),
-                                                          contentText, element.getName()));
-            }
-        });
-        return contentStringBuilder.toString();
-    }
-
-    private List<Serializable> getContent(JAXBElement<?> element) {
-        List<Serializable> content = new ArrayList<>();
-        if (element.getValue() instanceof SupTp) {
-            content = ((SupTp) element.getValue()).getContent();
-        } else if (element.getValue() instanceof InfTp) {
-            content = ((InfTp) element.getValue()).getContent();
-        }
-        return content;
+    private String marshalMainTitleToXmlStringInOrderToPreserveUnderlyingSupAndInfTags(TitletextTp contents) {
+        StringWriter sw = new StringWriter();
+        JAXB.marshal(contents, sw);
+        return sw.toString();
     }
 
     private URI extractDOI(DocTp docTp) {

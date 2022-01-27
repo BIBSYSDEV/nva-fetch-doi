@@ -35,8 +35,8 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalToObject;
+import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
@@ -54,9 +54,12 @@ class ScopusHandlerTest {
     private static final String SCP_ID_IN_0000469852 = "0000469852";
     private static final String DOI_IN_0000469852 = "10.1017/S0960428600000743";
     private static final String SCOPUS_XML_0000833530 = "2-s2.0-0000833530.xml";
-    private static final String HARDCODED_EXPECTED_TITLE_IN_0000833530 = "Measurement of A<sup>bb</sup><inf>FB</inf>"
-                                                                         + " in hadronic Z decays using a jet charge "
-                                                                         + "technique";
+    private static final String XML_ENCODING_DECLARATION = "<?xml version=\"1.0\" encoding=\"UTF-8\" "
+                                                           + "standalone=\"yes\"?>";
+    private static final String HARDCODED_EXPECTED_TITLE_IN_0000833530 = "Measurement of A\n"
+                                                                         + "    <sup>bb</sup>\n"
+                                                                         + "    <inf>FB</inf> in hadronic Z decays "
+                                                                         + "using a jet charge technique</titletextTp>";
 
     @BeforeEach
     public void init() {
@@ -105,7 +108,8 @@ class ScopusHandlerTest {
         S3Event s3Event = createS3Event(uri);
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         String actualMainTitle = createPublicationRequest.getEntityDescription().getMainTitle();
-        assertEquals(HARDCODED_EXPECTED_TITLE_IN_0000833530, actualMainTitle);
+        assertThat(actualMainTitle,
+                   stringContainsInOrder(XML_ENCODING_DECLARATION, HARDCODED_EXPECTED_TITLE_IN_0000833530));
     }
 
     private S3Event createS3Event(String expectedObjectKey) {
