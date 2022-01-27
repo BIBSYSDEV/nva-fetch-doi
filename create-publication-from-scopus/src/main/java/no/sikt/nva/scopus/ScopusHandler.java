@@ -4,7 +4,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import jakarta.xml.bind.JAXB;
-import java.util.ArrayList;
+import java.util.Collection;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CollaborationTp;
@@ -94,18 +94,18 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     }
 
     private List<Contributor> generateContributors(DocTp docTp) {
-        List<Contributor> contributors = new ArrayList<>();
-        extractAuthorGroup(docTp).forEach(authorGroupTp -> contributors.addAll(generateContributorsFromAuthorGroup(authorGroupTp)));
-        return contributors;
+        return extractAuthorGroup(docTp)
+            .stream()
+            .map(this::generateContributorsFromAuthorGroup)
+            .flatMap(Collection::stream)
+            .collect(Collectors.toList());
     }
 
-    private List<Contributor> generateContributorsFromAuthorGroup(AuthorGroupTp authorGroupTp){
-        List<Contributor> contributors = new ArrayList<>();
-        authorGroupTp
-            .getAuthorOrCollaboration()
-            .forEach(authorOrCollaboration ->
-                         contributors.add(generateContributorFromAuthorOrCollaboration(authorOrCollaboration)));
-        return contributors;
+    private List<Contributor> generateContributorsFromAuthorGroup(AuthorGroupTp authorGroupTp) {
+        return authorGroupTp.getAuthorOrCollaboration()
+            .stream()
+            .map(this::generateContributorFromAuthorOrCollaboration)
+            .collect(Collectors.toList());
     }
 
     private List<AuthorGroupTp> extractAuthorGroup(DocTp docTp) {
@@ -120,17 +120,23 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     }
 
     private Contributor generateContributorFromAuthorTp(AuthorTp author) {
-        var sequence = Integer.parseInt(author.getSeq());
         var identity = new Identity();
         identity.setName(determineContributorName(author));
-        return new Contributor(identity, null, null, sequence, false);
+        return new Contributor(identity, null, null, getSequenceNumber(author), false);
     }
 
     private Contributor generateContributorFromCollaborationTp(CollaborationTp collaboration) {
-        var sequence = Integer.parseInt(collaboration.getSeq());
         var identity = new Identity();
         identity.setName(determineContributorName(collaboration));
-        return new Contributor(identity, null, null, sequence, false);
+        return new Contributor(identity, null, null, getSequenceNumber(collaboration), false);
+    }
+
+    private int getSequenceNumber(AuthorTp authorTp) {
+        return Integer.parseInt(authorTp.getSeq());
+    }
+
+    private int getSequenceNumber(CollaborationTp collaborationTp) {
+        return Integer.parseInt(collaborationTp.getSeq());
     }
 
     private String determineContributorName(AuthorTp author) {
