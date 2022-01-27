@@ -103,10 +103,14 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
         StringBuilder mainTitleBuilder = new StringBuilder();
         getTitleText(docTp)
             .stream()
-            .filter(titleTextTp -> titleTextTp.getOriginal().equals(YesnoAtt.Y))
+            .filter(this::isTitleOriginal)
             .findFirst()
             .ifPresent(part -> mainTitleBuilder.append(getContentWithXmlTags(part.getContent())));
         return mainTitleBuilder.toString();
+    }
+
+    private boolean isTitleOriginal(TitletextTp titletextTp){
+        return titletextTp.getOriginal().equals(YesnoAtt.Y);
     }
 
     private String getContentWithXmlTags(List<Object> contents) {
