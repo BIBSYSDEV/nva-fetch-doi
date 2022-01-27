@@ -97,7 +97,7 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
 
     private String extractMainTitle(DocTp docTp) {
         return getMainTitleTextTp(docTp)
-            .map(this::marshalMainTitleToXmlStringInOrderToPreserveUnderlyingSupAndInfTags)
+            .map(this::marshallMainTitleToXmlPreservingUnderlyingStructure)
             .orElse(null);
     }
 
@@ -112,7 +112,7 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
         return titletextTp.getOriginal().equals(YesnoAtt.Y);
     }
 
-    private String marshalMainTitleToXmlStringInOrderToPreserveUnderlyingSupAndInfTags(TitletextTp contents) {
+    private String marshallMainTitleToXmlPreservingUnderlyingStructure(TitletextTp contents) {
         StringWriter sw = new StringWriter();
         JAXB.marshal(contents, sw);
         return sw.toString();

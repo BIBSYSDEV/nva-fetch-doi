@@ -37,6 +37,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalToObject;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
@@ -56,6 +57,8 @@ class ScopusHandlerTest {
     private static final String SCOPUS_XML_0000833530 = "2-s2.0-0000833530.xml";
     private static final String XML_ENCODING_DECLARATION = "<?xml version=\"1.0\" encoding=\"UTF-8\" "
                                                            + "standalone=\"yes\"?>";
+    private static final String HARDCODED_EXPECTED_TITLE_NAMESPACE = "<titletextTp xml:lang=\"eng\" "
+                                                                     + "language=\"English\" original=\"y\"";
     private static final String HARDCODED_EXPECTED_TITLE_IN_0000833530 = "Measurement of A\n"
                                                                          + "    <sup>bb</sup>\n"
                                                                          + "    <inf>FB</inf> in hadronic Z decays "
@@ -102,14 +105,16 @@ class ScopusHandlerTest {
     }
 
     @Test
-    void shouldExtractMainTitleAndPlaceItInsideEntityDescriptionObject() throws IOException {
+    void shouldReturnCreatePublicationRequestWithMainTitle() throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000833530));
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         S3Event s3Event = createS3Event(uri);
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         String actualMainTitle = createPublicationRequest.getEntityDescription().getMainTitle();
         assertThat(actualMainTitle,
-                   stringContainsInOrder(XML_ENCODING_DECLARATION, HARDCODED_EXPECTED_TITLE_IN_0000833530));
+                   stringContainsInOrder(XML_ENCODING_DECLARATION,
+                                         HARDCODED_EXPECTED_TITLE_NAMESPACE,
+                                         HARDCODED_EXPECTED_TITLE_IN_0000833530));
     }
 
     private S3Event createS3Event(String expectedObjectKey) {
