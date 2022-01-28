@@ -10,7 +10,6 @@ import jakarta.xml.bind.JAXB;
 
 import java.io.StringReader;
 import java.net.URI;
-import java.util.Objects;
 
 import no.scopus.generated.DocTp;
 import no.scopus.generated.ItemidTp;
@@ -41,11 +40,11 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     public static final int SINGLE_EXPECTED_RECORD = 0;
     public static final String S3_URI_TEMPLATE = "s3://%s/%s";
     private static final Logger logger = LoggerFactory.getLogger(ScopusHandler.class);
-    public static final String EMPTY_STRING = "";
     public static final String ISSN_TYPE_ELECTRONIC = "electronic";
     public static final String ISSN_TYPE_PRINT = "print";
     public static final String DASH = "-";
-    public static final String ERROR_MSG_FOR_INVALID_ISSN = "At least one of the provided issn is invalid.";
+    public static final PublicationContext EMPTY_PUBLICATION_CONTEXT = null;
+    public static final String ERROR_MSG_ISSN_NOT_FOUND = "Could not find issn";
     private final S3Client s3Client;
 
     @JacocoGenerated
@@ -116,18 +115,24 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     }
 
     private PublicationContext getPublicationContext(DocTp docTp) {
-        ScopusSourceType scopusSourceType = ScopusSourceType.valueOfCode(docTp.getMeta().getSrctype());
-        if (Objects.requireNonNull(scopusSourceType) == JOURNAL) {
-            var source = getSource(docTp);
-            var issnTpList = source.getIssn();
-            try {
-                return new UnconfirmedJournal(extractSourceTitle(source), findPrintIssn(issnTpList),
-                        findElectronicIssn(issnTpList));
-            } catch (InvalidIssnException e) {
-                throw logErrorAndThrowException(e);
-            }
+        if (isJournal(docTp)) {
+            return attempt(() -> createUnconfirmedJournal(docTp))
+                    .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
         }
-        return null;
+        return EMPTY_PUBLICATION_CONTEXT;
+    }
+
+    private UnconfirmedJournal createUnconfirmedJournal(DocTp docTp) throws InvalidIssnException {
+        var source = getSource(docTp);
+        var sourceTitle = extractSourceTitle(source);
+        var issnTpList = source.getIssn();
+        var printIssn = findPrintIssn(issnTpList);
+        var electronicIssn = findElectronicIssn(issnTpList);
+        return new UnconfirmedJournal(sourceTitle, printIssn, electronicIssn);
+    }
+
+    private boolean isJournal(DocTp docTp) {
+        return ScopusSourceType.valueOfCode(docTp.getMeta().getSrctype()) == JOURNAL;
     }
 
     private SourceTp getSource(DocTp docTp) {
@@ -154,11 +159,11 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
                 .map(IssnTp::getContent)
                 .map(this::addDashToIssn)
                 .findAny()
-                .orElse(null);
+                .orElseThrow(() -> new RuntimeException(ERROR_MSG_ISSN_NOT_FOUND));
     }
 
     private String addDashToIssn(String issn) {
-        return issn.substring(0, 4) + DASH + issn.substring(4);
+        return issn.contains(DASH) ? issn : issn.substring(0, 4) + DASH + issn.substring(4);
     }
 
     private DocTp parseXmlFile(String file) {
