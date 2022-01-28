@@ -32,6 +32,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
+import static nva.commons.core.attempt.Try.attempt;
+
 public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationRequest> {
 
     public static final int SINGLE_EXPECTED_RECORD = 0;
@@ -55,35 +58,49 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     @Override
     public CreatePublicationRequest handleRequest(S3Event event, Context context) {
         return attempt(() -> readFile(event))
-                .map(this::parseXmlFile)
-                .map(this::generateCreatePublicationRequest)
-                .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
+            .map(this::parseXmlFile)
+            .map(this::generateCreatePublicationRequest)
+            .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
     }
 
     private CreatePublicationRequest generateCreatePublicationRequest(DocTp docTp) {
         CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
         createPublicationRequest.setAdditionalIdentifiers(generateAdditionalIdentifiers(docTp));
-        Reference reference = new Reference.Builder().withPublishingContext(getPublicationContext(docTp)).build();
-        EntityDescription entityDescription = new EntityDescription.Builder().withReference(reference).build();
-        createPublicationRequest.setEntityDescription(entityDescription);
+        createPublicationRequest.setEntityDescription(generateEntityDescription(docTp));
         return createPublicationRequest;
     }
 
     private Set<AdditionalIdentifier> generateAdditionalIdentifiers(DocTp docTp) {
         return extractItemIdentifiers(docTp)
-                .stream()
-                .filter(this::isScopusIdentifier)
-                .map(this::toAdditionalIdentifier)
-                .collect(Collectors.toSet());
+            .stream()
+            .filter(this::isScopusIdentifier)
+            .map(this::toAdditionalIdentifier)
+            .collect(Collectors.toSet());
     }
 
     private List<ItemidTp> extractItemIdentifiers(DocTp docTp) {
         return docTp.getItem()
-                .getItem()
-                .getBibrecord()
-                .getItemInfo()
-                .getItemidlist()
-                .getItemid();
+            .getItem()
+            .getBibrecord()
+            .getItemInfo()
+            .getItemidlist()
+            .getItemid();
+    }
+
+    private EntityDescription generateEntityDescription(DocTp docTp) {
+        EntityDescription entityDescription = new EntityDescription();
+        entityDescription.setReference(generateReference(docTp));
+        return entityDescription;
+    }
+
+    private Reference generateReference(DocTp docTp) {
+        Reference reference = new Reference();
+        reference.setDoi(extractDOI(docTp));
+        return reference;
+    }
+
+    private URI extractDOI(DocTp docTp) {
+        return new UriWrapper(DOI_OPEN_URL_FORMAT).addChild(docTp.getMeta().getDoi()).getUri();
     }
 
     private boolean isScopusIdentifier(ItemidTp itemIdTp) {
@@ -130,8 +147,8 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     private RuntimeException logErrorAndThrowException(Exception exception) {
         logger.error(exception.getMessage());
         return exception instanceof RuntimeException
-                ? (RuntimeException) exception
-                : new RuntimeException(exception);
+                   ? (RuntimeException) exception
+                   : new RuntimeException(exception);
     }
 
     private String readFile(S3Event event) {
