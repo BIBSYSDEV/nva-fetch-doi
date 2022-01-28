@@ -33,7 +33,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
-import static nva.commons.core.attempt.Try.attempt;
 
 public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationRequest> {
 
@@ -96,6 +95,7 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     private Reference generateReference(DocTp docTp) {
         Reference reference = new Reference();
         reference.setDoi(extractDOI(docTp));
+        reference.setPublicationContext(getPublicationContext(docTp));
         return reference;
     }
 

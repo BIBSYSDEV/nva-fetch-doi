@@ -4,7 +4,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.hamcrest.core.IsIterableContaining.hasItem;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -20,7 +19,6 @@ import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotificatio
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.model.AdditionalIdentifier;
 
-import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.s3.S3Driver;
@@ -43,13 +41,8 @@ import java.util.List;
 
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalToObject;
-import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
 
 class ScopusHandlerTest {
 
@@ -58,7 +51,6 @@ class ScopusHandlerTest {
     public static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;
     public static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     public static final long SOME_FILE_SIZE = 100L;
-    public static final String HARD_CODED_DOI_IN_RESOURCE_FILE = "10.1017/S0960428600000743";
     public static final String HARD_CODED_JOURNAL_NAME_IN_RESOURCE_FILE = "Edinburgh Journal of Botany";
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
