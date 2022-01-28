@@ -37,7 +37,6 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalToObject;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
