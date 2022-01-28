@@ -24,12 +24,14 @@ import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.SingletonCollector;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -126,8 +128,8 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
         var source = getSource(docTp);
         var sourceTitle = extractSourceTitle(source);
         var issnTpList = source.getIssn();
-        var printIssn = findPrintIssn(issnTpList);
-        var electronicIssn = findElectronicIssn(issnTpList);
+        var printIssn = findPrintIssn(issnTpList).orElse(null);
+        var electronicIssn = findElectronicIssn(issnTpList).orElse(null);
         return new UnconfirmedJournal(sourceTitle, printIssn, electronicIssn);
     }
 
@@ -145,21 +147,20 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
         return sourceTitle.toString();
     }
 
-    private String findElectronicIssn(List<IssnTp> issnTpList) {
+    private Optional<String> findElectronicIssn(List<IssnTp> issnTpList) {
         return findIssn(issnTpList, ISSN_TYPE_ELECTRONIC);
     }
 
-    private String findPrintIssn(List<IssnTp> issnTpList) {
+    private Optional<String> findPrintIssn(List<IssnTp> issnTpList) {
         return findIssn(issnTpList, ISSN_TYPE_PRINT);
     }
 
-    private String findIssn(List<IssnTp> issnTpList, String issnType) {
-        return issnTpList.stream()
+    private Optional<String> findIssn(List<IssnTp> issnTpList, String issnType) {
+        return Optional.ofNullable(issnTpList.stream()
                 .filter(issn -> issnType.equals(issn.getType()))
                 .map(IssnTp::getContent)
                 .map(this::addDashToIssn)
-                .findAny()
-                .orElseThrow(() -> new RuntimeException(ERROR_MSG_ISSN_NOT_FOUND));
+                .collect(SingletonCollector.collectOrElse(null)));
     }
 
     private String addDashToIssn(String issn) {
@@ -170,6 +171,7 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
         return JAXB.unmarshal(new StringReader(file), DocTp.class);
     }
 
+    @JacocoGenerated
     private RuntimeException logErrorAndThrowException(Exception exception) {
         logger.error(exception.getMessage());
         return exception instanceof RuntimeException

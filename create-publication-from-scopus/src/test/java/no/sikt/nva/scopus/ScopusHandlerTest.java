@@ -136,8 +136,12 @@ class ScopusHandlerTest {
         scopusFile = scopusFile.replace("<issn type=\"print\">09604286</issn>", "");
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         var s3Event = createS3Event(uri);
-        var actualException = assertThrows(RuntimeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
-        assertThat(actualException.getMessage(), is(ScopusHandler.ERROR_MSG_ISSN_NOT_FOUND));
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
+                .getPublicationContext();
+        assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
+        var actualJournalName = ((UnconfirmedJournal) actualPublicationContext).getTitle();
+        assertThat(actualJournalName, is(HARD_CODED_JOURNAL_NAME_IN_RESOURCE_FILE));
     }
 
     @Test
