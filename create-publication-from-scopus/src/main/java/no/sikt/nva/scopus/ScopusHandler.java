@@ -4,12 +4,16 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import jakarta.xml.bind.JAXB;
+import java.io.StringWriter;
+import java.util.Optional;
 import java.util.Collection;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.ItemidTp;
+import no.scopus.generated.TitletextTp;
+import no.scopus.generated.YesnoAtt;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
@@ -83,6 +87,7 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     private EntityDescription generateEntityDescription(DocTp docTp) {
         EntityDescription entityDescription = new EntityDescription();
         entityDescription.setReference(generateReference(docTp));
+        entityDescription.setMainTitle(extractMainTitle(docTp));
         entityDescription.setContributors(generateContributors(docTp));
         return entityDescription;
     }
@@ -91,6 +96,33 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
         Reference reference = new Reference();
         reference.setDoi(extractDOI(docTp));
         return reference;
+    }
+
+    private List<TitletextTp> getTitleText(DocTp docTp) {
+        return docTp.getItem().getItem().getBibrecord().getHead().getCitationTitle().getTitletext();
+    }
+
+    private String extractMainTitle(DocTp docTp) {
+        return getMainTitleTextTp(docTp)
+            .map(this::marshallMainTitleToXmlPreservingUnderlyingStructure)
+            .orElse(null);
+    }
+
+    private Optional<TitletextTp> getMainTitleTextTp(DocTp docTp) {
+        return getTitleText(docTp)
+            .stream()
+            .filter(this::isTitleOriginal)
+            .findFirst();
+    }
+
+    private boolean isTitleOriginal(TitletextTp titletextTp) {
+        return titletextTp.getOriginal().equals(YesnoAtt.Y);
+    }
+
+    private String marshallMainTitleToXmlPreservingUnderlyingStructure(TitletextTp contents) {
+        StringWriter sw = new StringWriter();
+        JAXB.marshal(contents, sw);
+        return sw.toString();
     }
 
     private List<Contributor> generateContributors(DocTp docTp) {

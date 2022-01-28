@@ -36,6 +36,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalToObject;
+import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
@@ -59,6 +60,15 @@ class ScopusHandlerTest {
     private static final String SCOPUS_XML_0000469852 = "2-s2.0-0000469852.xml";
     private static final String SCP_ID_IN_0000469852 = "0000469852";
     private static final String DOI_IN_0000469852 = "10.1017/S0960428600000743";
+    private static final String SCOPUS_XML_0000833530 = "2-s2.0-0000833530.xml";
+    private static final String XML_ENCODING_DECLARATION = "<?xml version=\"1.0\" encoding=\"UTF-8\" "
+                                                           + "standalone=\"yes\"?>";
+    private static final String HARDCODED_EXPECTED_TITLE_NAMESPACE = "<titletextTp xml:lang=\"eng\" "
+                                                                     + "language=\"English\" original=\"y\"";
+    private static final String HARDCODED_EXPECTED_TITLE_IN_0000833530 = "Measurement of A\n"
+                                                                         + "    <sup>bb</sup>\n"
+                                                                         + "    <inf>FB</inf> in hadronic Z decays "
+                                                                         + "using a jet charge technique</titletextTp>";
     private static final String SCOPUS_XML_85114653695 = "2-s2.0-85114653695.xml";
     private static final String CONTRIBUTOR_1_NAME_IN_85114653695 = "Morra A.";
     private static final String CONTRIBUTOR_2_NAME_IN_85114653695 = "Escala-Garcia M.";
@@ -107,6 +117,19 @@ class ScopusHandlerTest {
         assertThat(createPublicationRequest.getEntityDescription().getReference().getDoi(), equalToObject(expectedURI));
     }
 
+    @Test
+    void shouldReturnCreatePublicationRequestWithMainTitle() throws IOException {
+        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000833530));
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
+        S3Event s3Event = createS3Event(uri);
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        String actualMainTitle = createPublicationRequest.getEntityDescription().getMainTitle();
+        assertThat(actualMainTitle,
+                   stringContainsInOrder(XML_ENCODING_DECLARATION,
+                                         HARDCODED_EXPECTED_TITLE_NAMESPACE,
+                                         HARDCODED_EXPECTED_TITLE_IN_0000833530));
+    }
+    
     @Test
     void shouldExtractContributorsNamesAndSequenceNumberCorrectly() throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_85114653695));
