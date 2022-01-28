@@ -2,10 +2,12 @@ package no.sikt.nva.scopus;
 
 import static no.sikt.nva.scopus.ScopusSourceType.JOURNAL;
 import static nva.commons.core.attempt.Try.attempt;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import jakarta.xml.bind.JAXB;
+
 import java.io.StringReader;
 import java.net.URI;
 import java.util.Objects;
@@ -43,6 +45,7 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     public static final String ISSN_TYPE_ELECTRONIC = "electronic";
     public static final String ISSN_TYPE_PRINT = "print";
     public static final String DASH = "-";
+    public static final String ERROR_MSG_FOR_INVALID_ISSN = "At least one of the provided issn is invalid.";
     private final S3Client s3Client;
 
     @JacocoGenerated
@@ -57,9 +60,9 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     @Override
     public CreatePublicationRequest handleRequest(S3Event event, Context context) {
         return attempt(() -> readFile(event))
-            .map(this::parseXmlFile)
-            .map(this::generateCreatePublicationRequest)
-            .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
+                .map(this::parseXmlFile)
+                .map(this::generateCreatePublicationRequest)
+                .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
     }
 
     private CreatePublicationRequest generateCreatePublicationRequest(DocTp docTp) {
@@ -71,19 +74,19 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
 
     private Set<AdditionalIdentifier> generateAdditionalIdentifiers(DocTp docTp) {
         return extractItemIdentifiers(docTp)
-            .stream()
-            .filter(this::isScopusIdentifier)
-            .map(this::toAdditionalIdentifier)
-            .collect(Collectors.toSet());
+                .stream()
+                .filter(this::isScopusIdentifier)
+                .map(this::toAdditionalIdentifier)
+                .collect(Collectors.toSet());
     }
 
     private List<ItemidTp> extractItemIdentifiers(DocTp docTp) {
         return docTp.getItem()
-            .getItem()
-            .getBibrecord()
-            .getItemInfo()
-            .getItemidlist()
-            .getItemid();
+                .getItem()
+                .getBibrecord()
+                .getItemInfo()
+                .getItemidlist()
+                .getItemid();
     }
 
     private EntityDescription generateEntityDescription(DocTp docTp) {
@@ -113,31 +116,49 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     }
 
     private PublicationContext getPublicationContext(DocTp docTp) {
-        PublicationContext publicationContext = null;
         ScopusSourceType scopusSourceType = ScopusSourceType.valueOfCode(docTp.getMeta().getSrctype());
         if (Objects.requireNonNull(scopusSourceType) == JOURNAL) {
-            StringBuilder publisherName = new StringBuilder();
-            SourceTp sourceTp = docTp.getItem().getItem().getBibrecord().getHead().getSource();
-            sourceTp.getSourcetitle().getContent().forEach(publisherName::append);
+            var source = getSource(docTp);
+            var issnTpList = source.getIssn();
             try {
-                String electronicIssn = EMPTY_STRING;
-                String printedIssn = EMPTY_STRING;
-                for (IssnTp issnTp : sourceTp.getIssn()) {
-                    String issn = issnTp.getContent();
-                    issn = issn.substring(0, 4) + DASH + issn.substring(4);
-                    if (ISSN_TYPE_ELECTRONIC.equals(issnTp.getType())) {
-                        electronicIssn = issn;
-                    } else if (ISSN_TYPE_PRINT.equals(issnTp.getType())) {
-                        printedIssn = issn;
-                    }
-                }
-                publicationContext = new UnconfirmedJournal(publisherName.toString(), printedIssn,
-                        electronicIssn);
+                return new UnconfirmedJournal(extractSourceTitle(source), findPrintIssn(issnTpList),
+                        findElectronicIssn(issnTpList));
             } catch (InvalidIssnException e) {
-                logger.error(e.getMessage());
+                throw logErrorAndThrowException(e);
             }
         }
-        return publicationContext;
+        return null;
+    }
+
+    private SourceTp getSource(DocTp docTp) {
+        return docTp.getItem().getItem().getBibrecord().getHead().getSource();
+    }
+
+    private String extractSourceTitle(SourceTp sourceTp) {
+        StringBuilder sourceTitle = new StringBuilder();
+        sourceTp.getSourcetitle().getContent().forEach(sourceTitle::append);
+        return sourceTitle.toString();
+    }
+
+    private String findElectronicIssn(List<IssnTp> issnTpList) {
+        return findIssn(issnTpList, ISSN_TYPE_ELECTRONIC);
+    }
+
+    private String findPrintIssn(List<IssnTp> issnTpList) {
+        return findIssn(issnTpList, ISSN_TYPE_PRINT);
+    }
+
+    private String findIssn(List<IssnTp> issnTpList, String issnType) {
+        return issnTpList.stream()
+                .filter(issn -> issnType.equals(issn.getType()))
+                .map(IssnTp::getContent)
+                .map(this::addDashToIssn)
+                .findAny()
+                .orElse(null);
+    }
+
+    private String addDashToIssn(String issn) {
+        return issn.substring(0, 4) + DASH + issn.substring(4);
     }
 
     private DocTp parseXmlFile(String file) {
@@ -147,8 +168,8 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     private RuntimeException logErrorAndThrowException(Exception exception) {
         logger.error(exception.getMessage());
         return exception instanceof RuntimeException
-                   ? (RuntimeException) exception
-                   : new RuntimeException(exception);
+                ? (RuntimeException) exception
+                : new RuntimeException(exception);
     }
 
     private String readFile(S3Event event) {
