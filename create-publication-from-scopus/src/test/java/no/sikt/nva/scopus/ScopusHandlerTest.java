@@ -35,6 +35,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalToObject;
+import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -52,6 +53,16 @@ class ScopusHandlerTest {
     private static final String SCOPUS_XML_0000469852 = "2-s2.0-0000469852.xml";
     private static final String SCP_ID_IN_0000469852 = "0000469852";
     private static final String DOI_IN_0000469852 = "10.1017/S0960428600000743";
+    private static final String SCOPUS_XML_0018132378 = "2-s2.0-0018132378.xml";
+    private static final String XML_DECLARATION = "<xml version";
+    private static final String AUTHOR_KEYWORD_NAME_SPACE = "<author-keywords>";
+    private static final String HARDCODED_KEYWORDS_0000469852 ="              <author-keyword "
+                                                               + "xml:lang=\"eng\"><sup>64</sup>Cu\n"
+                                                               + "              </author-keyword>\n"
+                                                               + "              <author-keyword "
+                                                               + "xml:lang=\"eng\">excretion</author-keyword>\n"
+                                                               + "              <author-keyword "
+                                                               + "xml:lang=\"eng\">sheep</author-keyword>";
 
     @BeforeEach
     public void init() {
@@ -104,6 +115,16 @@ class ScopusHandlerTest {
                                                               createS3Entity(expectedObjectKey),
                                                               EMPTY_USER_IDENTITY);
         return new S3Event(List.of(eventNotification));
+    }
+
+    @Test
+    void shouldExtractAuthorKeywordsAsXML() throws IOException {
+        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0018132378));
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
+        S3Event s3Event = createS3Event(uri);
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        String actualKeywords = createPublicationRequest.getAuthorKeywordsXmlFormat();
+        assertThat(actualKeywords, stringContainsInOrder(XML_DECLARATION, AUTHOR_KEYWORD_NAME_SPACE, HARDCODED_KEYWORDS_0000469852));
     }
 
     private S3Event createS3Event(URI uri) {

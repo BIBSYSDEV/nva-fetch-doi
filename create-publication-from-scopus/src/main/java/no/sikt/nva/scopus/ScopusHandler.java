@@ -4,6 +4,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import jakarta.xml.bind.JAXB;
+import java.io.StringWriter;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.ItemidTp;
 import no.unit.nva.metadata.CreatePublicationRequest;
@@ -54,6 +55,7 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
         CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
         createPublicationRequest.setAdditionalIdentifiers(generateAdditionalIdentifiers(docTp));
         createPublicationRequest.setEntityDescription(generateEntityDescription(docTp));
+        createPublicationRequest.setAuthorKeywordsXmlFormat(generateAuthorKeyWordsXml(docTp));
         return createPublicationRequest;
     }
 
@@ -126,5 +128,12 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
 
     private URI createS3BucketUri(S3Event s3Event) {
         return URI.create(String.format(S3_URI_TEMPLATE, extractBucketName(s3Event), extractFilename(s3Event)));
+    }
+
+    private String generateAuthorKeyWordsXml(DocTp docTp){
+        var authorKeywords = docTp.getItem().getItem().getBibrecord().getHead().getCitationInfo().getAuthorKeywords();
+        StringWriter sw = new StringWriter();
+        JAXB.marshal(authorKeywords, sw);
+        return sw.toString();
     }
 }
