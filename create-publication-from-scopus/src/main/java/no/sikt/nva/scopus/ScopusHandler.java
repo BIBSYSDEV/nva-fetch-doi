@@ -34,15 +34,19 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
 
     @Override
     public CreatePublicationRequest handleRequest(S3Event event, Context context) {
-        var scopusConverter = new ScopusConverter();
         return attempt(() -> readFile(event))
             .map(this::parseXmlFile)
-            .map(scopusConverter::generateCreatePublicationRequest)
+            .map(this::generateCreatePublicationRequest)
             .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
     }
 
     private DocTp parseXmlFile(String file) {
         return JAXB.unmarshal(new StringReader(file), DocTp.class);
+    }
+
+    private CreatePublicationRequest generateCreatePublicationRequest(DocTp docTp) {
+        var scopusConverter = new ScopusConverter(docTp);
+        return scopusConverter.generateCreatePublicationRequest();
     }
 
     private RuntimeException logErrorAndThrowException(Exception exception) {

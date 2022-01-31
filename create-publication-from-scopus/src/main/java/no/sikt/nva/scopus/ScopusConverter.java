@@ -22,56 +22,57 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Reference;
-import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
-public class ScopusConverter {
+class ScopusConverter {
 
-    @JacocoGenerated
-    public ScopusConverter() {
+    DocTp docTp;
+
+    protected ScopusConverter(DocTp docTp) {
+        this.docTp = docTp;
     }
 
-    public CreatePublicationRequest generateCreatePublicationRequest(DocTp docTp) {
+    public CreatePublicationRequest generateCreatePublicationRequest() {
         CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
-        createPublicationRequest.setAdditionalIdentifiers(generateAdditionalIdentifiers(docTp));
-        createPublicationRequest.setEntityDescription(generateEntityDescription(docTp));
+        createPublicationRequest.setAdditionalIdentifiers(generateAdditionalIdentifiers());
+        createPublicationRequest.setEntityDescription(generateEntityDescription());
         return createPublicationRequest;
     }
 
-    private EntityDescription generateEntityDescription(DocTp docTp) {
+    private EntityDescription generateEntityDescription() {
         EntityDescription entityDescription = new EntityDescription();
-        entityDescription.setReference(generateReference(docTp));
-        entityDescription.setMainTitle(extractMainTitle(docTp));
-        entityDescription.setContributors(generateContributors(docTp));
+        entityDescription.setReference(generateReference());
+        entityDescription.setMainTitle(extractMainTitle());
+        entityDescription.setContributors(generateContributors());
         return entityDescription;
     }
 
-    private String extractMainTitle(DocTp docTp) {
-        return getMainTitleTextTp(docTp)
+    private String extractMainTitle() {
+        return getMainTitleTextTp()
             .map(this::marshallMainTitleToXmlPreservingUnderlyingStructure)
             .orElse(null);
     }
 
-    private List<Contributor> generateContributors(DocTp docTp) {
-        return extractAuthorGroup(docTp)
+    private List<Contributor> generateContributors() {
+        return extractAuthorGroup()
             .stream()
             .map(this::generateContributorsFromAuthorGroup)
             .flatMap(Collection::stream)
             .collect(Collectors.toList());
     }
 
-    private Reference generateReference(DocTp docTp) {
+    private Reference generateReference() {
         Reference reference = new Reference();
-        reference.setDoi(extractDOI(docTp));
+        reference.setDoi(extractDOI());
         return reference;
     }
 
-    private URI extractDOI(DocTp docTp) {
+    private URI extractDOI() {
         return new UriWrapper(DOI_OPEN_URL_FORMAT).addChild(docTp.getMeta().getDoi()).getUri();
     }
 
-    private Optional<TitletextTp> getMainTitleTextTp(DocTp docTp) {
-        return getTitleText(docTp)
+    private Optional<TitletextTp> getMainTitleTextTp() {
+        return getTitleText()
             .stream()
             .filter(this::isTitleOriginal)
             .findFirst();
@@ -81,7 +82,7 @@ public class ScopusConverter {
         return titletextTp.getOriginal().equals(YesnoAtt.Y);
     }
 
-    private List<TitletextTp> getTitleText(DocTp docTp) {
+    private List<TitletextTp> getTitleText() {
         return docTp.getItem().getItem().getBibrecord().getHead().getCitationTitle().getTitletext();
     }
 
@@ -127,12 +128,12 @@ public class ScopusConverter {
         return collaborationTp.getIndexedName();
     }
 
-    private List<AuthorGroupTp> extractAuthorGroup(DocTp docTp) {
+    private List<AuthorGroupTp> extractAuthorGroup() {
         return docTp.getItem().getItem().getBibrecord().getHead().getAuthorGroup();
     }
 
-    private Set<AdditionalIdentifier> generateAdditionalIdentifiers(DocTp docTp) {
-        return extractItemIdentifiers(docTp)
+    private Set<AdditionalIdentifier> generateAdditionalIdentifiers() {
+        return extractItemIdentifiers()
             .stream()
             .filter(this::isScopusIdentifier)
             .map(this::toAdditionalIdentifier)
@@ -145,7 +146,7 @@ public class ScopusConverter {
         return sw.toString();
     }
 
-    private List<ItemidTp> extractItemIdentifiers(DocTp docTp) {
+    private List<ItemidTp> extractItemIdentifiers() {
         return docTp.getItem()
             .getItem()
             .getBibrecord()
