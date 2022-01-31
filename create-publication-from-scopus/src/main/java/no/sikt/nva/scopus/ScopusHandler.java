@@ -224,8 +224,12 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
 
     private String generateAuthorKeyWordsXml(DocTp docTp){
         var authorKeywords = docTp.getItem().getItem().getBibrecord().getHead().getCitationInfo().getAuthorKeywords();
-        StringWriter sw = new StringWriter();
-        JAXB.marshal(authorKeywords, sw);
-        return sw.toString();
+        if (authorKeywords != null) {
+            StringWriter sw = new StringWriter();
+            JAXB.marshal(authorKeywords, sw);
+            return sw.toString();
+        }else {
+            return "";
+        }
     }
 }

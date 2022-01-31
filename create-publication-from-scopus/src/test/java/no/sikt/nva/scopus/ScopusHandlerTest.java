@@ -61,15 +61,15 @@ class ScopusHandlerTest {
     private static final String SCP_ID_IN_0000469852 = "0000469852";
     private static final String DOI_IN_0000469852 = "10.1017/S0960428600000743";
     private static final String SCOPUS_XML_0018132378 = "2-s2.0-0018132378.xml";
-    private static final String XML_DECLARATION = "<xml version";
-    private static final String AUTHOR_KEYWORD_NAME_SPACE = "<author-keywords>";
-    private static final String HARDCODED_KEYWORDS_0000469852 ="              <author-keyword "
-                                                               + "xml:lang=\"eng\"><sup>64</sup>Cu\n"
+    private static final String AUTHOR_KEYWORD_NAME_SPACE = "<authorKeywordsTp";
+    private static final String HARDCODED_KEYWORDS_0000469852 ="    <author-keyword xml:lang=\"eng\">\n"
+                                                               + "        <sup>64</sup>Cu\n"
                                                                + "              </author-keyword>\n"
-                                                               + "              <author-keyword "
+                                                               + "    <author-keyword "
                                                                + "xml:lang=\"eng\">excretion</author-keyword>\n"
-                                                               + "              <author-keyword "
-                                                               + "xml:lang=\"eng\">sheep</author-keyword>";
+                                                               + "    <author-keyword "
+                                                               + "xml:lang=\"eng\">sheep</author-keyword>\n"
+                                                               + "</authorKeywordsTp>";
     private static final String SCOPUS_XML_0000833530 = "2-s2.0-0000833530.xml";
     private static final String XML_ENCODING_DECLARATION = "<?xml version=\"1.0\" encoding=\"UTF-8\" "
                                                            + "standalone=\"yes\"?>";
@@ -181,7 +181,10 @@ class ScopusHandlerTest {
         S3Event s3Event = createS3Event(uri);
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         String actualKeywords = createPublicationRequest.getAuthorKeywordsXmlFormat();
-        assertThat(actualKeywords, stringContainsInOrder(XML_DECLARATION, AUTHOR_KEYWORD_NAME_SPACE, HARDCODED_KEYWORDS_0000469852));
+        assertThat(actualKeywords, stringContainsInOrder(
+            XML_ENCODING_DECLARATION,
+            AUTHOR_KEYWORD_NAME_SPACE,
+            HARDCODED_KEYWORDS_0000469852));
     }
 
     private S3Event createS3Event(URI uri) {
