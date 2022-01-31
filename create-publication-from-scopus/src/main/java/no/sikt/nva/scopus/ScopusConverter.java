@@ -26,7 +26,7 @@ import nva.commons.core.paths.UriWrapper;
 
 class ScopusConverter {
 
-    DocTp docTp;
+    private final DocTp docTp;
 
     protected ScopusConverter(DocTp docTp) {
         this.docTp = docTp;
