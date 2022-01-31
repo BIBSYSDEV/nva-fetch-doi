@@ -8,6 +8,7 @@ import java.io.StringWriter;
 import java.util.Optional;
 import java.util.Collection;
 import no.scopus.generated.AuthorGroupTp;
+import no.scopus.generated.AuthorKeywordsTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DocTp;
@@ -223,13 +224,17 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     }
 
     private String generateAuthorKeyWordsXml(DocTp docTp){
-        var authorKeywords = docTp.getItem().getItem().getBibrecord().getHead().getCitationInfo().getAuthorKeywords();
-        if (authorKeywords != null) {
-            StringWriter sw = new StringWriter();
-            JAXB.marshal(authorKeywords, sw);
-            return sw.toString();
-        }else {
-            return "";
-        }
+        var authorKeywords = extractAuthorKeyWords(docTp);
+        return authorKeywords == null ? null : marshallAuthorKeywords(authorKeywords);
+    }
+
+    private String marshallAuthorKeywords(AuthorKeywordsTp authorKeywordsTp) {
+        StringWriter sw = new StringWriter();
+        JAXB.marshal(authorKeywordsTp, sw);
+        return sw.toString();
+    }
+
+    private AuthorKeywordsTp extractAuthorKeyWords(DocTp docTp){
+        return  docTp.getItem().getItem().getBibrecord().getHead().getCitationInfo().getAuthorKeywords();
     }
 }
