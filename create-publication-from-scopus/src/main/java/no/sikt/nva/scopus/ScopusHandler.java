@@ -3,14 +3,12 @@ package no.sikt.nva.scopus;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
-import com.github.jsonldjava.utils.Obj;
 import jakarta.xml.bind.JAXB;
 import jakarta.xml.bind.JAXBElement;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.Collection;
-import java.util.stream.Stream;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordsTp;
 import no.scopus.generated.AuthorTp;
@@ -101,24 +99,30 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
         return entityDescription;
     }
 
-    private List<String> generatePlainTextTags(DocTp docTp){
+    private List<String> generatePlainTextTags(DocTp docTp) {
         var authorKeywordsTp = extractAuthorKeyWords(docTp);
-        return authorKeywordsTp.getAuthorKeyword()
-            .stream().map(something -> something.getContent().stream().map(
-                this::extractContentString).collect(Collectors.joining())).collect(Collectors.toList());
+        return authorKeywordsTp == null
+                   ? null
+                   : authorKeywordsTp.getAuthorKeyword()
+                       .stream()
+                       .map(something -> something.getContent().stream().map(
+                           this::extractContentString).collect(Collectors.joining()))
+                       .collect(Collectors.toList());
     }
 
-    private String extractContentString(Object supInfOrString){
+    private String extractContentString(Object supInfOrString) {
         if (supInfOrString instanceof String) {
-            return (((String) supInfOrString).trim());
-        }else if (supInfOrString instanceof JAXBElement){
-            return extractContentString(((JAXBElement<?>)supInfOrString).getValue());
-        }else if(supInfOrString instanceof SupTp) {
-            return extractContentString( ((SupTp) supInfOrString).getContent());
-        }else if (supInfOrString instanceof InfTp) {
+            return ((String) supInfOrString).trim();
+        } else if (supInfOrString instanceof JAXBElement) {
+            return extractContentString(((JAXBElement<?>) supInfOrString).getValue());
+        } else if (supInfOrString instanceof SupTp) {
+            return extractContentString(((SupTp) supInfOrString).getContent());
+        } else if (supInfOrString instanceof InfTp) {
             return extractContentString(((InfTp) supInfOrString).getContent());
-        }else if (supInfOrString instanceof ArrayList) {
-            return ((ArrayList<?>) supInfOrString).stream().map(this::extractContentString).collect(Collectors.joining());
+        } else if (supInfOrString instanceof ArrayList) {
+            return ((ArrayList<?>) supInfOrString).stream()
+                .map(this::extractContentString)
+                .collect(Collectors.joining());
         } else {
             return supInfOrString.toString();
         }
@@ -253,7 +257,7 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
         return URI.create(String.format(S3_URI_TEMPLATE, extractBucketName(s3Event), extractFilename(s3Event)));
     }
 
-    private String generateAuthorKeyWordsXml(DocTp docTp){
+    private String generateAuthorKeyWordsXml(DocTp docTp) {
         var authorKeywords = extractAuthorKeyWords(docTp);
         return authorKeywords == null ? null : marshallAuthorKeywords(authorKeywords);
     }
@@ -264,7 +268,7 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
         return sw.toString();
     }
 
-    private AuthorKeywordsTp extractAuthorKeyWords(DocTp docTp){
-        return  docTp.getItem().getItem().getBibrecord().getHead().getCitationInfo().getAuthorKeywords();
+    private AuthorKeywordsTp extractAuthorKeyWords(DocTp docTp) {
+        return docTp.getItem().getItem().getBibrecord().getHead().getCitationInfo().getAuthorKeywords();
     }
 }

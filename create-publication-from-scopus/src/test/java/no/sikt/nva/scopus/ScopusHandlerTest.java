@@ -62,7 +62,7 @@ class ScopusHandlerTest {
     private static final String DOI_IN_0000469852 = "10.1017/S0960428600000743";
     private static final String SCOPUS_XML_0018132378 = "2-s2.0-0018132378.xml";
     private static final String AUTHOR_KEYWORD_NAME_SPACE = "<authorKeywordsTp";
-    private static final String HARDCODED_KEYWORDS_0000469852 ="    <author-keyword xml:lang=\"eng\">\n"
+    private static final String HARDCODED_KEYWORDS_0000469852 = "    <author-keyword xml:lang=\"eng\">\n"
                                                                + "        <sup>64</sup>Cu\n"
                                                                + "              </author-keyword>\n"
                                                                + "    <author-keyword "
@@ -164,18 +164,7 @@ class ScopusHandlerTest {
             hasProperty(SEQUENCE_FIELD_NAME, is(CONTRIBUTOR_151_SEQUENCE_NUMBER)))));
     }
 
-    private S3Event createS3Event(String expectedObjectKey) {
-        var eventNotification = new S3EventNotificationRecord(randomString(),
-                                                              randomString(),
-                                                              randomString(),
-                                                              randomDate(),
-                                                              randomString(),
-                                                              EMPTY_REQUEST_PARAMETERS,
-                                                              EMPTY_RESPONSE_ELEMENTS,
-                                                              createS3Entity(expectedObjectKey),
-                                                              EMPTY_USER_IDENTITY);
-        return new S3Event(List.of(eventNotification));
-    }
+
 
     @Test
     void shouldExtractAuthorKeywordsAsXML() throws IOException {
@@ -201,6 +190,19 @@ class ScopusHandlerTest {
             hasItem(HARDCODED_EXPECTED_KEYWORD_1_IN_0000469852),
             hasItem(HARDCODED_EXPECTED_KEYWORD_2_IN_0000469852),
             hasItem(HARDCODED_EXPECTED_KEYWORD_3_IN_0000469852)));
+    }
+
+    private S3Event createS3Event(String expectedObjectKey) {
+        var eventNotification = new S3EventNotificationRecord(randomString(),
+                                                              randomString(),
+                                                              randomString(),
+                                                              randomDate(),
+                                                              randomString(),
+                                                              EMPTY_REQUEST_PARAMETERS,
+                                                              EMPTY_RESPONSE_ELEMENTS,
+                                                              createS3Entity(expectedObjectKey),
+                                                              EMPTY_USER_IDENTITY);
+        return new S3Event(List.of(eventNotification));
     }
 
     private S3Event createS3Event(URI uri) {
