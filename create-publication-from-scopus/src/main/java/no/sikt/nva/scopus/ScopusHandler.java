@@ -3,16 +3,22 @@ package no.sikt.nva.scopus;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
+import com.github.jsonldjava.utils.Obj;
 import jakarta.xml.bind.JAXB;
+import jakarta.xml.bind.JAXBElement;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.Collection;
+import java.util.stream.Stream;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordsTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DocTp;
+import no.scopus.generated.InfTp;
 import no.scopus.generated.ItemidTp;
+import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
 import no.unit.nva.metadata.CreatePublicationRequest;
@@ -91,7 +97,31 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
         entityDescription.setReference(generateReference(docTp));
         entityDescription.setMainTitle(extractMainTitle(docTp));
         entityDescription.setContributors(generateContributors(docTp));
+        entityDescription.setTags(generatePlainTextTags(docTp));
         return entityDescription;
+    }
+
+    private List<String> generatePlainTextTags(DocTp docTp){
+        var authorKeywordsTp = extractAuthorKeyWords(docTp);
+        return authorKeywordsTp.getAuthorKeyword()
+            .stream().map(something -> something.getContent().stream().map(
+                this::extractContentString).collect(Collectors.joining())).collect(Collectors.toList());
+    }
+
+    private String extractContentString(Object supInfOrString){
+        if (supInfOrString instanceof String) {
+            return (((String) supInfOrString).trim());
+        }else if (supInfOrString instanceof JAXBElement){
+            return extractContentString(((JAXBElement<?>)supInfOrString).getValue());
+        }else if(supInfOrString instanceof SupTp) {
+            return extractContentString( ((SupTp) supInfOrString).getContent());
+        }else if (supInfOrString instanceof InfTp) {
+            return extractContentString(((InfTp) supInfOrString).getContent());
+        }else if (supInfOrString instanceof ArrayList) {
+            return ((ArrayList<?>) supInfOrString).stream().map(this::extractContentString).collect(Collectors.joining());
+        } else {
+            return supInfOrString.toString();
+        }
     }
 
     private Reference generateReference(DocTp docTp) {
