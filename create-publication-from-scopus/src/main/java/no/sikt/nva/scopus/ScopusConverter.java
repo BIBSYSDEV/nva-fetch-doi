@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.scopus.generated.AuthorGroupTp;
+import no.scopus.generated.AuthorKeywordsTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DocTp;
@@ -36,7 +37,23 @@ class ScopusConverter {
         CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
         createPublicationRequest.setAdditionalIdentifiers(generateAdditionalIdentifiers());
         createPublicationRequest.setEntityDescription(generateEntityDescription());
+        createPublicationRequest.setAuthorKeywordsXmlFormat(generateAuthorKeyWordsXml());
         return createPublicationRequest;
+    }
+
+    private String generateAuthorKeyWordsXml() {
+        var authorKeywords = extractAuthorKeyWords();
+        return authorKeywords == null ? null : marshallAuthorKeywords(authorKeywords);
+    }
+
+    private AuthorKeywordsTp extractAuthorKeyWords() {
+        return docTp.getItem().getItem().getBibrecord().getHead().getCitationInfo().getAuthorKeywords();
+    }
+
+    private String marshallAuthorKeywords(AuthorKeywordsTp authorKeywordsTp) {
+        StringWriter sw = new StringWriter();
+        JAXB.marshal(authorKeywordsTp, sw);
+        return sw.toString();
     }
 
     private EntityDescription generateEntityDescription() {

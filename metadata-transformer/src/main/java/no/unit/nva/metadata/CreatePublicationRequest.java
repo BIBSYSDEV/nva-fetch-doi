@@ -26,6 +26,7 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
     private List<ResearchProject> projects;
     private List<URI> subjects;
     private Set<AdditionalIdentifier> additionalIdentifiers;
+    private String AuthorKeywordsXmlFormat;
 
     @JacocoGenerated
     @Override
@@ -97,12 +98,21 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
         return additionalIdentifiers;
     }
 
+    @JacocoGenerated
+    public String getAuthorKeywordsXmlFormat() {
+        return AuthorKeywordsXmlFormat;
+    }
+
+    @JacocoGenerated
+    public void setAuthorKeywordsXmlFormat(String authorKeywordsXmlFormat) {
+        AuthorKeywordsXmlFormat = authorKeywordsXmlFormat;
+    }
 
     @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(getEntityDescription(), getFileSet(), getContext(), getProjects(),
-                getSubjects(), getAdditionalIdentifiers());
+                getSubjects(), getAdditionalIdentifiers(), getAuthorKeywordsXmlFormat());
     }
 
     @JacocoGenerated
@@ -120,6 +130,7 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
                 && Objects.equals(getContext(), that.getContext())
                 && Objects.equals(getProjects(), that.getProjects())
                 && Objects.equals(getSubjects(), that.getSubjects())
-                && Objects.equals(getAdditionalIdentifiers(), that.getAdditionalIdentifiers());
+                && Objects.equals(getAdditionalIdentifiers(), that.getAdditionalIdentifiers())
+                && Objects.equals(getAuthorKeywordsXmlFormat(), that.getAuthorKeywordsXmlFormat());
     }
 }
