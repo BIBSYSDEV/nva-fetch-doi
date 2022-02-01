@@ -41,7 +41,6 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -264,7 +263,6 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
         return JAXB.unmarshal(new StringReader(file), DocTp.class);
     }
 
-    @JacocoGenerated
     private RuntimeException logErrorAndThrowException(Exception exception) {
         logger.error(exception.getMessage());
         return exception instanceof RuntimeException

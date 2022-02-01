@@ -2,7 +2,13 @@ package no.sikt.nva.scopus;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.*;
+import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.RequestParametersEntity;
+import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.ResponseElementsEntity;
+import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3BucketEntity;
+import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3Entity;
+import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3EventNotificationRecord;
+import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3ObjectEntity;
+import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.UserIdentityEntity;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
@@ -34,6 +40,7 @@ import static org.hamcrest.Matchers.equalToObject;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.StringContains.containsString;
@@ -179,7 +186,23 @@ class ScopusHandlerTest {
     }
 
     @Test
-    void shouldReturnDefaultPublicationContextWhenEventWithS3UriThatPointsToScopusXmlWithoutIssns()
+    void shouldReturnCreatePublicationRequestWithUnconfirmedPublicationContextWhenEventS3UriScopusXmlWithInValidIssn()
+            throws IOException {
+        var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
+        scopusFile = scopusFile.replace("<issn type=\"print\">09604286</issn>",
+                "<issn type=\"print\">096042</issn>");
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
+        var s3Event = createS3Event(uri);
+        var exception = assertThrows(RuntimeException.class, () -> {
+            scopusHandler.handleRequest(s3Event, CONTEXT);
+        });
+        var expectedMessage = "no.unit.nva.model.exceptions.InvalidIssnException: The ISSN";
+        var actualMessage = exception.getMessage();
+        assertThat(actualMessage, startsWith(expectedMessage));
+    }
+
+    @Test
+    void shouldReturnDefaultPublicationContextWhenEventWithS3UriThatPointsToScopusXmlWithoutPrintIssn()
             throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
         scopusFile = scopusFile.replace("<issn type=\"print\">09604286</issn>", "");
