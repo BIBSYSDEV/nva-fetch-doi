@@ -41,13 +41,13 @@ class ScopusConverter {
         return createPublicationRequest;
     }
 
-    private String generateAuthorKeyWordsXml(){
+    private String generateAuthorKeyWordsXml() {
         var authorKeywords = extractAuthorKeyWords();
         return authorKeywords == null ? null : marshallAuthorKeywords(authorKeywords);
     }
 
-    private AuthorKeywordsTp extractAuthorKeyWords(){
-        return  docTp.getItem().getItem().getBibrecord().getHead().getCitationInfo().getAuthorKeywords();
+    private AuthorKeywordsTp extractAuthorKeyWords() {
+        return docTp.getItem().getItem().getBibrecord().getHead().getCitationInfo().getAuthorKeywords();
     }
 
     private String marshallAuthorKeywords(AuthorKeywordsTp authorKeywordsTp) {

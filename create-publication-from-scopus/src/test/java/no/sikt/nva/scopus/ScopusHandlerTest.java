@@ -62,14 +62,14 @@ class ScopusHandlerTest {
     private static final String DOI_IN_0000469852 = "10.1017/S0960428600000743";
     private static final String SCOPUS_XML_0018132378 = "2-s2.0-0018132378.xml";
     private static final String AUTHOR_KEYWORD_NAME_SPACE = "<authorKeywordsTp";
-    private static final String HARDCODED_KEYWORDS_0000469852 ="    <author-keyword xml:lang=\"eng\">\n"
-                                                               + "        <sup>64</sup>Cu\n"
-                                                               + "              </author-keyword>\n"
-                                                               + "    <author-keyword "
-                                                               + "xml:lang=\"eng\">excretion</author-keyword>\n"
-                                                               + "    <author-keyword "
-                                                               + "xml:lang=\"eng\">sheep</author-keyword>\n"
-                                                               + "</authorKeywordsTp>";
+    private static final String HARDCODED_KEYWORDS_0000469852 = "    <author-keyword xml:lang=\"eng\">\n"
+                                                                + "        <sup>64</sup>Cu\n"
+                                                                + "              </author-keyword>\n"
+                                                                + "    <author-keyword "
+                                                                + "xml:lang=\"eng\">excretion</author-keyword>\n"
+                                                                + "    <author-keyword "
+                                                                + "xml:lang=\"eng\">sheep</author-keyword>\n"
+                                                                + "</authorKeywordsTp>";
     private static final String SCOPUS_XML_0000833530 = "2-s2.0-0000833530.xml";
     private static final String XML_ENCODING_DECLARATION = "<?xml version=\"1.0\" encoding=\"UTF-8\" "
                                                            + "standalone=\"yes\"?>";
@@ -139,7 +139,7 @@ class ScopusHandlerTest {
                                          HARDCODED_EXPECTED_TITLE_NAMESPACE,
                                          HARDCODED_EXPECTED_TITLE_IN_0000833530));
     }
-    
+
     @Test
     void shouldExtractContributorsNamesAndSequenceNumberCorrectly() throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_85114653695));
@@ -149,29 +149,16 @@ class ScopusHandlerTest {
         var actualContributors = createPublicationRequest.getEntityDescription().getContributors();
         assertThat(actualContributors, hasItem(allOf(
             hasProperty(IDENTITY_FIELD_NAME,
-                hasProperty(NAME_FIELD_NAME, is(CONTRIBUTOR_1_NAME_IN_85114653695))),
+                        hasProperty(NAME_FIELD_NAME, is(CONTRIBUTOR_1_NAME_IN_85114653695))),
             hasProperty(SEQUENCE_FIELD_NAME, is(CONTRIBUTOR_1_SEQUENCE_NUMBER)))));
         assertThat(actualContributors, hasItem(allOf(
             hasProperty(IDENTITY_FIELD_NAME,
-                hasProperty(NAME_FIELD_NAME, is(CONTRIBUTOR_2_NAME_IN_85114653695))),
+                        hasProperty(NAME_FIELD_NAME, is(CONTRIBUTOR_2_NAME_IN_85114653695))),
             hasProperty(SEQUENCE_FIELD_NAME, is(CONTRIBUTOR_2_SEQUENCE_NUMBER)))));
         assertThat(actualContributors, hasItem(allOf(
             hasProperty(IDENTITY_FIELD_NAME,
-                hasProperty(NAME_FIELD_NAME, is(CONTRIBUTOR_151_NAME_IN_85114653695))),
+                        hasProperty(NAME_FIELD_NAME, is(CONTRIBUTOR_151_NAME_IN_85114653695))),
             hasProperty(SEQUENCE_FIELD_NAME, is(CONTRIBUTOR_151_SEQUENCE_NUMBER)))));
-    }
-
-    private S3Event createS3Event(String expectedObjectKey) {
-        var eventNotification = new S3EventNotificationRecord(randomString(),
-                                                              randomString(),
-                                                              randomString(),
-                                                              randomDate(),
-                                                              randomString(),
-                                                              EMPTY_REQUEST_PARAMETERS,
-                                                              EMPTY_RESPONSE_ELEMENTS,
-                                                              createS3Entity(expectedObjectKey),
-                                                              EMPTY_USER_IDENTITY);
-        return new S3Event(List.of(eventNotification));
     }
 
     @Test
@@ -185,6 +172,19 @@ class ScopusHandlerTest {
             XML_ENCODING_DECLARATION,
             AUTHOR_KEYWORD_NAME_SPACE,
             HARDCODED_KEYWORDS_0000469852));
+    }
+
+    private S3Event createS3Event(String expectedObjectKey) {
+        var eventNotification = new S3EventNotificationRecord(randomString(),
+                                                              randomString(),
+                                                              randomString(),
+                                                              randomDate(),
+                                                              randomString(),
+                                                              EMPTY_REQUEST_PARAMETERS,
+                                                              EMPTY_RESPONSE_ELEMENTS,
+                                                              createS3Entity(expectedObjectKey),
+                                                              EMPTY_USER_IDENTITY);
+        return new S3Event(List.of(eventNotification));
     }
 
     private S3Event createS3Event(URI uri) {
