@@ -8,6 +8,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -47,7 +48,7 @@ class ScopusConverter {
 
     private String generateAuthorKeyWordsXml() {
         var authorKeywords = extractAuthorKeyWords();
-        return authorKeywords == null ? null : marshallAuthorKeywords(authorKeywords);
+        return Objects.nonNull(authorKeywords) ? marshallAuthorKeywords(authorKeywords) : null;
     }
 
     private AuthorKeywordsTp extractAuthorKeyWords() {
@@ -71,13 +72,16 @@ class ScopusConverter {
 
     private List<String> generatePlainTextTags() {
         var authorKeywordsTp = extractAuthorKeyWords();
-        return authorKeywordsTp == null
-                   ? null
-                   : authorKeywordsTp.getAuthorKeyword()
-                       .stream()
-                       .map(something -> something.getContent().stream().map(
-                           this::extractContentString).collect(Collectors.joining()))
-                       .collect(Collectors.toList());
+        return Objects.nonNull(authorKeywordsTp)
+                   ? authorKeywordsTp
+            .getAuthorKeyword()
+            .stream()
+            .map(something -> something.getContent()
+                .stream()
+                .map(this::extractContentString)
+                .collect(Collectors.joining()))
+            .collect(Collectors.toList())
+                   : null;
     }
 
     private String extractContentString(Object content) {
