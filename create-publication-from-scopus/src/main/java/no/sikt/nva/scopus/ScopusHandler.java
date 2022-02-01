@@ -110,21 +110,21 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
                        .collect(Collectors.toList());
     }
 
-    private String extractContentString(Object supInfOrString) {
-        if (supInfOrString instanceof String) {
-            return ((String) supInfOrString).trim();
-        } else if (supInfOrString instanceof JAXBElement) {
-            return extractContentString(((JAXBElement<?>) supInfOrString).getValue());
-        } else if (supInfOrString instanceof SupTp) {
-            return extractContentString(((SupTp) supInfOrString).getContent());
-        } else if (supInfOrString instanceof InfTp) {
-            return extractContentString(((InfTp) supInfOrString).getContent());
-        } else if (supInfOrString instanceof ArrayList) {
-            return ((ArrayList<?>) supInfOrString).stream()
+    private String extractContentString(Object content) {
+        if (content instanceof String) {
+            return ((String) content).trim();
+        } else if (content instanceof JAXBElement) {
+            return extractContentString(((JAXBElement<?>) content).getValue());
+        } else if (content instanceof SupTp) {
+            return extractContentString(((SupTp) content).getContent());
+        } else if (content instanceof InfTp) {
+            return extractContentString(((InfTp) content).getContent());
+        } else if (content instanceof ArrayList) {
+            return ((ArrayList<?>) content).stream()
                 .map(this::extractContentString)
                 .collect(Collectors.joining());
         } else {
-            return supInfOrString.toString();
+            return content.toString();
         }
     }
 
