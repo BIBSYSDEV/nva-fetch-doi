@@ -8,7 +8,7 @@ public class ExceptionsTest {
     public static final String MESSAGE = "message";
 
     @Test
-    public void canCreateInsertPublicationException() {
+    public void canCreateUnsupportedXmlElementException() {
         UnsupportedXmlElementException exception = new UnsupportedXmlElementException(MESSAGE);
         assertNotNull(exception);
     }
