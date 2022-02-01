@@ -13,6 +13,7 @@ import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
+import nva.commons.core.StringUtils;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
@@ -35,6 +36,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.equalToObject;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.Matchers.hasItem;
@@ -62,14 +64,14 @@ class ScopusHandlerTest {
     private static final String DOI_IN_0000469852 = "10.1017/S0960428600000743";
     private static final String SCOPUS_XML_0018132378 = "2-s2.0-0018132378.xml";
     private static final String AUTHOR_KEYWORD_NAME_SPACE = "<authorKeywordsTp";
-    private static final String HARDCODED_KEYWORDS_0000469852 = "    <author-keyword xml:lang=\"eng\">\n"
-                                                                + "        <sup>64</sup>Cu\n"
-                                                                + "              </author-keyword>\n"
-                                                                + "    <author-keyword "
-                                                                + "xml:lang=\"eng\">excretion</author-keyword>\n"
-                                                                + "    <author-keyword "
-                                                                + "xml:lang=\"eng\">sheep</author-keyword>\n"
-                                                                + "</authorKeywordsTp>";
+//    private static final String HARDCODED_KEYWORDS_0000469852 = "    <author-keyword xml:lang=\"eng\">\n"
+//                                                                + "        <sup>64</sup>Cu\n"
+//                                                                + "              </author-keyword>\n"
+//                                                                + "    <author-keyword "
+//                                                                + "xml:lang=\"eng\">excretion</author-keyword>\n"
+//                                                                + "    <author-keyword "
+//                                                                + "xml:lang=\"eng\">sheep</author-keyword>\n"
+//                                                                + "</authorKeywordsTp>";
     private static final String SCOPUS_XML_0000833530 = "2-s2.0-0000833530.xml";
     private static final String XML_ENCODING_DECLARATION = "<?xml version=\"1.0\" encoding=\"UTF-8\" "
                                                            + "standalone=\"yes\"?>";
@@ -165,13 +167,15 @@ class ScopusHandlerTest {
     void shouldExtractAuthorKeywordsAsXML() throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0018132378));
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
+        String expectedAuthorKeywords =
+            IoUtils.stringFromResources(Path.of("expectedResults","expectedAuthorKeywords.xml"));
         S3Event s3Event = createS3Event(uri);
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         String actualKeywords = createPublicationRequest.getAuthorKeywordsXmlFormat();
-        assertThat(actualKeywords, stringContainsInOrder(
-            XML_ENCODING_DECLARATION,
-            AUTHOR_KEYWORD_NAME_SPACE,
-            HARDCODED_KEYWORDS_0000469852));
+        String actualKeywordsWithoutSpaces = StringUtils.removeWhiteSpaces(actualKeywords);
+        String expectedKeywordsWithoutSpaces = StringUtils.removeWhiteSpaces(expectedAuthorKeywords);
+        assertThat(actualKeywordsWithoutSpaces,is(equalTo(expectedKeywordsWithoutSpaces)));
+
     }
 
     private S3Event createS3Event(String expectedObjectKey) {
