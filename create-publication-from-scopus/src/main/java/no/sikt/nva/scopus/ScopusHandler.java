@@ -1,45 +1,20 @@
 package no.sikt.nva.scopus;
 
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import jakarta.xml.bind.JAXB;
-import jakarta.xml.bind.JAXBElement;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Optional;
-import java.util.Collection;
-import no.scopus.generated.AuthorGroupTp;
-import no.scopus.generated.AuthorKeywordsTp;
-import no.scopus.generated.AuthorTp;
-import no.scopus.generated.CollaborationTp;
+import java.io.StringReader;
+import java.net.URI;
 import no.scopus.generated.DocTp;
-import no.scopus.generated.InfTp;
-import no.scopus.generated.ItemidTp;
-import no.scopus.generated.SupTp;
-import no.scopus.generated.TitletextTp;
-import no.scopus.generated.YesnoAtt;
 import no.unit.nva.metadata.CreatePublicationRequest;
-import no.unit.nva.model.AdditionalIdentifier;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Identity;
-import no.unit.nva.model.Reference;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
-
-import java.io.StringReader;
-import java.net.URI;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
-import static nva.commons.core.attempt.Try.attempt;
 
 public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationRequest> {
 
@@ -65,171 +40,13 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
             .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
     }
 
-    private CreatePublicationRequest generateCreatePublicationRequest(DocTp docTp) {
-        CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
-        createPublicationRequest.setAdditionalIdentifiers(generateAdditionalIdentifiers(docTp));
-        createPublicationRequest.setEntityDescription(generateEntityDescription(docTp));
-        createPublicationRequest.setAuthorKeywordsXmlFormat(generateAuthorKeyWordsXml(docTp));
-        return createPublicationRequest;
-    }
-
-    private Set<AdditionalIdentifier> generateAdditionalIdentifiers(DocTp docTp) {
-        return extractItemIdentifiers(docTp)
-            .stream()
-            .filter(this::isScopusIdentifier)
-            .map(this::toAdditionalIdentifier)
-            .collect(Collectors.toSet());
-    }
-
-    private List<ItemidTp> extractItemIdentifiers(DocTp docTp) {
-        return docTp.getItem()
-            .getItem()
-            .getBibrecord()
-            .getItemInfo()
-            .getItemidlist()
-            .getItemid();
-    }
-
-    private EntityDescription generateEntityDescription(DocTp docTp) {
-        EntityDescription entityDescription = new EntityDescription();
-        entityDescription.setReference(generateReference(docTp));
-        entityDescription.setMainTitle(extractMainTitle(docTp));
-        entityDescription.setContributors(generateContributors(docTp));
-        entityDescription.setTags(generatePlainTextTags(docTp));
-        return entityDescription;
-    }
-
-    private List<String> generatePlainTextTags(DocTp docTp) {
-        var authorKeywordsTp = extractAuthorKeyWords(docTp);
-        return authorKeywordsTp == null
-                   ? null
-                   : authorKeywordsTp.getAuthorKeyword()
-                       .stream()
-                       .map(something -> something.getContent().stream().map(
-                           this::extractContentString).collect(Collectors.joining()))
-                       .collect(Collectors.toList());
-    }
-
-    private String extractContentString(Object content) {
-        if (content instanceof String) {
-            return ((String) content).trim();
-        } else if (content instanceof JAXBElement) {
-            return extractContentString(((JAXBElement<?>) content).getValue());
-        } else if (content instanceof SupTp) {
-            return extractContentString(((SupTp) content).getContent());
-        } else if (content instanceof InfTp) {
-            return extractContentString(((InfTp) content).getContent());
-        } else if (content instanceof ArrayList) {
-            return ((ArrayList<?>) content).stream()
-                .map(this::extractContentString)
-                .collect(Collectors.joining());
-        } else {
-            return content.toString();
-        }
-    }
-
-    private Reference generateReference(DocTp docTp) {
-        Reference reference = new Reference();
-        reference.setDoi(extractDOI(docTp));
-        return reference;
-    }
-
-    private List<TitletextTp> getTitleText(DocTp docTp) {
-        return docTp.getItem().getItem().getBibrecord().getHead().getCitationTitle().getTitletext();
-    }
-
-    private String extractMainTitle(DocTp docTp) {
-        return getMainTitleTextTp(docTp)
-            .map(this::marshallMainTitleToXmlPreservingUnderlyingStructure)
-            .orElse(null);
-    }
-
-    private Optional<TitletextTp> getMainTitleTextTp(DocTp docTp) {
-        return getTitleText(docTp)
-            .stream()
-            .filter(this::isTitleOriginal)
-            .findFirst();
-    }
-
-    private boolean isTitleOriginal(TitletextTp titletextTp) {
-        return titletextTp.getOriginal().equals(YesnoAtt.Y);
-    }
-
-    private String marshallMainTitleToXmlPreservingUnderlyingStructure(TitletextTp contents) {
-        StringWriter sw = new StringWriter();
-        JAXB.marshal(contents, sw);
-        return sw.toString();
-    }
-
-    private List<Contributor> generateContributors(DocTp docTp) {
-        return extractAuthorGroup(docTp)
-            .stream()
-            .map(this::generateContributorsFromAuthorGroup)
-            .flatMap(Collection::stream)
-            .collect(Collectors.toList());
-    }
-
-    private List<Contributor> generateContributorsFromAuthorGroup(AuthorGroupTp authorGroupTp) {
-        return authorGroupTp.getAuthorOrCollaboration()
-            .stream()
-            .map(this::generateContributorFromAuthorOrCollaboration)
-            .collect(Collectors.toList());
-    }
-
-    private List<AuthorGroupTp> extractAuthorGroup(DocTp docTp) {
-        return docTp.getItem().getItem().getBibrecord().getHead().getAuthorGroup();
-    }
-
-    private Contributor generateContributorFromAuthorOrCollaboration(Object authorOrCollaboration) {
-        return authorOrCollaboration instanceof AuthorTp
-                   ? generateContributorFromAuthorTp((AuthorTp) authorOrCollaboration)
-                   : generateContributorFromCollaborationTp(
-                       (CollaborationTp) authorOrCollaboration);
-    }
-
-    private Contributor generateContributorFromAuthorTp(AuthorTp author) {
-        var identity = new Identity();
-        identity.setName(determineContributorName(author));
-        return new Contributor(identity, null, null, getSequenceNumber(author), false);
-    }
-
-    private Contributor generateContributorFromCollaborationTp(CollaborationTp collaboration) {
-        var identity = new Identity();
-        identity.setName(determineContributorName(collaboration));
-        return new Contributor(identity, null, null, getSequenceNumber(collaboration), false);
-    }
-
-    private int getSequenceNumber(AuthorTp authorTp) {
-        return Integer.parseInt(authorTp.getSeq());
-    }
-
-    private int getSequenceNumber(CollaborationTp collaborationTp) {
-        return Integer.parseInt(collaborationTp.getSeq());
-    }
-
-    private String determineContributorName(AuthorTp author) {
-        return author.getPreferredName().getIndexedName();
-    }
-
-    private String determineContributorName(CollaborationTp collaborationTp) {
-        return collaborationTp.getIndexedName();
-    }
-
-    private URI extractDOI(DocTp docTp) {
-        return new UriWrapper(DOI_OPEN_URL_FORMAT).addChild(docTp.getMeta().getDoi()).getUri();
-    }
-
-    private boolean isScopusIdentifier(ItemidTp itemIdTp) {
-        return itemIdTp.getIdtype().equalsIgnoreCase(ScopusConstants.SCOPUS_ITEM_IDENTIFIER_SCP_FIELD_NAME);
-    }
-
-    private AdditionalIdentifier toAdditionalIdentifier(ItemidTp itemIdTp) {
-        return new AdditionalIdentifier(ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME,
-                                        itemIdTp.getValue());
-    }
-
     private DocTp parseXmlFile(String file) {
         return JAXB.unmarshal(new StringReader(file), DocTp.class);
+    }
+
+    private CreatePublicationRequest generateCreatePublicationRequest(DocTp docTp) {
+        var scopusConverter = new ScopusConverter(docTp);
+        return scopusConverter.generateCreatePublicationRequest();
     }
 
     private RuntimeException logErrorAndThrowException(Exception exception) {
@@ -255,20 +72,5 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
 
     private URI createS3BucketUri(S3Event s3Event) {
         return URI.create(String.format(S3_URI_TEMPLATE, extractBucketName(s3Event), extractFilename(s3Event)));
-    }
-
-    private String generateAuthorKeyWordsXml(DocTp docTp) {
-        var authorKeywords = extractAuthorKeyWords(docTp);
-        return authorKeywords == null ? null : marshallAuthorKeywords(authorKeywords);
-    }
-
-    private String marshallAuthorKeywords(AuthorKeywordsTp authorKeywordsTp) {
-        StringWriter sw = new StringWriter();
-        JAXB.marshal(authorKeywordsTp, sw);
-        return sw.toString();
-    }
-
-    private AuthorKeywordsTp extractAuthorKeyWords(DocTp docTp) {
-        return docTp.getItem().getItem().getBibrecord().getHead().getCitationInfo().getAuthorKeywords();
     }
 }
