@@ -228,7 +228,7 @@ class ScopusHandlerTest {
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
                 .getPublicationContext();
-        assertThat(actualPublicationContext, is(ScopusHandler.EMPTY_PUBLICATION_CONTEXT));
+        assertThat(actualPublicationContext, is(ScopusConstants.EMPTY_PUBLICATION_CONTEXT));
     }
 
     private S3Event createS3Event(String expectedObjectKey) {

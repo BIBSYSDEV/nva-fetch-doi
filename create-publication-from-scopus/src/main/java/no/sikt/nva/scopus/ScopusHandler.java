@@ -1,55 +1,28 @@
 package no.sikt.nva.scopus;
 
-import static no.sikt.nva.scopus.ScopusSourceType.JOURNAL;
-import static nva.commons.core.attempt.Try.attempt;
-
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import jakarta.xml.bind.JAXB;
-
-import java.io.StringReader;
-import java.net.URI;
-
-import java.io.StringReader;
-import java.net.URI;
 import no.scopus.generated.DocTp;
 import no.unit.nva.metadata.CreatePublicationRequest;
-import no.unit.nva.model.AdditionalIdentifier;
-import no.unit.nva.model.Contributor;
-import no.scopus.generated.IssnTp;
-import no.scopus.generated.SourceTp;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Identity;
-import no.unit.nva.model.Reference;
-import no.unit.nva.model.contexttypes.PublicationContext;
-import no.unit.nva.model.contexttypes.UnconfirmedJournal;
-import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.SingletonCollector;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.io.StringReader;
+import java.net.URI;
 
-import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
+import static nva.commons.core.attempt.Try.attempt;
 
 public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationRequest> {
 
     public static final int SINGLE_EXPECTED_RECORD = 0;
     public static final String S3_URI_TEMPLATE = "s3://%s/%s";
     private static final Logger logger = LoggerFactory.getLogger(ScopusHandler.class);
-    public static final String ISSN_TYPE_ELECTRONIC = "electronic";
-    public static final String ISSN_TYPE_PRINT = "print";
-    public static final String DASH = "-";
-    public static final PublicationContext EMPTY_PUBLICATION_CONTEXT = null;
-    public static final String ERROR_MSG_ISSN_NOT_FOUND = "Could not find issn";
     private final S3Client s3Client;
 
     @JacocoGenerated
@@ -69,6 +42,13 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
                 .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
     }
 
+    private RuntimeException logErrorAndThrowException(Exception exception) {
+        logger.error(exception.getMessage());
+        return exception instanceof RuntimeException
+                ? (RuntimeException) exception
+                : new RuntimeException(exception);
+    }
+
     private DocTp parseXmlFile(String file) {
         return JAXB.unmarshal(new StringReader(file), DocTp.class);
     }
@@ -78,63 +58,6 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
         return scopusConverter.generateCreatePublicationRequest();
     }
 
-    private RuntimeException logErrorAndThrowException(Exception exception) {
-        logger.error(exception.getMessage());
-        return exception instanceof RuntimeException
-                ? (RuntimeException) exception
-                : new RuntimeException(exception);
-    }
-
-    private PublicationContext getPublicationContext(DocTp docTp) {
-        if (isJournal(docTp)) {
-            return attempt(() -> createUnconfirmedJournal(docTp))
-                    .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
-        }
-        return EMPTY_PUBLICATION_CONTEXT;
-    }
-
-    private UnconfirmedJournal createUnconfirmedJournal(DocTp docTp) throws InvalidIssnException {
-        var source = getSource(docTp);
-        var sourceTitle = extractSourceTitle(source);
-        var issnTpList = source.getIssn();
-        var printIssn = findPrintIssn(issnTpList).orElse(null);
-        var electronicIssn = findElectronicIssn(issnTpList).orElse(null);
-        return new UnconfirmedJournal(sourceTitle, printIssn, electronicIssn);
-    }
-
-    private boolean isJournal(DocTp docTp) {
-        return ScopusSourceType.valueOfCode(docTp.getMeta().getSrctype()) == JOURNAL;
-    }
-
-    private SourceTp getSource(DocTp docTp) {
-        return docTp.getItem().getItem().getBibrecord().getHead().getSource();
-    }
-
-    private String extractSourceTitle(SourceTp sourceTp) {
-        StringBuilder sourceTitle = new StringBuilder();
-        sourceTp.getSourcetitle().getContent().forEach(sourceTitle::append);
-        return sourceTitle.toString();
-    }
-
-    private Optional<String> findElectronicIssn(List<IssnTp> issnTpList) {
-        return findIssn(issnTpList, ISSN_TYPE_ELECTRONIC);
-    }
-
-    private Optional<String> findPrintIssn(List<IssnTp> issnTpList) {
-        return findIssn(issnTpList, ISSN_TYPE_PRINT);
-    }
-
-    private Optional<String> findIssn(List<IssnTp> issnTpList, String issnType) {
-        return Optional.ofNullable(issnTpList.stream()
-                .filter(issn -> issnType.equals(issn.getType()))
-                .map(IssnTp::getContent)
-                .map(this::addDashToIssn)
-                .collect(SingletonCollector.collectOrElse(null)));
-    }
-
-    private String addDashToIssn(String issn) {
-        return issn.contains(DASH) ? issn : issn.substring(0, 4) + DASH + issn.substring(4);
-    }
 
     private String readFile(S3Event event) {
         var s3Driver = new S3Driver(s3Client, extractBucketName(event));
