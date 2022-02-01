@@ -30,9 +30,16 @@ import java.time.Instant;
 import java.util.List;
 
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
+import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.equalToObject;
+import static org.hamcrest.Matchers.stringContainsInOrder;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -47,8 +54,28 @@ class ScopusHandlerTest {
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
     private ScopusHandler scopusHandler;
+    private static final String IDENTITY_FIELD_NAME = "identity";
+    private static final String NAME_FIELD_NAME = "name";
+    private static final String SEQUENCE_FIELD_NAME = "sequence";
     private static final String SCOPUS_XML_0000469852 = "2-s2.0-0000469852.xml";
     private static final String SCP_ID_IN_0000469852 = "0000469852";
+    private static final String DOI_IN_0000469852 = "10.1017/S0960428600000743";
+    private static final String SCOPUS_XML_0000833530 = "2-s2.0-0000833530.xml";
+    private static final String XML_ENCODING_DECLARATION = "<?xml version=\"1.0\" encoding=\"UTF-8\" "
+                                                           + "standalone=\"yes\"?>";
+    private static final String HARDCODED_EXPECTED_TITLE_NAMESPACE = "<titletextTp xml:lang=\"eng\" "
+                                                                     + "language=\"English\" original=\"y\"";
+    private static final String HARDCODED_EXPECTED_TITLE_IN_0000833530 = "Measurement of A\n"
+                                                                         + "    <sup>bb</sup>\n"
+                                                                         + "    <inf>FB</inf> in hadronic Z decays "
+                                                                         + "using a jet charge technique</titletextTp>";
+    private static final String SCOPUS_XML_85114653695 = "2-s2.0-85114653695.xml";
+    private static final String CONTRIBUTOR_1_NAME_IN_85114653695 = "Morra A.";
+    private static final String CONTRIBUTOR_2_NAME_IN_85114653695 = "Escala-Garcia M.";
+    private static final String CONTRIBUTOR_151_NAME_IN_85114653695 = "NBCS Collaborators";
+    private static final int CONTRIBUTOR_1_SEQUENCE_NUMBER = 1;
+    private static final int CONTRIBUTOR_2_SEQUENCE_NUMBER = 2;
+    private static final int CONTRIBUTOR_151_SEQUENCE_NUMBER = 151;
 
     @BeforeEach
     public void init() {
@@ -68,7 +95,6 @@ class ScopusHandlerTest {
         assertThat(appender.getMessages(), containsString(expectedMessage));
     }
 
-
     @Test
     void shouldExtractScopusIdentifierAndPlaceItInsideAdditionalIdentifiersObject() throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000469852));
@@ -77,20 +103,64 @@ class ScopusHandlerTest {
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualAdditionalIdentifiers = createPublicationRequest.getAdditionalIdentifiers();
         var expectedIdentifier =
-                new AdditionalIdentifier(ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME, SCP_ID_IN_0000469852);
+            new AdditionalIdentifier(ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME, SCP_ID_IN_0000469852);
         assertThat(actualAdditionalIdentifiers, contains(expectedIdentifier));
+    }
+
+    @Test
+    void shouldExtractDoiAndPlaceItInsideReferenceObject() throws IOException {
+        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000469852));
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
+        S3Event s3Event = createS3Event(uri);
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        URI expectedURI = new UriWrapper(DOI_OPEN_URL_FORMAT).addChild(DOI_IN_0000469852).getUri();
+        assertThat(createPublicationRequest.getEntityDescription().getReference().getDoi(), equalToObject(expectedURI));
+    }
+
+    @Test
+    void shouldReturnCreatePublicationRequestWithMainTitle() throws IOException {
+        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000833530));
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
+        S3Event s3Event = createS3Event(uri);
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        String actualMainTitle = createPublicationRequest.getEntityDescription().getMainTitle();
+        assertThat(actualMainTitle,
+                   stringContainsInOrder(XML_ENCODING_DECLARATION,
+                                         HARDCODED_EXPECTED_TITLE_NAMESPACE,
+                                         HARDCODED_EXPECTED_TITLE_IN_0000833530));
+    }
+    
+    @Test
+    void shouldExtractContributorsNamesAndSequenceNumberCorrectly() throws IOException {
+        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_85114653695));
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
+        S3Event s3Event = createS3Event(uri);
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualContributors = createPublicationRequest.getEntityDescription().getContributors();
+        assertThat(actualContributors, hasItem(allOf(
+            hasProperty(IDENTITY_FIELD_NAME,
+                hasProperty(NAME_FIELD_NAME, is(CONTRIBUTOR_1_NAME_IN_85114653695))),
+            hasProperty(SEQUENCE_FIELD_NAME, is(CONTRIBUTOR_1_SEQUENCE_NUMBER)))));
+        assertThat(actualContributors, hasItem(allOf(
+            hasProperty(IDENTITY_FIELD_NAME,
+                hasProperty(NAME_FIELD_NAME, is(CONTRIBUTOR_2_NAME_IN_85114653695))),
+            hasProperty(SEQUENCE_FIELD_NAME, is(CONTRIBUTOR_2_SEQUENCE_NUMBER)))));
+        assertThat(actualContributors, hasItem(allOf(
+            hasProperty(IDENTITY_FIELD_NAME,
+                hasProperty(NAME_FIELD_NAME, is(CONTRIBUTOR_151_NAME_IN_85114653695))),
+            hasProperty(SEQUENCE_FIELD_NAME, is(CONTRIBUTOR_151_SEQUENCE_NUMBER)))));
     }
 
     private S3Event createS3Event(String expectedObjectKey) {
         var eventNotification = new S3EventNotificationRecord(randomString(),
-                randomString(),
-                randomString(),
-                randomDate(),
-                randomString(),
-                EMPTY_REQUEST_PARAMETERS,
-                EMPTY_RESPONSE_ELEMENTS,
-                createS3Entity(expectedObjectKey),
-                EMPTY_USER_IDENTITY);
+                                                              randomString(),
+                                                              randomString(),
+                                                              randomDate(),
+                                                              randomString(),
+                                                              EMPTY_REQUEST_PARAMETERS,
+                                                              EMPTY_RESPONSE_ELEMENTS,
+                                                              createS3Entity(expectedObjectKey),
+                                                              EMPTY_USER_IDENTITY);
         return new S3Event(List.of(eventNotification));
     }
 
@@ -105,7 +175,7 @@ class ScopusHandlerTest {
     private S3Entity createS3Entity(String expectedObjectKey) {
         S3BucketEntity bucket = new S3BucketEntity(randomString(), EMPTY_USER_IDENTITY, randomString());
         S3ObjectEntity object = new S3ObjectEntity(expectedObjectKey, SOME_FILE_SIZE, randomString(), randomString(),
-                randomString());
+                                                   randomString());
         String schemaVersion = randomString();
         return new S3Entity(randomString(), bucket, object, schemaVersion);
     }
