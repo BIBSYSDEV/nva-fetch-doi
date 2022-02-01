@@ -18,6 +18,7 @@ import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.IssnTp;
 import no.scopus.generated.ItemidTp;
+import no.scopus.generated.MetaTp;
 import no.scopus.generated.SourceTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
@@ -179,8 +180,8 @@ class ScopusConverter {
     }
 
     private PublicationContext getPublicationContext() {
-        if (isJournal(docTp)) {
-            return attempt(() -> createUnconfirmedJournal(docTp))
+        if (isJournal()) {
+            return attempt(() -> createUnconfirmedJournal())
                     .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
         }
         return ScopusConstants.EMPTY_PUBLICATION_CONTEXT;
@@ -193,8 +194,8 @@ class ScopusConverter {
                 : new RuntimeException(exception);
     }
 
-    private UnconfirmedJournal createUnconfirmedJournal(DocTp docTp) throws InvalidIssnException {
-        var source = getSource(docTp);
+    private UnconfirmedJournal createUnconfirmedJournal() throws InvalidIssnException {
+        var source = getSource();
         var sourceTitle = extractSourceTitle(source);
         var issnTpList = source.getIssn();
         var printIssn = findPrintIssn(issnTpList).orElse(null);
@@ -202,11 +203,15 @@ class ScopusConverter {
         return new UnconfirmedJournal(sourceTitle, printIssn, electronicIssn);
     }
 
-    private boolean isJournal(DocTp docTp) {
-        return ScopusSourceType.valueOfCode(docTp.getMeta().getSrctype()) == JOURNAL;
+    private boolean isJournal() {
+        return Optional.ofNullable(docTp)
+                .map(DocTp::getMeta)
+                .map(MetaTp::getSrctype)
+                .map(srcTyp -> JOURNAL.equals(ScopusSourceType.valueOfCode(srcTyp)))
+                .orElse(false);
     }
 
-    private SourceTp getSource(DocTp docTp) {
+    private SourceTp getSource() {
         return docTp.getItem().getItem().getBibrecord().getHead().getSource();
     }
 

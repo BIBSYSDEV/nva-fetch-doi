@@ -11,11 +11,10 @@ public class ScopusConstants {
     //URI constants:
     public static final String DOI_OPEN_URL_FORMAT = "https://doi.org";
 
-    //Hournal constants:
+    //Journal constants:
     public static final String ISSN_TYPE_ELECTRONIC = "electronic";
     public static final String ISSN_TYPE_PRINT = "print";
     public static final PublicationContext EMPTY_PUBLICATION_CONTEXT = null;
-    public static final String ERROR_MSG_ISSN_NOT_FOUND = "Could not find issn";
 
     @JacocoGenerated
     public ScopusConstants() {
