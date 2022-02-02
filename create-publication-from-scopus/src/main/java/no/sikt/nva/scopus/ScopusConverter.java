@@ -44,6 +44,7 @@ import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("PMD.GodClass")
 class ScopusConverter {
 
     private static final String MALFORMED_CONTENT_MESSAGE = "Malformed content, cannot parse: %s";
