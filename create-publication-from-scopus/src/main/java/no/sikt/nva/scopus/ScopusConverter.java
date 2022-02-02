@@ -91,10 +91,21 @@ class ScopusConverter {
     }
 
     private String extractMainAbstract() {
-        var mainAbstractTp =
-            docTp.getItem().getItem().getBibrecord().getHead().getAbstracts().getAbstract().stream().filter(abstractTp -> abstractTp.getOriginal() == YesnoAtt.Y).findFirst();
-       return mainAbstractTp.map(this::marshallAbstract).orElse(null);
+       return getMainAbstract().map(this::marshallAbstract).orElse(null);
     }
+
+    private Optional<AbstractTp> getMainAbstract(){
+        return getAbstracts().stream().filter(this::isOriginalAbstract).findFirst();
+    }
+
+    private List<AbstractTp> getAbstracts() {
+        return docTp.getItem().getItem().getBibrecord().getHead().getAbstracts().getAbstract();
+    }
+
+    private boolean isOriginalAbstract(AbstractTp abstractTp){
+        return abstractTp.getOriginal() == YesnoAtt.Y;
+    }
+
 
     private String marshallAbstract(AbstractTp abstractTp) {
         StringWriter sw = new StringWriter();
