@@ -3,6 +3,9 @@ package no.sikt.nva.scopus;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
+import static no.sikt.nva.scopus.ScopusSourceType.JOURNAL;
+import static nva.commons.core.attempt.Try.attempt;
+
 import jakarta.xml.bind.JAXB;
 import jakarta.xml.bind.JAXBElement;
 import java.io.StringWriter;
@@ -21,6 +24,9 @@ import no.scopus.generated.DocTp;
 import no.scopus.generated.InfTp;
 import no.scopus.generated.ItemidTp;
 import no.scopus.generated.SupTp;
+import no.scopus.generated.IssnTp;
+import no.scopus.generated.MetaTp;
+import no.scopus.generated.SourceTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.exception.UnsupportedXmlElementException;
@@ -30,12 +36,20 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.UnconfirmedJournal;
+import no.unit.nva.model.exceptions.InvalidIssnException;
+import nva.commons.core.SingletonCollector;
 import nva.commons.core.paths.UriWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class ScopusConverter {
 
     private static final String MALFORMED_CONTENT_MESSAGE = "Malformed content, cannot parse: %s";
+    public static final String DASH = "-";
     private final DocTp docTp;
+    private static final Logger logger = LoggerFactory.getLogger(ScopusConverter.class);
 
     protected ScopusConverter(DocTp docTp) {
         this.docTp = docTp;
@@ -122,6 +136,7 @@ class ScopusConverter {
     private Reference generateReference() {
         Reference reference = new Reference();
         reference.setDoi(extractDOI());
+        reference.setPublicationContext(getPublicationContext());
         return reference;
     }
 
@@ -220,5 +235,67 @@ class ScopusConverter {
     private AdditionalIdentifier toAdditionalIdentifier(ItemidTp itemIdTp) {
         return new AdditionalIdentifier(ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME,
                                         itemIdTp.getValue());
+    }
+
+    private PublicationContext getPublicationContext() {
+        if (isJournal()) {
+            return attempt(() -> createUnconfirmedJournal())
+                    .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
+        }
+        return ScopusConstants.EMPTY_PUBLICATION_CONTEXT;
+    }
+
+    private RuntimeException logErrorAndThrowException(Exception exception) {
+        logger.error(exception.getMessage());
+        return exception instanceof RuntimeException
+                ? (RuntimeException) exception
+                : new RuntimeException(exception);
+    }
+
+    private UnconfirmedJournal createUnconfirmedJournal() throws InvalidIssnException {
+        var source = getSource();
+        var sourceTitle = extractSourceTitle(source);
+        var issnTpList = source.getIssn();
+        var printIssn = findPrintIssn(issnTpList).orElse(null);
+        var electronicIssn = findElectronicIssn(issnTpList).orElse(null);
+        return new UnconfirmedJournal(sourceTitle, printIssn, electronicIssn);
+    }
+
+    private boolean isJournal() {
+        return Optional.ofNullable(docTp)
+                .map(DocTp::getMeta)
+                .map(MetaTp::getSrctype)
+                .map(srcTyp -> JOURNAL.equals(ScopusSourceType.valueOfCode(srcTyp)))
+                .orElse(false);
+    }
+
+    private SourceTp getSource() {
+        return docTp.getItem().getItem().getBibrecord().getHead().getSource();
+    }
+
+    private String extractSourceTitle(SourceTp sourceTp) {
+        StringBuilder sourceTitle = new StringBuilder();
+        sourceTp.getSourcetitle().getContent().forEach(sourceTitle::append);
+        return sourceTitle.toString();
+    }
+
+    private Optional<String> findElectronicIssn(List<IssnTp> issnTpList) {
+        return findIssn(issnTpList, ScopusConstants.ISSN_TYPE_ELECTRONIC);
+    }
+
+    private Optional<String> findPrintIssn(List<IssnTp> issnTpList) {
+        return findIssn(issnTpList, ScopusConstants.ISSN_TYPE_PRINT);
+    }
+
+    private Optional<String> findIssn(List<IssnTp> issnTpList, String issnType) {
+        return Optional.ofNullable(issnTpList.stream()
+                .filter(issn -> issnType.equals(issn.getType()))
+                .map(IssnTp::getContent)
+                .map(this::addDashToIssn)
+                .collect(SingletonCollector.collectOrElse(null)));
+    }
+
+    private String addDashToIssn(String issn) {
+        return issn.contains(DASH) ? issn : issn.substring(0, 4) + DASH + issn.substring(4);
     }
 }
