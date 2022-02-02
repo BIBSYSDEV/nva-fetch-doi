@@ -91,10 +91,10 @@ class ScopusConverter {
     }
 
     private String extractMainAbstract() {
-       return getMainAbstract().map(this::marshallAbstract).orElse(null);
+        return getMainAbstract().map(this::marshallAbstract).orElse(null);
     }
 
-    private Optional<AbstractTp> getMainAbstract(){
+    private Optional<AbstractTp> getMainAbstract() {
         return getAbstracts().stream().filter(this::isOriginalAbstract).findFirst();
     }
 
@@ -102,10 +102,9 @@ class ScopusConverter {
         return docTp.getItem().getItem().getBibrecord().getHead().getAbstracts().getAbstract();
     }
 
-    private boolean isOriginalAbstract(AbstractTp abstractTp){
+    private boolean isOriginalAbstract(AbstractTp abstractTp) {
         return abstractTp.getOriginal() == YesnoAtt.Y;
     }
-
 
     private String marshallAbstract(AbstractTp abstractTp) {
         StringWriter sw = new StringWriter();
@@ -266,7 +265,7 @@ class ScopusConverter {
     private PublicationContext getPublicationContext() {
         if (isJournal()) {
             return attempt(() -> createUnconfirmedJournal())
-                    .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
+                .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
         }
         return ScopusConstants.EMPTY_PUBLICATION_CONTEXT;
     }
@@ -274,8 +273,8 @@ class ScopusConverter {
     private RuntimeException logErrorAndThrowException(Exception exception) {
         logger.error(exception.getMessage());
         return exception instanceof RuntimeException
-                ? (RuntimeException) exception
-                : new RuntimeException(exception);
+                   ? (RuntimeException) exception
+                   : new RuntimeException(exception);
     }
 
     private UnconfirmedJournal createUnconfirmedJournal() throws InvalidIssnException {
@@ -289,10 +288,10 @@ class ScopusConverter {
 
     private boolean isJournal() {
         return Optional.ofNullable(docTp)
-                .map(DocTp::getMeta)
-                .map(MetaTp::getSrctype)
-                .map(srcTyp -> JOURNAL.equals(ScopusSourceType.valueOfCode(srcTyp)))
-                .orElse(false);
+            .map(DocTp::getMeta)
+            .map(MetaTp::getSrctype)
+            .map(srcTyp -> JOURNAL.equals(ScopusSourceType.valueOfCode(srcTyp)))
+            .orElse(false);
     }
 
     private SourceTp getSource() {
@@ -315,10 +314,10 @@ class ScopusConverter {
 
     private Optional<String> findIssn(List<IssnTp> issnTpList, String issnType) {
         return Optional.ofNullable(issnTpList.stream()
-                .filter(issn -> issnType.equals(issn.getType()))
-                .map(IssnTp::getContent)
-                .map(this::addDashToIssn)
-                .collect(SingletonCollector.collectOrElse(null)));
+                                       .filter(issn -> issnType.equals(issn.getType()))
+                                       .map(IssnTp::getContent)
+                                       .map(this::addDashToIssn)
+                                       .collect(SingletonCollector.collectOrElse(null)));
     }
 
     private String addDashToIssn(String issn) {
