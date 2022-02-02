@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordsTp;
 import no.scopus.generated.AuthorTp;
@@ -83,9 +84,22 @@ class ScopusConverter {
         EntityDescription entityDescription = new EntityDescription();
         entityDescription.setReference(generateReference());
         entityDescription.setMainTitle(extractMainTitle());
+        entityDescription.setAbstract(extractMainAbstract());
         entityDescription.setContributors(generateContributors());
         entityDescription.setTags(generatePlainTextTags());
         return entityDescription;
+    }
+
+    private String extractMainAbstract() {
+        var mainAbstractTp =
+            docTp.getItem().getItem().getBibrecord().getHead().getAbstracts().getAbstract().stream().filter(abstractTp -> abstractTp.getOriginal() == YesnoAtt.Y).findFirst();
+       return mainAbstractTp.map(this::marshallAbstract).orElse(null);
+    }
+
+    private String marshallAbstract(AbstractTp abstractTp) {
+        StringWriter sw = new StringWriter();
+        JAXB.marshal(abstractTp, sw);
+        return sw.toString();
     }
 
     private List<String> generatePlainTextTags() {
