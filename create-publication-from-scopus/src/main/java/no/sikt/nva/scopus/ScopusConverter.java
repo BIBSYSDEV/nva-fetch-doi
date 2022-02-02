@@ -1,12 +1,16 @@
 package no.sikt.nva.scopus;
 
+import static java.util.Collections.emptyList;
+import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.sikt.nva.scopus.ScopusSourceType.JOURNAL;
 import static nva.commons.core.attempt.Try.attempt;
 
 import jakarta.xml.bind.JAXB;
+import jakarta.xml.bind.JAXBElement;
 import java.io.StringWriter;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -17,12 +21,15 @@ import no.scopus.generated.AuthorKeywordsTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DocTp;
-import no.scopus.generated.IssnTp;
+import no.scopus.generated.InfTp;
 import no.scopus.generated.ItemidTp;
+import no.scopus.generated.SupTp;
+import no.scopus.generated.IssnTp;
 import no.scopus.generated.MetaTp;
 import no.scopus.generated.SourceTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
+import no.sikt.nva.scopus.exception.UnsupportedXmlElementException;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
@@ -37,8 +44,10 @@ import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("PMD.GodClass")
 class ScopusConverter {
 
+    private static final String MALFORMED_CONTENT_MESSAGE = "Malformed content, cannot parse: %s";
     public static final String DASH = "-";
     private final DocTp docTp;
     private static final Logger logger = LoggerFactory.getLogger(ScopusConverter.class);
@@ -57,7 +66,7 @@ class ScopusConverter {
 
     private String generateAuthorKeyWordsXml() {
         var authorKeywords = extractAuthorKeyWords();
-        return authorKeywords == null ? null : marshallAuthorKeywords(authorKeywords);
+        return nonNull(authorKeywords) ? marshallAuthorKeywords(authorKeywords) : null;
     }
 
     private AuthorKeywordsTp extractAuthorKeyWords() {
@@ -75,7 +84,40 @@ class ScopusConverter {
         entityDescription.setReference(generateReference());
         entityDescription.setMainTitle(extractMainTitle());
         entityDescription.setContributors(generateContributors());
+        entityDescription.setTags(generatePlainTextTags());
         return entityDescription;
+    }
+
+    private List<String> generatePlainTextTags() {
+        var authorKeywordsTp = extractAuthorKeyWords();
+        return nonNull(authorKeywordsTp)
+                   ? authorKeywordsTp
+            .getAuthorKeyword()
+            .stream()
+            .map(keyword -> keyword.getContent()
+                .stream()
+                .map(this::extractContentString)
+                .collect(Collectors.joining()))
+            .collect(Collectors.toList())
+                   : emptyList();
+    }
+
+    private String extractContentString(Object content) {
+        if (content instanceof String) {
+            return ((String) content).trim();
+        } else if (content instanceof JAXBElement) {
+            return extractContentString(((JAXBElement<?>) content).getValue());
+        } else if (content instanceof SupTp) {
+            return extractContentString(((SupTp) content).getContent());
+        } else if (content instanceof InfTp) {
+            return extractContentString(((InfTp) content).getContent());
+        } else if (content instanceof ArrayList) {
+            return ((ArrayList<?>) content).stream()
+                .map(this::extractContentString)
+                .collect(Collectors.joining());
+        } else {
+            throw new UnsupportedXmlElementException(String.format(MALFORMED_CONTENT_MESSAGE, content.getClass()));
+        }
     }
 
     private String extractMainTitle() {
