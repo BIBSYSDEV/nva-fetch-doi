@@ -1,5 +1,7 @@
 package no.sikt.nva.scopus;
 
+import static java.util.Collections.emptyList;
+import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import jakarta.xml.bind.JAXB;
 import jakarta.xml.bind.JAXBElement;
@@ -8,7 +10,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -50,7 +51,7 @@ class ScopusConverter {
 
     private String generateAuthorKeyWordsXml() {
         var authorKeywords = extractAuthorKeyWords();
-        return Objects.nonNull(authorKeywords) ? marshallAuthorKeywords(authorKeywords) : null;
+        return nonNull(authorKeywords) ? marshallAuthorKeywords(authorKeywords) : null;
     }
 
     private AuthorKeywordsTp extractAuthorKeyWords() {
@@ -74,16 +75,16 @@ class ScopusConverter {
 
     private List<String> generatePlainTextTags() {
         var authorKeywordsTp = extractAuthorKeyWords();
-        return Objects.nonNull(authorKeywordsTp)
+        return nonNull(authorKeywordsTp)
                    ? authorKeywordsTp
             .getAuthorKeyword()
             .stream()
-            .map(something -> something.getContent()
+            .map(keyword -> keyword.getContent()
                 .stream()
                 .map(this::extractContentString)
                 .collect(Collectors.joining()))
             .collect(Collectors.toList())
-                   : null;
+                   : emptyList();
     }
 
     private String extractContentString(Object content) {
