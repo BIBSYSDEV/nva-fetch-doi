@@ -27,7 +27,7 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
     private List<ResearchProject> projects;
     private List<URI> subjects;
     private Set<AdditionalIdentifier> additionalIdentifiers;
-    private String AuthorKeywordsXmlFormat;
+    private String authorKeywordsXmlFormat;
 
     @JacocoGenerated
     @Override
@@ -101,12 +101,12 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
 
     @JacocoGenerated
     public String getAuthorKeywordsXmlFormat() {
-        return AuthorKeywordsXmlFormat;
+        return authorKeywordsXmlFormat;
     }
 
     @JacocoGenerated
     public void setAuthorKeywordsXmlFormat(String authorKeywordsXmlFormat) {
-        AuthorKeywordsXmlFormat = authorKeywordsXmlFormat;
+        this.authorKeywordsXmlFormat = authorKeywordsXmlFormat;
     }
 
     @JacocoGenerated
