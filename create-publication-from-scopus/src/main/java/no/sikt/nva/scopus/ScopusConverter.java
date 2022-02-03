@@ -20,6 +20,7 @@ import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordsTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CollaborationTp;
+import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.InfTp;
 import no.scopus.generated.ItemidTp;
@@ -35,6 +36,7 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
@@ -85,7 +87,25 @@ class ScopusConverter {
         entityDescription.setMainTitle(extractMainTitle());
         entityDescription.setContributors(generateContributors());
         entityDescription.setTags(generatePlainTextTags());
+        entityDescription.setDate(extractPublicationDate());
         return entityDescription;
+    }
+
+    private PublicationDate extractPublicationDate() {
+        var publicationDate = getDateSortTp();
+        return new PublicationDate.Builder().withDay(publicationDate.getDay())
+            .withMonth(publicationDate.getMonth())
+            .withYear(publicationDate.getYear())
+            .build();
+    }
+
+    /*
+    According to the "SciVerse SCOPUS CUSTOM DATA DOCUMENTATION" dateSort contains the publication date if it exists,
+     if not there are several rules to determine what's the second-best date is. See "SciVerse SCOPUS CUSTOM DATA
+     DOCUMENTATION" for details.
+     */
+    private DateSortTp getDateSortTp() {
+        return docTp.getItem().getItem().getProcessInfo().getDateSort();
     }
 
     private List<String> generatePlainTextTags() {
@@ -241,7 +261,7 @@ class ScopusConverter {
     private PublicationContext getPublicationContext() {
         if (isJournal()) {
             return attempt(() -> createUnconfirmedJournal())
-                    .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
+                .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
         }
         return ScopusConstants.EMPTY_PUBLICATION_CONTEXT;
     }
@@ -249,8 +269,8 @@ class ScopusConverter {
     private RuntimeException logErrorAndThrowException(Exception exception) {
         logger.error(exception.getMessage());
         return exception instanceof RuntimeException
-                ? (RuntimeException) exception
-                : new RuntimeException(exception);
+                   ? (RuntimeException) exception
+                   : new RuntimeException(exception);
     }
 
     private UnconfirmedJournal createUnconfirmedJournal() throws InvalidIssnException {
@@ -264,10 +284,10 @@ class ScopusConverter {
 
     private boolean isJournal() {
         return Optional.ofNullable(docTp)
-                .map(DocTp::getMeta)
-                .map(MetaTp::getSrctype)
-                .map(srcTyp -> JOURNAL.equals(ScopusSourceType.valueOfCode(srcTyp)))
-                .orElse(false);
+            .map(DocTp::getMeta)
+            .map(MetaTp::getSrctype)
+            .map(srcTyp -> JOURNAL.equals(ScopusSourceType.valueOfCode(srcTyp)))
+            .orElse(false);
     }
 
     private SourceTp getSource() {
@@ -290,10 +310,10 @@ class ScopusConverter {
 
     private Optional<String> findIssn(List<IssnTp> issnTpList, String issnType) {
         return Optional.ofNullable(issnTpList.stream()
-                .filter(issn -> issnType.equals(issn.getType()))
-                .map(IssnTp::getContent)
-                .map(this::addDashToIssn)
-                .collect(SingletonCollector.collectOrElse(null)));
+                                       .filter(issn -> issnType.equals(issn.getType()))
+                                       .map(IssnTp::getContent)
+                                       .map(this::addDashToIssn)
+                                       .collect(SingletonCollector.collectOrElse(null)));
     }
 
     private String addDashToIssn(String issn) {
