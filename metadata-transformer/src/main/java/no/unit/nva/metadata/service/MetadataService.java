@@ -1,15 +1,22 @@
 package no.unit.nva.metadata.service;
 
 import static java.util.Objects.nonNull;
+import static org.apache.http.HttpStatus.SC_OK;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Optional;
+
+import com.github.openjson.JSONArray;
+import com.github.openjson.JSONObject;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.MetadataConverter;
 import no.unit.nva.metadata.type.Bibo;
@@ -17,6 +24,7 @@ import no.unit.nva.metadata.type.Citation;
 import no.unit.nva.metadata.type.DcTerms;
 import no.unit.nva.metadata.type.OntologyProperty;
 import no.unit.nva.metadata.type.RawMetaTag;
+import nva.commons.core.StringUtils;
 import org.apache.any23.extractor.ExtractionException;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Model;
@@ -48,6 +56,8 @@ public class MetadataService {
     private static final String HTTPS = "https";
     private static final String HTTP = "http";
     public static final ValueFactory valueFactory = SimpleValueFactory.getInstance();
+    //Todo: this URI should come from a Config/Environment. How is that done in NVA
+    public static final String API_URI_NVA_PUBLICATION_CHANNELS = "https://api.dev.nva.aws.unit.no/publication-channels";
     private final HttpClient httpClient;
     private final TranslatorService translatorService;
     private final Repository db = new SailRepository(new MemoryStore());
@@ -178,4 +188,44 @@ public class MetadataService {
         return value.matches(SHORT_DOI_REGEX);
     }
 
+    public String lookUpJournalIdAtPublicationChannel(String name, String electronicIssn, String printedIssn, int year)
+            throws IOException, InterruptedException {
+        String id;
+        if (StringUtils.isNotEmpty(electronicIssn)) {
+            id = queryPublicationChannelForJournal(electronicIssn, year);
+            if (StringUtils.isNotEmpty(id)) {
+                return id;
+            }
+        }
+        if (StringUtils.isNotEmpty(printedIssn)) {
+            id = queryPublicationChannelForJournal(printedIssn, year);
+            if (StringUtils.isNotEmpty(id)) {
+                return id;
+            }
+        }
+        if (StringUtils.isNotEmpty(name)) {
+            id = queryPublicationChannelForJournal(name, year);
+            if (StringUtils.isNotEmpty(id)) {
+                return id;
+            }
+        }
+        return null;
+    }
+
+    private String queryPublicationChannelForJournal(String term, int year) throws IOException, InterruptedException {
+        String query =  "query=" + URLEncoder.encode(term, StandardCharsets.UTF_8.toString()) + "&year=" + year;
+        String uri = API_URI_NVA_PUBLICATION_CHANNELS + "/journal?" + query;
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(uri))
+                .headers("Accept", "application/ld+json")
+                .GET()
+                .build();
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (SC_OK == response.statusCode()) {
+            JSONArray jsonArray = new JSONArray(response.body());
+            JSONObject jsonObject = jsonArray.getJSONObject(0);
+            return jsonObject.getString("id");
+        }
+        return null;
+    }
 }

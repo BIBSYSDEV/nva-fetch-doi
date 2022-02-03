@@ -8,6 +8,8 @@ import static nva.commons.core.attempt.Try.attempt;
 
 import jakarta.xml.bind.JAXB;
 import jakarta.xml.bind.JAXBElement;
+
+import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URI;
 import java.util.ArrayList;
@@ -31,6 +33,7 @@ import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.exception.UnsupportedXmlElementException;
 import no.unit.nva.metadata.CreatePublicationRequest;
+import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -41,6 +44,7 @@ import no.unit.nva.model.contexttypes.Periodical;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.exceptions.InvalidIssnException;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
@@ -51,11 +55,23 @@ class ScopusConverter {
 
     private static final String MALFORMED_CONTENT_MESSAGE = "Malformed content, cannot parse: %s";
     public static final String DASH = "-";
+    public static final int START_YEAR_FOR_LEVEL_INFO = 2004;
     private final DocTp docTp;
     private static final Logger logger = LoggerFactory.getLogger(ScopusConverter.class);
+    private final MetadataService metadataService;
 
     protected ScopusConverter(DocTp docTp) {
         this.docTp = docTp;
+        metadataService = getMetadataService();
+    }
+
+    @JacocoGenerated
+    private static MetadataService getMetadataService() {
+        try {
+            return new MetadataService();
+        } catch (IOException e) {
+            throw new RuntimeException("Error creating handler", e);
+        }
     }
 
     public CreatePublicationRequest generateCreatePublicationRequest() {
@@ -262,12 +278,17 @@ class ScopusConverter {
         var printIssn = findPrintIssn(issnTpList).orElse(null);
         var electronicIssn = findElectronicIssn(issnTpList).orElse(null);
         var publicationYear = findPublicationYear();
-        if (2004 > publicationYear) {
+        if (START_YEAR_FOR_LEVEL_INFO > publicationYear) {
             return new UnconfirmedJournal(sourceTitle, printIssn, electronicIssn);
         } else {
-            return new Journal("id");
+            try {
+                return new Journal(metadataService
+                        .lookUpJournalIdAtPublicationChannel(sourceTitle, electronicIssn, printIssn, publicationYear));
+            } catch (IOException | InterruptedException e) {
+                logger.error(e.getMessage());
+            }
         }
-//        return new UnconfirmedJournal(sourceTitle, printIssn, electronicIssn);
+        return new UnconfirmedJournal(sourceTitle, printIssn, electronicIssn);
     }
 
     private int findPublicationYear() {
@@ -275,7 +296,7 @@ class ScopusConverter {
                 .map(DocTp::getMeta)
                 .map(MetaTp::getPubYear)
                 .map(Integer::parseInt)
-                .orElse(null);
+                .orElse(-1);
     }
 
     private boolean isJournal() {

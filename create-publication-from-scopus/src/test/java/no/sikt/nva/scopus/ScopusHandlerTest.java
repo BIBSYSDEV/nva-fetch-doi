@@ -57,7 +57,7 @@ class ScopusHandlerTest {
     public static final long SOME_FILE_SIZE = 100L;
     public static final String HARD_CODED_JOURNAL_NAME_IN_RESOURCE_FILE = "Edinburgh Journal of Botany";
     public static final String HARD_CODED_JOURNAL_URI =
-            "https://api.dev.nva.aws.unit.no/publication-channels/journal/442850/2020";
+            "https://api.dev.nva.aws.unit.no/publication-channels/journal/440074/2010";
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
     private ScopusHandler scopusHandler;
@@ -256,7 +256,7 @@ class ScopusHandlerTest {
         var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
                 .getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Journal.class));
-        var actualJournalName = ((Journal) actualPublicationContext).getId();
+        var actualJournalName = ((Journal) actualPublicationContext).getId().toString();
         assertThat(actualJournalName, is(HARD_CODED_JOURNAL_URI));
     }
 
@@ -264,6 +264,7 @@ class ScopusHandlerTest {
     void shouldReturnDefaultPublicationContextWhenEventWithS3UriThatPointsToScopusXmlWithoutKnownSourceType()
             throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
+        //Todo: this is actually not perfect as there is a chance my random string starts with a 'j' ...
         var randomChar = randomString().substring(0, 1);
         scopusFile = scopusFile.replace("<xocs:srctype>j</xocs:srctype>", "<xocs:srctype>" + randomChar
                 + "</xocs:srctype>");

@@ -5,6 +5,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static j2html.TagCreator.body;
 import static j2html.TagCreator.div;
 import static j2html.TagCreator.head;
@@ -17,6 +18,7 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider.CITATION_AUTHOR;
 import static no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider.DC_CONTRIBUTOR;
 import static no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider.DC_CREATOR;
+import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -40,6 +42,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -70,9 +73,11 @@ import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -111,9 +116,25 @@ public class MetadataServiceTest {
     public static final String SECOND_ISBN_ISBN13_VARIANT = "9781627050128";
     public static final String ONLINE_ISSN = "2052-2916";
     public static final String PRINT_ISSN = "0969-0700";
-    public static final String ENSURE_ONLY_FILTERING_TITLES = "McLongName, Longy (Colonel (ret'd))";
     private static final TestAppender logger = LogUtils.getTestingAppenderForRootLogger();
     private WireMockServer wireMockServer;
+
+    @Test
+    public void getJournalIdFromPublicationChannelsByGivenJournalName()
+            throws IOException, InterruptedException {
+        var responseBody = IoUtils.stringFromResources(Path.of("publication_channels_442850_response.json"));
+        var httpResonse = mock(HttpResponse.class);
+        when(httpResonse.statusCode()).thenReturn(SC_OK);
+        when(httpResonse.body()).thenReturn(responseBody);
+        var httpClient = mock(HttpClient.class);
+        when(httpClient.send(any(HttpRequest.class), any())).thenReturn(httpResonse);
+        var metadataService = new MetadataService(httpClient);
+        var name = "Edinburgh Journal of Botany";
+        var year = 2003;
+        var actualId = metadataService.lookUpJournalIdAtPublicationChannel(name, null, null, year);
+        var expectedId = "https://api.dev.nva.aws.unit.no/publication-channels/journal/440074/2010";
+        assertThat(actualId, is(expectedId));
+    }
 
     @ParameterizedTest(name = "#{index} - {0}")
     @MethodSource({
@@ -130,6 +151,12 @@ public class MetadataServiceTest {
         actual.setContext(null);
 
         assertThat(actual, equalTo(expectedRequest));
+    }
+
+    @BeforeEach
+    private void extracted() {
+        wireMockServer = new WireMockServer();
+        wireMockServer.start();
     }
 
     @AfterEach
@@ -668,13 +695,14 @@ public class MetadataServiceTest {
     }
 
     private void startMock(String filename, String body) {
-        wireMockServer = new WireMockServer();
-        wireMockServer.start();
-
         configureFor("localhost", wireMockServer.port());
         stubFor(get(urlEqualTo("/article/" + filename))
                     .willReturn(aResponse()
                                     .withHeader("Content-Type", "text/html")
+                                    .withBody(body)));
+        stubFor(get(urlPathEqualTo("/publication-channels/journal"))
+                    .willReturn(aResponse()
+                                    .withHeader("Content-Type", "application/json")
                                     .withBody(body)));
     }
 
