@@ -276,7 +276,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractMainAbstractAsXML() throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_85114653695));
+        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000469852));
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         S3Event s3Event = createS3Event(uri);
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
