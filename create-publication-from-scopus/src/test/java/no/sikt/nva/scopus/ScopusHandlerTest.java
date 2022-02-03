@@ -1,36 +1,5 @@
 package no.sikt.nva.scopus;
 
-import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.events.S3Event;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.RequestParametersEntity;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.ResponseElementsEntity;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3BucketEntity;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3Entity;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3EventNotificationRecord;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3ObjectEntity;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.UserIdentityEntity;
-import no.unit.nva.metadata.CreatePublicationRequest;
-import no.unit.nva.model.AdditionalIdentifier;
-import no.unit.nva.model.contexttypes.Journal;
-import no.unit.nva.model.contexttypes.UnconfirmedJournal;
-import no.unit.nva.s3.S3Driver;
-import no.unit.nva.stubs.FakeS3Client;
-import nva.commons.core.ioutils.IoUtils;
-import nva.commons.core.paths.UnixPath;
-import nva.commons.core.paths.UriWrapper;
-import nva.commons.logutils.LogUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.core.sync.ResponseTransformer;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Path;
-import java.time.Instant;
-import java.util.List;
-
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -47,6 +16,35 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.events.S3Event;
+import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.RequestParametersEntity;
+import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.ResponseElementsEntity;
+import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3BucketEntity;
+import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3Entity;
+import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3EventNotificationRecord;
+import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3ObjectEntity;
+import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.UserIdentityEntity;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Path;
+import java.time.Instant;
+import java.util.List;
+import no.unit.nva.metadata.CreatePublicationRequest;
+import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.UnconfirmedJournal;
+import no.unit.nva.s3.S3Driver;
+import no.unit.nva.stubs.FakeS3Client;
+import nva.commons.core.ioutils.IoUtils;
+import nva.commons.core.paths.UnixPath;
+import nva.commons.core.paths.UriWrapper;
+import nva.commons.logutils.LogUtils;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.core.sync.ResponseTransformer;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
 class ScopusHandlerTest {
 
@@ -61,6 +59,7 @@ class ScopusHandlerTest {
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
     private ScopusHandler scopusHandler;
+    private static final String EXPECTED_RESULTS_PATH = "expectedResults";
     private static final String IDENTITY_FIELD_NAME = "identity";
     private static final String NAME_FIELD_NAME = "name";
     private static final String SEQUENCE_FIELD_NAME = "sequence";
@@ -96,6 +95,8 @@ class ScopusHandlerTest {
     private static final int CONTRIBUTOR_1_SEQUENCE_NUMBER = 1;
     private static final int CONTRIBUTOR_2_SEQUENCE_NUMBER = 2;
     private static final int CONTRIBUTOR_151_SEQUENCE_NUMBER = 151;
+    private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
+    private static final String EXPECTED_ABSTRACT_NAME_SPACE = "<abstractTp";
 
     @BeforeEach
     public void init() {
@@ -287,6 +288,20 @@ class ScopusHandlerTest {
             hasItem(HARDCODED_EXPECTED_KEYWORD_1_IN_0000469852),
             hasItem(HARDCODED_EXPECTED_KEYWORD_2_IN_0000469852),
             hasItem(HARDCODED_EXPECTED_KEYWORD_3_IN_0000469852)));
+    }
+
+    @Test
+    void shouldExtractMainAbstractAsXML() throws IOException {
+        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000469852));
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
+        S3Event s3Event = createS3Event(uri);
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualMainAbstract = createPublicationRequest.getEntityDescription().getAbstract();
+        String expectedAbstract =
+            IoUtils.stringFromResources(Path.of(EXPECTED_RESULTS_PATH,FILENAME_EXPECTED_ABSTRACT_IN_0000469852));
+        assertThat(actualMainAbstract, stringContainsInOrder(XML_ENCODING_DECLARATION,
+                                                             EXPECTED_ABSTRACT_NAME_SPACE,
+                                                             expectedAbstract));
     }
 
     private S3Event createS3Event(String expectedObjectKey) {

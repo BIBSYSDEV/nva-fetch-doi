@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordsTp;
 import no.scopus.generated.AuthorTp;
@@ -101,9 +102,32 @@ class ScopusConverter {
         EntityDescription entityDescription = new EntityDescription();
         entityDescription.setReference(generateReference());
         entityDescription.setMainTitle(extractMainTitle());
+        entityDescription.setAbstract(extractMainAbstract());
         entityDescription.setContributors(generateContributors());
         entityDescription.setTags(generatePlainTextTags());
         return entityDescription;
+    }
+
+    private String extractMainAbstract() {
+        return getMainAbstract().map(this::marshallAbstract).orElse(null);
+    }
+
+    private Optional<AbstractTp> getMainAbstract() {
+        return getAbstracts().stream().filter(this::isOriginalAbstract).findFirst();
+    }
+
+    private List<AbstractTp> getAbstracts() {
+        return docTp.getItem().getItem().getBibrecord().getHead().getAbstracts().getAbstract();
+    }
+
+    private boolean isOriginalAbstract(AbstractTp abstractTp) {
+        return YesnoAtt.Y.equals(abstractTp.getOriginal());
+    }
+
+    private String marshallAbstract(AbstractTp abstractTp) {
+        StringWriter sw = new StringWriter();
+        JAXB.marshal(abstractTp, sw);
+        return sw.toString();
     }
 
     private List<String> generatePlainTextTags() {
@@ -259,7 +283,7 @@ class ScopusConverter {
     private PublicationContext getPublicationContext() {
         if (isJournal()) {
             return attempt(() -> createPeriodical())
-                    .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
+                .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
         }
         return ScopusConstants.EMPTY_PUBLICATION_CONTEXT;
     }
@@ -267,8 +291,8 @@ class ScopusConverter {
     private RuntimeException logErrorAndThrowException(Exception exception) {
         logger.error(exception.getMessage());
         return exception instanceof RuntimeException
-                ? (RuntimeException) exception
-                : new RuntimeException(exception);
+                   ? (RuntimeException) exception
+                   : new RuntimeException(exception);
     }
 
     private Periodical createPeriodical() throws InvalidIssnException {
@@ -301,10 +325,10 @@ class ScopusConverter {
 
     private boolean isJournal() {
         return Optional.ofNullable(docTp)
-                .map(DocTp::getMeta)
-                .map(MetaTp::getSrctype)
-                .map(srcTyp -> JOURNAL.equals(ScopusSourceType.valueOfCode(srcTyp)))
-                .orElse(false);
+            .map(DocTp::getMeta)
+            .map(MetaTp::getSrctype)
+            .map(srcTyp -> JOURNAL.equals(ScopusSourceType.valueOfCode(srcTyp)))
+            .orElse(false);
     }
 
     private SourceTp getSource() {
@@ -327,10 +351,10 @@ class ScopusConverter {
 
     private Optional<String> findIssn(List<IssnTp> issnTpList, String issnType) {
         return Optional.ofNullable(issnTpList.stream()
-                .filter(issn -> issnType.equals(issn.getType()))
-                .map(IssnTp::getContent)
-                .map(this::addDashToIssn)
-                .collect(SingletonCollector.collectOrElse(null)));
+                                       .filter(issn -> issnType.equals(issn.getType()))
+                                       .map(IssnTp::getContent)
+                                       .map(this::addDashToIssn)
+                                       .collect(SingletonCollector.collectOrElse(null)));
     }
 
     private String addDashToIssn(String issn) {
