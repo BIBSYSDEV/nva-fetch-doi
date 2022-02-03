@@ -56,6 +56,7 @@ class ScopusHandlerTest {
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
     private ScopusHandler scopusHandler;
+    private static final String EXPECTED_RESULTS_PATH = "expectedResults";
     private static final String IDENTITY_FIELD_NAME = "identity";
     private static final String NAME_FIELD_NAME = "name";
     private static final String SEQUENCE_FIELD_NAME = "sequence";
@@ -97,6 +98,8 @@ class ScopusHandlerTest {
     private static final String PUBLICATION_DAY_FIELD_NAME = "day";
     private static final String PUBLICATION_MONTH_FIELD_NAME = "month";
     private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
+    private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
+    private static final String EXPECTED_ABSTRACT_NAME_SPACE = "<abstractTp";
 
     @BeforeEach
     public void init() {
@@ -285,6 +288,20 @@ class ScopusHandlerTest {
             hasProperty(PUBLICATION_DAY_FIELD_NAME, is(EXPECTED_PUBLICATION_DAY_IN_0018132378)),
             hasProperty(PUBLICATION_MONTH_FIELD_NAME, is(EXPECTED_PUBLICATION_MONTH_IN_0018132378)),
             hasProperty(PUBLICATION_YEAR_FIELD_NAME, is(EXPECTED_PUBLICATION_YEAR_IN_0018132378))));
+    }
+
+    @Test
+    void shouldExtractMainAbstractAsXML() throws IOException {
+        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000469852));
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
+        S3Event s3Event = createS3Event(uri);
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualMainAbstract = createPublicationRequest.getEntityDescription().getAbstract();
+        String expectedAbstract =
+            IoUtils.stringFromResources(Path.of(EXPECTED_RESULTS_PATH,FILENAME_EXPECTED_ABSTRACT_IN_0000469852));
+        assertThat(actualMainAbstract, stringContainsInOrder(XML_ENCODING_DECLARATION,
+                                                             EXPECTED_ABSTRACT_NAME_SPACE,
+                                                             expectedAbstract));
     }
 
     private S3Event createS3Event(String expectedObjectKey) {

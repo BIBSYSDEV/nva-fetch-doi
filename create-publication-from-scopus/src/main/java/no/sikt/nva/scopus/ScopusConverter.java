@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordsTp;
 import no.scopus.generated.AuthorTp;
@@ -85,6 +86,7 @@ class ScopusConverter {
         EntityDescription entityDescription = new EntityDescription();
         entityDescription.setReference(generateReference());
         entityDescription.setMainTitle(extractMainTitle());
+        entityDescription.setAbstract(extractMainAbstract());
         entityDescription.setContributors(generateContributors());
         entityDescription.setTags(generatePlainTextTags());
         entityDescription.setDate(extractPublicationDate());
@@ -106,6 +108,28 @@ class ScopusConverter {
      */
     private DateSortTp getDateSortTp() {
         return docTp.getItem().getItem().getProcessInfo().getDateSort();
+    }
+
+    private String extractMainAbstract() {
+        return getMainAbstract().map(this::marshallAbstract).orElse(null);
+    }
+
+    private Optional<AbstractTp> getMainAbstract() {
+        return getAbstracts().stream().filter(this::isOriginalAbstract).findFirst();
+    }
+
+    private List<AbstractTp> getAbstracts() {
+        return docTp.getItem().getItem().getBibrecord().getHead().getAbstracts().getAbstract();
+    }
+
+    private boolean isOriginalAbstract(AbstractTp abstractTp) {
+        return YesnoAtt.Y.equals(abstractTp.getOriginal());
+    }
+
+    private String marshallAbstract(AbstractTp abstractTp) {
+        StringWriter sw = new StringWriter();
+        JAXB.marshal(abstractTp, sw);
+        return sw.toString();
     }
 
     private List<String> generatePlainTextTags() {
