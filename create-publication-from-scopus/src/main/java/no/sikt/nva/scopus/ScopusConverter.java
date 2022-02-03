@@ -103,7 +103,7 @@ class ScopusConverter {
     }
 
     private boolean isOriginalAbstract(AbstractTp abstractTp) {
-        return abstractTp.getOriginal() == YesnoAtt.Y;
+        return YesnoAtt.Y.equals(abstractTp.getOriginal());
     }
 
     private String marshallAbstract(AbstractTp abstractTp) {
