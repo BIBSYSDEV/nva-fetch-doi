@@ -36,6 +36,8 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.Periodical;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.exceptions.InvalidIssnException;
@@ -240,7 +242,7 @@ class ScopusConverter {
 
     private PublicationContext getPublicationContext() {
         if (isJournal()) {
-            return attempt(() -> createUnconfirmedJournal())
+            return attempt(() -> createPeriodical())
                     .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
         }
         return ScopusConstants.EMPTY_PUBLICATION_CONTEXT;
@@ -253,13 +255,27 @@ class ScopusConverter {
                 : new RuntimeException(exception);
     }
 
-    private UnconfirmedJournal createUnconfirmedJournal() throws InvalidIssnException {
+    private Periodical createPeriodical() throws InvalidIssnException {
         var source = getSource();
         var sourceTitle = extractSourceTitle(source);
         var issnTpList = source.getIssn();
         var printIssn = findPrintIssn(issnTpList).orElse(null);
         var electronicIssn = findElectronicIssn(issnTpList).orElse(null);
-        return new UnconfirmedJournal(sourceTitle, printIssn, electronicIssn);
+        var publicationYear = findPublicationYear();
+        if (2004 > publicationYear) {
+            return new UnconfirmedJournal(sourceTitle, printIssn, electronicIssn);
+        } else {
+            return new Journal("id");
+        }
+//        return new UnconfirmedJournal(sourceTitle, printIssn, electronicIssn);
+    }
+
+    private int findPublicationYear() {
+        return Optional.ofNullable(docTp)
+                .map(DocTp::getMeta)
+                .map(MetaTp::getPubYear)
+                .map(Integer::parseInt)
+                .orElse(null);
     }
 
     private boolean isJournal() {

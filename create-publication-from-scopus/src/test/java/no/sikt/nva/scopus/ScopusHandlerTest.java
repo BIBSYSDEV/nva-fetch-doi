@@ -11,6 +11,7 @@ import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotificatio
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.UserIdentityEntity;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
@@ -55,6 +56,8 @@ class ScopusHandlerTest {
     public static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     public static final long SOME_FILE_SIZE = 100L;
     public static final String HARD_CODED_JOURNAL_NAME_IN_RESOURCE_FILE = "Edinburgh Journal of Botany";
+    public static final String HARD_CODED_JOURNAL_URI =
+            "https://api.dev.nva.aws.unit.no/publication-channels/journal/442850/2020";
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
     private ScopusHandler scopusHandler;
@@ -240,6 +243,21 @@ class ScopusHandlerTest {
         assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
         var actualJournalName = ((UnconfirmedJournal) actualPublicationContext).getTitle();
         assertThat(actualJournalName, is(HARD_CODED_JOURNAL_NAME_IN_RESOURCE_FILE));
+    }
+
+    @Test
+    void shouldReturnCreatePublicationRequestWithJournalWhenEventWithS3UriThatPointsToScopusXmlWhereSourceTitleIsInNsd()
+            throws IOException {
+        var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
+        scopusFile = scopusFile.replace("<xocs:pub-year>1993</xocs:pub-year>", "<xocs:pub-year>2010</xocs:pub-year>");
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
+        var s3Event = createS3Event(uri);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
+                .getPublicationContext();
+        assertThat(actualPublicationContext, instanceOf(Journal.class));
+        var actualJournalName = ((Journal) actualPublicationContext).getId();
+        assertThat(actualJournalName, is(HARD_CODED_JOURNAL_URI));
     }
 
     @Test
