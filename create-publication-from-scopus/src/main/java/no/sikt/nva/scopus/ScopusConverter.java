@@ -201,6 +201,7 @@ class ScopusConverter {
     private Contributor generateContributorFromAuthorTp(AuthorTp author) {
         var identity = new Identity();
         identity.setName(determineContributorName(author));
+        identity.setOrcId(author.getOrcid());
         return new Contributor(identity, null, null, getSequenceNumber(author), false);
     }
 
