@@ -9,6 +9,7 @@ dependencies {
     }
     implementation project(":doi-proxy")
     implementation project(":metadata-transformer")
+    implementation libs.nva.json
 
     testImplementation(libs.zalando.problem) {
         compileOnly(libs.apiGuardian) {

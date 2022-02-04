@@ -1,6 +1,7 @@
 dependencies {
     implementation project(":fetch-doi-commons")
 
+    implementation libs.nva.json
     runtimeOnly libs.jersey.common
     implementation libs.jakarta
     implementation libs.nva.secrets
