@@ -1,12 +1,9 @@
 package no.sikt.nva.scopus;
 
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import jakarta.xml.bind.JAXB;
-import java.io.StringReader;
-import java.net.URI;
 import no.scopus.generated.DocTp;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.s3.S3Driver;
@@ -15,6 +12,11 @@ import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
+
+import java.io.StringReader;
+import java.net.URI;
+
+import static nva.commons.core.attempt.Try.attempt;
 
 public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationRequest> {
 
@@ -35,9 +37,16 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     @Override
     public CreatePublicationRequest handleRequest(S3Event event, Context context) {
         return attempt(() -> readFile(event))
-            .map(this::parseXmlFile)
-            .map(this::generateCreatePublicationRequest)
-            .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
+                .map(this::parseXmlFile)
+                .map(this::generateCreatePublicationRequest)
+                .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
+    }
+
+    private RuntimeException logErrorAndThrowException(Exception exception) {
+        logger.error(exception.getMessage());
+        return exception instanceof RuntimeException
+                ? (RuntimeException) exception
+                : new RuntimeException(exception);
     }
 
     private DocTp parseXmlFile(String file) {
@@ -49,12 +58,6 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
         return scopusConverter.generateCreatePublicationRequest();
     }
 
-    private RuntimeException logErrorAndThrowException(Exception exception) {
-        logger.error(exception.getMessage());
-        return exception instanceof RuntimeException
-                   ? (RuntimeException) exception
-                   : new RuntimeException(exception);
-    }
 
     private String readFile(S3Event event) {
         var s3Driver = new S3Driver(s3Client, extractBucketName(event));
