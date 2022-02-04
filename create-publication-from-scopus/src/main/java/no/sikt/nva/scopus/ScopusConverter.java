@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordsTp;
@@ -133,15 +134,15 @@ class ScopusConverter {
     private List<String> generatePlainTextTags() {
         var authorKeywordsTp = extractAuthorKeyWords();
         return nonNull(authorKeywordsTp)
-                   ? authorKeywordsTp
-            .getAuthorKeyword()
-            .stream()
-            .map(keyword -> keyword.getContent()
+                ? authorKeywordsTp
+                .getAuthorKeyword()
                 .stream()
-                .map(this::extractContentString)
-                .collect(Collectors.joining()))
-            .collect(Collectors.toList())
-                   : emptyList();
+                .map(keyword -> keyword.getContent()
+                        .stream()
+                        .map(this::extractContentString)
+                        .collect(Collectors.joining()))
+                .collect(Collectors.toList())
+                : emptyList();
     }
 
     private String extractContentString(Object content) {
@@ -155,8 +156,8 @@ class ScopusConverter {
             return extractContentString(((InfTp) content).getContent());
         } else if (content instanceof ArrayList) {
             return ((ArrayList<?>) content).stream()
-                .map(this::extractContentString)
-                .collect(Collectors.joining());
+                    .map(this::extractContentString)
+                    .collect(Collectors.joining());
         } else {
             throw new UnsupportedXmlElementException(String.format(MALFORMED_CONTENT_MESSAGE, content.getClass()));
         }
@@ -164,16 +165,16 @@ class ScopusConverter {
 
     private String extractMainTitle() {
         return getMainTitleTextTp()
-            .map(this::marshallMainTitleToXmlPreservingUnderlyingStructure)
-            .orElse(null);
+                .map(this::marshallMainTitleToXmlPreservingUnderlyingStructure)
+                .orElse(null);
     }
 
     private List<Contributor> generateContributors() {
         return extractAuthorGroup()
-            .stream()
-            .map(this::generateContributorsFromAuthorGroup)
-            .flatMap(Collection::stream)
-            .collect(Collectors.toList());
+                .stream()
+                .map(this::generateContributorsFromAuthorGroup)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
     }
 
     private Reference generateReference() {
@@ -189,9 +190,9 @@ class ScopusConverter {
 
     private Optional<TitletextTp> getMainTitleTextTp() {
         return getTitleText()
-            .stream()
-            .filter(this::isTitleOriginal)
-            .findFirst();
+                .stream()
+                .filter(this::isTitleOriginal)
+                .findFirst();
     }
 
     private boolean isTitleOriginal(TitletextTp titletextTp) {
@@ -204,16 +205,16 @@ class ScopusConverter {
 
     private List<Contributor> generateContributorsFromAuthorGroup(AuthorGroupTp authorGroupTp) {
         return authorGroupTp.getAuthorOrCollaboration()
-            .stream()
-            .map(this::generateContributorFromAuthorOrCollaboration)
-            .collect(Collectors.toList());
+                .stream()
+                .map(this::generateContributorFromAuthorOrCollaboration)
+                .collect(Collectors.toList());
     }
 
     private Contributor generateContributorFromAuthorOrCollaboration(Object authorOrCollaboration) {
         return authorOrCollaboration instanceof AuthorTp
-                   ? generateContributorFromAuthorTp((AuthorTp) authorOrCollaboration)
-                   : generateContributorFromCollaborationTp(
-                       (CollaborationTp) authorOrCollaboration);
+                ? generateContributorFromAuthorTp((AuthorTp) authorOrCollaboration)
+                : generateContributorFromCollaborationTp(
+                (CollaborationTp) authorOrCollaboration);
     }
 
     private Contributor generateContributorFromAuthorTp(AuthorTp author) {
@@ -250,10 +251,10 @@ class ScopusConverter {
 
     private Set<AdditionalIdentifier> generateAdditionalIdentifiers() {
         return extractItemIdentifiers()
-            .stream()
-            .filter(this::isScopusIdentifier)
-            .map(this::toAdditionalIdentifier)
-            .collect(Collectors.toSet());
+                .stream()
+                .filter(this::isScopusIdentifier)
+                .map(this::toAdditionalIdentifier)
+                .collect(Collectors.toSet());
     }
 
     private String marshallMainTitleToXmlPreservingUnderlyingStructure(TitletextTp contents) {
@@ -264,11 +265,11 @@ class ScopusConverter {
 
     private List<ItemidTp> extractItemIdentifiers() {
         return docTp.getItem()
-            .getItem()
-            .getBibrecord()
-            .getItemInfo()
-            .getItemidlist()
-            .getItemid();
+                .getItem()
+                .getBibrecord()
+                .getItemInfo()
+                .getItemidlist()
+                .getItemid();
     }
 
     private boolean isScopusIdentifier(ItemidTp itemIdTp) {
@@ -277,13 +278,13 @@ class ScopusConverter {
 
     private AdditionalIdentifier toAdditionalIdentifier(ItemidTp itemIdTp) {
         return new AdditionalIdentifier(ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME,
-                                        itemIdTp.getValue());
+                itemIdTp.getValue());
     }
 
     private PublicationContext getPublicationContext() {
         if (isJournal()) {
             return attempt(() -> createPeriodical())
-                .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
+                    .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
         }
         return ScopusConstants.EMPTY_PUBLICATION_CONTEXT;
     }
@@ -291,70 +292,72 @@ class ScopusConverter {
     private RuntimeException logErrorAndThrowException(Exception exception) {
         logger.error(exception.getMessage());
         return exception instanceof RuntimeException
-                   ? (RuntimeException) exception
-                   : new RuntimeException(exception);
+                ? (RuntimeException) exception
+                : new RuntimeException(exception);
     }
 
     private Periodical createPeriodical() throws InvalidIssnException {
-        var source = getSource();
-        var sourceTitle = extractSourceTitle(source);
-        var issnTpList = source.getIssn();
-        var printIssn = findPrintIssn(issnTpList).orElse(null);
-        var electronicIssn = findElectronicIssn(issnTpList).orElse(null);
+        var sourceTitle = findSourceTitle();
+        var printIssn = findPrintIssn().orElse(null);
+        var electronicIssn = findElectronicIssn().orElse(null);
         var publicationYear = findPublicationYear();
         if (START_YEAR_FOR_LEVEL_INFO > publicationYear) {
             return new UnconfirmedJournal(sourceTitle, printIssn, electronicIssn);
-        } else {
-            try {
-                return new Journal(metadataService
-                        .lookUpJournalIdAtPublicationChannel(sourceTitle, electronicIssn, printIssn, publicationYear));
-            } catch (IOException | InterruptedException e) {
-                logger.error(e.getMessage());
-            }
+        }
+        return getPeriodical(sourceTitle, printIssn, electronicIssn, publicationYear);
+    }
+
+    private Periodical getPeriodical(String sourceTitle, String printIssn, String electronicIssn, int publicationYear)
+            throws InvalidIssnException {
+        try {
+            return new Journal(metadataService
+                    .lookUpJournalIdAtPublicationChannel(sourceTitle, electronicIssn, printIssn, publicationYear));
+        } catch (IOException | InterruptedException e) {
+            logger.error(e.getMessage());
         }
         return new UnconfirmedJournal(sourceTitle, printIssn, electronicIssn);
     }
 
-    private int findPublicationYear() {
+    private Integer findPublicationYear() {
         return Optional.ofNullable(docTp)
                 .map(DocTp::getMeta)
                 .map(MetaTp::getPubYear)
                 .map(Integer::parseInt)
-                .orElse(-1);
+                .orElse(null);
     }
 
     private boolean isJournal() {
         return Optional.ofNullable(docTp)
-            .map(DocTp::getMeta)
-            .map(MetaTp::getSrctype)
-            .map(srcTyp -> JOURNAL.equals(ScopusSourceType.valueOfCode(srcTyp)))
-            .orElse(false);
+                .map(DocTp::getMeta)
+                .map(MetaTp::getSrctype)
+                .map(srcTyp -> JOURNAL.equals(ScopusSourceType.valueOfCode(srcTyp)))
+                .orElse(false);
     }
 
     private SourceTp getSource() {
         return docTp.getItem().getItem().getBibrecord().getHead().getSource();
     }
 
-    private String extractSourceTitle(SourceTp sourceTp) {
+    private String findSourceTitle() {
         StringBuilder sourceTitle = new StringBuilder();
-        sourceTp.getSourcetitle().getContent().forEach(sourceTitle::append);
+        getSource().getSourcetitle().getContent().forEach(sourceTitle::append);
         return sourceTitle.toString();
     }
 
-    private Optional<String> findElectronicIssn(List<IssnTp> issnTpList) {
-        return findIssn(issnTpList, ScopusConstants.ISSN_TYPE_ELECTRONIC);
+    private Optional<String> findElectronicIssn() {
+        return findIssn(getSource().getIssn(), ScopusConstants.ISSN_TYPE_ELECTRONIC);
     }
 
-    private Optional<String> findPrintIssn(List<IssnTp> issnTpList) {
-        return findIssn(issnTpList, ScopusConstants.ISSN_TYPE_PRINT);
+    private Optional<String> findPrintIssn() {
+        return findIssn(getSource().getIssn(), ScopusConstants.ISSN_TYPE_PRINT);
     }
 
     private Optional<String> findIssn(List<IssnTp> issnTpList, String issnType) {
         return Optional.ofNullable(issnTpList.stream()
-                                       .filter(issn -> issnType.equals(issn.getType()))
-                                       .map(IssnTp::getContent)
-                                       .map(this::addDashToIssn)
-                                       .collect(SingletonCollector.collectOrElse(null)));
+                .filter(issn -> issnType.equals(issn.getType()))
+                .map(IssnTp::getContent)
+                .map(this::addDashToIssn)
+                .collect(SingletonCollector.collectOrElse(null)));
     }
 
     private String addDashToIssn(String issn) {
