@@ -37,6 +37,7 @@ import no.scopus.generated.ShortTitle;
 import no.scopus.generated.YesnoAtt;
 import no.unit.nva.language.LanguageConstants;
 import nva.commons.core.ioutils.IoUtils;
+import nva.commons.core.paths.UriWrapper;
 
 public final class ScopusGenerator {
 
@@ -70,8 +71,12 @@ public final class ScopusGenerator {
 
     private static MetaTp randomMetaTp() {
         var meta = new MetaTp();
-        meta.setDoi(randomDoi().toString());
+        meta.setDoi(randomScopusDoi());
         return meta;
+    }
+
+    private static String randomScopusDoi() {
+        return new UriWrapper(randomDoi()).getPath().removeRoot().toString();
     }
 
     private static ItemTp randomItemTp() {
