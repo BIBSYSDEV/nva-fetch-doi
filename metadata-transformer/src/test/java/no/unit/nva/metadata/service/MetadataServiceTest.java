@@ -131,7 +131,9 @@ public class MetadataServiceTest {
         var metadataService = new MetadataService(httpClient);
         var name = "Edinburgh Journal of Botany";
         var year = 2003;
-        var actualId = metadataService.lookUpJournalIdAtPublicationChannel(name, null, null, year);
+        var actualId =
+            metadataService.lookUpJournalIdAtPublicationChannel(name, null, null, year)
+                .orElseThrow();
         var expectedId = "https://api.dev.nva.aws.unit.no/publication-channels/journal/440074/2010";
         assertThat(actualId, is(expectedId));
     }

@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.concurrent.Callable;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.doi.DataciteContentType;
 import no.unit.nva.doi.DoiProxyService;
@@ -100,11 +101,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     @JacocoGenerated
     private static MetadataService getMetadataService() {
-        try {
-            return new MetadataService();
-        } catch (IOException e) {
-            throw new RuntimeException("Error creating handler", e);
-        }
+        return attempt((Callable<MetadataService>) MetadataService::new).orElseThrow();
     }
 
     @Override
