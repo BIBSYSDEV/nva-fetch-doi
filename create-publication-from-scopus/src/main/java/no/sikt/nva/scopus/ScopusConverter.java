@@ -20,6 +20,8 @@ import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordsTp;
 import no.scopus.generated.AuthorTp;
+import no.scopus.generated.CitationTypeTp;
+import no.scopus.generated.CitationtypeAtt;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.InfTp;
@@ -40,6 +42,9 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.exceptions.InvalidIssnException;
+import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.pages.Pages;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
@@ -161,8 +166,32 @@ class ScopusConverter {
     private Reference generateReference() {
         Reference reference = new Reference();
         reference.setDoi(extractDOI());
+        reference.setPublicationInstance(generatePublicationInstance());
         reference.setPublicationContext(getPublicationContext());
         return reference;
+    }
+
+    private PublicationInstance<? extends Pages> generatePublicationInstance() {
+        var citationType = getCitationType();
+        return citationType.map(this::convertCitationTypeToPublicationInstance).orElse(null);
+    }
+
+    private PublicationInstance<? extends Pages> convertCitationTypeToPublicationInstance(CitationTypeTp citationTypeTp) {
+        return citationTypeTp.getCode() == CitationtypeAtt.AR
+                   ? new JournalArticle()
+                   : null;
+    }
+
+    private Optional<CitationTypeTp> getCitationType() {
+        return docTp
+            .getItem()
+            .getItem()
+            .getBibrecord()
+            .getHead()
+            .getCitationInfo()
+            .getCitationType()
+            .stream()
+            .findFirst();
     }
 
     private URI extractDOI() {
