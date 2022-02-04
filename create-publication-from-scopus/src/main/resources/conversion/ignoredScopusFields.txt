@@ -1,4 +1,15 @@
 .meta
-.item
 .dbname
 .contentType
+.item.item.processInfo
+.item.item.bibrecord.tail
+.item.item.bibrecord.itemfilelinks
+.item.item.bibrecord.itemInfo.itemidlist.pii
+.item.item.bibrecord.itemInfo.itemidlist.ern
+.item.item.bibrecord.itemInfo.itemidlist.doi
+.item.item.bibrecord.itemInfo.history
+.item.item.bibrecord.itemInfo.externalSource
+.item.item.bibrecord.itemInfo.dbcollection
+.item.item.bibrecord.itemInfo.copyright
+.item.item.bibrecord.head
+	
