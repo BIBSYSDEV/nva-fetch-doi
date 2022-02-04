@@ -134,7 +134,7 @@ class ScopusHandlerTest {
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
-        var expectedURI = new UriWrapper(DOI_OPEN_URL_FORMAT).addChild(DOI_IN_0000469852).getUri();
+        var expectedURI =  UriWrapper.fromUri(DOI_OPEN_URL_FORMAT).addChild(DOI_IN_0000469852).getUri();
         assertThat(createPublicationRequest.getEntityDescription().getReference().getDoi(), equalToObject(expectedURI));
     }
 
