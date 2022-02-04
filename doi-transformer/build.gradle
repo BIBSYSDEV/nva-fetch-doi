@@ -5,6 +5,8 @@ dependencies {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
 
+    implementation libs.nva.json
+
     api libs.nva.identifiers
     api libs.nva.doi
     runtimeOnly libs.jersey.common

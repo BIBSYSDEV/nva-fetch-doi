@@ -10,6 +10,7 @@ dependencies {
     api libs.jackson.datatype.jsr310
     api libs.httpclient
 
+    implementation libs.nva.json
     implementation libs.bundles.problem
 
     runtimeOnly libs.aws.lambda.java.core

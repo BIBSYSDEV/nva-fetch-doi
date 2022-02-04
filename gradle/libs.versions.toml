@@ -1,5 +1,5 @@
 [versions]
-nva = { strictly = "1.18.6" }
+nva = { strictly = "1.20.9" }
 testUtils = { strictly = "0.1.24" }
 jacksonVersion = { strictly = "2.13.0" }
 jakartaVersion = { strictly = "2.1.6" }
@@ -7,7 +7,7 @@ awsSdkVersion = { strictly = "1.12.129" }
 awsSdk2Version = { strictly = "2.17.99" }
 awsLambdaEvents = { strictly = '3.11.0' }
 awsLambdaCore = { strictly = '1.2.1' }
-nvaDatamodelVersion = { strictly = "0.14.23" }
+nvaDatamodelVersion = { strictly = "0.15.1" }
 jerseyVersion = { strictly = "2.30.1" }
 rdf4jVersion = { strictly = "3.1.2" }
 problemVersion = { strictly = "0.26.0" }
@@ -28,6 +28,7 @@ slf4j = { strictly = '1.8.0-beta4' }
 
 nva-s3 = { group = "com.github.bibsysdev", name = "s3", version.ref = "nva" }
 nva-core = { group = "com.github.bibsysdev", name = "core", version.ref = "nva" }
+nva-json = { group = "com.github.bibsysdev", name = "json", version.ref = "nva" }
 nva-apigateway = { group = "com.github.bibsysdev", name = "apigateway", version.ref = "nva" }
 nva-secrets = { group = "com.github.bibsysdev", name = "secrets", version.ref = "nva" }
 nva-logutils = { group = "com.github.bibsysdev", name = "logutils", version.ref = "nva" }
