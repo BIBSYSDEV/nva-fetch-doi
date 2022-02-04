@@ -166,7 +166,7 @@ class ScopusConverter {
     }
 
     private URI extractDOI() {
-        return new UriWrapper(DOI_OPEN_URL_FORMAT).addChild(docTp.getMeta().getDoi()).getUri();
+        return  UriWrapper.fromUri(DOI_OPEN_URL_FORMAT).addChild(docTp.getMeta().getDoi()).getUri();
     }
 
     private Optional<TitletextTp> getMainTitleTextTp() {
