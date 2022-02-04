@@ -25,6 +25,7 @@ public final class ScopusGenerator {
 
     public static final Set<Class<?>> NOT_BEAN_CLASSES = Set.of(XMLGregorianCalendar.class);
     private static final Set<String> IGNORED_FIELDS = readIgnoredFields();
+    public static final int SMALL_NUMBER = 10;
 
     public ScopusGenerator() {
 
@@ -79,8 +80,7 @@ public final class ScopusGenerator {
     }
 
     private static Stream<Integer> smallList() {
-        return IntStream.range(0, 1 + randomInteger(10))
-            .boxed();
+        return IntStream.range(0, 1 + randomInteger(SMALL_NUMBER)).boxed();
     }
 
     private static Set<String> readIgnoredFields() {
