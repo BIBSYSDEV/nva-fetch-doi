@@ -1,27 +1,229 @@
 package no.sikt.nva.scopus.test.utils;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFieldsAndClasses;
+import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
+import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import jakarta.xml.bind.JAXB;
+import java.io.Serializable;
+import java.io.StringWriter;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import javax.xml.datatype.XMLGregorianCalendar;
+import no.scopus.generated.AbstractTp;
+import no.scopus.generated.AbstractsTp;
+import no.scopus.generated.AuthorKeywordTp;
+import no.scopus.generated.AuthorKeywordsTp;
+import no.scopus.generated.BibrecordTp;
+import no.scopus.generated.CitationInfoTp;
+import no.scopus.generated.CitationTitleTp;
 import no.scopus.generated.DocTp;
+import no.scopus.generated.HeadTp;
+import no.scopus.generated.ItemInfoTp;
+import no.scopus.generated.ItemTp;
+import no.scopus.generated.ItemidTp;
+import no.scopus.generated.ItemidlistTp;
+import no.scopus.generated.MetaTp;
+import no.scopus.generated.OrigItemTp;
+import no.scopus.generated.PublishercopyrightTp;
+import no.scopus.generated.ShortTitle;
+import no.scopus.generated.YesnoAtt;
+import no.unit.nva.language.LanguageConstants;
 import nva.commons.core.ioutils.IoUtils;
 
 public final class ScopusGenerator {
 
     public static final Set<Class<?>> NOT_BEAN_CLASSES = Set.of(XMLGregorianCalendar.class);
+    public static final int SMALL_NUMBER = 10;
     private static final Set<String> IGNORED_FIELDS = readIgnoredFields();
+    public static final String SCOPUS_IDENTIFIER_TYPE = "SCP";
+    private final DocTp document;
 
     public ScopusGenerator() {
-
+        this.document = randomDocument();
     }
 
     public static DocTp randomDocument() {
         DocTp docTp = new DocTp();
+        docTp.setItem(randomItemTp());
+        docTp.setMeta(randomMetaTp());
         assertThat(docTp, doesNotHaveEmptyValuesIgnoringFieldsAndClasses(NOT_BEAN_CLASSES, IGNORED_FIELDS));
         return docTp;
+    }
+
+    public DocTp getDocument() {
+        return document;
+    }
+
+    public String toXml() {
+        StringWriter xmlWriter = new StringWriter();
+        JAXB.marshal(document, xmlWriter);
+        return xmlWriter.toString();
+    }
+
+    private static MetaTp randomMetaTp() {
+        var meta = new MetaTp();
+        meta.setDoi(randomDoi().toString());
+        return meta;
+    }
+
+    private static ItemTp randomItemTp() {
+        var item = new ItemTp();
+        item.setItem(randomOriginalItem());
+        return item;
+    }
+
+    private static OrigItemTp randomOriginalItem() {
+        var item = new OrigItemTp();
+        item.setBibrecord(randomBibRecord());
+        return item;
+    }
+
+    private static BibrecordTp randomBibRecord() {
+        var bibRecord = new BibrecordTp();
+        bibRecord.setItemInfo(randomItemInfo());
+        bibRecord.setHead(randomHeadTp());
+        return bibRecord;
+    }
+
+    private static HeadTp randomHeadTp() {
+        var head = new HeadTp();
+        head.setCitationTitle(randomCitationTitle());
+        head.setAbstracts(randomAbstracts());
+        head.setCitationInfo(randomCitationInfo());
+        return head;
+    }
+
+    private static CitationInfoTp randomCitationInfo() {
+        var citationInfo = new CitationInfoTp();
+        citationInfo.setAuthorKeywords(randomAuthorKeywordsTp());
+        return citationInfo;
+    }
+
+    private static AuthorKeywordsTp randomAuthorKeywordsTp() {
+        var authorKeywords = new AuthorKeywordsTp();
+        authorKeywords.getAuthorKeyword().addAll(randomAuthorKeywords());
+        return authorKeywords;
+    }
+
+    private static List<AuthorKeywordTp> randomAuthorKeywords() {
+        return smallStream().map(ignored -> randomAuthorKeyword()).collect(Collectors.toList());
+    }
+
+    private static AuthorKeywordTp randomAuthorKeyword() {
+        var authorKeyword = new AuthorKeywordTp();
+
+        authorKeyword.setLang(randomScopusLanguageCode());
+        authorKeyword.setOriginal(randomYesOrNo());
+        authorKeyword.setPerspective(randomString());
+        authorKeyword.getContent().addAll(randomSerializables());
+        return authorKeyword;
+    }
+
+    private static AbstractsTp randomAbstracts() {
+        var abstracts = new AbstractsTp();
+        abstracts.getAbstract().addAll(randomAbstractsList());
+        return abstracts;
+    }
+
+    private static List<AbstractTp> randomAbstractsList() {
+        return smallStream().map(ignored -> randomAbstract()).collect(Collectors.toList());
+    }
+
+    private static AbstractTp randomAbstract() {
+        var abstractTp = new AbstractTp();
+
+        abstractTp.setLang(randomScopusLanguageCode());
+        abstractTp.setOriginal(randomYesOrNo());
+        abstractTp.setSource(randomString());
+        abstractTp.setPublishercopyright(randomPublisherCopyrightTp());
+        return abstractTp;
+    }
+
+    private static PublishercopyrightTp randomPublisherCopyrightTp() {
+        var copyright = new PublishercopyrightTp();
+        copyright.getContent().addAll(randomSerializables());
+        return copyright;
+    }
+
+    private static YesnoAtt randomYesOrNo() {
+        return randomElement(YesnoAtt.values());
+    }
+
+    private static CitationTitleTp randomCitationTitle() {
+        var citationTitle = new CitationTitleTp();
+        citationTitle.getShortTitle().addAll(randomShortTitles());
+        return citationTitle;
+    }
+
+    private static List<ShortTitle> randomShortTitles() {
+        return smallStream().map(ignored -> randomShortTitle()).collect(Collectors.toList());
+    }
+
+    private static ShortTitle randomShortTitle() {
+        ShortTitle shortTitle = new ShortTitle();
+        shortTitle.setLang(randomScopusLanguageCode());
+        shortTitle.getContent().addAll(randomSerializables());
+        return shortTitle;
+    }
+
+    private static List<Serializable> randomSerializables() {
+        return randomStrings();
+    }
+
+    private static List<Serializable> randomStrings() {
+        return smallStream().map(ignored -> randomString()).collect(Collectors.toList());
+    }
+
+    private static String randomScopusLanguageCode() {
+        return randomElement(LanguageConstants.ALL_LANGUAGES).getIso6391Code();
+    }
+
+    private static ItemInfoTp randomItemInfo() {
+        var itemInfo = new ItemInfoTp();
+        itemInfo.setItemidlist(randomItemIdList());
+        return itemInfo;
+    }
+
+    private static ItemidlistTp randomItemIdList() {
+        var list = new ItemidlistTp();
+        list.getItemid().addAll(randomItemIdTps());
+        return list;
+    }
+
+    private static List<ItemidTp> randomItemIdTps() {
+        var list = smallStream().map(ignored -> randomItemidTp()).collect(Collectors.toList());
+        list.addAll(randomScopusIdentifiers());
+        return list;
+    }
+
+    private static List<ItemidTp> randomScopusIdentifiers() {
+        return smallStream().map(ignored -> randomScopusIdentifier()).collect(Collectors.toList());
+    }
+
+    private static ItemidTp randomScopusIdentifier() {
+        var scopusIdentifier = new ItemidTp();
+        scopusIdentifier.setIdtype(SCOPUS_IDENTIFIER_TYPE);
+        scopusIdentifier.setValue(randomString());
+        return scopusIdentifier;
+    }
+
+    private static ItemidTp randomItemidTp() {
+        var itemIdtp = new ItemidTp();
+        itemIdtp.setIdtype(randomString());
+        itemIdtp.setValue(randomString());
+        return itemIdtp;
+    }
+
+    private static Stream<Integer> smallStream() {
+        return IntStream.range(0, 1 + randomInteger(SMALL_NUMBER)).boxed();
     }
 
     private static Set<String> readIgnoredFields() {
