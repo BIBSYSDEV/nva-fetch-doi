@@ -3,19 +3,25 @@ package no.sikt.nva.scopus.test.utils;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFieldsAndClasses;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import jakarta.xml.bind.JAXB;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.nio.file.Path;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AbstractsTp;
@@ -24,6 +30,7 @@ import no.scopus.generated.AuthorKeywordsTp;
 import no.scopus.generated.BibrecordTp;
 import no.scopus.generated.CitationInfoTp;
 import no.scopus.generated.CitationTitleTp;
+import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
 import no.scopus.generated.ItemInfoTp;
@@ -32,6 +39,7 @@ import no.scopus.generated.ItemidTp;
 import no.scopus.generated.ItemidlistTp;
 import no.scopus.generated.MetaTp;
 import no.scopus.generated.OrigItemTp;
+import no.scopus.generated.ProcessInfo;
 import no.scopus.generated.PublishercopyrightTp;
 import no.scopus.generated.ShortTitle;
 import no.scopus.generated.YesnoAtt;
@@ -43,8 +51,8 @@ public final class ScopusGenerator {
 
     public static final Set<Class<?>> NOT_BEAN_CLASSES = Set.of(XMLGregorianCalendar.class);
     public static final int SMALL_NUMBER = 10;
-    private static final Set<String> IGNORED_FIELDS = readIgnoredFields();
     public static final String SCOPUS_IDENTIFIER_TYPE = "SCP";
+    private static final Set<String> IGNORED_FIELDS = readIgnoredFields();
     private final DocTp document;
 
     public ScopusGenerator() {
@@ -88,7 +96,45 @@ public final class ScopusGenerator {
     private static OrigItemTp randomOriginalItem() {
         var item = new OrigItemTp();
         item.setBibrecord(randomBibRecord());
+        item.setProcessInfo(randomProcessInfo());
         return item;
+    }
+
+    private static ProcessInfo randomProcessInfo() {
+        var processInfo = new ProcessInfo();
+        processInfo.setDateSort(randomDateSort());
+        return processInfo;
+    }
+
+    private static DateSortTp randomDateSort() {
+        var date = new DateSortTp();
+        date.setTimestamp(randomGregorianCalendar());
+        date.setDay(randomDay().toString());
+        date.setMonth(randomMonth().toString());
+        date.setYear(randomYear().toString());
+        return date;
+    }
+
+    private static Integer randomYear() {
+        return 1 + randomInteger(currentYear());
+    }
+
+    private static int currentYear() {
+        return Calendar.getInstance().get(Calendar.YEAR);
+    }
+
+    private static Integer randomMonth() {
+        return 1 + randomInteger(12);
+    }
+
+    private static Integer randomDay() {
+        return 1 + randomInteger(30);
+    }
+
+    private static XMLGregorianCalendar randomGregorianCalendar() {
+        var calendar = (GregorianCalendar) GregorianCalendar.getInstance(TimeZone.getDefault());
+        calendar.setTimeInMillis(randomInstant().toEpochMilli());
+        return attempt(() -> DatatypeFactory.newInstance().newXMLGregorianCalendar(calendar)).orElseThrow();
     }
 
     private static BibrecordTp randomBibRecord() {
