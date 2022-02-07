@@ -4,6 +4,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.StringContains.containsString;
 import static org.mockito.Mockito.mock;
 
 import com.amazonaws.services.lambda.runtime.Context;
@@ -24,12 +25,14 @@ import java.util.Arrays;
 import java.util.List;
 
 import no.unit.nva.s3.S3Driver;
+import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 
 class ScopusDeleteHandlerTest {
 
@@ -43,12 +46,26 @@ class ScopusDeleteHandlerTest {
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
     private ScopusDeleteHandler scopusDeleteHandler;
+    private FakeEventBridgeClient fakeEventBridgeClient;
+
 
     @BeforeEach
     public void init() {
         s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, "ignoredValue");
-        scopusDeleteHandler = new ScopusDeleteHandler(s3Client);
+        fakeEventBridgeClient = new FakeEventBridgeClient();
+        scopusDeleteHandler = new ScopusDeleteHandler(s3Client, fakeEventBridgeClient);
+    }
+
+    @Test
+    void shouldEmitEventWithSingleScopusIdentifierWhenInputFileContainsSingleScopusIdentifier() throws IOException {
+        var scopusFile = IoUtils.stringFromResources(Path.of("delete.txt"));
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
+        S3Event s3Event = createS3Event(uri);
+        scopusDeleteHandler.handleRequest(s3Event, CONTEXT);
+        List<PutEventsRequestEntry> requestEntries = fakeEventBridgeClient.getRequestEntries();
+        String detail = requestEntries.get(0).detail();
+        assertThat(detail, containsString("0000687314"));
     }
 
     @Test
