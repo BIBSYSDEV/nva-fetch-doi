@@ -63,6 +63,9 @@ class ScopusHandlerTest {
     private static final String SCOPUS_XML_0000469852 = "2-s2.0-0000469852.xml";
     private static final String DOI_IN_0000469852 = "10.1017/S0960428600000743";
     private static final String SCOPUS_XML_0018132378 = "2-s2.0-0018132378.xml";
+    private static final String EXPECTED_PUBLICATION_YEAR_IN_0018132378 = "1978";
+    private static final String EXPECTED_PUBLICATION_DAY_IN_0018132378 = "01";
+    private static final String EXPECTED_PUBLICATION_MONTH_IN_0018132378 = "01";
     private static final String AUTHOR_KEYWORD_NAME_SPACE = "<authorKeywordsTp";
     private static final String HARDCODED_KEYWORDS_0000469852 = "    <author-keyword xml:lang=\"eng\">\n"
                                                                 + "        <sup>64</sup>Cu\n"
@@ -91,6 +94,9 @@ class ScopusHandlerTest {
     private static final int CONTRIBUTOR_1_SEQUENCE_NUMBER = 1;
     private static final int CONTRIBUTOR_2_SEQUENCE_NUMBER = 2;
     private static final int CONTRIBUTOR_151_SEQUENCE_NUMBER = 151;
+    private static final String PUBLICATION_DAY_FIELD_NAME = "day";
+    private static final String PUBLICATION_MONTH_FIELD_NAME = "month";
+    private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
     private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
     private static final String EXPECTED_ABSTRACT_NAME_SPACE = "<abstractTp";
     private FakeS3Client s3Client;
@@ -275,6 +281,19 @@ class ScopusHandlerTest {
             hasItem(HARDCODED_EXPECTED_KEYWORD_1_IN_0000469852),
             hasItem(HARDCODED_EXPECTED_KEYWORD_2_IN_0000469852),
             hasItem(HARDCODED_EXPECTED_KEYWORD_3_IN_0000469852)));
+    }
+
+    @Test
+    void shouldExtractPublicationDate() throws IOException {
+        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0018132378));
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
+        S3Event s3Event = createS3Event(uri);
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationDate = createPublicationRequest.getEntityDescription().getDate();
+        assertThat(actualPublicationDate, allOf(
+            hasProperty(PUBLICATION_DAY_FIELD_NAME, is(EXPECTED_PUBLICATION_DAY_IN_0018132378)),
+            hasProperty(PUBLICATION_MONTH_FIELD_NAME, is(EXPECTED_PUBLICATION_MONTH_IN_0018132378)),
+            hasProperty(PUBLICATION_YEAR_FIELD_NAME, is(EXPECTED_PUBLICATION_YEAR_IN_0018132378))));
     }
 
     @Test
