@@ -14,8 +14,10 @@ dependencies {
     implementation libs.aws.lambda.java.core
     implementation libs.aws.lambda.events
     implementation libs.bundles.logging
-    testImplementation libs.nva.testutils
 
+    testImplementation project (":fetch-doi-testing")
+    testImplementation libs.nva.testutils
+    testImplementation libs.nva.json
     testImplementation(libs.zalando.problem) {
         compileOnly(libs.apiGuardian) {
             because 'Dependency has maven scope provided'

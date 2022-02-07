@@ -51,7 +51,6 @@ public class MetadataService {
     public static final ValueFactory valueFactory = SimpleValueFactory.getInstance();
     //Todo: this URI should come from a Config/Environment. How is that done in NVA
     public static final String API_HOST = new Environment().readEnv("API_HOST");
-    public static final String PUBLICATION_CHANNELS_PATH = "publication-channels/journal";
     private static final String EMPTY_BASE_URI = "";
     private static final Logger logger = LoggerFactory.getLogger(MetadataService.class);
     private static final String DOI_DISPLAY_REGEX = "(doi:|doc:|http(s)?://(dx\\.)?doi\\.org/)?10\\.\\d{4,9}+/.*";
@@ -66,14 +65,25 @@ public class MetadataService {
     private final HttpClient httpClient;
     private final TranslatorService translatorService;
     private final Repository db = new SailRepository(new MemoryStore());
+    private final URI publicationChannelsHostUri;
 
-    public MetadataService() throws IOException {
-        this(getDefaultHttpClient());
+    public MetadataService() {
+        this(getDefaultHttpClient(), defaultPublicationChannelsHostUri());
     }
 
+    /**
+     * @deprecated  For testing, we should also inject the URI so that we can use WireMock.
+     * @param httpClient the HttpClient.
+     */
+    @Deprecated
     public MetadataService(HttpClient httpClient) {
+        this(httpClient, defaultPublicationChannelsHostUri());
+    }
+
+    public MetadataService(HttpClient httpClient, URI publicationChannelsHostUri) {
         this.translatorService = new TranslatorService();
         this.httpClient = httpClient;
+        this.publicationChannelsHostUri = publicationChannelsHostUri;
     }
 
     /**
@@ -99,9 +109,13 @@ public class MetadataService {
                                                                 int year) {
         return Stream
             .of(electronicIssn, printedIssn, name)
-            .map(publicationDetail -> fetchPublicationIdentifierFromPublicationChannels(publicationDetail, year))
+            .map(queryTerm -> fetchPublicationIdentifierFromPublicationChannels(queryTerm, year))
             .flatMap(Optional::stream)
             .findFirst();
+    }
+
+    private static URI defaultPublicationChannelsHostUri() {
+        return UriWrapper.fromHost(API_HOST).addChild("publication-channels").addChild("journal").getUri();
     }
 
     private static HttpClient getDefaultHttpClient() {
@@ -205,10 +219,9 @@ public class MetadataService {
     }
 
     private Optional<String> fetchPublicationIdentifierFromPublicationChannels(
-        String publicationIdentifier, int year) {
-        return Optional.ofNullable(publicationIdentifier)
-            .flatMap(id -> queryPublicationChannelForJournal(publicationIdentifier, year));
-
+        String publicationQueryTerm, int year) {
+        return Optional.ofNullable(publicationQueryTerm)
+            .flatMap(queryTerm -> queryPublicationChannelForJournal(queryTerm, year));
     }
 
     private Optional<String> queryPublicationChannelForJournal(String term, int year) {
@@ -220,17 +233,21 @@ public class MetadataService {
 
     private Optional<String> parseResponseFromPublicationChannelsProxy(HttpResponse<String> response) {
         if (HttpURLConnection.HTTP_OK == response.statusCode()) {
-            JSONArray jsonArray = new JSONArray(response.body());
-            JSONObject jsonObject = jsonArray.getJSONObject(0);
-            return Optional.ofNullable(jsonObject.getString("id"));
+            return getIdOfFirstElement(response);
         }
         return Optional.empty();
+    }
+
+    private Optional<String> getIdOfFirstElement(HttpResponse<String> response) {
+        JSONArray jsonArray = new JSONArray(response.body());
+        JSONObject jsonObject = jsonArray.getJSONObject(0);
+        return Optional.ofNullable(jsonObject.getString("id"));
     }
 
     private HttpResponse<String> sendQueryToPublicationChannelsProxy(String term, int year)
         throws IOException, InterruptedException {
         var searchTerm = URLEncoder.encode(term, StandardCharsets.UTF_8.toString());
-        var uri = UriWrapper.fromHost(API_HOST).addChild(PUBLICATION_CHANNELS_PATH)
+        var uri = new UriWrapper(publicationChannelsHostUri)
             .addQueryParameter("query", searchTerm)
             .addQueryParameter("year", Integer.toString(year))
             .getUri();

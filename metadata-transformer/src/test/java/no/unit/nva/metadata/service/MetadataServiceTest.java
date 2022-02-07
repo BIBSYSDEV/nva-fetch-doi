@@ -3,6 +3,7 @@ package no.unit.nva.metadata.service;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.options;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
@@ -34,6 +35,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.admin.model.PaginatedResult.Meta;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import j2html.tags.ContainerTag;
 import j2html.tags.EmptyTag;
 import java.io.IOException;
@@ -50,6 +53,7 @@ import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import no.sikt.nva.testing.http.WiremockHttpClient;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.DcContentCaseArgumentsProvider;
@@ -119,6 +123,24 @@ public class MetadataServiceTest {
     private static final TestAppender logger = LogUtils.getTestingAppenderForRootLogger();
     private WireMockServer wireMockServer;
 
+    private URI serverUri;
+    private HttpClient httpClient;
+
+    @BeforeEach
+    public void initialize() {
+        wireMockServer = new WireMockServer(WireMockConfiguration.options().dynamicPort());
+        wireMockServer.start();
+        this.serverUri = URI.create(wireMockServer.baseUrl());
+        this.httpClient = WiremockHttpClient.create();
+    }
+
+    @AfterEach
+    public void tearDown() {
+        wireMockServer.stop();
+    }
+
+
+
     @Test
     public void getJournalIdFromPublicationChannelsByGivenJournalName()
             throws IOException, InterruptedException {
@@ -128,7 +150,7 @@ public class MetadataServiceTest {
         when(httpResonse.body()).thenReturn(responseBody);
         var httpClient = mock(HttpClient.class);
         when(httpClient.send(any(HttpRequest.class), any())).thenReturn(httpResonse);
-        var metadataService = new MetadataService(httpClient);
+        var metadataService = new MetadataService(httpClient,serverUri);
         var name = "Edinburgh Journal of Botany";
         var year = 2003;
         var actualId =
@@ -143,11 +165,11 @@ public class MetadataServiceTest {
         "provideMetadataWithLowercasePrefixes",
         "provideMetadataForAbstract"
     })
-    public void getCreatePublicationParsesHtmlAndReturnsMetadata(String testDescription, String html,
-                                                                 CreatePublicationRequest expectedRequest)
+    public void getCreatePublicationParsesHtmlAndReturnsMetadata( String ignored,String html,
+                                                                  CreatePublicationRequest expectedRequest)
         throws IOException {
         URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
-        MetadataService metadataService = new MetadataService();
+        MetadataService metadataService = new MetadataService(httpClient,serverUri);
         Optional<CreatePublicationRequest> request = metadataService.generateCreatePublicationRequest(uri);
         CreatePublicationRequest actual = request.orElseThrow();
         actual.setContext(null);
@@ -155,16 +177,7 @@ public class MetadataServiceTest {
         assertThat(actual, equalTo(expectedRequest));
     }
 
-    @BeforeEach
-    private void extracted() {
-        wireMockServer = new WireMockServer();
-        wireMockServer.start();
-    }
 
-    @AfterEach
-    void tearDown() {
-        wireMockServer.stop();
-    }
 
     @Test
     void getCreatePublicationRequestAddsTagsWhenTagsArePresent() throws IOException {

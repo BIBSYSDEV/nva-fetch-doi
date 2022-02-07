@@ -4,10 +4,8 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.sikt.nva.scopus.ScopusSourceType.JOURNAL;
-import static nva.commons.core.attempt.Try.attempt;
 import jakarta.xml.bind.JAXB;
 import jakarta.xml.bind.JAXBElement;
-import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URI;
 import java.util.ArrayList;
@@ -23,13 +21,12 @@ import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.InfTp;
-import no.scopus.generated.IssnTp;
 import no.scopus.generated.ItemidTp;
 import no.scopus.generated.MetaTp;
-import no.scopus.generated.SourceTp;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
+import no.sikt.nva.scopus.conversion.JournalCreator;
 import no.sikt.nva.scopus.exception.UnsupportedXmlElementException;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
@@ -38,39 +35,19 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Reference;
-import no.unit.nva.model.contexttypes.Journal;
-import no.unit.nva.model.contexttypes.Periodical;
 import no.unit.nva.model.contexttypes.PublicationContext;
-import no.unit.nva.model.contexttypes.UnconfirmedJournal;
-import no.unit.nva.model.exceptions.InvalidIssnException;
-import nva.commons.core.JacocoGenerated;
-import nva.commons.core.SingletonCollector;
 import nva.commons.core.paths.UriWrapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("PMD.GodClass")
 class ScopusConverter {
 
     private static final String MALFORMED_CONTENT_MESSAGE = "Malformed content, cannot parse: %s";
-    public static final String DASH = "-";
-    public static final int START_YEAR_FOR_LEVEL_INFO = 2004;
     private final DocTp docTp;
-    private static final Logger logger = LoggerFactory.getLogger(ScopusConverter.class);
     private final MetadataService metadataService;
 
-    protected ScopusConverter(DocTp docTp) {
+    protected ScopusConverter(DocTp docTp, MetadataService metadataService) {
         this.docTp = docTp;
-        metadataService = getMetadataService();
-    }
-
-    @JacocoGenerated
-    private static MetadataService getMetadataService() {
-        try {
-            return new MetadataService();
-        } catch (IOException e) {
-            throw new RuntimeException("Error creating handler", e);
-        }
+        this.metadataService = metadataService;
     }
 
     public CreatePublicationRequest generateCreatePublicationRequest() {
@@ -280,52 +257,9 @@ class ScopusConverter {
 
     private PublicationContext getPublicationContext() {
         if (isJournal()) {
-            return attempt(() -> createPeriodical())
-                .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
+            return new JournalCreator(metadataService, docTp).createJournal();
         }
         return ScopusConstants.EMPTY_PUBLICATION_CONTEXT;
-    }
-
-    private RuntimeException logErrorAndThrowException(Exception exception) {
-        logger.error(exception.getMessage());
-        return exception instanceof RuntimeException
-                   ? (RuntimeException) exception
-                   : new RuntimeException(exception);
-    }
-
-    private Periodical createPeriodical() {
-        var sourceTitle = findSourceTitle();
-        var printIssn = findPrintIssn().orElse(null);
-        var electronicIssn = findElectronicIssn().orElse(null);
-        var publicationYear = findPublicationYear();
-        if (thereIsNoLevelInformationForPublication(publicationYear)) {
-            return createUnconfirmedJournal(sourceTitle, printIssn, electronicIssn);
-        }
-        return getPeriodical(sourceTitle, printIssn, electronicIssn, publicationYear);
-    }
-
-    private boolean thereIsNoLevelInformationForPublication(Integer publicationYear) {
-        return START_YEAR_FOR_LEVEL_INFO > publicationYear;
-    }
-
-    private Periodical getPeriodical(String sourceTitle, String printIssn, String electronicIssn, int publicationYear) {
-        return
-            metadataService
-                .lookUpJournalIdAtPublicationChannel(sourceTitle, electronicIssn, printIssn, publicationYear)
-                .map(id -> (Periodical) new Journal(id))
-                .orElseGet(() -> createUnconfirmedJournal(sourceTitle, printIssn, electronicIssn));
-    }
-
-    private UnconfirmedJournal createUnconfirmedJournal(String sourceTitle, String printIssn, String electronicIssn) {
-        return attempt(() -> new UnconfirmedJournal(sourceTitle, printIssn, electronicIssn)).orElseThrow();
-    }
-
-    private Integer findPublicationYear() {
-        return Optional.ofNullable(docTp)
-            .map(DocTp::getMeta)
-            .map(MetaTp::getPubYear)
-            .map(Integer::parseInt)
-            .orElse(null);
     }
 
     private boolean isJournal() {
@@ -334,35 +268,5 @@ class ScopusConverter {
             .map(MetaTp::getSrctype)
             .map(srcTyp -> JOURNAL.equals(ScopusSourceType.valueOfCode(srcTyp)))
             .orElse(false);
-    }
-
-    private SourceTp getSource() {
-        return docTp.getItem().getItem().getBibrecord().getHead().getSource();
-    }
-
-    private String findSourceTitle() {
-        StringBuilder sourceTitle = new StringBuilder();
-        getSource().getSourcetitle().getContent().forEach(sourceTitle::append);
-        return sourceTitle.toString();
-    }
-
-    private Optional<String> findElectronicIssn() {
-        return findIssn(getSource().getIssn(), ScopusConstants.ISSN_TYPE_ELECTRONIC);
-    }
-
-    private Optional<String> findPrintIssn() {
-        return findIssn(getSource().getIssn(), ScopusConstants.ISSN_TYPE_PRINT);
-    }
-
-    private Optional<String> findIssn(List<IssnTp> issnTpList, String issnType) {
-        return Optional.ofNullable(issnTpList.stream()
-                                       .filter(issn -> issnType.equals(issn.getType()))
-                                       .map(IssnTp::getContent)
-                                       .map(this::addDashToIssn)
-                                       .collect(SingletonCollector.collectOrElse(null)));
-    }
-
-    private String addDashToIssn(String issn) {
-        return issn.contains(DASH) ? issn : issn.substring(0, 4) + DASH + issn.substring(4);
     }
 }

@@ -1,8 +1,14 @@
 package no.sikt.nva.scopus;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
@@ -25,12 +31,19 @@ import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotificatio
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3EventNotificationRecord;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3ObjectEntity;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.UserIdentityEntity;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.github.tomakehurst.wiremock.WireMockServer;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
+import no.sikt.nva.testing.http.WiremockHttpClient;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.metadata.CreatePublicationRequest;
+import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
@@ -40,6 +53,7 @@ import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
@@ -54,11 +68,8 @@ class ScopusHandlerTest {
     public static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     public static final long SOME_FILE_SIZE = 100L;
     public static final String HARD_CODED_JOURNAL_NAME_IN_RESOURCE_FILE = "Edinburgh Journal of Botany";
-    public static final String HARD_CODED_JOURNAL_URI =
-            "https://api.dev.nva.aws.unit.no/publication-channels/journal/440074/2010";
-    private FakeS3Client s3Client;
-    private S3Driver s3Driver;
-    private ScopusHandler scopusHandler;
+    public static final URI HARD_CODED_JOURNAL_URI =
+        URI.create("https://api.dev.nva.aws.unit.no/publication-channels/journal/440074/2010");
     private static final String EXPECTED_RESULTS_PATH = "expectedResults";
     private static final String IDENTITY_FIELD_NAME = "identity";
     private static final String NAME_FIELD_NAME = "name";
@@ -97,12 +108,26 @@ class ScopusHandlerTest {
     private static final int CONTRIBUTOR_151_SEQUENCE_NUMBER = 151;
     private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
     private static final String EXPECTED_ABSTRACT_NAME_SPACE = "<abstractTp";
+    private FakeS3Client s3Client;
+    private S3Driver s3Driver;
+    private ScopusHandler scopusHandler;
+    private WireMockServer httpServer;
+    private URI serverUri;
+    private MetadataService metadataService;
 
     @BeforeEach
     public void init() {
         s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, "ignoredValue");
-        scopusHandler = new ScopusHandler(s3Client);
+        startWiremockServer();
+        HttpClient httpClient = WiremockHttpClient.create();
+        metadataService = new MetadataService(httpClient, serverUri);
+        scopusHandler = new ScopusHandler(s3Client, metadataService);
+    }
+
+    @AfterEach
+    public void tearDown() {
+        httpServer.stop();
     }
 
     @Test
@@ -110,7 +135,7 @@ class ScopusHandlerTest {
         var s3Event = createS3Event(randomString());
         var expectedMessage = randomString();
         s3Client = new FakeS3ClientThrowingException(expectedMessage);
-        scopusHandler = new ScopusHandler(s3Client);
+        scopusHandler = new ScopusHandler(s3Client, metadataService);
         var appender = LogUtils.getTestingAppenderForRootLogger();
         assertThrows(RuntimeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
@@ -134,7 +159,7 @@ class ScopusHandlerTest {
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
-        var expectedURI =  UriWrapper.fromUri(DOI_OPEN_URL_FORMAT).addChild(DOI_IN_0000469852).getUri();
+        var expectedURI = UriWrapper.fromUri(DOI_OPEN_URL_FORMAT).addChild(DOI_IN_0000469852).getUri();
         assertThat(createPublicationRequest.getEntityDescription().getReference().getDoi(), equalToObject(expectedURI));
     }
 
@@ -180,20 +205,20 @@ class ScopusHandlerTest {
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         String actualKeywords = createPublicationRequest.getAuthorKeywordsXmlFormat();
         assertThat(actualKeywords, stringContainsInOrder(
-                XML_ENCODING_DECLARATION,
-                AUTHOR_KEYWORD_NAME_SPACE,
-                HARDCODED_KEYWORDS_0000469852));
+            XML_ENCODING_DECLARATION,
+            AUTHOR_KEYWORD_NAME_SPACE,
+            HARDCODED_KEYWORDS_0000469852));
     }
 
     @Test
     void shouldReturnCreatePublicationRequestWithUnconfirmedPublicationContextWhenEventWithS3UriThatPointsToScopusXml()
-            throws IOException {
+        throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
-                .getPublicationContext();
+            .getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
         var actualJournalName = ((UnconfirmedJournal) actualPublicationContext).getTitle();
         assertThat(actualJournalName, is(HARD_CODED_JOURNAL_NAME_IN_RESOURCE_FILE));
@@ -201,15 +226,15 @@ class ScopusHandlerTest {
 
     @Test
     void shouldReturnCreatePublicationRequestWithUnconfirmedPublicationContextWhenEventS3UriScopusXmlWithValidIssn()
-            throws IOException {
+        throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
         scopusFile = scopusFile.replace("<issn type=\"print\">09604286</issn>",
-                "<issn type=\"print\">0960-4286</issn>");
+                                        "<issn type=\"print\">0960-4286</issn>");
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
-                .getPublicationContext();
+            .getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
         var actualJournalName = ((UnconfirmedJournal) actualPublicationContext).getTitle();
         assertThat(actualJournalName, is(HARD_CODED_JOURNAL_NAME_IN_RESOURCE_FILE));
@@ -217,10 +242,10 @@ class ScopusHandlerTest {
 
     @Test
     void shouldReturnCreatePublicationRequestWithUnconfirmedPublicationContextWhenEventS3UriScopusXmlWithInValidIssn()
-            throws IOException {
+        throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
         scopusFile = scopusFile.replace("<issn type=\"print\">09604286</issn>",
-                "<issn type=\"print\">096042</issn>");
+                                        "<issn type=\"print\">096042</issn>");
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         var s3Event = createS3Event(uri);
         var exception = assertThrows(RuntimeException.class, () -> {
@@ -233,14 +258,14 @@ class ScopusHandlerTest {
 
     @Test
     void shouldReturnDefaultPublicationContextWhenEventWithS3UriThatPointsToScopusXmlWithoutPrintIssn()
-            throws IOException {
+        throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
         scopusFile = scopusFile.replace("<issn type=\"print\">09604286</issn>", "");
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
-                .getPublicationContext();
+            .getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
         var actualJournalName = ((UnconfirmedJournal) actualPublicationContext).getTitle();
         assertThat(actualJournalName, is(HARD_CODED_JOURNAL_NAME_IN_RESOURCE_FILE));
@@ -248,32 +273,36 @@ class ScopusHandlerTest {
 
     @Test
     void shouldReturnCreatePublicationRequestWithJournalWhenEventWithS3UriThatPointsToScopusXmlWhereSourceTitleIsInNsd()
-            throws IOException {
+        throws IOException {
+
+        URI expectedJournalUri = mockedPublicationChannelsReturnsJournalUri();
+
         var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
-        scopusFile = scopusFile.replace("<xocs:pub-year>1993</xocs:pub-year>", "<xocs:pub-year>2010</xocs:pub-year>");
+        scopusFile = scopusFile.replace("<xocs:pub-year>1993</xocs:pub-year>",
+                                        "<xocs:pub-year>2010</xocs:pub-year>");
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
-                .getPublicationContext();
+            .getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Journal.class));
         var actualJournalName = ((Journal) actualPublicationContext).getId().toString();
-        assertThat(actualJournalName, is(HARD_CODED_JOURNAL_URI));
+        assertThat(actualJournalName, is(expectedJournalUri.toString()));
     }
 
     @Test
     void shouldReturnDefaultPublicationContextWhenEventWithS3UriThatPointsToScopusXmlWithoutKnownSourceType()
-            throws IOException {
+        throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
         //Todo: this is actually not perfect as there is a chance my random string starts with a 'j' ...
         var randomChar = randomString().substring(0, 1);
         scopusFile = scopusFile.replace("<xocs:srctype>j</xocs:srctype>", "<xocs:srctype>" + randomChar
-                + "</xocs:srctype>");
+                                                                          + "</xocs:srctype>");
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
-                .getPublicationContext();
+            .getPublicationContext();
         assertThat(actualPublicationContext, is(ScopusConstants.EMPTY_PUBLICATION_CONTEXT));
     }
 
@@ -298,10 +327,34 @@ class ScopusHandlerTest {
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualMainAbstract = createPublicationRequest.getEntityDescription().getAbstract();
         String expectedAbstract =
-            IoUtils.stringFromResources(Path.of(EXPECTED_RESULTS_PATH,FILENAME_EXPECTED_ABSTRACT_IN_0000469852));
+            IoUtils.stringFromResources(Path.of(EXPECTED_RESULTS_PATH, FILENAME_EXPECTED_ABSTRACT_IN_0000469852));
         assertThat(actualMainAbstract, stringContainsInOrder(XML_ENCODING_DECLARATION,
                                                              EXPECTED_ABSTRACT_NAME_SPACE,
                                                              expectedAbstract));
+    }
+
+    private void startWiremockServer() {
+        httpServer = new WireMockServer(options().dynamicHttpsPort());
+        httpServer.start();
+        serverUri = URI.create(httpServer.baseUrl());
+    }
+
+    private URI mockedPublicationChannelsReturnsJournalUri() {
+        var journalUri = randomUri();
+        ArrayNode publicationChannelsResponseBody = publicationChannelsResponseWithJournalUri(journalUri);
+        stubFor(get(anyUrl()).willReturn(aResponse()
+                                             .withBody(publicationChannelsResponseBody.toPrettyString())
+                                             .withStatus(HttpURLConnection.HTTP_OK)));
+        return journalUri;
+    }
+
+    private ArrayNode publicationChannelsResponseWithJournalUri(URI journalUri) {
+        var publicationChannelsResponseBodyElement = JsonUtils.dtoObjectMapper.createObjectNode();
+        publicationChannelsResponseBodyElement.put("id", journalUri.toString());
+
+        var publicationChannelsResponseBody = JsonUtils.dtoObjectMapper.createArrayNode();
+        publicationChannelsResponseBody.add(publicationChannelsResponseBodyElement);
+        return publicationChannelsResponseBody;
     }
 
     private S3Event createS3Event(String expectedObjectKey) {
@@ -328,7 +381,7 @@ class ScopusHandlerTest {
     private S3Entity createS3Entity(String expectedObjectKey) {
         var bucket = new S3BucketEntity(randomString(), EMPTY_USER_IDENTITY, randomString());
         var object = new S3ObjectEntity(expectedObjectKey, SOME_FILE_SIZE, randomString(), randomString(),
-                                                   randomString());
+                                        randomString());
         var schemaVersion = randomString();
         return new S3Entity(randomString(), bucket, object, schemaVersion);
     }
