@@ -68,8 +68,7 @@ class ScopusHandlerTest {
     public static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     public static final long SOME_FILE_SIZE = 100L;
     public static final String HARD_CODED_JOURNAL_NAME_IN_RESOURCE_FILE = "Edinburgh Journal of Botany";
-    public static final URI HARD_CODED_JOURNAL_URI =
-        URI.create("https://api.dev.nva.aws.unit.no/publication-channels/journal/440074/2010");
+
     private static final String EXPECTED_RESULTS_PATH = "expectedResults";
     private static final String IDENTITY_FIELD_NAME = "identity";
     private static final String NAME_FIELD_NAME = "name";
