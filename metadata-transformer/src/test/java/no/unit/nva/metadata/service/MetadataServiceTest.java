@@ -3,7 +3,6 @@ package no.unit.nva.metadata.service;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.options;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
@@ -35,7 +34,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.admin.model.PaginatedResult.Meta;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import j2html.tags.ContainerTag;
 import j2html.tags.EmptyTag;
@@ -139,18 +137,16 @@ public class MetadataServiceTest {
         wireMockServer.stop();
     }
 
-
-
     @Test
     public void getJournalIdFromPublicationChannelsByGivenJournalName()
-            throws IOException, InterruptedException {
+        throws IOException, InterruptedException {
         var responseBody = IoUtils.stringFromResources(Path.of("publication_channels_442850_response.json"));
         var httpResonse = mock(HttpResponse.class);
         when(httpResonse.statusCode()).thenReturn(SC_OK);
         when(httpResonse.body()).thenReturn(responseBody);
         var httpClient = mock(HttpClient.class);
         when(httpClient.send(any(HttpRequest.class), any())).thenReturn(httpResonse);
-        var metadataService = new MetadataService(httpClient,serverUri);
+        var metadataService = new MetadataService(httpClient, serverUri);
         var name = "Edinburgh Journal of Botany";
         var year = 2003;
         var actualId =
@@ -165,19 +161,17 @@ public class MetadataServiceTest {
         "provideMetadataWithLowercasePrefixes",
         "provideMetadataForAbstract"
     })
-    public void getCreatePublicationParsesHtmlAndReturnsMetadata( String ignored,String html,
-                                                                  CreatePublicationRequest expectedRequest)
+    public void getCreatePublicationParsesHtmlAndReturnsMetadata(String ignored, String html,
+                                                                 CreatePublicationRequest expectedRequest)
         throws IOException {
         URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
-        MetadataService metadataService = new MetadataService(httpClient,serverUri);
+        MetadataService metadataService = new MetadataService(httpClient, serverUri);
         Optional<CreatePublicationRequest> request = metadataService.generateCreatePublicationRequest(uri);
         CreatePublicationRequest actual = request.orElseThrow();
         actual.setContext(null);
 
         assertThat(actual, equalTo(expectedRequest));
     }
-
-
 
     @Test
     void getCreatePublicationRequestAddsTagsWhenTagsArePresent() throws IOException {
@@ -202,7 +196,7 @@ public class MetadataServiceTest {
     @ParameterizedTest(name = "getCreatePublication returns date when date attribute {0} with value {1}")
     @ArgumentsSource(ValidDateArgumentsProvider.class)
     void getCreatePublicationReturnsDateWhenDateVariantIsPresent(String tagAttribute, String date)
-            throws IOException, InterruptedException {
+        throws IOException, InterruptedException {
 
         CreatePublicationRequest actual = getCreatePublicationRequest(tagAttribute, date);
         CreatePublicationRequest expectedRequest = getCreatePublicationRequestWithDateOnly(date);
@@ -337,14 +331,14 @@ public class MetadataServiceTest {
         throws IOException {
         CreatePublicationRequest request = getCreatePublicationRequest(tags);
         Object[] expected = tags.stream()
-                                .filter(this::isNameProperty)
-                                .map(MetaTagPair::getContent)
-                                .distinct()
-                                .toArray();
+            .filter(this::isNameProperty)
+            .map(MetaTagPair::getContent)
+            .distinct()
+            .toArray();
         List<String> actual = request.getEntityDescription().getContributors().stream()
-                                  .map(Contributor::getIdentity)
-                                  .map(Identity::getName)
-                                  .collect(Collectors.toList());
+            .map(Contributor::getIdentity)
+            .map(Identity::getName)
+            .collect(Collectors.toList());
         assertThat(actual, containsInAnyOrder(expected));
     }
 
@@ -379,11 +373,11 @@ public class MetadataServiceTest {
         CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(third, metaTags);
         String actual = createPublicationRequest.getEntityDescription().getMainTitle();
         List<String> authorNames = createPublicationRequest.getEntityDescription()
-                                       .getContributors()
-                                       .stream()
-                                       .map(Contributor::getIdentity)
-                                       .map(Identity::getName)
-                                       .collect(Collectors.toList());
+            .getContributors()
+            .stream()
+            .map(Contributor::getIdentity)
+            .map(Identity::getName)
+            .collect(Collectors.toList());
         assertThat(authorNames, hasItem(shortAuthorName));
         assertThat(actual, equalTo(expected));
     }
@@ -400,13 +394,13 @@ public class MetadataServiceTest {
             new MetaTagPair(metaTagName, isxnImplyingContentType)));
 
         PublicationContext actualContext = createPublicationRequest.getEntityDescription()
-                                               .getReference().getPublicationContext();
+            .getReference().getPublicationContext();
         assertThat(actualContext, instanceOf(expectedContext));
 
         verifyMetaTagContentInPublicationContext(isxnImplyingContentType, actualContext);
 
         PublicationInstance<?> actualInstance = createPublicationRequest.getEntityDescription()
-                                                    .getReference().getPublicationInstance();
+            .getReference().getPublicationInstance();
         assertThat(actualInstance, instanceOf(expectedInstance));
     }
 
@@ -420,9 +414,9 @@ public class MetadataServiceTest {
             new MetaTagPair(Citation.ISBN.getMetaTagName(), SECOND_ISBN_ISBN13_VARIANT)));
 
         List<String> actual = ((Book) createPublicationRequest.getEntityDescription()
-                                          .getReference().getPublicationContext()).getIsbnList();
+            .getReference().getPublicationContext()).getIsbnList();
         String[] expected = List.of(FIRST_ISBN_ISBN13_VARIANT, SECOND_ISBN_ISBN13_VARIANT)
-                                .toArray(String[]::new);
+            .toArray(String[]::new);
 
         assertThat(actual, containsInAnyOrder(expected));
     }
@@ -436,9 +430,9 @@ public class MetadataServiceTest {
             new MetaTagPair(Citation.ISSN.getMetaTagName(), PRINT_ISSN)));
 
         String actual = ((UnconfirmedJournal) createPublicationRequest.getEntityDescription()
-                                       .getReference().getPublicationContext()).getOnlineIssn();
+            .getReference().getPublicationContext()).getOnlineIssn();
         String[] expected = List.of(ONLINE_ISSN, PRINT_ISSN)
-                                .toArray(String[]::new);
+            .toArray(String[]::new);
 
         assertThat(actual, is(in(expected)));
     }
@@ -488,8 +482,8 @@ public class MetadataServiceTest {
 
     private static CreatePublicationRequest createRequestWithTitle(String title) {
         EntityDescription entityDescription = new EntityDescription.Builder()
-                                                  .withMainTitle(title)
-                                                  .build();
+            .withMainTitle(title)
+            .build();
         CreatePublicationRequest request = new CreatePublicationRequest();
         request.setEntityDescription(entityDescription);
         return request;
@@ -516,9 +510,9 @@ public class MetadataServiceTest {
     private static CreatePublicationRequest createRequestWithDescriptionAndOrAbstract(
         String description, String abstractString) {
         EntityDescription entityDescription = new EntityDescription.Builder()
-                                                  .withDescription(description)
-                                                  .withAbstract(abstractString)
-                                                  .build();
+            .withDescription(description)
+            .withAbstract(abstractString)
+            .build();
         CreatePublicationRequest request = new CreatePublicationRequest();
         request.setEntityDescription(entityDescription);
         return request;
@@ -576,8 +570,8 @@ public class MetadataServiceTest {
 
     private String createAuthorShorterThanShortestTitle(String... titles) {
         return Arrays.stream(titles).reduce(this::shortestString)
-                   .map(this::leftHalf)
-                   .orElseThrow();
+            .map(this::leftHalf)
+            .orElseThrow();
     }
 
     private String leftHalf(String title) {
@@ -622,7 +616,7 @@ public class MetadataServiceTest {
     }
 
     private CreatePublicationRequest getCreatePublicationRequest(String attribute, String value)
-            throws IOException, InterruptedException {
+        throws IOException, InterruptedException {
         Optional<CreatePublicationRequest> request = getCreatePublicationRequestResponse(attribute, value);
         CreatePublicationRequest actual = request.orElseThrow();
         actual.setContext(null);
@@ -674,8 +668,8 @@ public class MetadataServiceTest {
 
     private CreatePublicationRequest createPublicationRequestWithLanguageOnly(URI uri) {
         EntityDescription entityDescription = new EntityDescription.Builder()
-                                                  .withLanguage(uri)
-                                                  .build();
+            .withLanguage(uri)
+            .build();
         CreatePublicationRequest expectedRequest = new CreatePublicationRequest();
         expectedRequest.setEntityDescription(entityDescription);
         return expectedRequest;
@@ -683,8 +677,8 @@ public class MetadataServiceTest {
 
     private CreatePublicationRequest getCreatePublicationRequestWithDateOnly(String date) {
         EntityDescription entityDescription = new EntityDescription.Builder()
-                                                  .withDate(createPublicationDate(date))
-                                                  .build();
+            .withDate(createPublicationDate(date))
+            .build();
         CreatePublicationRequest expectedRequest = new CreatePublicationRequest();
         expectedRequest.setEntityDescription(entityDescription);
         return expectedRequest;
@@ -697,10 +691,10 @@ public class MetadataServiceTest {
         String day = dateParts.length > 2 ? dateParts[2] : null;
 
         return new PublicationDate.Builder()
-                   .withYear(year)
-                   .withMonth(month)
-                   .withDay(day)
-                   .build();
+            .withYear(year)
+            .withMonth(month)
+            .withDay(day)
+            .build();
     }
 
     private URI prepareWebServerAndReturnUriToMetadata(String filename, String body) {

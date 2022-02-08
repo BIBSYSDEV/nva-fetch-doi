@@ -305,8 +305,8 @@ class ScopusHandlerTest {
         var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
             .getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Journal.class));
-        var actualJournalName = ((Journal) actualPublicationContext).getId().toString();
-        assertThat(actualJournalName, is(expectedJournalUri.toString()));
+        var actualJournalName = ((Journal) actualPublicationContext).getId();
+        assertThat(actualJournalName, is(expectedJournalUri));
     }
 
     @Test

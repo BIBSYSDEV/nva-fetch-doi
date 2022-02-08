@@ -49,7 +49,6 @@ import org.slf4j.LoggerFactory;
 public class MetadataService {
 
     public static final ValueFactory valueFactory = SimpleValueFactory.getInstance();
-    //Todo: this URI should come from a Config/Environment. How is that done in NVA
     public static final String API_HOST = new Environment().readEnv("API_HOST");
     private static final String EMPTY_BASE_URI = "";
     private static final Logger logger = LoggerFactory.getLogger(MetadataService.class);
