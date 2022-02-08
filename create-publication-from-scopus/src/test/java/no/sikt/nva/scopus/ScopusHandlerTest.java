@@ -162,20 +162,6 @@ class ScopusHandlerTest {
         assertThat(actualMainTitle, is(equalTo(titleObjectAsXmlString)));
     }
 
-    private TitletextTp extractTitle() {
-        return Optional.of(scopusData.getDocument())
-            .map(DocTp::getItem)
-            .map(ItemTp::getItem)
-            .map(OrigItemTp::getBibrecord)
-            .map(BibrecordTp::getHead)
-            .map(HeadTp::getCitationTitle)
-            .map(CitationTitleTp::getTitletext)
-            .stream()
-            .flatMap(Collection::stream)
-            .filter(t -> t.getOriginal().equals(YesnoAtt.Y))
-            .collect(SingletonCollector.collect());
-    }
-
     @Test
     void shouldExtractContributorsNamesAndSequenceNumberCorrectly() throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_85114653695));
@@ -324,6 +310,20 @@ class ScopusHandlerTest {
         assertThat(actualMainAbstract, stringContainsInOrder(XML_ENCODING_DECLARATION,
                                                              EXPECTED_ABSTRACT_NAME_SPACE,
                                                              expectedAbstract));
+    }
+
+    private TitletextTp extractTitle() {
+        return Optional.of(scopusData.getDocument())
+            .map(DocTp::getItem)
+            .map(ItemTp::getItem)
+            .map(OrigItemTp::getBibrecord)
+            .map(BibrecordTp::getHead)
+            .map(HeadTp::getCitationTitle)
+            .map(CitationTitleTp::getTitletext)
+            .stream()
+            .flatMap(Collection::stream)
+            .filter(t -> t.getOriginal().equals(YesnoAtt.Y))
+            .collect(SingletonCollector.collect());
     }
 
     private AdditionalIdentifier[] convertScopusIdentifiersToNvaAdditionalIdentifiers(
