@@ -101,7 +101,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     @JacocoGenerated
     private static MetadataService getMetadataService() {
-        return attempt((Callable<MetadataService>) MetadataService::new).orElseThrow();
+        return new MetadataService();
     }
 
     @Override
