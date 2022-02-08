@@ -12,6 +12,7 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.Matchers.stringContainsInOrder;
+import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -29,15 +30,26 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import no.scopus.generated.BibrecordTp;
+import no.scopus.generated.CitationTitleTp;
+import no.scopus.generated.DocTp;
+import no.scopus.generated.HeadTp;
+import no.scopus.generated.ItemTp;
 import no.scopus.generated.ItemidTp;
+import no.scopus.generated.OrigItemTp;
+import no.scopus.generated.TitletextTp;
+import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.test.utils.ScopusGenerator;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
+import nva.commons.core.SingletonCollector;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
@@ -61,7 +73,6 @@ class ScopusHandlerTest {
     private static final String NAME_FIELD_NAME = "name";
     private static final String SEQUENCE_FIELD_NAME = "sequence";
     private static final String SCOPUS_XML_0000469852 = "2-s2.0-0000469852.xml";
-    private static final String DOI_IN_0000469852 = "10.1017/S0960428600000743";
     private static final String SCOPUS_XML_0018132378 = "2-s2.0-0018132378.xml";
     private static final String EXPECTED_PUBLICATION_YEAR_IN_0018132378 = "1978";
     private static final String EXPECTED_PUBLICATION_DAY_IN_0018132378 = "01";
@@ -78,15 +89,8 @@ class ScopusHandlerTest {
     private static final String HARDCODED_EXPECTED_KEYWORD_1_IN_0000469852 = "64Cu";
     private static final String HARDCODED_EXPECTED_KEYWORD_2_IN_0000469852 = "excretion";
     private static final String HARDCODED_EXPECTED_KEYWORD_3_IN_0000469852 = "sheep";
-    private static final String SCOPUS_XML_0000833530 = "2-s2.0-0000833530.xml";
     private static final String XML_ENCODING_DECLARATION = "<?xml version=\"1.0\" encoding=\"UTF-8\" "
                                                            + "standalone=\"yes\"?>";
-    private static final String HARDCODED_EXPECTED_TITLE_NAMESPACE = "<titletextTp xml:lang=\"eng\" "
-                                                                     + "language=\"English\" original=\"y\"";
-    private static final String HARDCODED_EXPECTED_TITLE_IN_0000833530 = "Measurement of A\n"
-                                                                         + "    <sup>bb</sup>\n"
-                                                                         + "    <inf>FB</inf> in hadronic Z decays "
-                                                                         + "using a jet charge technique</titletextTp>";
     private static final String SCOPUS_XML_85114653695 = "2-s2.0-85114653695.xml";
     private static final String CONTRIBUTOR_1_NAME_IN_85114653695 = "Morra A.";
     private static final String CONTRIBUTOR_2_NAME_IN_85114653695 = "Escala-Garcia M.";
@@ -148,15 +152,28 @@ class ScopusHandlerTest {
 
     @Test
     void shouldReturnCreatePublicationRequestWithMainTitle() throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000833530));
-        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
-        S3Event s3Event = createS3Event(uri);
-        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
-        String actualMainTitle = createPublicationRequest.getEntityDescription().getMainTitle();
-        assertThat(actualMainTitle,
-                   stringContainsInOrder(XML_ENCODING_DECLARATION,
-                                         HARDCODED_EXPECTED_TITLE_NAMESPACE,
-                                         HARDCODED_EXPECTED_TITLE_IN_0000833530));
+
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        var titleObject = extractTitle();
+        var titleObjectAsXmlString = ScopusGenerator.toXml(titleObject);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualMainTitle = createPublicationRequest.getEntityDescription().getMainTitle();
+        assertThat(actualMainTitle, is(equalTo(titleObjectAsXmlString)));
+    }
+
+    private TitletextTp extractTitle() {
+        return Optional.of(scopusData.getDocument())
+            .map(DocTp::getItem)
+            .map(ItemTp::getItem)
+            .map(OrigItemTp::getBibrecord)
+            .map(BibrecordTp::getHead)
+            .map(HeadTp::getCitationTitle)
+            .map(CitationTitleTp::getTitletext)
+            .stream()
+            .flatMap(Collection::stream)
+            .filter(t -> t.getOriginal().equals(YesnoAtt.Y))
+            .collect(SingletonCollector.collect());
     }
 
     @Test

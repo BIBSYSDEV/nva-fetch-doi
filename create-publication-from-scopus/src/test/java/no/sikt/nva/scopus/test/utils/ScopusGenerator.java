@@ -13,6 +13,7 @@ import java.io.Serializable;
 import java.io.StringWriter;
 import java.nio.file.Path;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
@@ -41,7 +42,9 @@ import no.scopus.generated.MetaTp;
 import no.scopus.generated.OrigItemTp;
 import no.scopus.generated.ProcessInfo;
 import no.scopus.generated.PublishercopyrightTp;
+import no.scopus.generated.RichstringWithMMLType;
 import no.scopus.generated.ShortTitle;
+import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
 import no.unit.nva.language.LanguageConstants;
 import nva.commons.core.ioutils.IoUtils;
@@ -74,6 +77,12 @@ public final class ScopusGenerator {
     public String toXml() {
         StringWriter xmlWriter = new StringWriter();
         JAXB.marshal(document, xmlWriter);
+        return xmlWriter.toString();
+    }
+
+    public static String toXml(RichstringWithMMLType serializable) {
+        StringWriter xmlWriter = new StringWriter();
+        JAXB.marshal(serializable, xmlWriter);
         return xmlWriter.toString();
     }
 
@@ -149,6 +158,7 @@ public final class ScopusGenerator {
         head.setCitationTitle(randomCitationTitle());
         head.setAbstracts(randomAbstracts());
         head.setCitationInfo(randomCitationInfo());
+
         return head;
     }
 
@@ -211,7 +221,31 @@ public final class ScopusGenerator {
     private static CitationTitleTp randomCitationTitle() {
         var citationTitle = new CitationTitleTp();
         citationTitle.getShortTitle().addAll(randomShortTitles());
+        citationTitle.getTitletext().add(randomOriginalTitle());
+        citationTitle.getTitletext().addAll(randomNonOriginalTitles());
         return citationTitle;
+    }
+
+    private static Collection<? extends TitletextTp> randomNonOriginalTitles() {
+        return smallStream().map(ignored -> randomNonOriginalTitle()).collect(Collectors.toList());
+    }
+
+    private static TitletextTp randomOriginalTitle() {
+        return randomTitle(YesnoAtt.Y);
+    }
+
+    private static TitletextTp randomNonOriginalTitle() {
+        return randomTitle(YesnoAtt.N);
+    }
+
+    private static TitletextTp randomTitle(YesnoAtt n) {
+        var titleText = new TitletextTp();
+        titleText.setOriginal(n);
+        titleText.setLang(randomScopusLanguageCode());
+        titleText.setPerspective(randomString());
+        titleText.setLang(randomScopusLanguageCode());
+        titleText.getContent().addAll(randomSerializables());
+        return titleText;
     }
 
     private static List<ShortTitle> randomShortTitles() {
