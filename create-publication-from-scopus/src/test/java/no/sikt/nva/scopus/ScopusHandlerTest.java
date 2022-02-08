@@ -294,8 +294,8 @@ class ScopusHandlerTest {
         throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
 
-        URI queryUri = createExpectedQueryUriForJournalWithEIssn(E_ISSN_0000469852, "2010");
-        URI expectedJournalUri = mockedPublicationChannelsReturnsJournalUri(queryUri);
+        var queryUri = createExpectedQueryUriForJournalWithEIssn(E_ISSN_0000469852, "2010");
+        var expectedJournalUri = mockedPublicationChannelsReturnsJournalUri(queryUri);
 
         scopusFile = scopusFile.replace("<xocs:pub-year>1993</xocs:pub-year>",
                                         "<xocs:pub-year>2010</xocs:pub-year>");
@@ -327,9 +327,10 @@ class ScopusHandlerTest {
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
             .getPublicationContext();
+        var actualJournalName = ((Journal) actualPublicationContext).getId();
+
         assertThat(actualPublicationContext, instanceOf(Journal.class));
-        var actualJournalName = ((Journal) actualPublicationContext).getId().toString();
-        assertThat(actualJournalName, is(expectedJournalUri.toString()));
+        assertThat(actualJournalName, is(expectedJournalUri));
     }
 
     @Test

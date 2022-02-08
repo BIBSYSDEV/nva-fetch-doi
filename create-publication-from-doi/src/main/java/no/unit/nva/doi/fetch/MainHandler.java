@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.concurrent.Callable;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.doi.DataciteContentType;
 import no.unit.nva.doi.DoiProxyService;

@@ -161,8 +161,9 @@ public class MetadataServiceTest {
         "provideMetadataWithLowercasePrefixes",
         "provideMetadataForAbstract"
     })
-    public void getCreatePublicationParsesHtmlAndReturnsMetadata(String ignored, String html,
-                                                                 CreatePublicationRequest expectedRequest)
+    void getCreatePublicationParsesHtmlAndReturnsMetadata(String ignored,
+                                                          String html,
+                                                          CreatePublicationRequest expectedRequest)
         throws IOException {
         URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
         MetadataService metadataService = new MetadataService(httpClient, serverUri);
