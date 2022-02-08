@@ -102,12 +102,14 @@ class ScopusHandlerTest {
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
     private ScopusHandler scopusHandler;
+    private ScopusGenerator scopusData;
 
     @BeforeEach
     public void init() {
         s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, "ignoredValue");
         scopusHandler = new ScopusHandler(s3Client);
+        scopusData = new ScopusGenerator();
     }
 
     @Test
@@ -136,11 +138,11 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractDoiAndPlaceItInsideReferenceObject() throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000469852));
-        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
-        var expectedURI = UriWrapper.fromUri(DOI_OPEN_URL_FORMAT).addChild(DOI_IN_0000469852).getUri();
+        var scopusDoi = scopusData.getDocument().getMeta().getDoi();
+        var expectedURI = UriWrapper.fromUri(DOI_OPEN_URL_FORMAT).addChild(scopusDoi).getUri();
         assertThat(createPublicationRequest.getEntityDescription().getReference().getDoi(), equalToObject(expectedURI));
     }
 
