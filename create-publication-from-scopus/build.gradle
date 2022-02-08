@@ -1,7 +1,7 @@
 def problemVersion = '0.24.0'
 
 dependencies {
-    api (libs.nva.datamodel) {
+    api(libs.nva.datamodel) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
     implementation project(":scopus-generate")
@@ -15,6 +15,7 @@ dependencies {
     implementation libs.aws.lambda.events
     implementation libs.bundles.logging
     testImplementation libs.nva.testutils
+    testImplementation libs.nva.language
 
     testImplementation(libs.zalando.problem) {
         compileOnly(libs.apiGuardian) {
