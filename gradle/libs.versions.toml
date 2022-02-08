@@ -1,6 +1,5 @@
 [versions]
-nva = { strictly = "1.20.9" }
-testUtils = { strictly = "0.1.24" }
+nva = { strictly = "1.20.10" }
 jacksonVersion = { strictly = "2.13.0" }
 jakartaVersion = { strictly = "2.1.6" }
 awsSdkVersion = { strictly = "1.12.129" }
@@ -23,6 +22,7 @@ junit5 = { strictly = '5.7.2' }
 mockito = { strictly = '3.9.0' }
 log4j = { strictly = '2.17.1' }
 slf4j = { strictly = '1.8.0-beta4' }
+nvaLanguage = {strictly = '1.0'}
 
 [libraries]
 nva-s3 = { group = "com.github.bibsysdev", name = "s3", version.ref = "nva" }
@@ -36,7 +36,8 @@ nva-doi = { group = "com.github.bibsysdev", name = "doi", version.ref = "nva" }
 nva-testutils = { group = "com.github.bibsysdev", name = "nvatestutils", version.ref = "nva" }
 nva-datamodel = { group = "com.github.bibsysdev", name = "nva-datamodel-java", version.ref = "nvaDatamodelVersion" }
 
-testUtils = { group = "com.github.BIBSYSDEV", name = "nva-testutils", version.ref = "testUtils" }
+nva-language= { group= 'com.github.bibsysdev', name= 'nva-language', version.ref = "nvaLanguage"}
+
 
 
 jackson-core = { group = "com.fasterxml.jackson.core", name = "jackson-core", version.ref = "jacksonVersion" }
@@ -100,7 +101,7 @@ slf4j-api = { group = 'org.slf4j', name = 'slf4j-api', version.ref = 'slf4j' }
 rdf4j = ["rdf4j-sail-api", "rdf4j-model", "rdf4j-repository-sail", "rdf4j-sail-memory", "rdf4j-repository-api", "rdf4j-rio-api"]
 any23 = ["apache-any23-core", "apache-any23-api"]
 testing = ["mockito-core", "hamcrest-base", "hamcrest-core", "junit-jupiter-engine", "junit-jupiter-params",
-    "junit-jupiter-api", "junit-vintage-engine", "testUtils", "nva-logutils","wiremock"]
+    "junit-jupiter-api", "junit-vintage-engine", "nva-testutils", "nva-logutils","wiremock"]
 problem = ["zalando-jackson-datatype-problem", "zalando-problem"]
 xsd2java = ["xsd2java-xjc", "xsd2java-impl", "xsd2java-api", "xsd2java-activation", "xsd2java-jakarta"]
 logging = ['log4j-core', 'log4j-api', 'log4j-slf4j18-impl', 'slf4j-api']

@@ -114,7 +114,7 @@ public class MetadataService {
             .findFirst();
     }
 
-    private static URI defaultPublicationChannelsHostUri() {
+    public static URI defaultPublicationChannelsHostUri() {
         return UriWrapper.fromHost(API_HOST).addChild("publication-channels").addChild("journal").getUri();
     }
 
