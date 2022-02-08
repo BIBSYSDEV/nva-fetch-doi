@@ -4,7 +4,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.StringContains.containsString;
 import static org.mockito.Mockito.mock;
 
 import com.amazonaws.services.lambda.runtime.Context;
@@ -24,6 +23,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeS3Client;
@@ -32,7 +32,6 @@ import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 
 class ScopusDeleteHandlerTest {
 
@@ -40,9 +39,14 @@ class ScopusDeleteHandlerTest {
     public static final RequestParametersEntity EMPTY_REQUEST_PARAMETERS = null;
     public static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;
     public static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
-    public static final List<String> HARDCODED_SCOPUS_IDENTIFIERS_IN_DELETE_FILE =
-            Arrays.asList("0000687314", "0017752991", "33947568076", "85084744636");
     public static final long SOME_FILE_SIZE = 100L;
+
+    public static final String DELETE_MULTIPLE_IDENTIFIERS_FILE = "deleteMultipleIdentifiers.txt";
+    public static final String DELETE_SINGLE_IDENTIFIER_FILE = "deleteSingleIdentifier.txt";
+    public static final String HARDCODED_SCOPUS_IDENTIFIER_IN_DELETE_SINGLE_FILE = "0000687314";
+    public static final List<String> HARDCODED_SCOPUS_IDENTIFIERS_IN_DELETE_MULTIPLE_FILE =
+            Arrays.asList("0000687314", "0017752991", "33947568076", "85084744636");
+
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
     private ScopusDeleteHandler scopusDeleteHandler;
@@ -59,25 +63,43 @@ class ScopusDeleteHandlerTest {
 
     @Test
     void shouldEmitEventWithSingleScopusIdentifierWhenInputFileContainsSingleScopusIdentifier() throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of("delete.txt"));
+        var scopusFile = IoUtils.stringFromResources(Path.of(DELETE_SINGLE_IDENTIFIER_FILE));
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
-        S3Event s3Event = createS3Event(uri);
+        var s3Event = createS3Event(uri);
         scopusDeleteHandler.handleRequest(s3Event, CONTEXT);
-        List<PutEventsRequestEntry> requestEntries = fakeEventBridgeClient.getRequestEntries();
-        String detail = requestEntries.get(0).detail();
-        assertThat(detail, containsString("0000687314"));
+        var requestEntries = fakeEventBridgeClient.getRequestEntries();
+        assertThat(requestEntries.size(), is(equalTo(1)));
+        var eventBodyJson = requestEntries.get(0).detail();
+        var actualRequestEntryBody =
+                JsonUtils.dtoObjectMapper.readValue(eventBodyJson, ScopusDeleteEventBody.class);
+        var expectedRequestEntryBody = new ScopusDeleteEventBody(HARDCODED_SCOPUS_IDENTIFIER_IN_DELETE_SINGLE_FILE);
+        assertThat(actualRequestEntryBody, is(equalTo(expectedRequestEntryBody)));
+    }
+
+    @Test
+    void shouldEmitEventsWithScopusIdentifiersWhenInputFileContainsMultipleScopusIdentifiers() throws IOException {
+        var scopusFile = IoUtils.stringFromResources(Path.of(DELETE_MULTIPLE_IDENTIFIERS_FILE));
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
+        var s3Event = createS3Event(uri);
+        scopusDeleteHandler.handleRequest(s3Event, CONTEXT);
+        var requestEntries = fakeEventBridgeClient.getRequestEntries();
+        assertThat(requestEntries.size(), is(equalTo(HARDCODED_SCOPUS_IDENTIFIERS_IN_DELETE_MULTIPLE_FILE.size())));
+        var eventBodyJson = requestEntries.get(0).detail();
+        var actualRequestEntryBody =
+                JsonUtils.dtoObjectMapper.readValue(eventBodyJson, ScopusDeleteEventBody.class);
+        var expectedRequestEntryBody = new ScopusDeleteEventBody(HARDCODED_SCOPUS_IDENTIFIER_IN_DELETE_SINGLE_FILE);
+        assertThat(actualRequestEntryBody, is(equalTo(expectedRequestEntryBody)));
     }
 
     @Test
     void shouldReturnCorrectIdentifiersFromFileContentWhenEventWithS3UriThatPointsToScopusDeleteFile()
             throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of("delete.txt"));
+        var scopusFile = IoUtils.stringFromResources(Path.of(DELETE_MULTIPLE_IDENTIFIERS_FILE));
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
-        S3Event s3Event = createS3Event(uri);
-        List<String> identifiersToDelete = scopusDeleteHandler.handleRequest(s3Event, CONTEXT);
-        assertThat(identifiersToDelete, is(equalTo(HARDCODED_SCOPUS_IDENTIFIERS_IN_DELETE_FILE)));
+        var s3Event = createS3Event(uri);
+        var identifiersToDelete = scopusDeleteHandler.handleRequest(s3Event, CONTEXT);
+        assertThat(identifiersToDelete, is(equalTo(HARDCODED_SCOPUS_IDENTIFIERS_IN_DELETE_MULTIPLE_FILE)));
     }
-
 
     private S3Event createS3Event(String expectedObjectKey) {
         var eventNotification = new S3EventNotificationRecord(randomString(),

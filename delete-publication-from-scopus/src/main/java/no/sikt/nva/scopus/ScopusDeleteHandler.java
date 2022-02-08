@@ -5,11 +5,11 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.collect.Lists;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 public class ScopusDeleteHandler implements RequestHandler<S3Event, List<String>> {
 
     public static final int SINGLE_EXPECTED_RECORD = 0;
-    public static final int MAX_EVENTS_PER_PUTEVENTS = 20_000;
+    public static final int PUT_EVENTS_REQUEST_MAX_ENTRIES = 2;
     public static final String S3_URI_TEMPLATE = "s3://%s/%s";
     public static final String DELETE_SCOPUS_IDENTIFIER_PREFIX = "DELETE-2-s2.0-";
     public static final String EMPTY_STRING = "";
@@ -44,25 +44,32 @@ public class ScopusDeleteHandler implements RequestHandler<S3Event, List<String>
 
     @Override
     public List<String> handleRequest(S3Event event, Context context) {
-        logger.info("Reading file from s3");
-        List<String> scopusIdentifiersToDelete = readFile(event)
+        logger.info("Reading delete file from s3");
+
+        List<String> identifiersToDelete = readFile(event)
                 .lines()
-                .map(this::trimDeleteScopusPrefix)
+                .map(this::trimDeletePrefix)
                 .collect(Collectors.toList());
-        emitEventsFromList(scopusIdentifiersToDelete);
-        return scopusIdentifiersToDelete;
+
+        Lists.partition(identifiersToDelete, PUT_EVENTS_REQUEST_MAX_ENTRIES).stream()
+                .map(this::createPutEventsRequestEntries)
+                .collect(Collectors.toList())
+                .forEach(this::emitPutEventsRequest);
+
+        return identifiersToDelete;
     }
 
-    private void emitEventsFromList(List<String> scopusIdentifiers) {
-        List<PutEventsRequestEntry> requestEntries = new ArrayList<>();
-        for (String scopusIdentifier : scopusIdentifiers) { //
-            // TODO: Use MAX_EVENTS_PER_PUTEVENTS
-            requestEntries.add(createEventRequestEntryForScopusIdentifier(scopusIdentifier));
-        }
+    private void emitPutEventsRequest(List<PutEventsRequestEntry> requestEntries) {
         eventBridgeClient.putEvents(PutEventsRequest.builder().entries(requestEntries).build());
     }
 
-    private PutEventsRequestEntry createEventRequestEntryForScopusIdentifier(String scopusIdentifier) {
+    private List<PutEventsRequestEntry> createPutEventsRequestEntries(List<String> scopusIdentifiersList) {
+        return scopusIdentifiersList.stream()
+                .map(this::createPutEventsRequestEntry)
+                .collect(Collectors.toList());
+    }
+
+    private PutEventsRequestEntry createPutEventsRequestEntry(String scopusIdentifier) {
         return PutEventsRequestEntry.builder()
                 .detail(createScopusDeleteEventBodyJson(scopusIdentifier))
                 .build();
@@ -76,7 +83,7 @@ public class ScopusDeleteHandler implements RequestHandler<S3Event, List<String>
         }
     }
 
-    private String trimDeleteScopusPrefix(String line) {
+    private String trimDeletePrefix(String line) {
         return line.replace(DELETE_SCOPUS_IDENTIFIER_PREFIX, EMPTY_STRING).trim();
     }
 
@@ -86,15 +93,15 @@ public class ScopusDeleteHandler implements RequestHandler<S3Event, List<String>
         return s3Driver.getFile(new UriWrapper(fileUri).toS3bucketPath());
     }
 
+    private URI createS3BucketUri(S3Event s3Event) {
+        return URI.create(String.format(S3_URI_TEMPLATE, extractBucketName(s3Event), extractFilename(s3Event)));
+    }
+
     private String extractBucketName(S3Event event) {
         return event.getRecords().get(SINGLE_EXPECTED_RECORD).getS3().getBucket().getName();
     }
 
     private String extractFilename(S3Event event) {
         return event.getRecords().get(SINGLE_EXPECTED_RECORD).getS3().getObject().getKey();
-    }
-
-    private URI createS3BucketUri(S3Event s3Event) {
-        return URI.create(String.format(S3_URI_TEMPLATE, extractBucketName(s3Event), extractFilename(s3Event)));
     }
 }
