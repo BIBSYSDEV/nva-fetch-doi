@@ -31,6 +31,7 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
+import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
@@ -96,6 +97,7 @@ class ScopusHandlerTest {
     private static final int CONTRIBUTOR_151_SEQUENCE_NUMBER = 151;
     private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
     private static final String EXPECTED_ABSTRACT_NAME_SPACE = "<abstractTp";
+    private static final String SCOPUS_XML_CONFERENCE_PAPER_0020298182  = "2-s2.0-0020298182.xml";
 
     @BeforeEach
     public void init() {
@@ -300,11 +302,13 @@ class ScopusHandlerTest {
 
     @Test
     void shouldNotGenerateCreatePublicationFromUnsupportedPublicationTypes() throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_85114653695));
+        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_CONFERENCE_PAPER_0020298182));
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         S3Event s3Event = createS3Event(uri);
-        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
-        assertThat(createPublicationRequest, is(null));
+        var expectedMessage = String.format(ScopusConverter.UNSUPPORTED_CITATION_TYPE_MESSAGE, "2-s2.0-0020298182");
+        var appender = LogUtils.getTestingAppenderForRootLogger();
+        assertThrows(UnsupportedCitationTypeException.class, ()-> scopusHandler.handleRequest(s3Event, CONTEXT));
+        assertThat(appender.getMessages(), containsString(expectedMessage));
     }
 
     private S3Event createS3Event(String expectedObjectKey) {
