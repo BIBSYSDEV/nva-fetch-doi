@@ -105,9 +105,6 @@ class ScopusHandlerTest {
     private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
     private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
     private static final String EXPECTED_ABSTRACT_NAME_SPACE = "<abstractTp";
-    private FakeS3Client s3Client;
-    private S3Driver s3Driver;
-    private ScopusHandler scopusHandler;
     private ScopusGenerator scopusData;
 
     @BeforeEach
