@@ -1,7 +1,6 @@
 package no.sikt.nva.scopus;
 
 import static java.util.Collections.emptyList;
-import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.sikt.nva.scopus.ScopusSourceType.JOURNAL;
 import jakarta.xml.bind.JAXB;
@@ -16,11 +15,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AuthorGroupTp;
+import no.scopus.generated.AuthorKeywordTp;
 import no.scopus.generated.AuthorKeywordsTp;
 import no.scopus.generated.AuthorTp;
+import no.scopus.generated.CitationInfoTp;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
+import no.scopus.generated.HeadTp;
 import no.scopus.generated.InfTp;
 import no.scopus.generated.ItemidTp;
 import no.scopus.generated.MetaTp;
@@ -61,12 +63,19 @@ class ScopusConverter {
     }
 
     private String generateAuthorKeyWordsXml() {
-        var authorKeywords = extractAuthorKeyWords();
-        return nonNull(authorKeywords) ? marshallAuthorKeywords(authorKeywords) : null;
+        return extractAuthorKeyWords()
+            .map(this::marshallAuthorKeywords)
+            .orElse(null);
     }
 
-    private AuthorKeywordsTp extractAuthorKeyWords() {
-        return docTp.getItem().getItem().getBibrecord().getHead().getCitationInfo().getAuthorKeywords();
+    private Optional<AuthorKeywordsTp> extractAuthorKeyWords() {
+        return Optional.ofNullable(extractHead())
+            .map(HeadTp::getCitationInfo)
+            .map(CitationInfoTp::getAuthorKeywords);
+    }
+
+    private HeadTp extractHead() {
+        return docTp.getItem().getItem().getBibrecord().getHead();
     }
 
     private String marshallAuthorKeywords(AuthorKeywordsTp authorKeywordsTp) {
@@ -112,7 +121,7 @@ class ScopusConverter {
     }
 
     private List<AbstractTp> getAbstracts() {
-        return docTp.getItem().getItem().getBibrecord().getHead().getAbstracts().getAbstract();
+        return extractHead().getAbstracts().getAbstract();
     }
 
     private boolean isOriginalAbstract(AbstractTp abstractTp) {
@@ -126,17 +135,21 @@ class ScopusConverter {
     }
 
     private List<String> generatePlainTextTags() {
-        var authorKeywordsTp = extractAuthorKeyWords();
-        return nonNull(authorKeywordsTp)
-                   ? authorKeywordsTp
+        return extractAuthorKeyWords()
+            .map(this::extractKeywordsAsStrings)
+            .orElse(emptyList());
+    }
+
+    private List<String> extractKeywordsAsStrings(AuthorKeywordsTp authorKeywordsTp) {
+        return authorKeywordsTp
             .getAuthorKeyword()
             .stream()
-            .map(keyword -> keyword.getContent()
-                .stream()
-                .map(this::extractContentString)
-                .collect(Collectors.joining()))
-            .collect(Collectors.toList())
-                   : emptyList();
+            .map(this::concatenateKeywordsWithoutSpaceBetween)
+            .collect(Collectors.toList());
+    }
+
+    private String concatenateKeywordsWithoutSpaceBetween(AuthorKeywordTp keyword) {
+        return keyword.getContent().stream().map(this::extractContentString).collect(Collectors.joining());
     }
 
     private String extractContentString(Object content) {
@@ -194,7 +207,7 @@ class ScopusConverter {
     }
 
     private List<TitletextTp> getTitleText() {
-        return docTp.getItem().getItem().getBibrecord().getHead().getCitationTitle().getTitletext();
+        return extractHead().getCitationTitle().getTitletext();
     }
 
     private List<Contributor> generateContributorsFromAuthorGroup(AuthorGroupTp authorGroupTp) {
@@ -240,7 +253,7 @@ class ScopusConverter {
     }
 
     private List<AuthorGroupTp> extractAuthorGroup() {
-        return docTp.getItem().getItem().getBibrecord().getHead().getAuthorGroup();
+        return extractHead().getAuthorGroup();
     }
 
     private Set<AdditionalIdentifier> generateAdditionalIdentifiers() {
