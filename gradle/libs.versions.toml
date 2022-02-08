@@ -22,6 +22,7 @@ junit5 = { strictly = '5.7.2' }
 mockito = { strictly = '3.9.0' }
 log4j = { strictly = '2.17.1' }
 slf4j = { strictly = '1.8.0-beta4' }
+nvaLanguage = {strictly = '1.0'}
 
 [libraries]
 
@@ -36,6 +37,8 @@ nva-identifiers = { group = "com.github.bibsysdev", name = "identifiers", versio
 nva-doi = { group = "com.github.bibsysdev", name = "doi", version.ref = "nva" }
 nva-testutils = { group = "com.github.bibsysdev", name = "nvatestutils", version.ref = "nva" }
 nva-datamodel = { group = "com.github.bibsysdev", name = "nva-datamodel-java", version.ref = "nvaDatamodelVersion" }
+
+nva-language= { group= 'com.github.bibsysdev', name= 'nva-language', version.ref = "nvaLanguage"}
 
 
 
