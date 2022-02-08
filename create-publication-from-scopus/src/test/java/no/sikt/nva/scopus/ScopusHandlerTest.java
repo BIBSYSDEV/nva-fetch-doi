@@ -30,8 +30,11 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.Collectors;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
@@ -39,6 +42,7 @@ import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
+import org.jsoup.select.Evaluator.Id;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
@@ -94,9 +98,9 @@ class ScopusHandlerTest {
     private static final int CONTRIBUTOR_151_SEQUENCE_NUMBER = 151;
     private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
     private static final String EXPECTED_ABSTRACT_NAME_SPACE = "<abstractTp";
-    private static final String ORCID_NAME_FIELDS = "orcId";
     private static final String EXPECTED_ORCID_FOR_PERSON_IN_85114653695 = "0000-0002-2228-429X";
     private static final String NAME_PERSON_WITH_ORCID_ENDING_429X = "Schmidt M.K.";
+    private static final int SEQUENCE_NUMBER_PERSON_WITH_ORCID_ENDING_429X = 150;
 
     @BeforeEach
     public void init() {
@@ -295,12 +299,15 @@ class ScopusHandlerTest {
         S3Event s3Event = createS3Event(uri);
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualContributors = createPublicationRequest.getEntityDescription().getContributors();
-        assertThat(actualContributors, hasItem(
-            hasProperty(IDENTITY_FIELD_NAME,
-                        allOf(hasProperty(NAME_FIELD_NAME, is(NAME_PERSON_WITH_ORCID_ENDING_429X)),
-                              hasProperty(ORCID_NAME_FIELDS, is(EXPECTED_ORCID_FOR_PERSON_IN_85114653695)))
-            )
-        ));
+        var expectedIdentity = new Identity.Builder()
+            .withName(NAME_PERSON_WITH_ORCID_ENDING_429X)
+            .withOrcId(EXPECTED_ORCID_FOR_PERSON_IN_85114653695)
+            .build();
+        var expectedContributor = new Contributor.Builder()
+            .withIdentity(expectedIdentity)
+            .withSequence(SEQUENCE_NUMBER_PERSON_WITH_ORCID_ENDING_429X)
+            .build();
+        assertThat(actualContributors, hasItem(expectedContributor));
     }
 
     private S3Event createS3Event(String expectedObjectKey) {
