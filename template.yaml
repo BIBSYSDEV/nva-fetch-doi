@@ -55,6 +55,18 @@ Parameters:
     Type: String
     Default: "scopus-xml-files"
     Description: Name of bucket for unzipped scopus xml files
+  NvaEventsBucketName:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/NVA/Events/EventsBucketName'
+  NvaEventsBucketArn:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/NVA/Events/EventsBucketArn'
+  NvaEventsBusArn:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/NVA/Events/EventsBusArn'
+  NvaEventsBusName:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/NVA/Events/EventsBusName'
 
 Resources:
   ApiAccessLogGroup:
@@ -207,7 +219,11 @@ Resources:
       Handler: no.sikt.nva.scopus.ScopusHandler::handleRequest
       Runtime: java11
       MemorySize: !Ref LambdaMemorySize
-      Role: !GetAtt ReadFromScopusBucketsRole.Arn
+      Role: !GetAtt ScopusHandlersRole.Arn
+      Environment:
+        Variables:
+          EVENTS_BUCKET: !Ref NvaEventsBucketName
+          EVENTS_BUS: !Ref NvaEventsBusName
       Events:
         Scopus:
           Type: S3
@@ -309,7 +325,7 @@ Resources:
       Timestamp: '${BUILD_TIMESTAMP}'
       AuthorizerArn: !Ref CognitoAuthorizerArn
 
-  ReadFromScopusBucketsRole:
+  ScopusHandlersRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -325,7 +341,7 @@ Resources:
     Properties:
       PolicyName: !Sub DefaultLambdaPermissions-${AWS::StackName}
       Roles:
-        - !Ref ReadFromScopusBucketsRole
+        - !Ref ScopusHandlersRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -342,7 +358,7 @@ Resources:
     Properties:
       PolicyName: !Sub ScopusBucketsAccessPolicy-${AWS::StackName}
       Roles:
-        - !Ref ReadFromScopusBucketsRole
+        - !Ref ScopusHandlersRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -352,6 +368,26 @@ Resources:
             Resource:
               - !Sub '${ScopusXmlBucket.Arn}/*'
               - !Sub '${ScopusZipBucket.Arn}/*'
+
+  SendEventsToNvaPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub SendEventsToNva-${AWS::StackName}
+      Roles:
+        - !Ref ScopusHandlersRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - 's3:*'
+            Resource:
+              - !Ref NvaEventsBucketArn
+          - Effect: Allow
+            Action:
+              - events:PutEvents
+            Resource:
+              - !Ref NvaEventsBusArn
 
   ScopusUnzipperFunction:
     Type: AWS::Serverless::Function
@@ -381,7 +417,7 @@ Resources:
                     Bucket=zip_bucket if fname.endswith('.zip') else xml_bucket,
                     Key=f'unzipped/{fname}' if fname.endswith('.zip') else fname
                 )
-      Role: !GetAtt ReadFromScopusBucketsRole.Arn
+      Role: !GetAtt ScopusHandlersRole.Arn
       Events:
         UnzipEvent:
           Type: S3

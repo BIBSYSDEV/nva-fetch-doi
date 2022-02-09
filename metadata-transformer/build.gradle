@@ -2,9 +2,11 @@ dependencies {
     api libs.bundles.any23
     implementation libs.bundles.rdf4j
     implementation libs.nva.core
+    implementation libs.nva.json
     implementation(libs.nva.datamodel) {
         exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
     }
+
     runtimeOnly libs.jackson.datatype.jdk8
     runtimeOnly libs.jackson.datatype.jsr310
 
@@ -15,6 +17,7 @@ dependencies {
     testImplementation libs.nva.logutils
     testCompileClasspath libs.jackson.databind
 
+    testImplementation libs.nva.datamodeltestutils
     testImplementation libs.wiremock
     testImplementation libs.j2html
 }
