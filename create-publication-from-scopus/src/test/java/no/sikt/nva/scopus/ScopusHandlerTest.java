@@ -1,8 +1,5 @@
 package no.sikt.nva.scopus;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
@@ -121,6 +118,7 @@ class ScopusHandlerTest {
     private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
     private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
     private static final String EXPECTED_ABSTRACT_NAME_SPACE = "<abstractTp";
+    public static final char JOURNAL_SOURCETYPE_IDENTIFYING_CHAR = 'j';
 
 
     private FakeS3Client s3Client;
@@ -186,9 +184,9 @@ class ScopusHandlerTest {
     void shouldReturnCreatePublicationRequestWithMainTitle() throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000833530));
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
-        S3Event s3Event = createS3Event(uri);
-        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
-        String actualMainTitle = createPublicationRequest.getEntityDescription().getMainTitle();
+        var s3Event = createS3Event(uri);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualMainTitle = createPublicationRequest.getEntityDescription().getMainTitle();
         assertThat(actualMainTitle,
                    stringContainsInOrder(XML_ENCODING_DECLARATION,
                                          HARDCODED_EXPECTED_TITLE_NAMESPACE,
@@ -199,8 +197,8 @@ class ScopusHandlerTest {
     void shouldExtractContributorsNamesAndSequenceNumberCorrectly() throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_85114653695));
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
-        S3Event s3Event = createS3Event(uri);
-        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var s3Event = createS3Event(uri);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualContributors = createPublicationRequest.getEntityDescription().getContributors();
         assertThat(actualContributors, hasItem(allOf(
             hasProperty(IDENTITY_FIELD_NAME,
@@ -220,9 +218,9 @@ class ScopusHandlerTest {
     void shouldExtractAuthorKeywordsAsXML() throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0018132378));
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
-        S3Event s3Event = createS3Event(uri);
-        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
-        String actualKeywords = createPublicationRequest.getAuthorKeywordsXmlFormat();
+        var s3Event = createS3Event(uri);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualKeywords = createPublicationRequest.getAuthorKeywordsXmlFormat();
         assertThat(actualKeywords, stringContainsInOrder(
             XML_ENCODING_DECLARATION,
             AUTHOR_KEYWORD_NAME_SPACE,
@@ -291,31 +289,11 @@ class ScopusHandlerTest {
 
     @Test
     void shouldReturnCreatePublicationRequestWithJournalWhenEventWithS3UriThatPointsToScopusXmlWhereSourceTitleIsInNsd()
-        throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
-
-        var queryUri = createExpectedQueryUriForJournalWithEIssn(E_ISSN_0000469852, "2010");
-        var expectedJournalUri = mockedPublicationChannelsReturnsJournalUri(queryUri);
-
-        scopusFile = scopusFile.replace("<xocs:pub-year>1993</xocs:pub-year>",
-                                        "<xocs:pub-year>2010</xocs:pub-year>");
-        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
-        var s3Event = createS3Event(uri);
-        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
-        var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
-            .getPublicationContext();
-        assertThat(actualPublicationContext, instanceOf(Journal.class));
-        var actualJournalName = ((Journal) actualPublicationContext).getId();
-        assertThat(actualJournalName, is(expectedJournalUri));
-    }
-
-    @Test
-    void shouldReturnCreatePublicationRequestWithJournalWhenEventWithS3UriThatPointsToScopusXmlWhereSourceTitleIsInNsd2()
         throws IOException, InterruptedException {
         var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
 
-        URI expectedJournalUri = randomUri();
-        URI queryUri = createExpectedQueryUriForJournalWithEIssn(E_ISSN_0000469852, "2010");
+        var expectedJournalUri = randomUri();
+        var queryUri = createExpectedQueryUriForJournalWithEIssn(E_ISSN_0000469852, "2010");
         httpClient = mockHttpClientReturningResponseForQuery(queryUri, expectedJournalUri);
         metadataService = new MetadataService(httpClient, serverUri);
         scopusHandler = new ScopusHandler(s3Client, metadataService);
@@ -337,8 +315,7 @@ class ScopusHandlerTest {
     void shouldReturnDefaultPublicationContextWhenEventWithS3UriThatPointsToScopusXmlWithoutKnownSourceType()
         throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
-        //Todo: this is actually not perfect as there is a chance my random string starts with a 'j' ...
-        var randomChar = randomString().substring(0, 1);
+        var randomChar = getRandomCharBesidesUnwantedChar(JOURNAL_SOURCETYPE_IDENTIFYING_CHAR);
         scopusFile = scopusFile.replace("<xocs:srctype>j</xocs:srctype>", "<xocs:srctype>" + randomChar
                                                                           + "</xocs:srctype>");
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
@@ -389,21 +366,20 @@ class ScopusHandlerTest {
                                                              expectedAbstract));
     }
 
+    //Inntil nå er det bare 'j' som kommer inn som param, men jeg tror vi kan bruke metoden om igjen med andre sourceTypes
+    private char getRandomCharBesidesUnwantedChar(char unwantedChar) {
+        var randomChar = unwantedChar;
+        do {
+            randomChar = randomString().toLowerCase().charAt(0);
+        } while(randomChar == unwantedChar);
+        return randomChar;
+    }
+
     private URI createExpectedQueryUriForJournalWithEIssn(String eIssn, String year) {
         return new UriWrapper(serverUri)
             .addQueryParameter("query", eIssn)
             .addQueryParameter("year", year)
             .getUri();
-    }
-
-    private URI mockedPublicationChannelsReturnsJournalUri(URI queryUri) {
-        var journalUri = randomUri();
-        ArrayNode publicationChannelsResponseBody = createPublicationChannelsResponseWithJournalUri(journalUri);
-        stubFor(get(START_OF_QUERY + queryUri.getQuery()).willReturn(aResponse()
-                                                                         .withBody(
-                                                                             publicationChannelsResponseBody.toPrettyString())
-                                                                         .withStatus(HttpURLConnection.HTTP_OK)));
-        return journalUri;
     }
 
     private HttpClient mockHttpClientReturningResponseForQuery(URI expectedQueryUri, URI expectedJournalId)

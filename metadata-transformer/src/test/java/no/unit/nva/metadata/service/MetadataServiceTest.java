@@ -148,7 +148,7 @@ public class MetadataServiceTest {
         when(httpClient.send(any(HttpRequest.class), any())).thenReturn(httpResonse);
         var metadataService = new MetadataService(httpClient, serverUri);
         var name = "Edinburgh Journal of Botany";
-        var year = 2003;
+        var year = 2010;
         var actualId =
             metadataService.lookUpJournalIdAtPublicationChannel(name, null, null, year)
                 .orElseThrow();
