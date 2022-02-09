@@ -27,7 +27,7 @@ public class ScopusDeleteHandler implements RequestHandler<S3Event, List<String>
 
     public static final int SINGLE_EXPECTED_RECORD = 0;
     public static final int PUT_EVENTS_REQUEST_MAX_ENTRIES = 2;
-    public static final String S3_URI_TEMPLATE = "s3://%s/%s";
+    public static final String S3_SCHEME = "s3";
     public static final String DELETE_SCOPUS_IDENTIFIER_PREFIX = "DELETE-2-s2.0-";
     public static final String EMPTY_STRING = "";
     private static final Logger logger = LoggerFactory.getLogger(ScopusDeleteHandler.class);
@@ -104,8 +104,8 @@ public class ScopusDeleteHandler implements RequestHandler<S3Event, List<String>
         return s3Driver.getFile(new UriWrapper(fileUri).toS3bucketPath());
     }
 
-    private URI createS3BucketUri(S3Event s3Event) {
-        return URI.create(String.format(S3_URI_TEMPLATE, extractBucketName(s3Event), extractFilename(s3Event)));
+    private URI createS3BucketUri(S3Event event) {
+        return new UriWrapper(S3_SCHEME,extractBucketName(event)).addChild(extractFilename(event)).getUri();
     }
 
     private String extractBucketName(S3Event event) {
