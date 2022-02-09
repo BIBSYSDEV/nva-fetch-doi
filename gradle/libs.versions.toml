@@ -22,7 +22,7 @@ junit5 = { strictly = '5.7.2' }
 mockito = { strictly = '3.9.0' }
 log4j = { strictly = '2.17.1' }
 slf4j = { strictly = '1.8.0-beta4' }
-nvaLanguage = {strictly = '1.0'}
+nvaLanguage = { strictly = '1.0' }
 
 [libraries]
 
@@ -37,8 +37,10 @@ nva-doi = { group = "com.github.bibsysdev", name = "doi", version.ref = "nva" }
 nva-events = { group = "com.github.bibsysdev", name = "eventhandlers", version.ref = "nva" }
 nva-testutils = { group = "com.github.bibsysdev", name = "nvatestutils", version.ref = "nva" }
 nva-datamodel = { group = "com.github.bibsysdev", name = "nva-datamodel-java", version.ref = "nvaDatamodelVersion" }
+nva-datamodeltestutils = { group = 'com.github.bibsysdev', name = 'nva-datamodel-testutils', version.ref = 'nvaDatamodelVersion' }
 
-nva-language= { group= 'com.github.bibsysdev', name= 'nva-language', version.ref = "nvaLanguage"}
+
+nva-language = { group = 'com.github.bibsysdev', name = 'nva-language', version.ref = "nvaLanguage" }
 
 
 
@@ -49,7 +51,7 @@ jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-an
 jackson-datatype-jsr310 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jsr310", version.ref = "jacksonVersion" }
 
 aws-java-sdk2-s3 = { group = "software.amazon.awssdk", name = "s3", version.ref = "awsSdk2Version" }
-aws-java-sdk2-eventbridge={ group= 'software.amazon.awssdk', name= 'eventbridge', version.ref = 'awsSdk2Version'}
+aws-java-sdk2-eventbridge = { group = 'software.amazon.awssdk', name = 'eventbridge', version.ref = 'awsSdk2Version' }
 aws-sdk2-secrets = { group = 'software.amazon.awssdk', name = 'secretsmanager', version.ref = 'awsSdk2Version' }
 
 aws-java-sdk-s3 = { group = "com.amazonaws", name = "aws-java-sdk-s3", version.ref = "awsSdkVersion" }
@@ -82,9 +84,9 @@ httpclient = { group = "org.apache.httpcomponents", name = "httpclient", version
 wiremock = { group = "com.github.tomakehurst", name = "wiremock-jre8", version.ref = "wiremock" }
 j2html = { group = "com.j2html", name = "j2html", version.ref = "j2html" }
 
-mockito-core = {group = 'org.mockito', name = 'mockito-core', version.ref = 'mockito'}
-hamcrest-base = {group = 'org.hamcrest', name = 'hamcrest', version.ref = 'hamcrest'}
-hamcrest-core = {group = 'org.hamcrest', name = 'hamcrest-core', version.ref = 'hamcrest'}
+mockito-core = { group = 'org.mockito', name = 'mockito-core', version.ref = 'mockito' }
+hamcrest-base = { group = 'org.hamcrest', name = 'hamcrest', version.ref = 'hamcrest' }
+hamcrest-core = { group = 'org.hamcrest', name = 'hamcrest-core', version.ref = 'hamcrest' }
 junit-jupiter-engine = { group = 'org.junit.jupiter', name = 'junit-jupiter-engine', version.ref = 'junit5' }
 junit-jupiter-params = { group = 'org.junit.jupiter', name = 'junit-jupiter-params', version.ref = 'junit5' }
 junit-jupiter-api = { group = 'org.junit.jupiter', name = 'junit-jupiter-api', version.ref = 'junit5' }

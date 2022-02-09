@@ -56,6 +56,7 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
         return request;
     }
 
+    @JacocoGenerated
     private static EventBridgeClient defaultEventBridgeClient() {
         //TODO: setup the client properly
         return EventBridgeClient.create();
