@@ -10,7 +10,7 @@ import nva.commons.core.JacocoGenerated;
 
 public class ScopusDeleteEventBody implements EventBody {
 
-    public static final String TOPIC = "delete-scopus-identifier";
+    public static final String TOPIC = "NvaFetchDoi.Scopus.Delete";
     public static final String SCOPUS_IDENTIFIER = "scopusIdentifier";
 
     @JsonProperty(SCOPUS_IDENTIFIER)
