@@ -5,7 +5,7 @@ import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalToObject;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
@@ -32,6 +32,9 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
+import java.util.stream.Collectors;
+import no.scopus.generated.ItemidTp;
+import no.sikt.nva.scopus.test.utils.ScopusGenerator;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
@@ -56,17 +59,16 @@ class ScopusHandlerTest {
     public static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     public static final long SOME_FILE_SIZE = 100L;
     public static final String HARD_CODED_JOURNAL_NAME_IN_RESOURCE_FILE = "Edinburgh Journal of Botany";
-    private FakeS3Client s3Client;
-    private S3Driver s3Driver;
-    private ScopusHandler scopusHandler;
     private static final String EXPECTED_RESULTS_PATH = "expectedResults";
     private static final String IDENTITY_FIELD_NAME = "identity";
     private static final String NAME_FIELD_NAME = "name";
     private static final String SEQUENCE_FIELD_NAME = "sequence";
     private static final String SCOPUS_XML_0000469852 = "2-s2.0-0000469852.xml";
-    private static final String SCP_ID_IN_0000469852 = "0000469852";
     private static final String DOI_IN_0000469852 = "10.1017/S0960428600000743";
     private static final String SCOPUS_XML_0018132378 = "2-s2.0-0018132378.xml";
+    private static final String EXPECTED_PUBLICATION_YEAR_IN_0018132378 = "1978";
+    private static final String EXPECTED_PUBLICATION_DAY_IN_0018132378 = "01";
+    private static final String EXPECTED_PUBLICATION_MONTH_IN_0018132378 = "01";
     private static final String AUTHOR_KEYWORD_NAME_SPACE = "<authorKeywordsTp";
     private static final String HARDCODED_KEYWORDS_0000469852 = "    <author-keyword xml:lang=\"eng\">\n"
                                                                 + "        <sup>64</sup>Cu\n"
@@ -95,15 +97,23 @@ class ScopusHandlerTest {
     private static final int CONTRIBUTOR_1_SEQUENCE_NUMBER = 1;
     private static final int CONTRIBUTOR_2_SEQUENCE_NUMBER = 2;
     private static final int CONTRIBUTOR_151_SEQUENCE_NUMBER = 151;
+    private static final String PUBLICATION_DAY_FIELD_NAME = "day";
+    private static final String PUBLICATION_MONTH_FIELD_NAME = "month";
+    private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
     private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
     private static final String EXPECTED_ABSTRACT_NAME_SPACE = "<abstractTp";
-    private static final String SCOPUS_XML_CONFERENCE_PAPER_0020298182  = "2-s2.0-0020298182.xml";
+    private static final String SCOPUS_XML_CONFERENCE_PAPER_0020298182 = "2-s2.0-0020298182.xml";
+    private FakeS3Client s3Client;
+    private S3Driver s3Driver;
+    private ScopusHandler scopusHandler;
+    private ScopusGenerator scopusData;
 
     @BeforeEach
     public void init() {
         s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, "ignoredValue");
         scopusHandler = new ScopusHandler(s3Client);
+        scopusData = new ScopusGenerator();
     }
 
     @Test
@@ -118,24 +128,25 @@ class ScopusHandlerTest {
     }
 
     @Test
-    void shouldExtractScopusIdentifierAndPlaceItInsideAdditionalIdentifiersObject() throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000469852));
-        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
+    void shouldExtractOnlyScopusIdentifierIgnoreAllOtherIdentifiersAndStoreItInPublication() throws IOException {
+        var scopusData = new ScopusGenerator();
+        var scopusIdentifiers = keepOnlyTheScopusIdentifiers(scopusData);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualAdditionalIdentifiers = createPublicationRequest.getAdditionalIdentifiers();
-        var expectedIdentifier =
-            new AdditionalIdentifier(ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME, SCP_ID_IN_0000469852);
-        assertThat(actualAdditionalIdentifiers, contains(expectedIdentifier));
+        var expectedAdditionalIdentifier =
+            convertScopusIdentifiersToNvaAdditionalIdentifiers(scopusIdentifiers);
+        assertThat(actualAdditionalIdentifiers, containsInAnyOrder(expectedAdditionalIdentifier));
     }
 
     @Test
     void shouldExtractDoiAndPlaceItInsideReferenceObject() throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000469852));
-        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
-        var expectedURI =  UriWrapper.fromUri(DOI_OPEN_URL_FORMAT).addChild(DOI_IN_0000469852).getUri();
+        var scopusDoi = scopusData.getDocument().getMeta().getDoi();
+        var expectedURI = UriWrapper.fromUri(DOI_OPEN_URL_FORMAT).addChild(scopusDoi).getUri();
         assertThat(createPublicationRequest.getEntityDescription().getReference().getDoi(), equalToObject(expectedURI));
     }
 
@@ -181,20 +192,20 @@ class ScopusHandlerTest {
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         String actualKeywords = createPublicationRequest.getAuthorKeywordsXmlFormat();
         assertThat(actualKeywords, stringContainsInOrder(
-                XML_ENCODING_DECLARATION,
-                AUTHOR_KEYWORD_NAME_SPACE,
-                HARDCODED_KEYWORDS_0000469852));
+            XML_ENCODING_DECLARATION,
+            AUTHOR_KEYWORD_NAME_SPACE,
+            HARDCODED_KEYWORDS_0000469852));
     }
 
     @Test
     void shouldReturnCreatePublicationRequestWithUnconfirmedPublicationContextWhenEventWithS3UriThatPointsToScopusXml()
-            throws IOException {
+        throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
-                .getPublicationContext();
+            .getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
         var actualJournalName = ((UnconfirmedJournal) actualPublicationContext).getTitle();
         assertThat(actualJournalName, is(HARD_CODED_JOURNAL_NAME_IN_RESOURCE_FILE));
@@ -202,15 +213,15 @@ class ScopusHandlerTest {
 
     @Test
     void shouldReturnCreatePublicationRequestWithUnconfirmedPublicationContextWhenEventS3UriScopusXmlWithValidIssn()
-            throws IOException {
+        throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
         scopusFile = scopusFile.replace("<issn type=\"print\">09604286</issn>",
-                "<issn type=\"print\">0960-4286</issn>");
+                                        "<issn type=\"print\">0960-4286</issn>");
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
-                .getPublicationContext();
+            .getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
         var actualJournalName = ((UnconfirmedJournal) actualPublicationContext).getTitle();
         assertThat(actualJournalName, is(HARD_CODED_JOURNAL_NAME_IN_RESOURCE_FILE));
@@ -218,10 +229,10 @@ class ScopusHandlerTest {
 
     @Test
     void shouldReturnCreatePublicationRequestWithUnconfirmedPublicationContextWhenEventS3UriScopusXmlWithInValidIssn()
-            throws IOException {
+        throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
         scopusFile = scopusFile.replace("<issn type=\"print\">09604286</issn>",
-                "<issn type=\"print\">096042</issn>");
+                                        "<issn type=\"print\">096042</issn>");
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         var s3Event = createS3Event(uri);
         var exception = assertThrows(RuntimeException.class, () -> {
@@ -234,14 +245,14 @@ class ScopusHandlerTest {
 
     @Test
     void shouldReturnDefaultPublicationContextWhenEventWithS3UriThatPointsToScopusXmlWithoutPrintIssn()
-            throws IOException {
+        throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
         scopusFile = scopusFile.replace("<issn type=\"print\">09604286</issn>", "");
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
-                .getPublicationContext();
+            .getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
         var actualJournalName = ((UnconfirmedJournal) actualPublicationContext).getTitle();
         assertThat(actualJournalName, is(HARD_CODED_JOURNAL_NAME_IN_RESOURCE_FILE));
@@ -249,16 +260,16 @@ class ScopusHandlerTest {
 
     @Test
     void shouldReturnDefaultPublicationContextWhenEventWithS3UriThatPointsToScopusXmlWithoutKnownSourceType()
-            throws IOException {
+        throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
         var randomChar = randomString().substring(0, 1);
         scopusFile = scopusFile.replace("<xocs:srctype>j</xocs:srctype>", "<xocs:srctype>" + randomChar
-                + "</xocs:srctype>");
+                                                                          + "</xocs:srctype>");
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
-                .getPublicationContext();
+            .getPublicationContext();
         assertThat(actualPublicationContext, is(ScopusConstants.EMPTY_PUBLICATION_CONTEXT));
     }
 
@@ -276,6 +287,19 @@ class ScopusHandlerTest {
     }
 
     @Test
+    void shouldExtractPublicationDate() throws IOException {
+        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0018132378));
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
+        S3Event s3Event = createS3Event(uri);
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationDate = createPublicationRequest.getEntityDescription().getDate();
+        assertThat(actualPublicationDate, allOf(
+            hasProperty(PUBLICATION_DAY_FIELD_NAME, is(EXPECTED_PUBLICATION_DAY_IN_0018132378)),
+            hasProperty(PUBLICATION_MONTH_FIELD_NAME, is(EXPECTED_PUBLICATION_MONTH_IN_0018132378)),
+            hasProperty(PUBLICATION_YEAR_FIELD_NAME, is(EXPECTED_PUBLICATION_YEAR_IN_0018132378))));
+    }
+
+    @Test
     void shouldExtractMainAbstractAsXML() throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000469852));
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
@@ -283,7 +307,7 @@ class ScopusHandlerTest {
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualMainAbstract = createPublicationRequest.getEntityDescription().getAbstract();
         String expectedAbstract =
-            IoUtils.stringFromResources(Path.of(EXPECTED_RESULTS_PATH,FILENAME_EXPECTED_ABSTRACT_IN_0000469852));
+            IoUtils.stringFromResources(Path.of(EXPECTED_RESULTS_PATH, FILENAME_EXPECTED_ABSTRACT_IN_0000469852));
         assertThat(actualMainAbstract, stringContainsInOrder(XML_ENCODING_DECLARATION,
                                                              EXPECTED_ABSTRACT_NAME_SPACE,
                                                              expectedAbstract));
@@ -307,8 +331,31 @@ class ScopusHandlerTest {
         S3Event s3Event = createS3Event(uri);
         var expectedMessage = String.format(ScopusConverter.UNSUPPORTED_CITATION_TYPE_MESSAGE, "2-s2.0-0020298182");
         var appender = LogUtils.getTestingAppenderForRootLogger();
-        assertThrows(UnsupportedCitationTypeException.class, ()-> scopusHandler.handleRequest(s3Event, CONTEXT));
+        assertThrows(UnsupportedCitationTypeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
+    }
+
+    private AdditionalIdentifier[] convertScopusIdentifiersToNvaAdditionalIdentifiers(
+        List<ItemidTp> scopusIdentifiers) {
+        return scopusIdentifiers
+            .stream()
+            .map(idtp -> new AdditionalIdentifier(ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME, idtp.getValue()))
+            .collect(Collectors.toList())
+            .toArray(AdditionalIdentifier[]::new);
+    }
+
+    private List<ItemidTp> keepOnlyTheScopusIdentifiers(ScopusGenerator scopusData) {
+        return scopusData.getDocument()
+            .getItem()
+            .getItem()
+            .getBibrecord()
+            .getItemInfo()
+            .getItemidlist()
+            .getItemid()
+            .stream()
+            .filter(identifier -> identifier.getIdtype()
+                .equalsIgnoreCase(ScopusConstants.SCOPUS_ITEM_IDENTIFIER_SCP_FIELD_NAME))
+            .collect(Collectors.toList());
     }
 
     private S3Event createS3Event(String expectedObjectKey) {
@@ -335,7 +382,7 @@ class ScopusHandlerTest {
     private S3Entity createS3Entity(String expectedObjectKey) {
         var bucket = new S3BucketEntity(randomString(), EMPTY_USER_IDENTITY, randomString());
         var object = new S3ObjectEntity(expectedObjectKey, SOME_FILE_SIZE, randomString(), randomString(),
-                                                   randomString());
+                                        randomString());
         var schemaVersion = randomString();
         return new S3Entity(randomString(), bucket, object, schemaVersion);
     }
