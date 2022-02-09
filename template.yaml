@@ -99,7 +99,7 @@ Resources:
                       $ref: '#/components/schemas/DoiLookup'
               x-amazon-apigateway-integration:
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchDoiFunction.Arn}:live/invocations
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchDoiFunction.Arn/invocations
                 responses: {}
                 httpMethod: POST
                 type: AWS_PROXY
@@ -188,11 +188,11 @@ Resources:
       Handler: no.unit.nva.doi.fetch.MainHandler::handleRequest
       Runtime: java11
       MemorySize: !Ref LambdaMemorySize
-      AutoPublishAlias: live
-      DeploymentPreference:
-        Type: AllAtOnce
-      ProvisionedConcurrencyConfig:
-        ProvisionedConcurrentExecutions: 1
+#      AutoPublishAlias: live
+#      DeploymentPreference:
+#        Type: AllAtOnce
+#      ProvisionedConcurrencyConfig:
+#        ProvisionedConcurrentExecutions: 1
       Role: !GetAtt NvaFetchDoiFunctionRole.Arn
       Environment:
         Variables:
@@ -231,26 +231,26 @@ Resources:
             Bucket: !Ref ScopusXmlBucket
             Events: 's3:ObjectCreated:*'
 
-  NvaFetchDoiFunctionScalableTarget:
-    Type: AWS::ApplicationAutoScaling::ScalableTarget
-    Properties:
-      MaxCapacity: !Ref MaxConcurrency
-      MinCapacity: !Ref MinConcurrency
-      ResourceId: !Sub function:${NvaFetchDoiFunction}:live
-      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
-      ScalableDimension: lambda:function:ProvisionedConcurrency
-      ServiceNamespace: lambda
-    DependsOn: NvaFetchDoiFunctionAliaslive
-  NvaFetchDoiFunctionScalingPolicy:
-    Type: AWS::ApplicationAutoScaling::ScalingPolicy
-    Properties:
-      PolicyName: utilization
-      PolicyType: TargetTrackingScaling
-      ScalingTargetId: !Ref NvaFetchDoiFunctionScalableTarget
-      TargetTrackingScalingPolicyConfiguration:
-        TargetValue: !Ref ScaleOutUsageThreshold
-        PredefinedMetricSpecification:
-          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
+#  NvaFetchDoiFunctionScalableTarget:
+#    Type: AWS::ApplicationAutoScaling::ScalableTarget
+#    Properties:
+#      MaxCapacity: !Ref MaxConcurrency
+#      MinCapacity: !Ref MinConcurrency
+#      ResourceId: !Sub function:${NvaFetchDoiFunction}:live
+#      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
+#      ScalableDimension: lambda:function:ProvisionedConcurrency
+#      ServiceNamespace: lambda
+#    DependsOn: NvaFetchDoiFunctionAliaslive
+#  NvaFetchDoiFunctionScalingPolicy:
+#    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+#    Properties:
+#      PolicyName: utilization
+#      PolicyType: TargetTrackingScaling
+#      ScalingTargetId: !Ref NvaFetchDoiFunctionScalableTarget
+#      TargetTrackingScalingPolicyConfiguration:
+#        TargetValue: !Ref ScaleOutUsageThreshold
+#        PredefinedMetricSpecification:
+#          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
 
   NvaFetchDoiFunctionBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
