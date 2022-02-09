@@ -10,7 +10,6 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Lists;
-import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -21,6 +20,7 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 
 public class ScopusDeleteHandler implements RequestHandler<S3Event, List<String>> {
@@ -88,7 +88,7 @@ public class ScopusDeleteHandler implements RequestHandler<S3Event, List<String>
 
     private String createScopusDeleteEventBodyJson(String scopusIdentifier) {
         try {
-            return JsonUtils.dtoObjectMapper.writeValueAsString(new ScopusDeleteEventBody(scopusIdentifier));
+            return dtoObjectMapper.writeValueAsString(new ScopusDeleteEventBody(scopusIdentifier));
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
