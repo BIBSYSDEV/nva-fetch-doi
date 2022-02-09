@@ -8,11 +8,17 @@ dependencies {
     runtimeOnly libs.jackson.datatype.jdk8
     runtimeOnly libs.jackson.datatype.jsr310
 
+    implementation libs.nva.apigateway
     implementation libs.bundles.logging
 
+    testImplementation project (":fetch-doi-testing")
     testImplementation libs.nva.logutils
     testCompileClasspath libs.jackson.databind
 
     testImplementation libs.wiremock
     testImplementation libs.j2html
+}
+
+test{
+    environment "API_HOST", "api.localhost.nva.aws.unit.no"
 }

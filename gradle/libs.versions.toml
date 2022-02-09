@@ -14,7 +14,7 @@ any23core = { strictly = "2.4" }
 icu4j = { strictly = "69.1" }
 commonsValidator = { strictly = "1.7" }
 apacheHttpClient = { strictly = "4.5.13" }
-wiremock = { strictly = "2.27.2" }
+wiremock = { strictly = "2.32.0" }
 j2html = { strictly = "1.4.0" }
 apiGuardian = { strictly = "1.1.2" }
 hamcrest = { strictly = '2.2' }
@@ -25,7 +25,6 @@ slf4j = { strictly = '1.8.0-beta4' }
 nvaLanguage = {strictly = '1.0'}
 
 [libraries]
-
 nva-s3 = { group = "com.github.bibsysdev", name = "s3", version.ref = "nva" }
 nva-core = { group = "com.github.bibsysdev", name = "core", version.ref = "nva" }
 nva-json = { group = "com.github.bibsysdev", name = "json", version.ref = "nva" }
@@ -101,7 +100,8 @@ slf4j-api = { group = 'org.slf4j', name = 'slf4j-api', version.ref = 'slf4j' }
 [bundles]
 rdf4j = ["rdf4j-sail-api", "rdf4j-model", "rdf4j-repository-sail", "rdf4j-sail-memory", "rdf4j-repository-api", "rdf4j-rio-api"]
 any23 = ["apache-any23-core", "apache-any23-api"]
-testing = ["mockito-core", "hamcrest-base", "hamcrest-core", "junit-jupiter-engine", "junit-jupiter-params", "junit-jupiter-api", "junit-vintage-engine", "nva-testutils", "nva-logutils"]
+testing = ["mockito-core", "hamcrest-base", "hamcrest-core", "junit-jupiter-engine", "junit-jupiter-params",
+    "junit-jupiter-api", "junit-vintage-engine", "nva-testutils", "nva-logutils","wiremock"]
 problem = ["zalando-jackson-datatype-problem", "zalando-problem"]
 xsd2java = ["xsd2java-xjc", "xsd2java-impl", "xsd2java-api", "xsd2java-activation", "xsd2java-jakarta"]
 logging = ['log4j-core', 'log4j-api', 'log4j-slf4j18-impl', 'slf4j-api']

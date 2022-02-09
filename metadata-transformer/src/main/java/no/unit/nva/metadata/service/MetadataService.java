@@ -1,10 +1,13 @@
 package no.unit.nva.metadata.service;
 
 import static java.util.Objects.nonNull;
-import static org.apache.http.HttpStatus.SC_OK;
-
+import static nva.commons.core.attempt.Try.attempt;
+import com.github.openjson.JSONArray;
+import com.github.openjson.JSONObject;
+import com.google.common.net.HttpHeaders;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
@@ -14,9 +17,8 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Optional;
-
-import com.github.openjson.JSONArray;
-import com.github.openjson.JSONObject;
+import java.util.function.Function;
+import java.util.stream.Stream;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.MetadataConverter;
 import no.unit.nva.metadata.type.Bibo;
@@ -24,7 +26,9 @@ import no.unit.nva.metadata.type.Citation;
 import no.unit.nva.metadata.type.DcTerms;
 import no.unit.nva.metadata.type.OntologyProperty;
 import no.unit.nva.metadata.type.RawMetaTag;
-import nva.commons.core.StringUtils;
+import nva.commons.apigateway.MediaTypes;
+import nva.commons.core.Environment;
+import nva.commons.core.paths.UriWrapper;
 import org.apache.any23.extractor.ExtractionException;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Model;
@@ -44,6 +48,8 @@ import org.slf4j.LoggerFactory;
 
 public class MetadataService {
 
+    public static final ValueFactory valueFactory = SimpleValueFactory.getInstance();
+    public static final String API_HOST = new Environment().readEnv("API_HOST");
     private static final String EMPTY_BASE_URI = "";
     private static final Logger logger = LoggerFactory.getLogger(MetadataService.class);
     private static final String DOI_DISPLAY_REGEX = "(doi:|doc:|http(s)?://(dx\\.)?doi\\.org/)?10\\.\\d{4,9}+/.*";
@@ -55,20 +61,28 @@ public class MetadataService {
     private static final String DOI_FIRST_PART = "10";
     private static final String HTTPS = "https";
     private static final String HTTP = "http";
-    public static final ValueFactory valueFactory = SimpleValueFactory.getInstance();
-    //Todo: this URI should come from a Config/Environment. How is that done in NVA
-    public static final String API_URI_NVA_PUBLICATION_CHANNELS = "https://api.dev.nva.aws.unit.no/publication-channels";
     private final HttpClient httpClient;
     private final TranslatorService translatorService;
     private final Repository db = new SailRepository(new MemoryStore());
+    private final URI publicationChannelsHostUri;
 
-    public MetadataService() throws IOException {
-        this(getDefaultHttpClient());
+    public MetadataService() {
+        this(getDefaultHttpClient(), defaultPublicationChannelsHostUri());
     }
 
+    /**
+     * @deprecated  For testing, we should also inject the URI so that we can use WireMock.
+     * @param httpClient the HttpClient.
+     */
+    @Deprecated
     public MetadataService(HttpClient httpClient) {
+        this(httpClient, defaultPublicationChannelsHostUri());
+    }
+
+    public MetadataService(HttpClient httpClient, URI publicationChannelsHostUri) {
         this.translatorService = new TranslatorService();
         this.httpClient = httpClient;
+        this.publicationChannelsHostUri = publicationChannelsHostUri;
     }
 
     /**
@@ -88,10 +102,25 @@ public class MetadataService {
         }
     }
 
+    public Optional<String> lookUpJournalIdAtPublicationChannel(String name,
+                                                                String electronicIssn,
+                                                                String printedIssn,
+                                                                int year) {
+        return Stream
+            .of(electronicIssn, printedIssn, name)
+            .map(queryTerm -> fetchPublicationIdentifierFromPublicationChannels(queryTerm, year))
+            .flatMap(Optional::stream)
+            .findFirst();
+    }
+
+    public static URI defaultPublicationChannelsHostUri() {
+        return UriWrapper.fromHost(API_HOST).addChild("publication-channels").addChild("journal").getUri();
+    }
+
     private static HttpClient getDefaultHttpClient() {
         return HttpClient.newBuilder()
-                .followRedirects(HttpClient.Redirect.NEVER)
-                .build();
+            .followRedirects(HttpClient.Redirect.NEVER)
+            .build();
     }
 
     private ByteArrayInputStream loadExtractedData() {
@@ -99,7 +128,7 @@ public class MetadataService {
     }
 
     private Model getMetadata(URI uri) throws ExtractionException, IOException, URISyntaxException,
-            InterruptedException {
+                                              InterruptedException {
         translatorService.loadMetadataFromUri(uri);
         try (RepositoryConnection repositoryConnection = db.getConnection()) {
             repositoryConnection.add(loadExtractedData(), EMPTY_BASE_URI, RDFFormat.JSONLD);
@@ -134,7 +163,7 @@ public class MetadataService {
     }
 
     private Value extractValue(OntologyProperty ontologyProperty, Value object) throws IOException,
-            InterruptedException {
+                                                                                       InterruptedException {
         if (isPotentialDoiProperty(ontologyProperty) && isDoiString(object)) {
             return extractDoi(object.stringValue());
         } else {
@@ -165,16 +194,16 @@ public class MetadataService {
 
     private IRI extractDoi(String value) throws IOException, InterruptedException {
         Optional<String> doiString = isShortDoi(value) ? fetchDoiUriFromShortDoi(value)
-                : Optional.of(DOI_PREFIX + value.substring(value.indexOf(DOI_FIRST_PART)));
+                                         : Optional.of(DOI_PREFIX + value.substring(value.indexOf(DOI_FIRST_PART)));
         return doiString.map(valueFactory::createIRI).orElse(null);
     }
 
     private Optional<String> fetchDoiUriFromShortDoi(String value) throws IOException, InterruptedException {
         String uri = value.startsWith(HTTPS) ? value : value.replace(HTTP, HTTPS);
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(uri))
-                .method(HEAD, HttpRequest.BodyPublishers.noBody())
-                .build();
+            .uri(URI.create(uri))
+            .method(HEAD, HttpRequest.BodyPublishers.noBody())
+            .build();
         HttpResponse<Void> response = httpClient.send(request, HttpResponse.BodyHandlers.discarding());
         return response.statusCode() == MOVED_PERMANENTLY ? response.headers().firstValue(LOCATION) : Optional.empty();
     }
@@ -188,44 +217,46 @@ public class MetadataService {
         return value.matches(SHORT_DOI_REGEX);
     }
 
-    public String lookUpJournalIdAtPublicationChannel(String name, String electronicIssn, String printedIssn, int year)
-            throws IOException, InterruptedException {
-        String id;
-        if (StringUtils.isNotEmpty(electronicIssn)) {
-            id = queryPublicationChannelForJournal(electronicIssn, year);
-            if (StringUtils.isNotEmpty(id)) {
-                return id;
-            }
-        }
-        if (StringUtils.isNotEmpty(printedIssn)) {
-            id = queryPublicationChannelForJournal(printedIssn, year);
-            if (StringUtils.isNotEmpty(id)) {
-                return id;
-            }
-        }
-        if (StringUtils.isNotEmpty(name)) {
-            id = queryPublicationChannelForJournal(name, year);
-            if (StringUtils.isNotEmpty(id)) {
-                return id;
-            }
-        }
-        return null;
+    private Optional<String> fetchPublicationIdentifierFromPublicationChannels(
+        String publicationQueryTerm, int year) {
+        return Optional.ofNullable(publicationQueryTerm)
+            .flatMap(queryTerm -> queryPublicationChannelForJournal(queryTerm, year));
     }
 
-    private String queryPublicationChannelForJournal(String term, int year) throws IOException, InterruptedException {
-        String query =  "query=" + URLEncoder.encode(term, StandardCharsets.UTF_8.toString()) + "&year=" + year;
-        String uri = API_URI_NVA_PUBLICATION_CHANNELS + "/journal?" + query;
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(uri))
-                .headers("Accept", "application/ld+json")
-                .GET()
-                .build();
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        if (SC_OK == response.statusCode()) {
-            JSONArray jsonArray = new JSONArray(response.body());
-            JSONObject jsonObject = jsonArray.getJSONObject(0);
-            return jsonObject.getString("id");
+    private Optional<String> queryPublicationChannelForJournal(String term, int year) {
+        return attempt(() -> sendQueryToPublicationChannelsProxy(term, year))
+            .map(this::parseResponseFromPublicationChannelsProxy)
+            .toOptional()
+            .flatMap(Function.identity());
+    }
+
+    private Optional<String> parseResponseFromPublicationChannelsProxy(HttpResponse<String> response) {
+        if (HttpURLConnection.HTTP_OK == response.statusCode()) {
+            return getIdOfFirstElement(response);
         }
-        return null;
+        return Optional.empty();
+    }
+
+    private Optional<String> getIdOfFirstElement(HttpResponse<String> response) {
+        JSONArray jsonArray = new JSONArray(response.body());
+        JSONObject jsonObject = jsonArray.getJSONObject(0);
+        return Optional.ofNullable(jsonObject.getString("id"));
+    }
+
+    private HttpResponse<String> sendQueryToPublicationChannelsProxy(String term, int year)
+        throws IOException, InterruptedException {
+        var searchTerm = URLEncoder.encode(term, StandardCharsets.UTF_8.toString());
+        var uri = new UriWrapper(publicationChannelsHostUri)
+            .addQueryParameter("query", searchTerm)
+            .addQueryParameter("year", Integer.toString(year))
+            .getUri();
+
+        var request = HttpRequest.newBuilder()
+            .uri(uri)
+            .headers(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, MediaTypes.APPLICATION_JSON_LD.toString())
+            .GET()
+            .build();
+
+        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
     }
 }

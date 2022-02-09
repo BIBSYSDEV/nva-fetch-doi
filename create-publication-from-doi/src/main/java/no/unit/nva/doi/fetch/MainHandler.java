@@ -100,11 +100,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     @JacocoGenerated
     private static MetadataService getMetadataService() {
-        try {
-            return new MetadataService();
-        } catch (IOException e) {
-            throw new RuntimeException("Error creating handler", e);
-        }
+        return new MetadataService();
     }
 
     @Override
