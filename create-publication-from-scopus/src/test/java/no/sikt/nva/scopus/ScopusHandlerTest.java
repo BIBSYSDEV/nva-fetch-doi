@@ -322,7 +322,7 @@ class ScopusHandlerTest {
             .map(CitationTitleTp::getTitletext)
             .stream()
             .flatMap(Collection::stream)
-            .filter(t -> t.getOriginal().equals(YesnoAtt.Y))
+            .filter(t -> YesnoAtt.Y.equals(t.getOriginal()))
             .collect(SingletonCollector.collect());
     }
 
