@@ -1,34 +1,72 @@
 package no.sikt.nva.scopus.conversion;
 
 import static nva.commons.core.attempt.Try.attempt;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.IssnTp;
 import no.scopus.generated.MetaTp;
+import no.scopus.generated.PublisherTp;
 import no.scopus.generated.SourceTp;
 import no.sikt.nva.scopus.ScopusConstants;
 import no.unit.nva.metadata.service.MetadataService;
+import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.BookSeries;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Periodical;
+import no.unit.nva.model.contexttypes.Publisher;
+import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
+import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import nva.commons.core.SingletonCollector;
 
-public class JournalCreator {
+public class PublicationContextCreator {
 
     public static final String DASH = "-";
     public static final int START_YEAR_FOR_LEVEL_INFO = 2004;
+    public static final String EMPTY_STRING = "";
 
     private final MetadataService metadataService;
     private final DocTp docTp;
 
-    public JournalCreator(MetadataService metadataService, DocTp docTp) {
+    public PublicationContextCreator(MetadataService metadataService, DocTp docTp) {
         this.metadataService = metadataService;
         this.docTp = docTp;
     }
 
     public Periodical createJournal() {
         return createConfirmedJournal().orElseGet(this::createUnconfirmedJournal);
+    }
+
+    public Book createBook() {
+        BookSeries bookSeries = null;
+        String seriesNumber = null;
+        PublishingHouse publishingHouse = createPublisher();
+        List<String> isbnList = new ArrayList<>();
+        return attempt(() -> new Book(bookSeries, seriesNumber, publishingHouse, isbnList)).orElseThrow();
+    }
+
+    private PublishingHouse createPublisher() {
+        return createConfirmedPublisher().orElseGet(this::createUnconfirmedPublisher);
+    }
+
+
+    private Optional<PublishingHouse> createConfirmedPublisher() {
+        var publisherName = findPublisherName();
+        metadataService.lookUpPublisherIdAtPublicationChannel(publisherName);
+        return null;
+    }
+
+    private UnconfirmedPublisher createUnconfirmedPublisher() {
+        var publisherName = findPublisherName();
+        return new UnconfirmedPublisher(publisherName);
+    }
+
+    private String findPublisherName() {
+        Optional<PublisherTp> publisherTp = docTp.getItem().getItem().getBibrecord().getHead().getSource().getPublisher().stream().findFirst();
+        return publisherTp.map(PublisherTp::getPublishername).orElse(EMPTY_STRING);
     }
 
     private Optional<Periodical> createConfirmedJournal() {

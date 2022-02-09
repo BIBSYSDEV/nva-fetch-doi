@@ -65,9 +65,10 @@ public class MetadataService {
     private final TranslatorService translatorService;
     private final Repository db = new SailRepository(new MemoryStore());
     private final URI publicationChannelsHostUri;
+    private final URI publicationChannelsHostUriPublisher;
 
     public MetadataService() {
-        this(getDefaultHttpClient(), defaultPublicationChannelsHostUri());
+        this(getDefaultHttpClient(), defaultPublicationChannelsHostUri(), defaultPublicationChannelsHostUriPublisher());
     }
 
     /**
@@ -76,13 +77,15 @@ public class MetadataService {
      */
     @Deprecated
     public MetadataService(HttpClient httpClient) {
-        this(httpClient, defaultPublicationChannelsHostUri());
+        this(httpClient, defaultPublicationChannelsHostUri(), defaultPublicationChannelsHostUriPublisher());
     }
 
-    public MetadataService(HttpClient httpClient, URI publicationChannelsHostUri) {
+    public MetadataService(HttpClient httpClient, URI publicationChannelsHostUri,
+                           URI publicationChannelsHostUriPublisher) {
         this.translatorService = new TranslatorService();
         this.httpClient = httpClient;
         this.publicationChannelsHostUri = publicationChannelsHostUri;
+        this.publicationChannelsHostUriPublisher = publicationChannelsHostUriPublisher;
     }
 
     /**
@@ -115,6 +118,10 @@ public class MetadataService {
 
     public static URI defaultPublicationChannelsHostUri() {
         return UriWrapper.fromHost(API_HOST).addChild("publication-channels").addChild("journal").getUri();
+    }
+
+    public static URI defaultPublicationChannelsHostUriPublisher() {
+        return UriWrapper.fromHost(API_HOST).addChild("publication-channels").addChild("publisher").getUri();
     }
 
     private static HttpClient getDefaultHttpClient() {
@@ -230,6 +237,13 @@ public class MetadataService {
             .flatMap(Function.identity());
     }
 
+    private Optional<String> queryPublicationChannelForPublisher(String term) {
+        return attempt(() -> sendQueryToPublicationChannelsProxy(term))
+            .map(this::parseResponseFromPublicationChannelsProxy)
+            .toOptional()
+            .flatMap(Function.identity());
+    }
+
     private Optional<String> parseResponseFromPublicationChannelsProxy(HttpResponse<String> response) {
         if (HttpURLConnection.HTTP_OK == response.statusCode()) {
             return getIdOfFirstElement(response);
@@ -258,5 +272,28 @@ public class MetadataService {
             .build();
 
         return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    private HttpResponse<String> sendQueryToPublicationChannelsProxy(String term)
+        throws IOException, InterruptedException {
+        var searchTerm = URLEncoder.encode(term, StandardCharsets.UTF_8.toString());
+        var uri = new UriWrapper(publicationChannelsHostUriPublisher)
+            .addQueryParameter("query", searchTerm)
+            .getUri();
+
+        var request = HttpRequest.newBuilder()
+            .uri(uri)
+            .headers(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, MediaTypes.APPLICATION_JSON_LD.toString())
+            .GET()
+            .build();
+
+        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    public Optional<String> lookUpPublisherIdAtPublicationChannel(String publisherName) {
+        return Optional.ofNullable(publisherName)
+                .flatMap(queryTerm -> queryPublicationChannelForPublisher(queryTerm))
+                .stream()
+                .findFirst();
     }
 }

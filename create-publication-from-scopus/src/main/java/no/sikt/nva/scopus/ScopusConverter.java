@@ -2,6 +2,7 @@ package no.sikt.nva.scopus;
 
 import static java.util.Collections.emptyList;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
+import static no.sikt.nva.scopus.ScopusSourceType.BOOK;
 import static no.sikt.nva.scopus.ScopusSourceType.JOURNAL;
 import jakarta.xml.bind.JAXB;
 import jakarta.xml.bind.JAXBElement;
@@ -29,7 +30,7 @@ import no.scopus.generated.MetaTp;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
-import no.sikt.nva.scopus.conversion.JournalCreator;
+import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.exception.UnsupportedXmlElementException;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
@@ -290,7 +291,10 @@ class ScopusConverter {
 
     private PublicationContext getPublicationContext() {
         if (isJournal()) {
-            return new JournalCreator(metadataService, docTp).createJournal();
+            return new PublicationContextCreator(metadataService, docTp).createJournal();
+        }
+        if (isBook()) {
+            return new PublicationContextCreator(metadataService, docTp).createBook();
         }
         return ScopusConstants.EMPTY_PUBLICATION_CONTEXT;
     }
@@ -300,6 +304,14 @@ class ScopusConverter {
             .map(DocTp::getMeta)
             .map(MetaTp::getSrctype)
             .map(srcTyp -> JOURNAL.equals(ScopusSourceType.valueOfCode(srcTyp)))
+            .orElse(false);
+    }
+
+    private boolean isBook() {
+        return Optional.ofNullable(docTp)
+            .map(DocTp::getMeta)
+            .map(MetaTp::getSrctype)
+            .map(srcTyp -> BOOK.equals(ScopusSourceType.valueOfCode(srcTyp)))
             .orElse(false);
     }
 }

@@ -135,7 +135,8 @@ class ScopusHandlerTest {
     private S3Driver s3Driver;
     private ScopusHandler scopusHandler;
     private WireMockServer httpServer;
-    private URI serverUri;
+    private URI serverUriJournal;
+    private URI serverUriPublisher;
     private MetadataService metadataService;
 
     private ScopusGenerator scopusData;
@@ -148,7 +149,7 @@ class ScopusHandlerTest {
         s3Driver = new S3Driver(s3Client, "ignoredValue");
         startWiremockServer();
         httpClient = WiremockHttpClient.create();
-        metadataService = new MetadataService(httpClient, serverUri);
+        metadataService = new MetadataService(httpClient, serverUriJournal, serverUriPublisher);
         eventBridgeClient = new FakeEventBridgeClient();
         scopusHandler = new ScopusHandler(s3Client, metadataService, eventBridgeClient);
         scopusData = new ScopusGenerator();
@@ -422,7 +423,7 @@ class ScopusHandlerTest {
     }
 
     private URI createExpectedQueryUriForJournalWithEIssn(String electronicIssn, String year) {
-        return new UriWrapper(serverUri)
+        return new UriWrapper(serverUriJournal)
                 .addQueryParameter("query", electronicIssn)
                 .addQueryParameter("year", year)
                 .getUri();
@@ -441,7 +442,8 @@ class ScopusHandlerTest {
     private void startWiremockServer() {
         httpServer = new WireMockServer(options().dynamicHttpsPort());
         httpServer.start();
-        serverUri = URI.create(httpServer.baseUrl());
+        serverUriJournal = URI.create(httpServer.baseUrl());
+        serverUriPublisher = URI.create(httpServer.baseUrl());
     }
 
     private ArrayNode createPublicationChannelsResponseWithJournalUri(URI journalUri) {

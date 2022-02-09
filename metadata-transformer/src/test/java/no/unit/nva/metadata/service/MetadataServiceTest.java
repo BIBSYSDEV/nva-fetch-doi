@@ -121,14 +121,16 @@ public class MetadataServiceTest {
     private static final TestAppender logger = LogUtils.getTestingAppenderForRootLogger();
     private WireMockServer wireMockServer;
 
-    private URI serverUri;
+    private URI serverUriJournal;
+    private URI serverUriPublisher;
     private HttpClient httpClient;
 
     @BeforeEach
     public void initialize() {
         wireMockServer = new WireMockServer(WireMockConfiguration.options().dynamicPort());
         wireMockServer.start();
-        this.serverUri = URI.create(wireMockServer.baseUrl());
+        this.serverUriJournal = URI.create(wireMockServer.baseUrl());
+        this.serverUriPublisher = URI.create(wireMockServer.baseUrl());
         this.httpClient = WiremockHttpClient.create();
     }
 
@@ -146,7 +148,7 @@ public class MetadataServiceTest {
         when(httpResonse.body()).thenReturn(responseBody);
         var httpClient = mock(HttpClient.class);
         when(httpClient.send(any(HttpRequest.class), any())).thenReturn(httpResonse);
-        var metadataService = new MetadataService(httpClient, serverUri);
+        var metadataService = new MetadataService(httpClient, serverUriJournal, serverUriPublisher);
         var name = "Edinburgh Journal of Botany";
         var year = 2010;
         var actualId =
@@ -166,7 +168,7 @@ public class MetadataServiceTest {
                                                           CreatePublicationRequest expectedRequest)
         throws IOException {
         URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
-        MetadataService metadataService = new MetadataService(httpClient, serverUri);
+        MetadataService metadataService = new MetadataService(httpClient, serverUriJournal, serverUriPublisher);
         Optional<CreatePublicationRequest> request = metadataService.generateCreatePublicationRequest(uri);
         CreatePublicationRequest actual = request.orElseThrow();
         actual.setContext(null);
