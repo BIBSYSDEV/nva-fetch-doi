@@ -144,11 +144,11 @@ class ScopusConverter {
         return authorKeywordsTp
             .getAuthorKeyword()
             .stream()
-            .map(this::concatenateKeywordsWithoutSpaceBetween)
+            .map(this::extractConcatenatedKeywordString)
             .collect(Collectors.toList());
     }
 
-    private String concatenateKeywordsWithoutSpaceBetween(AuthorKeywordTp keyword) {
+    private String extractConcatenatedKeywordString(AuthorKeywordTp keyword) {
         return keyword.getContent().stream().map(this::extractContentString).collect(Collectors.joining());
     }
 
