@@ -21,6 +21,8 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import static nva.commons.core.attempt.Try.attempt;
+
 public class ScopusDeleteHandler implements RequestHandler<S3Event, List<String>> {
 
     public static final int SINGLE_EXPECTED_RECORD = 0;
@@ -44,23 +46,32 @@ public class ScopusDeleteHandler implements RequestHandler<S3Event, List<String>
 
     @Override
     public List<String> handleRequest(S3Event event, Context context) {
-        logger.info("Reading delete file from s3");
 
-        List<String> identifiersToDelete = readFile(event)
-                .lines()
-                .map(this::trimDeletePrefix)
-                .collect(Collectors.toList());
+        List<String> identifiersToDelete = readIdentifiersToDelete(event);
 
-        Lists.partition(identifiersToDelete, PUT_EVENTS_REQUEST_MAX_ENTRIES).stream()
-                .map(this::createPutEventsRequestEntries)
-                .collect(Collectors.toList())
-                .forEach(this::emitPutEventsRequest);
+        emitEventsForIdentifiersToDelete(identifiersToDelete);
 
         return identifiersToDelete;
     }
 
+    private void emitEventsForIdentifiersToDelete(List<String> identifiersToDelete) {
+        Lists.partition(identifiersToDelete, PUT_EVENTS_REQUEST_MAX_ENTRIES).stream()
+                .map(this::createPutEventsRequestEntries)
+                .collect(Collectors.toList())
+                .forEach(this::emitPutEventsRequest);
+    }
+
+    private List<String> readIdentifiersToDelete(S3Event event) {
+        return attempt(() -> readFile(event))
+                    .orElseThrow(fail -> logErrorAndThrowException(fail.getException()))
+                    .lines()
+                    .map(this::trimDeletePrefix)
+                    .collect(Collectors.toList());
+    }
+
     private void emitPutEventsRequest(List<PutEventsRequestEntry> requestEntries) {
-        eventBridgeClient.putEvents(PutEventsRequest.builder().entries(requestEntries).build());
+        attempt(() -> eventBridgeClient.putEvents(PutEventsRequest.builder().entries(requestEntries).build()))
+                .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
     }
 
     private List<PutEventsRequestEntry> createPutEventsRequestEntries(List<String> scopusIdentifiersList) {
@@ -103,5 +114,12 @@ public class ScopusDeleteHandler implements RequestHandler<S3Event, List<String>
 
     private String extractFilename(S3Event event) {
         return event.getRecords().get(SINGLE_EXPECTED_RECORD).getS3().getObject().getKey();
+    }
+
+    private RuntimeException logErrorAndThrowException(Exception exception) {
+        logger.error(exception.getMessage());
+        return exception instanceof RuntimeException
+                ? (RuntimeException) exception
+                : new RuntimeException(exception);
     }
 }

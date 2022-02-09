@@ -4,6 +4,8 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 import com.amazonaws.services.lambda.runtime.Context;
@@ -30,8 +32,14 @@ import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
+import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.core.sync.ResponseTransformer;
+import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
+import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
 class ScopusDeleteHandlerTest {
 
@@ -92,6 +100,30 @@ class ScopusDeleteHandlerTest {
     }
 
     @Test
+    void shouldLogExceptionMessageWhenExceptionOccursInS3Client() {
+        var s3Event = createS3Event(randomString());
+        var expectedMessage = randomString();
+        var s3Client = new FakeS3ClientThrowingException(expectedMessage);
+        var scopusDeleteHandler = new ScopusDeleteHandler(s3Client, fakeEventBridgeClient);
+        var appender = LogUtils.getTestingAppenderForRootLogger();
+        assertThrows(RuntimeException.class, () -> scopusDeleteHandler.handleRequest(s3Event, CONTEXT));
+        assertThat(appender.getMessages(), containsString(expectedMessage));
+    }
+
+    @Test
+    void shouldLogExceptionMessageWhenExceptionOccursInEventBridgeClient() throws IOException {
+        var scopusFile = IoUtils.stringFromResources(Path.of(DELETE_MULTIPLE_IDENTIFIERS_FILE));
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
+        var s3Event = createS3Event(uri);
+        var expectedMessage = randomString();
+        var eventBridgeClient = new FakeEventBridgeClientThrowingException(expectedMessage);
+        var scopusDeleteHandler = new ScopusDeleteHandler(s3Client, eventBridgeClient);
+        var appender = LogUtils.getTestingAppenderForRootLogger();
+        assertThrows(RuntimeException.class, () -> scopusDeleteHandler.handleRequest(s3Event, CONTEXT));
+        assertThat(appender.getMessages(), containsString(expectedMessage));
+    }
+
+    @Test
     void shouldReturnCorrectIdentifiersFromFileContentWhenEventWithS3UriThatPointsToScopusDeleteFile()
             throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of(DELETE_MULTIPLE_IDENTIFIERS_FILE));
@@ -128,6 +160,38 @@ class ScopusDeleteHandlerTest {
                 randomString());
         String schemaVersion = randomString();
         return new S3Entity(randomString(), bucket, object, schemaVersion);
+    }
+
+    private static class FakeS3ClientThrowingException extends FakeS3Client {
+
+        private final String expectedErrorMessage;
+
+        public FakeS3ClientThrowingException(String expectedErrorMessage) {
+            super();
+            this.expectedErrorMessage = expectedErrorMessage;
+        }
+
+        @Override
+        public <ReturnT> ReturnT getObject(GetObjectRequest getObjectRequest,
+                                           ResponseTransformer<GetObjectResponse, ReturnT> responseTransformer) {
+            throw new RuntimeException(expectedErrorMessage);
+        }
+    }
+
+    private static class FakeEventBridgeClientThrowingException extends FakeEventBridgeClient {
+
+        private final String expectedErrorMessage;
+
+        public FakeEventBridgeClientThrowingException(String expectedErrorMessage) {
+            super();
+            this.expectedErrorMessage = expectedErrorMessage;
+        }
+
+        @Override
+        public PutEventsResponse putEvents(PutEventsRequest putEventsRequest) {
+            throw new RuntimeException(expectedErrorMessage);
+        }
+
     }
 
 }
