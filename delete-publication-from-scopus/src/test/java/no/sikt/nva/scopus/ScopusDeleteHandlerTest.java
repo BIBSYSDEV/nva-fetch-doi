@@ -1,5 +1,6 @@
 package no.sikt.nva.scopus;
 
+import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -25,7 +26,6 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
-import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeS3Client;
@@ -78,8 +78,7 @@ class ScopusDeleteHandlerTest {
         var requestEntries = fakeEventBridgeClient.getRequestEntries();
         assertThat(requestEntries.size(), is(equalTo(1)));
         var eventBodyJson = requestEntries.get(0).detail();
-        var actualRequestEntryBody =
-                JsonUtils.dtoObjectMapper.readValue(eventBodyJson, ScopusDeleteEventBody.class);
+        var actualRequestEntryBody = dtoObjectMapper.readValue(eventBodyJson, ScopusDeleteEventBody.class);
         var expectedRequestEntryBody = new ScopusDeleteEventBody(HARDCODED_SCOPUS_IDENTIFIER_IN_DELETE_SINGLE_FILE);
         assertThat(actualRequestEntryBody, is(equalTo(expectedRequestEntryBody)));
     }
@@ -93,8 +92,7 @@ class ScopusDeleteHandlerTest {
         var requestEntries = fakeEventBridgeClient.getRequestEntries();
         assertThat(requestEntries.size(), is(equalTo(HARDCODED_SCOPUS_IDENTIFIERS_IN_DELETE_MULTIPLE_FILE.size())));
         var eventBodyJson = requestEntries.get(0).detail();
-        var actualRequestEntryBody =
-                JsonUtils.dtoObjectMapper.readValue(eventBodyJson, ScopusDeleteEventBody.class);
+        var actualRequestEntryBody = dtoObjectMapper.readValue(eventBodyJson, ScopusDeleteEventBody.class);
         var expectedRequestEntryBody = new ScopusDeleteEventBody(HARDCODED_SCOPUS_IDENTIFIER_IN_DELETE_SINGLE_FILE);
         assertThat(actualRequestEntryBody, is(equalTo(expectedRequestEntryBody)));
     }
