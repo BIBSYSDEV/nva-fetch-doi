@@ -34,6 +34,7 @@ nva-secrets = { group = "com.github.bibsysdev", name = "secrets", version.ref = 
 nva-logutils = { group = "com.github.bibsysdev", name = "logutils", version.ref = "nva" }
 nva-identifiers = { group = "com.github.bibsysdev", name = "identifiers", version.ref = "nva" }
 nva-doi = { group = "com.github.bibsysdev", name = "doi", version.ref = "nva" }
+nva-events = { group = "com.github.bibsysdev", name = "eventhandlers", version.ref = "nva" }
 nva-testutils = { group = "com.github.bibsysdev", name = "nvatestutils", version.ref = "nva" }
 nva-datamodel = { group = "com.github.bibsysdev", name = "nva-datamodel-java", version.ref = "nvaDatamodelVersion" }
 
@@ -47,11 +48,14 @@ jackson-datatype-jdk8 = { group = "com.fasterxml.jackson.datatype", name = "jack
 jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations", version.ref = "jacksonVersion" }
 jackson-datatype-jsr310 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jsr310", version.ref = "jacksonVersion" }
 
-aws-java-sdk-s3 = { group = "com.amazonaws", name = "aws-java-sdk-s3", version.ref = "awsSdkVersion" }
 aws-java-sdk2-s3 = { group = "software.amazon.awssdk", name = "s3", version.ref = "awsSdk2Version" }
+aws-java-sdk2-eventbridge={ group= 'software.amazon.awssdk', name= 'eventbridge', version.ref = 'awsSdk2Version'}
+aws-sdk2-secrets = { group = 'software.amazon.awssdk', name = 'secretsmanager', version.ref = 'awsSdk2Version' }
+
+aws-java-sdk-s3 = { group = "com.amazonaws", name = "aws-java-sdk-s3", version.ref = "awsSdkVersion" }
 aws-java-sdk-core = { group = "com.amazonaws", name = "aws-java-sdk-core", version.ref = "awsSdkVersion" }
 aws-secretsmanager = { group = "com.amazonaws", name = "aws-java-sdk-secretsmanager", version.ref = "awsSdkVersion" }
-aws-sdk2-secrets = { group = 'software.amazon.awssdk', name = 'secretsmanager', version.ref = 'awsSdk2Version' }
+
 aws-lambda-java-core = { group = "com.amazonaws", name = "aws-lambda-java-core", version.ref = "awsLambdaCore" }
 aws-lambda-events = { group = 'com.amazonaws', name = 'aws-lambda-java-events', version.ref = 'awsLambdaEvents' }
 jakarta = { group = "jakarta.ws.rs", name = "jakarta.ws.rs-api", version.ref = "jakartaVersion" }

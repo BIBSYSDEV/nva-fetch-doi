@@ -1,24 +1,26 @@
 package no.unit.nva.metadata;
 
+import static nva.commons.core.attempt.Try.attempt;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
-
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
-
 import no.unit.nva.WithContext;
 import no.unit.nva.WithFile;
 import no.unit.nva.WithMetadata;
+import no.unit.nva.commons.json.JsonSerializable;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.file.model.FileSet;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ResearchProject;
-
 import nva.commons.core.JacocoGenerated;
 
-public class CreatePublicationRequest implements WithMetadata, WithFile, WithContext {
+public class CreatePublicationRequest implements WithMetadata, WithFile, WithContext, JsonSerializable {
 
     private EntityDescription entityDescription;
     private FileSet fileSet;
@@ -28,6 +30,10 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
     private List<URI> subjects;
     private Set<AdditionalIdentifier> additionalIdentifiers;
     private String authorKeywordsXmlFormat;
+
+    public static CreatePublicationRequest fromJson(String json) {
+        return attempt(()-> JsonUtils.dtoObjectMapper.readValue(json,CreatePublicationRequest.class)).orElseThrow();
+    }
 
     @JacocoGenerated
     @Override
@@ -134,4 +140,5 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
                 && Objects.equals(getAdditionalIdentifiers(), that.getAdditionalIdentifiers())
                 && Objects.equals(getAuthorKeywordsXmlFormat(), that.getAuthorKeywordsXmlFormat());
     }
+
 }
