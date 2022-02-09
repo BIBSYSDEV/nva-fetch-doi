@@ -5,6 +5,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static j2html.TagCreator.body;
 import static j2html.TagCreator.div;
 import static j2html.TagCreator.head;
@@ -17,6 +18,7 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider.CITATION_AUTHOR;
 import static no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider.DC_CONTRIBUTOR;
 import static no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider.DC_CREATOR;
+import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -32,6 +34,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import j2html.tags.ContainerTag;
 import j2html.tags.EmptyTag;
 import java.io.IOException;
@@ -40,6 +43,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +51,7 @@ import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import no.sikt.nva.testing.http.WiremockHttpClient;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider;
 import no.unit.nva.metadata.service.testdata.DcContentCaseArgumentsProvider;
@@ -70,9 +75,11 @@ import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -111,30 +118,60 @@ public class MetadataServiceTest {
     public static final String SECOND_ISBN_ISBN13_VARIANT = "9781627050128";
     public static final String ONLINE_ISSN = "2052-2916";
     public static final String PRINT_ISSN = "0969-0700";
-    public static final String ENSURE_ONLY_FILTERING_TITLES = "McLongName, Longy (Colonel (ret'd))";
     private static final TestAppender logger = LogUtils.getTestingAppenderForRootLogger();
     private WireMockServer wireMockServer;
+
+    private URI serverUri;
+    private HttpClient httpClient;
+
+    @BeforeEach
+    public void initialize() {
+        wireMockServer = new WireMockServer(WireMockConfiguration.options().dynamicPort());
+        wireMockServer.start();
+        this.serverUri = URI.create(wireMockServer.baseUrl());
+        this.httpClient = WiremockHttpClient.create();
+    }
+
+    @AfterEach
+    public void tearDown() {
+        wireMockServer.stop();
+    }
+
+    @Test
+    public void getJournalIdFromPublicationChannelsByGivenJournalName()
+        throws IOException, InterruptedException {
+        var responseBody = IoUtils.stringFromResources(Path.of("publication_channels_442850_response.json"));
+        var httpResonse = mock(HttpResponse.class);
+        when(httpResonse.statusCode()).thenReturn(SC_OK);
+        when(httpResonse.body()).thenReturn(responseBody);
+        var httpClient = mock(HttpClient.class);
+        when(httpClient.send(any(HttpRequest.class), any())).thenReturn(httpResonse);
+        var metadataService = new MetadataService(httpClient, serverUri);
+        var name = "Edinburgh Journal of Botany";
+        var year = 2010;
+        var actualId =
+            metadataService.lookUpJournalIdAtPublicationChannel(name, null, null, year)
+                .orElseThrow();
+        var expectedId = "https://api.dev.nva.aws.unit.no/publication-channels/journal/440074/2010";
+        assertThat(actualId, is(expectedId));
+    }
 
     @ParameterizedTest(name = "#{index} - {0}")
     @MethodSource({
         "provideMetadataWithLowercasePrefixes",
         "provideMetadataForAbstract"
     })
-    public void getCreatePublicationParsesHtmlAndReturnsMetadata(String testDescription, String html,
-                                                                 CreatePublicationRequest expectedRequest)
+    void getCreatePublicationParsesHtmlAndReturnsMetadata(String ignored,
+                                                          String html,
+                                                          CreatePublicationRequest expectedRequest)
         throws IOException {
         URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
-        MetadataService metadataService = new MetadataService();
+        MetadataService metadataService = new MetadataService(httpClient, serverUri);
         Optional<CreatePublicationRequest> request = metadataService.generateCreatePublicationRequest(uri);
         CreatePublicationRequest actual = request.orElseThrow();
         actual.setContext(null);
 
         assertThat(actual, equalTo(expectedRequest));
-    }
-
-    @AfterEach
-    void tearDown() {
-        wireMockServer.stop();
     }
 
     @Test
@@ -160,7 +197,7 @@ public class MetadataServiceTest {
     @ParameterizedTest(name = "getCreatePublication returns date when date attribute {0} with value {1}")
     @ArgumentsSource(ValidDateArgumentsProvider.class)
     void getCreatePublicationReturnsDateWhenDateVariantIsPresent(String tagAttribute, String date)
-            throws IOException, InterruptedException {
+        throws IOException, InterruptedException {
 
         CreatePublicationRequest actual = getCreatePublicationRequest(tagAttribute, date);
         CreatePublicationRequest expectedRequest = getCreatePublicationRequestWithDateOnly(date);
@@ -295,14 +332,14 @@ public class MetadataServiceTest {
         throws IOException {
         CreatePublicationRequest request = getCreatePublicationRequest(tags);
         Object[] expected = tags.stream()
-                                .filter(this::isNameProperty)
-                                .map(MetaTagPair::getContent)
-                                .distinct()
-                                .toArray();
+            .filter(this::isNameProperty)
+            .map(MetaTagPair::getContent)
+            .distinct()
+            .toArray();
         List<String> actual = request.getEntityDescription().getContributors().stream()
-                                  .map(Contributor::getIdentity)
-                                  .map(Identity::getName)
-                                  .collect(Collectors.toList());
+            .map(Contributor::getIdentity)
+            .map(Identity::getName)
+            .collect(Collectors.toList());
         assertThat(actual, containsInAnyOrder(expected));
     }
 
@@ -337,11 +374,11 @@ public class MetadataServiceTest {
         CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(third, metaTags);
         String actual = createPublicationRequest.getEntityDescription().getMainTitle();
         List<String> authorNames = createPublicationRequest.getEntityDescription()
-                                       .getContributors()
-                                       .stream()
-                                       .map(Contributor::getIdentity)
-                                       .map(Identity::getName)
-                                       .collect(Collectors.toList());
+            .getContributors()
+            .stream()
+            .map(Contributor::getIdentity)
+            .map(Identity::getName)
+            .collect(Collectors.toList());
         assertThat(authorNames, hasItem(shortAuthorName));
         assertThat(actual, equalTo(expected));
     }
@@ -358,13 +395,13 @@ public class MetadataServiceTest {
             new MetaTagPair(metaTagName, isxnImplyingContentType)));
 
         PublicationContext actualContext = createPublicationRequest.getEntityDescription()
-                                               .getReference().getPublicationContext();
+            .getReference().getPublicationContext();
         assertThat(actualContext, instanceOf(expectedContext));
 
         verifyMetaTagContentInPublicationContext(isxnImplyingContentType, actualContext);
 
         PublicationInstance<?> actualInstance = createPublicationRequest.getEntityDescription()
-                                                    .getReference().getPublicationInstance();
+            .getReference().getPublicationInstance();
         assertThat(actualInstance, instanceOf(expectedInstance));
     }
 
@@ -378,9 +415,9 @@ public class MetadataServiceTest {
             new MetaTagPair(Citation.ISBN.getMetaTagName(), SECOND_ISBN_ISBN13_VARIANT)));
 
         List<String> actual = ((Book) createPublicationRequest.getEntityDescription()
-                                          .getReference().getPublicationContext()).getIsbnList();
+            .getReference().getPublicationContext()).getIsbnList();
         String[] expected = List.of(FIRST_ISBN_ISBN13_VARIANT, SECOND_ISBN_ISBN13_VARIANT)
-                                .toArray(String[]::new);
+            .toArray(String[]::new);
 
         assertThat(actual, containsInAnyOrder(expected));
     }
@@ -394,9 +431,9 @@ public class MetadataServiceTest {
             new MetaTagPair(Citation.ISSN.getMetaTagName(), PRINT_ISSN)));
 
         String actual = ((UnconfirmedJournal) createPublicationRequest.getEntityDescription()
-                                       .getReference().getPublicationContext()).getOnlineIssn();
+            .getReference().getPublicationContext()).getOnlineIssn();
         String[] expected = List.of(ONLINE_ISSN, PRINT_ISSN)
-                                .toArray(String[]::new);
+            .toArray(String[]::new);
 
         assertThat(actual, is(in(expected)));
     }
@@ -446,8 +483,8 @@ public class MetadataServiceTest {
 
     private static CreatePublicationRequest createRequestWithTitle(String title) {
         EntityDescription entityDescription = new EntityDescription.Builder()
-                                                  .withMainTitle(title)
-                                                  .build();
+            .withMainTitle(title)
+            .build();
         CreatePublicationRequest request = new CreatePublicationRequest();
         request.setEntityDescription(entityDescription);
         return request;
@@ -474,9 +511,9 @@ public class MetadataServiceTest {
     private static CreatePublicationRequest createRequestWithDescriptionAndOrAbstract(
         String description, String abstractString) {
         EntityDescription entityDescription = new EntityDescription.Builder()
-                                                  .withDescription(description)
-                                                  .withAbstract(abstractString)
-                                                  .build();
+            .withDescription(description)
+            .withAbstract(abstractString)
+            .build();
         CreatePublicationRequest request = new CreatePublicationRequest();
         request.setEntityDescription(entityDescription);
         return request;
@@ -534,8 +571,8 @@ public class MetadataServiceTest {
 
     private String createAuthorShorterThanShortestTitle(String... titles) {
         return Arrays.stream(titles).reduce(this::shortestString)
-                   .map(this::leftHalf)
-                   .orElseThrow();
+            .map(this::leftHalf)
+            .orElseThrow();
     }
 
     private String leftHalf(String title) {
@@ -580,7 +617,7 @@ public class MetadataServiceTest {
     }
 
     private CreatePublicationRequest getCreatePublicationRequest(String attribute, String value)
-            throws IOException, InterruptedException {
+        throws IOException, InterruptedException {
         Optional<CreatePublicationRequest> request = getCreatePublicationRequestResponse(attribute, value);
         CreatePublicationRequest actual = request.orElseThrow();
         actual.setContext(null);
@@ -632,8 +669,8 @@ public class MetadataServiceTest {
 
     private CreatePublicationRequest createPublicationRequestWithLanguageOnly(URI uri) {
         EntityDescription entityDescription = new EntityDescription.Builder()
-                                                  .withLanguage(uri)
-                                                  .build();
+            .withLanguage(uri)
+            .build();
         CreatePublicationRequest expectedRequest = new CreatePublicationRequest();
         expectedRequest.setEntityDescription(entityDescription);
         return expectedRequest;
@@ -641,8 +678,8 @@ public class MetadataServiceTest {
 
     private CreatePublicationRequest getCreatePublicationRequestWithDateOnly(String date) {
         EntityDescription entityDescription = new EntityDescription.Builder()
-                                                  .withDate(createPublicationDate(date))
-                                                  .build();
+            .withDate(createPublicationDate(date))
+            .build();
         CreatePublicationRequest expectedRequest = new CreatePublicationRequest();
         expectedRequest.setEntityDescription(entityDescription);
         return expectedRequest;
@@ -655,10 +692,10 @@ public class MetadataServiceTest {
         String day = dateParts.length > 2 ? dateParts[2] : null;
 
         return new PublicationDate.Builder()
-                   .withYear(year)
-                   .withMonth(month)
-                   .withDay(day)
-                   .build();
+            .withYear(year)
+            .withMonth(month)
+            .withDay(day)
+            .build();
     }
 
     private URI prepareWebServerAndReturnUriToMetadata(String filename, String body) {
@@ -668,13 +705,14 @@ public class MetadataServiceTest {
     }
 
     private void startMock(String filename, String body) {
-        wireMockServer = new WireMockServer();
-        wireMockServer.start();
-
         configureFor("localhost", wireMockServer.port());
         stubFor(get(urlEqualTo("/article/" + filename))
                     .willReturn(aResponse()
                                     .withHeader("Content-Type", "text/html")
+                                    .withBody(body)));
+        stubFor(get(urlPathEqualTo("/publication-channels/journal"))
+                    .willReturn(aResponse()
+                                    .withHeader("Content-Type", "application/json")
                                     .withBody(body)));
     }
 

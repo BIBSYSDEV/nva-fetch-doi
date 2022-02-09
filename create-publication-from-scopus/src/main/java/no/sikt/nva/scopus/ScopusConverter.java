@@ -1,11 +1,8 @@
 package no.sikt.nva.scopus;
 
 import static java.util.Collections.emptyList;
-import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.sikt.nva.scopus.ScopusSourceType.JOURNAL;
-import static nva.commons.core.attempt.Try.attempt;
-
 import jakarta.xml.bind.JAXB;
 import jakarta.xml.bind.JAXBElement;
 import java.io.StringWriter;
@@ -18,21 +15,24 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AuthorGroupTp;
+import no.scopus.generated.AuthorKeywordTp;
 import no.scopus.generated.AuthorKeywordsTp;
 import no.scopus.generated.AuthorTp;
+import no.scopus.generated.CitationInfoTp;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
+import no.scopus.generated.HeadTp;
 import no.scopus.generated.InfTp;
 import no.scopus.generated.ItemidTp;
-import no.scopus.generated.SupTp;
-import no.scopus.generated.IssnTp;
 import no.scopus.generated.MetaTp;
-import no.scopus.generated.SourceTp;
+import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
+import no.sikt.nva.scopus.conversion.JournalCreator;
 import no.sikt.nva.scopus.exception.UnsupportedXmlElementException;
 import no.unit.nva.metadata.CreatePublicationRequest;
+import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -40,23 +40,18 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.PublicationContext;
-import no.unit.nva.model.contexttypes.UnconfirmedJournal;
-import no.unit.nva.model.exceptions.InvalidIssnException;
-import nva.commons.core.SingletonCollector;
 import nva.commons.core.paths.UriWrapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("PMD.GodClass")
 class ScopusConverter {
 
     private static final String MALFORMED_CONTENT_MESSAGE = "Malformed content, cannot parse: %s";
-    public static final String DASH = "-";
     private final DocTp docTp;
-    private static final Logger logger = LoggerFactory.getLogger(ScopusConverter.class);
+    private final MetadataService metadataService;
 
-    protected ScopusConverter(DocTp docTp) {
+    protected ScopusConverter(DocTp docTp, MetadataService metadataService) {
         this.docTp = docTp;
+        this.metadataService = metadataService;
     }
 
     public CreatePublicationRequest generateCreatePublicationRequest() {
@@ -68,12 +63,19 @@ class ScopusConverter {
     }
 
     private String generateAuthorKeyWordsXml() {
-        var authorKeywords = extractAuthorKeyWords();
-        return nonNull(authorKeywords) ? marshallAuthorKeywords(authorKeywords) : null;
+        return extractAuthorKeyWords()
+            .map(this::marshallAuthorKeywords)
+            .orElse(null);
     }
 
-    private AuthorKeywordsTp extractAuthorKeyWords() {
-        return docTp.getItem().getItem().getBibrecord().getHead().getCitationInfo().getAuthorKeywords();
+    private Optional<AuthorKeywordsTp> extractAuthorKeyWords() {
+        return Optional.ofNullable(extractHead())
+            .map(HeadTp::getCitationInfo)
+            .map(CitationInfoTp::getAuthorKeywords);
+    }
+
+    private HeadTp extractHead() {
+        return docTp.getItem().getItem().getBibrecord().getHead();
     }
 
     private String marshallAuthorKeywords(AuthorKeywordsTp authorKeywordsTp) {
@@ -119,7 +121,7 @@ class ScopusConverter {
     }
 
     private List<AbstractTp> getAbstracts() {
-        return docTp.getItem().getItem().getBibrecord().getHead().getAbstracts().getAbstract();
+        return extractHead().getAbstracts().getAbstract();
     }
 
     private boolean isOriginalAbstract(AbstractTp abstractTp) {
@@ -133,17 +135,21 @@ class ScopusConverter {
     }
 
     private List<String> generatePlainTextTags() {
-        var authorKeywordsTp = extractAuthorKeyWords();
-        return nonNull(authorKeywordsTp)
-                   ? authorKeywordsTp
+        return extractAuthorKeyWords()
+            .map(this::extractKeywordsAsStrings)
+            .orElse(emptyList());
+    }
+
+    private List<String> extractKeywordsAsStrings(AuthorKeywordsTp authorKeywordsTp) {
+        return authorKeywordsTp
             .getAuthorKeyword()
             .stream()
-            .map(keyword -> keyword.getContent()
-                .stream()
-                .map(this::extractContentString)
-                .collect(Collectors.joining()))
-            .collect(Collectors.toList())
-                   : emptyList();
+            .map(this::extractConcatenatedKeywordString)
+            .collect(Collectors.toList());
+    }
+
+    private String extractConcatenatedKeywordString(AuthorKeywordTp keyword) {
+        return keyword.getContent().stream().map(this::extractContentString).collect(Collectors.joining());
     }
 
     private String extractContentString(Object content) {
@@ -186,7 +192,7 @@ class ScopusConverter {
     }
 
     private URI extractDOI() {
-        return  UriWrapper.fromUri(DOI_OPEN_URL_FORMAT).addChild(docTp.getMeta().getDoi()).getUri();
+        return UriWrapper.fromUri(DOI_OPEN_URL_FORMAT).addChild(docTp.getMeta().getDoi()).getUri();
     }
 
     private Optional<TitletextTp> getMainTitleTextTp() {
@@ -201,7 +207,7 @@ class ScopusConverter {
     }
 
     private List<TitletextTp> getTitleText() {
-        return docTp.getItem().getItem().getBibrecord().getHead().getCitationTitle().getTitletext();
+        return extractHead().getCitationTitle().getTitletext();
     }
 
     private List<Contributor> generateContributorsFromAuthorGroup(AuthorGroupTp authorGroupTp) {
@@ -247,7 +253,7 @@ class ScopusConverter {
     }
 
     private List<AuthorGroupTp> extractAuthorGroup() {
-        return docTp.getItem().getItem().getBibrecord().getHead().getAuthorGroup();
+        return extractHead().getAuthorGroup();
     }
 
     private Set<AdditionalIdentifier> generateAdditionalIdentifiers() {
@@ -284,26 +290,9 @@ class ScopusConverter {
 
     private PublicationContext getPublicationContext() {
         if (isJournal()) {
-            return attempt(() -> createUnconfirmedJournal())
-                .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
+            return new JournalCreator(metadataService, docTp).createJournal();
         }
         return ScopusConstants.EMPTY_PUBLICATION_CONTEXT;
-    }
-
-    private RuntimeException logErrorAndThrowException(Exception exception) {
-        logger.error(exception.getMessage());
-        return exception instanceof RuntimeException
-                   ? (RuntimeException) exception
-                   : new RuntimeException(exception);
-    }
-
-    private UnconfirmedJournal createUnconfirmedJournal() throws InvalidIssnException {
-        var source = getSource();
-        var sourceTitle = extractSourceTitle(source);
-        var issnTpList = source.getIssn();
-        var printIssn = findPrintIssn(issnTpList).orElse(null);
-        var electronicIssn = findElectronicIssn(issnTpList).orElse(null);
-        return new UnconfirmedJournal(sourceTitle, printIssn, electronicIssn);
     }
 
     private boolean isJournal() {
@@ -312,35 +301,5 @@ class ScopusConverter {
             .map(MetaTp::getSrctype)
             .map(srcTyp -> JOURNAL.equals(ScopusSourceType.valueOfCode(srcTyp)))
             .orElse(false);
-    }
-
-    private SourceTp getSource() {
-        return docTp.getItem().getItem().getBibrecord().getHead().getSource();
-    }
-
-    private String extractSourceTitle(SourceTp sourceTp) {
-        StringBuilder sourceTitle = new StringBuilder();
-        sourceTp.getSourcetitle().getContent().forEach(sourceTitle::append);
-        return sourceTitle.toString();
-    }
-
-    private Optional<String> findElectronicIssn(List<IssnTp> issnTpList) {
-        return findIssn(issnTpList, ScopusConstants.ISSN_TYPE_ELECTRONIC);
-    }
-
-    private Optional<String> findPrintIssn(List<IssnTp> issnTpList) {
-        return findIssn(issnTpList, ScopusConstants.ISSN_TYPE_PRINT);
-    }
-
-    private Optional<String> findIssn(List<IssnTp> issnTpList, String issnType) {
-        return Optional.ofNullable(issnTpList.stream()
-                                       .filter(issn -> issnType.equals(issn.getType()))
-                                       .map(IssnTp::getContent)
-                                       .map(this::addDashToIssn)
-                                       .collect(SingletonCollector.collectOrElse(null)));
-    }
-
-    private String addDashToIssn(String issn) {
-        return issn.contains(DASH) ? issn : issn.substring(0, 4) + DASH + issn.substring(4);
     }
 }

@@ -13,6 +13,7 @@ import no.scopus.generated.DocTp;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -37,14 +38,16 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     public static final String EVENT_TOPIC_IS_SET_IN_EVENT_BODY = "ReferToEventTopic";
 
     private final S3Client s3Client;
+    private final MetadataService metadataService;
     private final EventBridgeClient eventBridgeClient;
 
     @JacocoGenerated
     public ScopusHandler() {
-        this(S3Driver.defaultS3Client().build(), defaultEventBridgeClient());
+        this(S3Driver.defaultS3Client().build(), defaultMetadataService(), defaultEventBridgeClient());
     }
 
-    public ScopusHandler(S3Client s3Client, EventBridgeClient eventBridgeClient) {
+    public ScopusHandler(S3Client s3Client, MetadataService metadataService, EventBridgeClient eventBridgeClient) {
+        this.metadataService = metadataService;
         this.s3Client = s3Client;
         this.eventBridgeClient = eventBridgeClient;
     }
@@ -67,6 +70,11 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
             .map(this::parseXmlFile)
             .map(this::generateCreatePublicationRequest)
             .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
+    }
+
+    @JacocoGenerated
+    private static MetadataService defaultMetadataService() {
+        return new MetadataService();
     }
 
     private void emitEventToEventBridge(Context context, CreatePublicationRequest request) {
@@ -119,7 +127,7 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     }
 
     private CreatePublicationRequest generateCreatePublicationRequest(DocTp docTp) {
-        var scopusConverter = new ScopusConverter(docTp);
+        var scopusConverter = new ScopusConverter(docTp, metadataService);
         return scopusConverter.generateCreatePublicationRequest();
     }
 

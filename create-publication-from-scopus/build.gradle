@@ -13,15 +13,20 @@ dependencies {
     implementation libs.nva.s3
     implementation libs.nva.json
     implementation libs.nva.core
+    implementation libs.nva.doi
     implementation libs.nva.events
     implementation libs.nva.apigateway
 
     implementation libs.aws.lambda.java.core
     implementation libs.aws.lambda.events
     implementation libs.bundles.logging
+
+
     testImplementation libs.nva.testutils
     testImplementation libs.nva.language
-
+    testImplementation project (":fetch-doi-testing")
+    testImplementation libs.nva.testutils
+    testImplementation libs.nva.json
     testImplementation(libs.zalando.problem) {
         compileOnly(libs.apiGuardian) {
             because 'Dependency has maven scope provided'
@@ -31,6 +36,7 @@ dependencies {
 
 
 test{
+    environment "API_HOST", "api.localhost.nva.aws.unit.no"
     environment "EVENTS_BUCKET", "NvaEventsBucket"
     environment "EVENTS_BUS", "NvaEventBus"
 }
