@@ -6,7 +6,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.equalToObject;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
@@ -32,9 +31,19 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import no.scopus.generated.BibrecordTp;
+import no.scopus.generated.CitationTitleTp;
+import no.scopus.generated.DocTp;
+import no.scopus.generated.HeadTp;
+import no.scopus.generated.ItemTp;
 import no.scopus.generated.ItemidTp;
+import no.scopus.generated.OrigItemTp;
+import no.scopus.generated.TitletextTp;
+import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.test.utils.ScopusGenerator;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.metadata.CreatePublicationRequest;
@@ -84,15 +93,8 @@ class ScopusHandlerTest {
     private static final String HARDCODED_EXPECTED_KEYWORD_1_IN_0000469852 = "64Cu";
     private static final String HARDCODED_EXPECTED_KEYWORD_2_IN_0000469852 = "excretion";
     private static final String HARDCODED_EXPECTED_KEYWORD_3_IN_0000469852 = "sheep";
-    private static final String SCOPUS_XML_0000833530 = "2-s2.0-0000833530.xml";
     private static final String XML_ENCODING_DECLARATION = "<?xml version=\"1.0\" encoding=\"UTF-8\" "
                                                            + "standalone=\"yes\"?>";
-    private static final String HARDCODED_EXPECTED_TITLE_NAMESPACE = "<titletextTp xml:lang=\"eng\" "
-                                                                     + "language=\"English\" original=\"y\"";
-    private static final String HARDCODED_EXPECTED_TITLE_IN_0000833530 = "Measurement of A\n"
-                                                                         + "    <sup>bb</sup>\n"
-                                                                         + "    <inf>FB</inf> in hadronic Z decays "
-                                                                         + "using a jet charge technique</titletextTp>";
     private static final String SCOPUS_XML_85114653695 = "2-s2.0-85114653695.xml";
     private static final String CONTRIBUTOR_1_NAME_IN_85114653695 = "Morra A.";
     private static final String CONTRIBUTOR_2_NAME_IN_85114653695 = "Escala-Garcia M.";
@@ -153,15 +155,13 @@ class ScopusHandlerTest {
 
     @Test
     void shouldReturnCreatePublicationRequestWithMainTitle() throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000833530));
-        var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
-        S3Event s3Event = createS3Event(uri);
-        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
-        String actualMainTitle = createPublicationRequest.getEntityDescription().getMainTitle();
-        assertThat(actualMainTitle,
-                   stringContainsInOrder(XML_ENCODING_DECLARATION,
-                                         HARDCODED_EXPECTED_TITLE_NAMESPACE,
-                                         HARDCODED_EXPECTED_TITLE_IN_0000833530));
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        var titleObject = extractTitle();
+        var titleObjectAsXmlString = ScopusGenerator.toXml(titleObject);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualMainTitle = createPublicationRequest.getEntityDescription().getMainTitle();
+        assertThat(actualMainTitle, is(equalTo(titleObjectAsXmlString)));
     }
 
     @Test
@@ -340,6 +340,20 @@ class ScopusHandlerTest {
 
     private UnixPath randomS3Path() {
         return UnixPath.of(randomString());
+    }
+
+    private TitletextTp extractTitle() {
+        return Optional.of(scopusData.getDocument())
+            .map(DocTp::getItem)
+            .map(ItemTp::getItem)
+            .map(OrigItemTp::getBibrecord)
+            .map(BibrecordTp::getHead)
+            .map(HeadTp::getCitationTitle)
+            .map(CitationTitleTp::getTitletext)
+            .stream()
+            .flatMap(Collection::stream)
+            .filter(t -> YesnoAtt.Y.equals(t.getOriginal()))
+            .collect(SingletonCollector.collect());
     }
 
     private AdditionalIdentifier[] convertScopusIdentifiersToNvaAdditionalIdentifiers(
