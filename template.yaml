@@ -19,6 +19,10 @@ Parameters:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Description: Reference to Cognito UserPool for the stage
     Default: CognitoAuthorizerArn
+  ApiDomain:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Description: The Api domain
+    Default: /NVA/ApiDomain
   CustomDomain:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Description: Custom API to connect this lambda to
@@ -224,6 +228,7 @@ Resources:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketName
           EVENTS_BUS: !Ref NvaEventsBusName
+          API_HOST: !Ref ApiDomain
       Events:
         Scopus:
           Type: S3
