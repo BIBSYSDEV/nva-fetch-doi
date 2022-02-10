@@ -1,6 +1,5 @@
 package no.sikt.nva.scopus;
 
-import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -27,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeS3Client;
@@ -138,10 +136,10 @@ class ScopusDeleteHandlerTest {
         assertThat(identifiersToDelete, is(equalTo(HARDCODED_SCOPUS_IDENTIFIERS_IN_DELETE_MULTIPLE_FILE)));
     }
 
-    private List<ScopusDeleteEventBody> getScopusDeleteEventBodies() throws JsonProcessingException {
+    private List<ScopusDeleteEventBody> getScopusDeleteEventBodies() {
         var eventBodies = new ArrayList<ScopusDeleteEventBody>();
         for (PutEventsRequestEntry entry : fakeEventBridgeClient.getRequestEntries()) {
-            eventBodies.add(dtoObjectMapper.readValue(entry.detail(), ScopusDeleteEventBody.class));
+            eventBodies.add(ScopusDeleteEventBody.fromJson(entry.detail()));
         }
         return eventBodies;
     }

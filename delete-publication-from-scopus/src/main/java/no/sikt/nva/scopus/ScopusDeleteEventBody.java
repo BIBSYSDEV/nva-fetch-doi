@@ -8,6 +8,9 @@ import java.util.Objects;
 import no.unit.nva.events.models.EventBody;
 import nva.commons.core.JacocoGenerated;
 
+import static no.unit.nva.events.handlers.EventHandlersConfig.defaultEventObjectMapper;
+import static nva.commons.core.attempt.Try.attempt;
+
 public class ScopusDeleteEventBody implements EventBody {
 
     public static final String TOPIC = "NvaFetchDoi.Scopus.Delete";
@@ -19,6 +22,14 @@ public class ScopusDeleteEventBody implements EventBody {
     @JsonCreator
     public ScopusDeleteEventBody(@JsonProperty(SCOPUS_IDENTIFIER) String scopusIdentifier) {
         this.scopusIdentifier = scopusIdentifier;
+    }
+
+    public static ScopusDeleteEventBody fromJson(String json) {
+        return attempt(() -> defaultEventObjectMapper.readValue(json, ScopusDeleteEventBody.class)).orElseThrow();
+    }
+
+    public String toJson() {
+        return attempt(() -> defaultEventObjectMapper.writeValueAsString(this)).orElseThrow();
     }
 
     @JacocoGenerated

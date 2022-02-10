@@ -5,12 +5,13 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 
 import java.net.URI;
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Lists;
 import no.unit.nva.s3.S3Driver;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
@@ -20,7 +21,6 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 
 public class ScopusDeleteHandler implements RequestHandler<S3Event, List<String>> {
@@ -29,7 +29,9 @@ public class ScopusDeleteHandler implements RequestHandler<S3Event, List<String>
     public static final int PUT_EVENTS_REQUEST_MAX_ENTRIES = 2;
     public static final String S3_SCHEME = "s3";
     public static final String DELETE_SCOPUS_IDENTIFIER_PREFIX = "DELETE-2-s2.0-";
+    public static final String EVENT_TOPIC_IS_SET_IN_EVENT_BODY = "ReferToEventTopic";
     public static final String EMPTY_STRING = "";
+    private static final String EVENT_BUS = new Environment().readEnv("EVENTS_BUS");
     private static final Logger logger = LoggerFactory.getLogger(ScopusDeleteHandler.class);
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
@@ -49,24 +51,24 @@ public class ScopusDeleteHandler implements RequestHandler<S3Event, List<String>
 
         List<String> identifiersToDelete = readIdentifiersToDelete(event);
 
-        emitEventsForIdentifiersToDelete(identifiersToDelete);
+        emitEventsForIdentifiersToDelete(identifiersToDelete, context);
 
         return identifiersToDelete;
     }
 
-    private void emitEventsForIdentifiersToDelete(List<String> identifiersToDelete) {
+    private void emitEventsForIdentifiersToDelete(List<String> identifiersToDelete, Context context) {
         Lists.partition(identifiersToDelete, PUT_EVENTS_REQUEST_MAX_ENTRIES).stream()
-                .map(this::createPutEventsRequestEntries)
+                .map(identifier -> createPutEventsRequestEntries(identifier, context))
                 .collect(Collectors.toList())
                 .forEach(this::emitPutEventsRequest);
     }
 
     private List<String> readIdentifiersToDelete(S3Event event) {
         return attempt(() -> readFile(event))
-                    .orElseThrow(fail -> logErrorAndThrowException(fail.getException()))
-                    .lines()
-                    .map(this::trimDeletePrefix)
-                    .collect(Collectors.toList());
+                .orElseThrow(fail -> logErrorAndThrowException(fail.getException()))
+                .lines()
+                .map(this::trimDeletePrefix)
+                .collect(Collectors.toList());
     }
 
     private void emitPutEventsRequest(List<PutEventsRequestEntry> requestEntries) {
@@ -74,24 +76,25 @@ public class ScopusDeleteHandler implements RequestHandler<S3Event, List<String>
                 .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
     }
 
-    private List<PutEventsRequestEntry> createPutEventsRequestEntries(List<String> scopusIdentifiersList) {
-        return scopusIdentifiersList.stream()
-                .map(this::createPutEventsRequestEntry)
+    private List<PutEventsRequestEntry> createPutEventsRequestEntries(List<String> identifiersList, Context context) {
+        return identifiersList.stream()
+                .map(identifier -> createPutEventsRequestEntry(identifier, context))
                 .collect(Collectors.toList());
     }
 
-    private PutEventsRequestEntry createPutEventsRequestEntry(String scopusIdentifier) {
+    private PutEventsRequestEntry createPutEventsRequestEntry(String identifier, Context context) {
         return PutEventsRequestEntry.builder()
-                .detail(createScopusDeleteEventBodyJson(scopusIdentifier))
+                .detailType(EVENT_TOPIC_IS_SET_IN_EVENT_BODY)
+                .time(Instant.now())
+                .eventBusName(EVENT_BUS)
+                .detail(createScopusDeleteEventBodyJson(identifier))
+                .source(context.getFunctionName())
+                .resources(context.getInvokedFunctionArn())
                 .build();
     }
 
     private String createScopusDeleteEventBodyJson(String scopusIdentifier) {
-        try {
-            return dtoObjectMapper.writeValueAsString(new ScopusDeleteEventBody(scopusIdentifier));
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        return new ScopusDeleteEventBody(scopusIdentifier).toJson();
     }
 
     private String trimDeletePrefix(String line) {
@@ -105,7 +108,7 @@ public class ScopusDeleteHandler implements RequestHandler<S3Event, List<String>
     }
 
     private URI createS3BucketUri(S3Event event) {
-        return new UriWrapper(S3_SCHEME,extractBucketName(event)).addChild(extractFilename(event)).getUri();
+        return new UriWrapper(S3_SCHEME, extractBucketName(event)).addChild(extractFilename(event)).getUri();
     }
 
     private String extractBucketName(S3Event event) {
