@@ -12,6 +12,7 @@ import jakarta.xml.bind.JAXB;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
@@ -93,6 +94,7 @@ public final class ScopusGenerator {
     private static MetaTp randomMetaTp() {
         var meta = new MetaTp();
         meta.setDoi(randomScopusDoi());
+        meta.setEid(randomString());
         return meta;
     }
 
@@ -190,19 +192,20 @@ public final class ScopusGenerator {
     }
 
     private static CitationtypeAtt randomUnSupportedCitationTypeAtt() {
-        List<CitationtypeAtt> citationTypeAttList = List.of(CitationtypeAtt.AB, CitationtypeAtt.BK,
-                                                            CitationtypeAtt.BR, CitationtypeAtt.BZ,
-                                                            CitationtypeAtt.CB,
-                                                            CitationtypeAtt.CH, CitationtypeAtt.CP,
-                                                            CitationtypeAtt.CR, CitationtypeAtt.DI,
-                                                            CitationtypeAtt.DP, CitationtypeAtt.ED,
-                                                            CitationtypeAtt.ER, CitationtypeAtt.IP,
-                                                            CitationtypeAtt.LE, CitationtypeAtt.MM,
-                                                            CitationtypeAtt.NO, CitationtypeAtt.PA,
-                                                            CitationtypeAtt.PP, CitationtypeAtt.RE,
-                                                            CitationtypeAtt.RF, CitationtypeAtt.RP,
-                                                            CitationtypeAtt.SH, CitationtypeAtt.ST,
-                                                            CitationtypeAtt.TB, CitationtypeAtt.WP);
+        List<CitationtypeAtt> citationTypeAttList = new ArrayList<>(
+            List.of(CitationtypeAtt.AB, CitationtypeAtt.BK,
+                    CitationtypeAtt.BR, CitationtypeAtt.BZ,
+                    CitationtypeAtt.CB,
+                    CitationtypeAtt.CH, CitationtypeAtt.CP,
+                    CitationtypeAtt.CR, CitationtypeAtt.DI,
+                    CitationtypeAtt.DP, CitationtypeAtt.ED,
+                    CitationtypeAtt.ER, CitationtypeAtt.IP,
+                    CitationtypeAtt.LE, CitationtypeAtt.MM,
+                    CitationtypeAtt.NO, CitationtypeAtt.PA,
+                    CitationtypeAtt.PP, CitationtypeAtt.RE,
+                    CitationtypeAtt.RF, CitationtypeAtt.RP,
+                    CitationtypeAtt.SH, CitationtypeAtt.ST,
+                    CitationtypeAtt.TB, CitationtypeAtt.WP));
         Collections.shuffle(citationTypeAttList);
         return citationTypeAttList.stream().findFirst().get();
     }

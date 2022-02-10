@@ -131,7 +131,6 @@ class ScopusHandlerTest {
     private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
     private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
     private static final String EXPECTED_ABSTRACT_NAME_SPACE = "<abstractTp";
-    private static final String SCOPUS_XML_CONFERENCE_PAPER_0020298182 = "2-s2.0-0020298182.xml";
     public static final char JOURNAL_SOURCETYPE_IDENTIFYING_CHAR = 'j';
 
 
@@ -470,10 +469,12 @@ class ScopusHandlerTest {
 
     @Test
     void shouldNotGenerateCreatePublicationFromUnsupportedPublicationTypes() throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_CONFERENCE_PAPER_0020298182));
-        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
+        scopusData.replaceSupportedCitationTypeWithUnsuportedCitationType();
+        //eid is chosen becuase it seems to match the file name in the bucket.
+        var eid = keepOnlyTheEid();
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         S3Event s3Event = createS3Event(uri);
-        var expectedMessage = String.format(ScopusConverter.UNSUPPORTED_CITATION_TYPE_MESSAGE, "2-s2.0-0020298182");
+        var expectedMessage = String.format(ScopusConverter.UNSUPPORTED_CITATION_TYPE_MESSAGE, eid);
         var appender = LogUtils.getTestingAppenderForRootLogger();
         assertThrows(UnsupportedCitationTypeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
@@ -500,6 +501,10 @@ class ScopusHandlerTest {
                 .filter(identifier -> identifier.getIdtype()
                         .equalsIgnoreCase(ScopusConstants.SCOPUS_ITEM_IDENTIFIER_SCP_FIELD_NAME))
                 .collect(Collectors.toList());
+    }
+
+    private String keepOnlyTheEid(){
+        return scopusData.getDocument().getMeta().getEid();
     }
 
     private S3Event createS3Event(String expectedObjectKey) {
