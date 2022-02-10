@@ -63,8 +63,7 @@ import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.model.AdditionalIdentifier;
-import no.unit.nva.model.contexttypes.Journal;
-import no.unit.nva.model.contexttypes.UnconfirmedJournal;
+import no.unit.nva.model.contexttypes.*;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeS3Client;
@@ -294,6 +293,23 @@ class ScopusHandlerTest {
         assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
         var actualJournalName = ((UnconfirmedJournal) actualPublicationContext).getTitle();
         assertThat(actualJournalName, is(HARD_CODED_JOURNAL_NAME_IN_RESOURCE_FILE));
+    }
+
+    @Test
+    void shouldReturnPublicationContextBookWithUnconfirmedPublisherWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeB()
+            throws IOException {
+        scopusData.getDocument().getMeta().setSrctype("b");
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
+                .getPublicationContext();
+        assertThat(actualPublicationContext, instanceOf(Book.class));
+        var actualPublisher = ((Book) actualPublicationContext).getPublisher();
+        assertThat(actualPublisher, instanceOf(UnconfirmedPublisher.class));
+        String expectedPublishername = scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0).getPublishername();
+        String actualPublisherName = ((UnconfirmedPublisher) actualPublisher).getName();
+        assertThat(actualPublisherName, is(expectedPublishername));
     }
 
     @Test

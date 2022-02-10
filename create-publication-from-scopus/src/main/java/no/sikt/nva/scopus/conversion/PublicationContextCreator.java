@@ -21,6 +21,7 @@ import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import nva.commons.core.SingletonCollector;
+import nva.commons.core.paths.UriWrapper;
 
 public class PublicationContextCreator {
 
@@ -55,8 +56,8 @@ public class PublicationContextCreator {
 
     private Optional<PublishingHouse> createConfirmedPublisher() {
         var publisherName = findPublisherName();
-        metadataService.lookUpPublisherIdAtPublicationChannel(publisherName);
-        return null;
+        Optional<String> publisherID = metadataService.lookUpPublisherIdAtPublicationChannel(publisherName);
+        return publisherID.map(id -> new Publisher(UriWrapper.fromUri(id).getUri()));
     }
 
     private UnconfirmedPublisher createUnconfirmedPublisher() {

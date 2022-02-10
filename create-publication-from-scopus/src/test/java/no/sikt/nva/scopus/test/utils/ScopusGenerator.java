@@ -24,28 +24,8 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
-import no.scopus.generated.AbstractTp;
-import no.scopus.generated.AbstractsTp;
-import no.scopus.generated.AuthorKeywordTp;
-import no.scopus.generated.AuthorKeywordsTp;
-import no.scopus.generated.BibrecordTp;
-import no.scopus.generated.CitationInfoTp;
-import no.scopus.generated.CitationTitleTp;
-import no.scopus.generated.DateSortTp;
-import no.scopus.generated.DocTp;
-import no.scopus.generated.HeadTp;
-import no.scopus.generated.ItemInfoTp;
-import no.scopus.generated.ItemTp;
-import no.scopus.generated.ItemidTp;
-import no.scopus.generated.ItemidlistTp;
-import no.scopus.generated.MetaTp;
-import no.scopus.generated.OrigItemTp;
-import no.scopus.generated.ProcessInfo;
-import no.scopus.generated.PublishercopyrightTp;
-import no.scopus.generated.RichstringWithMMLType;
-import no.scopus.generated.ShortTitle;
-import no.scopus.generated.TitletextTp;
-import no.scopus.generated.YesnoAtt;
+
+import no.scopus.generated.*;
 import no.unit.nva.language.LanguageConstants;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
@@ -158,8 +138,20 @@ public final class ScopusGenerator {
         head.setCitationTitle(randomCitationTitle());
         head.setAbstracts(randomAbstracts());
         head.setCitationInfo(randomCitationInfo());
-
+        head.setSource(randomSource());
         return head;
+    }
+
+    private static SourceTp randomSource() {
+        var source = new SourceTp();
+        source.getPublisher().add(randomPublisher());
+        return source;
+    }
+
+    private static PublisherTp randomPublisher() {
+        var publisher = new PublisherTp();
+        publisher.setPublishername(randomString());
+        return publisher;
     }
 
     private static CitationInfoTp randomCitationInfo() {
