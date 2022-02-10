@@ -1,0 +1,16 @@
+[
+  {
+    "@context": "https://bibsysdev.github.io/src/publication-channel/channel-context.json",
+    "id": "https://api.dev.nva.aws.unit.no/publication-channels/journal/440074/2010",
+    "type": "Journal",
+    "identifier": "440074",
+    "name": "Edinburgh journal of botany",
+    "website": "https://journals.rbge.org.uk/ejb",
+    "level": "1",
+    "active": true,
+    "onlineIssn": "1474-0036",
+    "printIssn": "0960-4286",
+    "npiDomain": "Biologi",
+    "language": "http://lexvo.org/id/iso639-3/eng"
+  }
+]
