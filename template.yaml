@@ -213,27 +213,28 @@ Resources:
             RestApiId: !Ref NvaFetchDoiFunctionApi
 
 
-  NvaFetchDoiFunctionScalableTarget:
-    Type: AWS::ApplicationAutoScaling::ScalableTarget
-    DependsOn: NvaFetchDoiFunctionAliaslive
-    Properties:
-      MaxCapacity: !Ref MaxConcurrency
-      MinCapacity: !Ref MinConcurrency
-      ResourceId: !Sub function:${NvaFetchDoiFunction}:live
-      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
-      ScalableDimension: lambda:function:ProvisionedConcurrency
-      ServiceNamespace: lambda
+#  NvaFetchDoiFunctionScalableTarget:
+#    Type: AWS::ApplicationAutoScaling::ScalableTarget
+#    Properties:
+#      MaxCapacity: 10
+#      MinCapacity: 1
+#      ResourceId: !Sub function:${NvaFetchDoiFunction}:live # You need to specify an alis or version here
+#      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
+#      ScalableDimension: lambda:function:ProvisionedConcurrency
+#      ServiceNamespace: lambda
+#    DependsOn: NvaFetchDoiFunctionAliaslive # This is your function logical ID + "Alias" + what you use for AutoPublishAlias
+#
+#  NvaFetchDoiFunctionScalingPolicy:
+#    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+#    Properties:
+#      PolicyName: NvaFetchDoiFunctionScalingPolicy
+#      PolicyType: TargetTrackingScaling
+#      ScalingTargetId: !Ref NvaFetchDoiFunctionScalableTarget
+#      TargetTrackingScalingPolicyConfiguration:
+#        TargetValue: 0.70 # Any value between 0.1 and 0.9 can be used here
+#        PredefinedMetricSpecification:
+#          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
 
-  NvaFetchDoiFunctionScalingPolicy:
-    Type: AWS::ApplicationAutoScaling::ScalingPolicy
-    Properties:
-      PolicyName: NvaFetchDoiFunctionScalingPolicy
-      PolicyType: TargetTrackingScaling
-      ScalingTargetId: !Ref NvaFetchDoiFunctionScalableTarget
-      TargetTrackingScalingPolicyConfiguration:
-        TargetValue: 0.70
-        PredefinedMetricSpecification:
-          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
 
   NvaFetchDoiFunctionBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
