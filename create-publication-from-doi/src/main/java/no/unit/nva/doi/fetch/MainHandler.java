@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
 public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     public static final String PUBLICATION_API_HOST_ENV = "PUBLICATION_API_HOST";
-    public static final String PUBLICATION_API_SCHEME_ENV = "PUBLICATION_API_SCHEME";
+    public static final String PUBLICATION_API_SCHEME = "https";
     public static final JsonPointer FEIDE_ID = JsonPointer.compile("/authorizer/claims/custom:feideId");
     public static final JsonPointer CUSTOMER_ID = JsonPointer.compile("/authorizer/claims/custom:customerId");
     public static final String NULL_DOI_URL_ERROR = "doiUrl can not be null";
@@ -57,7 +57,6 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     private final transient PublicationPersistenceService publicationPersistenceService;
     private final transient BareProxyClient bareProxyClient;
     private final transient String publicationApiHost;
-    private final transient String publicationApiScheme;
     private final transient MetadataService metadataService;
 
     private static final Logger logger = LoggerFactory.getLogger(MainHandler.class);
@@ -95,7 +94,6 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         this.metadataService = metadataService;
 
         this.publicationApiHost = environment.readEnv(PUBLICATION_API_HOST_ENV);
-        this.publicationApiScheme = environment.readEnv(PUBLICATION_API_SCHEME_ENV);
     }
 
     @JacocoGenerated
@@ -177,7 +175,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     }
 
     private URI urlToPublicationProxy() {
-        return attempt(() -> new URIBuilder().setHost(publicationApiHost).setScheme(publicationApiScheme).build())
+        return attempt(() -> new URIBuilder().setHost(publicationApiHost).setScheme(PUBLICATION_API_SCHEME).build())
             .orElseThrow(failure -> new IllegalStateException(failure.getException()));
     }
 
