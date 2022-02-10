@@ -1,5 +1,3 @@
-def problemVersion = '0.24.0'
-
 dependencies {
     api (libs.nva.datamodel) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
