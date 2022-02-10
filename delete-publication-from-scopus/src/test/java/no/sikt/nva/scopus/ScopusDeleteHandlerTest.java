@@ -39,7 +39,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
-import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
@@ -79,9 +78,9 @@ class ScopusDeleteHandlerTest {
         var s3Event = createS3Event(uri);
         assertThat(fakeEventBridgeClient.getRequestEntries().size(), is(equalTo(0)));
         scopusDeleteHandler.handleRequest(s3Event, CONTEXT);
-        var actualScopusIdentifiersFromEventBodies = getScopusIdentifiersFromEventBodies();
-        assertThat(actualScopusIdentifiersFromEventBodies.size(), is(equalTo(1)));
-        assertThat(actualScopusIdentifiersFromEventBodies.get(0),
+        var actualIdentifiersFromEventBodies = getIdentifiersFromEventBodies();
+        assertThat(actualIdentifiersFromEventBodies.size(), is(equalTo(1)));
+        assertThat(actualIdentifiersFromEventBodies.get(0),
                 is(equalTo(HARDCODED_IDENTIFIER_IN_DELETE_SINGLE_FILE)));
     }
 
@@ -91,10 +90,10 @@ class ScopusDeleteHandlerTest {
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         var s3Event = createS3Event(uri);
         scopusDeleteHandler.handleRequest(s3Event, CONTEXT);
-        var actualScopusIdentifiersFromEventBodies = getScopusIdentifiersFromEventBodies();
-        assertThat(actualScopusIdentifiersFromEventBodies.size(),
+        var actualIdentifiersFromEventBodies = getIdentifiersFromEventBodies();
+        assertThat(actualIdentifiersFromEventBodies.size(),
                 is(equalTo(HARDCODED_IDENTIFIERS_IN_DELETE_MULTIPLE_FILE.size())));
-        assertThat(actualScopusIdentifiersFromEventBodies,
+        assertThat(actualIdentifiersFromEventBodies,
                 containsInAnyOrder(HARDCODED_IDENTIFIERS_IN_DELETE_MULTIPLE_FILE.toArray()));
     }
 
@@ -132,7 +131,7 @@ class ScopusDeleteHandlerTest {
         assertThat(identifiersToDelete, is(equalTo(HARDCODED_IDENTIFIERS_IN_DELETE_MULTIPLE_FILE)));
     }
 
-    private List<String> getScopusIdentifiersFromEventBodies() {
+    private List<String> getIdentifiersFromEventBodies() {
         return fakeEventBridgeClient.getRequestEntries().stream()
                 .map(entry -> ScopusDeleteEventBody.fromJson(entry.detail()))
                 .collect(Collectors.toList())
