@@ -385,6 +385,30 @@ class ScopusHandlerTest {
         assertThat(request, is(equalTo(expectedRequest)));
     }
 
+    @Test
+    void shouldExtractJournalArticle() throws IOException {
+        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_85114653695));
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
+        S3Event s3Event = createS3Event(uri);
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationInstance =
+            createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
+        assertThat(actualPublicationInstance, isA(JournalArticle.class));
+    }
+
+    @Test
+    void shouldNotGenerateCreatePublicationFromUnsupportedPublicationTypes() throws IOException {
+        scopusData.replaceSupportedCitationTypeWithUnsuportedCitationType();
+        //eid is chosen becuase it seems to match the file name in the bucket.
+        var eid = keepOnlyTheEid();
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        S3Event s3Event = createS3Event(uri);
+        var expectedMessage = String.format(ScopusConverter.UNSUPPORTED_CITATION_TYPE_MESSAGE, eid);
+        var appender = LogUtils.getTestingAppenderForRootLogger();
+        assertThrows(UnsupportedCitationTypeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
+        assertThat(appender.getMessages(), containsString(expectedMessage));
+    }
+
     private EventReference fetchEmittedEvent() {
         return eventBridgeClient.getRequestEntries().stream()
             .map(PutEventsRequestEntry::detail)
@@ -454,30 +478,6 @@ class ScopusHandlerTest {
         var publicationChannelsResponseBody = dtoObjectMapper.createArrayNode();
         publicationChannelsResponseBody.add(publicationChannelsResponseBodyElement);
         return publicationChannelsResponseBody;
-    }
-
-    @Test
-    void shouldExtractJournalArticle() throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_85114653695));
-        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
-        S3Event s3Event = createS3Event(uri);
-        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
-        var actualPublicationInstance =
-            createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
-        assertThat(actualPublicationInstance, isA(JournalArticle.class));
-    }
-
-    @Test
-    void shouldNotGenerateCreatePublicationFromUnsupportedPublicationTypes() throws IOException {
-        scopusData.replaceSupportedCitationTypeWithUnsuportedCitationType();
-        //eid is chosen becuase it seems to match the file name in the bucket.
-        var eid = keepOnlyTheEid();
-        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
-        S3Event s3Event = createS3Event(uri);
-        var expectedMessage = String.format(ScopusConverter.UNSUPPORTED_CITATION_TYPE_MESSAGE, eid);
-        var appender = LogUtils.getTestingAppenderForRootLogger();
-        assertThrows(UnsupportedCitationTypeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
-        assertThat(appender.getMessages(), containsString(expectedMessage));
     }
 
     private AdditionalIdentifier[] convertScopusIdentifiersToNvaAdditionalIdentifiers(
