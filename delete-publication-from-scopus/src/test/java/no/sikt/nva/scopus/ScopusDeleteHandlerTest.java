@@ -23,9 +23,11 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeS3Client;
@@ -37,6 +39,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
+import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
@@ -74,13 +77,12 @@ class ScopusDeleteHandlerTest {
         var scopusFile = IoUtils.stringFromResources(Path.of(DELETE_SINGLE_IDENTIFIER_FILE));
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         var s3Event = createS3Event(uri);
+        assertThat(fakeEventBridgeClient.getRequestEntries().size(), is(equalTo(0)));
         scopusDeleteHandler.handleRequest(s3Event, CONTEXT);
-        var requestEntries = fakeEventBridgeClient.getRequestEntries();
-        assertThat(requestEntries.size(), is(equalTo(1)));
-        var eventBodyJson = requestEntries.get(0).detail();
-        var actualRequestEntryBody = dtoObjectMapper.readValue(eventBodyJson, ScopusDeleteEventBody.class);
-        var expectedRequestEntryBody = new ScopusDeleteEventBody(HARDCODED_SCOPUS_IDENTIFIER_IN_DELETE_SINGLE_FILE);
-        assertThat(actualRequestEntryBody, is(equalTo(expectedRequestEntryBody)));
+        var actualScopusDeleteEventBodies = getScopusDeleteEventBodies();
+        assertThat(actualScopusDeleteEventBodies.size(), is(equalTo(1)));
+        assertThat(actualScopusDeleteEventBodies.get(0).getScopusIdentifier(),
+                is(equalTo(HARDCODED_SCOPUS_IDENTIFIER_IN_DELETE_SINGLE_FILE)));
     }
 
     @Test
@@ -89,12 +91,17 @@ class ScopusDeleteHandlerTest {
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         var s3Event = createS3Event(uri);
         scopusDeleteHandler.handleRequest(s3Event, CONTEXT);
-        var requestEntries = fakeEventBridgeClient.getRequestEntries();
-        assertThat(requestEntries.size(), is(equalTo(HARDCODED_SCOPUS_IDENTIFIERS_IN_DELETE_MULTIPLE_FILE.size())));
-        var eventBodyJson = requestEntries.get(0).detail();
-        var actualRequestEntryBody = dtoObjectMapper.readValue(eventBodyJson, ScopusDeleteEventBody.class);
-        var expectedRequestEntryBody = new ScopusDeleteEventBody(HARDCODED_SCOPUS_IDENTIFIER_IN_DELETE_SINGLE_FILE);
-        assertThat(actualRequestEntryBody, is(equalTo(expectedRequestEntryBody)));
+        var actualScopusDeleteEventBodies = getScopusDeleteEventBodies();
+        assertThat(actualScopusDeleteEventBodies.size(),
+                is(equalTo(HARDCODED_SCOPUS_IDENTIFIERS_IN_DELETE_MULTIPLE_FILE.size())));
+        assertThat(actualScopusDeleteEventBodies.get(0).getScopusIdentifier(),
+                is(equalTo(HARDCODED_SCOPUS_IDENTIFIERS_IN_DELETE_MULTIPLE_FILE.get(0))));
+        assertThat(actualScopusDeleteEventBodies.get(1).getScopusIdentifier(),
+                is(equalTo(HARDCODED_SCOPUS_IDENTIFIERS_IN_DELETE_MULTIPLE_FILE.get(1))));
+        assertThat(actualScopusDeleteEventBodies.get(2).getScopusIdentifier(),
+                is(equalTo(HARDCODED_SCOPUS_IDENTIFIERS_IN_DELETE_MULTIPLE_FILE.get(2))));
+        assertThat(actualScopusDeleteEventBodies.get(3).getScopusIdentifier(),
+                is(equalTo(HARDCODED_SCOPUS_IDENTIFIERS_IN_DELETE_MULTIPLE_FILE.get(3))));
     }
 
     @Test
@@ -129,6 +136,14 @@ class ScopusDeleteHandlerTest {
         var s3Event = createS3Event(uri);
         var identifiersToDelete = scopusDeleteHandler.handleRequest(s3Event, CONTEXT);
         assertThat(identifiersToDelete, is(equalTo(HARDCODED_SCOPUS_IDENTIFIERS_IN_DELETE_MULTIPLE_FILE)));
+    }
+
+    private List<ScopusDeleteEventBody> getScopusDeleteEventBodies() throws JsonProcessingException {
+        var eventBodies = new ArrayList<ScopusDeleteEventBody>();
+        for (PutEventsRequestEntry entry : fakeEventBridgeClient.getRequestEntries()) {
+            eventBodies.add(dtoObjectMapper.readValue(entry.detail(), ScopusDeleteEventBody.class));
+        }
+        return eventBodies;
     }
 
     private S3Event createS3Event(String expectedObjectKey) {
