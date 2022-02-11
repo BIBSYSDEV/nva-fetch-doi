@@ -22,7 +22,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import static nva.commons.core.attempt.Try.attempt;
 
-public class ScopusDeleteHandler implements RequestHandler<S3Event, List<String>> {
+public class ScopusDeleteHandler implements RequestHandler<S3Event, Void> {
 
     public static final int SINGLE_EXPECTED_RECORD = 0;
     public static final int PUT_EVENTS_REQUEST_MAX_ENTRIES = 2;
@@ -45,13 +45,10 @@ public class ScopusDeleteHandler implements RequestHandler<S3Event, List<String>
     }
 
     @Override
-    public List<String> handleRequest(S3Event event, Context context) {
-
+    public Void handleRequest(S3Event event, Context context) {
         List<String> identifiersToDelete = readIdentifiersToDelete(event);
-
         emitEventsForIdentifiersToDelete(identifiersToDelete, context);
-
-        return identifiersToDelete;
+        return null;
     }
 
     private void emitEventsForIdentifiersToDelete(List<String> identifiersToDelete, Context context) {

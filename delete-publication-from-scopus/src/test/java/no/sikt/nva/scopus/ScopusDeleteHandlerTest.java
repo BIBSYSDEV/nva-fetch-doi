@@ -121,16 +121,6 @@ class ScopusDeleteHandlerTest {
         assertThat(appender.getMessages(), containsString(expectedMessage));
     }
 
-    @Test
-    void shouldReturnCorrectIdentifiersFromFileContentWhenEventWithS3UriThatPointsToScopusDeleteFile()
-            throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of(DELETE_MULTIPLE_IDENTIFIERS_FILE));
-        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
-        var s3Event = createS3Event(uri);
-        var identifiersToDelete = scopusDeleteHandler.handleRequest(s3Event, CONTEXT);
-        assertThat(identifiersToDelete, is(equalTo(HARDCODED_IDENTIFIERS_IN_DELETE_MULTIPLE_FILE)));
-    }
-
     private List<String> getIdentifiersFromEventBodies() {
         return fakeEventBridgeClient.getRequestEntries().stream()
                 .map(entry -> ScopusDeleteEventBody.fromJson(entry.detail()))
