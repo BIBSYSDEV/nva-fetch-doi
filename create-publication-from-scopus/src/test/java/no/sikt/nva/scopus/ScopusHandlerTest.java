@@ -307,9 +307,31 @@ class ScopusHandlerTest {
         assertThat(actualPublicationContext, instanceOf(Book.class));
         var actualPublisher = ((Book) actualPublicationContext).getPublisher();
         assertThat(actualPublisher, instanceOf(UnconfirmedPublisher.class));
-        String expectedPublishername = scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0).getPublishername();
+        String expectedPublishername = scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource()
+                .getPublisher().get(0).getPublishername();
         String actualPublisherName = ((UnconfirmedPublisher) actualPublisher).getName();
         assertThat(actualPublisherName, is(expectedPublishername));
+    }
+
+    @Test
+    void shouldReturnPublicationContextBookWithConfirmedPublisherWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeB()
+            throws IOException {
+        scopusData.getDocument().getMeta().setSrctype("b");
+        var expectedPublisherName = randomString();
+        scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0)
+                .setPublishername(expectedPublisherName);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        var queryUri = createExpectedQueryUriForPublisherWithName(expectedPublisherName);
+        var expectedPublisherUri = mockedPublicationChannelsReturnsUri(queryUri);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
+                .getPublicationContext();
+        assertThat(actualPublicationContext, instanceOf(Book.class));
+        var actualPublisher = ((Book) actualPublicationContext).getPublisher();
+        assertThat(actualPublisher, instanceOf(Publisher.class));
+        var actualPublisherId = ((Publisher) actualPublisher).getId();
+        assertThat(actualPublisherId, is(expectedPublisherUri));
     }
 
     @Test
@@ -318,7 +340,7 @@ class ScopusHandlerTest {
         var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
 
         var queryUri = createExpectedQueryUriForJournalWithEIssn(E_ISSN_0000469852, "2010");
-        var expectedJournalUri = mockedPublicationChannelsReturnsJournalUri(queryUri);
+        var expectedJournalUri = mockedPublicationChannelsReturnsUri(queryUri);
 
         scopusFile = scopusFile.replace("<xocs:pub-year>1993</xocs:pub-year>",
                 "<xocs:pub-year>2010</xocs:pub-year>");
@@ -445,14 +467,20 @@ class ScopusHandlerTest {
                 .getUri();
     }
 
-    private URI mockedPublicationChannelsReturnsJournalUri(URI queryUri) {
-        var journalUri = randomUri();
-        ArrayNode publicationChannelsResponseBody = createPublicationChannelsResponseWithJournalUri(journalUri);
+    private URI createExpectedQueryUriForPublisherWithName(String name) {
+        return new UriWrapper(serverUriPublisher)
+                .addQueryParameter("query", name)
+                .getUri();
+    }
+
+    private URI mockedPublicationChannelsReturnsUri(URI queryUri) {
+        var uri = randomUri();
+        ArrayNode publicationChannelsResponseBody = createPublicationChannelsResponseWithUri(uri);
         stubFor(get(START_OF_QUERY + queryUri
                 .getQuery())
                 .willReturn(aResponse().withBody(publicationChannelsResponseBody
                         .toPrettyString()).withStatus(HttpURLConnection.HTTP_OK)));
-        return journalUri;
+        return uri;
     }
 
     private void startWiremockServer() {
@@ -462,12 +490,13 @@ class ScopusHandlerTest {
         serverUriPublisher = URI.create(httpServer.baseUrl());
     }
 
-    private ArrayNode createPublicationChannelsResponseWithJournalUri(URI journalUri) {
+    private ArrayNode createPublicationChannelsResponseWithUri(URI uri) {
         var publicationChannelsResponseBodyElement = dtoObjectMapper.createObjectNode();
-        publicationChannelsResponseBodyElement.put("id", journalUri.toString());
+        publicationChannelsResponseBodyElement.put("id", uri.toString());
 
         var publicationChannelsResponseBody = dtoObjectMapper.createArrayNode();
         publicationChannelsResponseBody.add(publicationChannelsResponseBodyElement);
+
         return publicationChannelsResponseBody;
     }
 
