@@ -391,14 +391,16 @@ class ScopusHandlerTest {
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualContributors = createPublicationRequest.getEntityDescription().getContributors();
-        authors.forEach(author -> {
-            if (nonNull(author.getOrcid())) {
-                var optionalContributor = findContributor(author.getOrcid(), actualContributors);
-                assertTrue(optionalContributor.isPresent());
-                var contributor = optionalContributor.get();
-                assertEquals(contributor.getSequence().toString(), author.getSeq());
-            }
-        });
+        authors.forEach(author -> checkAuthor(author, actualContributors));
+    }
+
+    private void checkAuthor(AuthorTp authorTp, List<Contributor> contributors){
+        if (nonNull(authorTp.getOrcid())) {
+            var optionalContributor = findContributor(authorTp.getOrcid(), contributors);
+            assertTrue(optionalContributor.isPresent());
+            var contributor = optionalContributor.get();
+            assertEquals(contributor.getSequence().toString(), authorTp.getSeq());
+        }
     }
 
     private EventReference fetchEmittedEvent() {

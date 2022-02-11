@@ -172,9 +172,8 @@ public final class ScopusGenerator {
 
     private static Collection<? extends AuthorGroupTp> randomAuthorGroups(List<?> authorsAndCollaborations) {
         List<AuthorGroupTp> authorGroupTps = new ArrayList<>();
-        int max = 1000;
-        int min = 0;
-        var numbersOfAuthorGroups = (int) ((Math.random() * (max - min)) + min);
+        int maxNumberOfAuthorGroups = 200;
+        var numbersOfAuthorGroups = randomInteger(maxNumberOfAuthorGroups) + 1;
         for (int authorGroupTpsIndex = 0; authorGroupTpsIndex > numbersOfAuthorGroups; authorGroupTpsIndex++) {
             authorGroupTps.add(randomAuthorGroup(authorsAndCollaborations));
         }
@@ -190,22 +189,21 @@ public final class ScopusGenerator {
 
     private static List<?> randomSubsetRandomAuthorsOrCollaborations(List<?> authorsAndCollaborations) {
         int min = 0;
-        int max = authorsAndCollaborations.size();
-        var numbersOfAuthorOrCollaborations = (int) ((Math.random() * (max - min)) + min);
+        var numbersOfAuthorOrCollaborations = randomInteger(authorsAndCollaborations.size()) + 1;
         Collections.shuffle(authorsAndCollaborations);
         return authorsAndCollaborations.subList(min, numbersOfAuthorOrCollaborations);
     }
 
     private static List<?> randomAuthorOrCollaborations() {
         List<Object> authorOrCollaborations = new ArrayList<>();
-        int max = 200;
-        int min = 1;
-        var numbersOfAuthorOrCollaborations = (int) ((Math.random() * (max - min)) + min);
-        var sequenceNumber = min;
+        int maxNumbersOfAuthors = 200;
+        var maxGapInSequenceNumber = 200;
+        var numbersOfAuthorOrCollaborations = randomInteger(maxNumbersOfAuthors) + 1;
+        var sequenceNumber = 1;
         for (int authorOrCollaborationIndex = 0; authorOrCollaborationIndex > numbersOfAuthorOrCollaborations;
             authorOrCollaborationIndex++) {
-            sequenceNumber = sequenceNumber + (int) ((Math.random() * (max - min)) + min);
-            authorOrCollaborations.add(randomAuthorOrCollaboration(sequenceNumber + ""));
+            sequenceNumber = sequenceNumber + randomInteger(maxGapInSequenceNumber) + 1;
+            authorOrCollaborations.add(randomAuthorOrCollaboration(Integer.toString(sequenceNumber)));
         }
         return authorOrCollaborations;
     }
