@@ -1,5 +1,7 @@
 package no.sikt.nva.scopus.conversion;
 
+import static no.sikt.nva.scopus.ScopusSourceType.BOOK;
+import static no.sikt.nva.scopus.ScopusSourceType.JOURNAL;
 import static nva.commons.core.attempt.Try.attempt;
 
 import java.util.ArrayList;
@@ -11,15 +13,9 @@ import no.scopus.generated.MetaTp;
 import no.scopus.generated.PublisherTp;
 import no.scopus.generated.SourceTp;
 import no.sikt.nva.scopus.ScopusConstants;
+import no.sikt.nva.scopus.ScopusSourceType;
 import no.unit.nva.metadata.service.MetadataService;
-import no.unit.nva.model.contexttypes.Book;
-import no.unit.nva.model.contexttypes.BookSeries;
-import no.unit.nva.model.contexttypes.Journal;
-import no.unit.nva.model.contexttypes.Periodical;
-import no.unit.nva.model.contexttypes.Publisher;
-import no.unit.nva.model.contexttypes.PublishingHouse;
-import no.unit.nva.model.contexttypes.UnconfirmedJournal;
-import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
+import no.unit.nva.model.contexttypes.*;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.paths.UriWrapper;
 
@@ -35,6 +31,32 @@ public class PublicationContextCreator {
     public PublicationContextCreator(MetadataService metadataService, DocTp docTp) {
         this.metadataService = metadataService;
         this.docTp = docTp;
+    }
+
+    public PublicationContext getPublicationContext() {
+        if (isJournal()) {
+            return createJournal();
+        }
+        if (isBook()) {
+            return createBook();
+        }
+        return ScopusConstants.EMPTY_PUBLICATION_CONTEXT;
+    }
+
+    private boolean isJournal() {
+        return Optional.ofNullable(docTp)
+                .map(DocTp::getMeta)
+                .map(MetaTp::getSrctype)
+                .map(srcTyp -> JOURNAL.equals(ScopusSourceType.valueOfCode(srcTyp)))
+                .orElse(false);
+    }
+
+    private boolean isBook() {
+        return Optional.ofNullable(docTp)
+                .map(DocTp::getMeta)
+                .map(MetaTp::getSrctype)
+                .map(srcTyp -> BOOK.equals(ScopusSourceType.valueOfCode(srcTyp)))
+                .orElse(false);
     }
 
     public Periodical createJournal() {

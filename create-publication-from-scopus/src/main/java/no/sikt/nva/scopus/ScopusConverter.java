@@ -2,8 +2,6 @@ package no.sikt.nva.scopus;
 
 import static java.util.Collections.emptyList;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
-import static no.sikt.nva.scopus.ScopusSourceType.BOOK;
-import static no.sikt.nva.scopus.ScopusSourceType.JOURNAL;
 import jakarta.xml.bind.JAXB;
 import jakarta.xml.bind.JAXBElement;
 import java.io.StringWriter;
@@ -26,7 +24,6 @@ import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
 import no.scopus.generated.InfTp;
 import no.scopus.generated.ItemidTp;
-import no.scopus.generated.MetaTp;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
@@ -40,7 +37,6 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
-import no.unit.nva.model.contexttypes.PublicationContext;
 import nva.commons.core.paths.UriWrapper;
 
 @SuppressWarnings("PMD.GodClass")
@@ -188,7 +184,7 @@ class ScopusConverter {
     private Reference generateReference() {
         Reference reference = new Reference();
         reference.setDoi(extractDOI());
-        reference.setPublicationContext(getPublicationContext());
+        reference.setPublicationContext(new PublicationContextCreator(metadataService, docTp).getPublicationContext());
         return reference;
     }
 
@@ -289,29 +285,4 @@ class ScopusConverter {
                                         itemIdTp.getValue());
     }
 
-    private PublicationContext getPublicationContext() {
-        if (isJournal()) {
-            return new PublicationContextCreator(metadataService, docTp).createJournal();
-        }
-        if (isBook()) {
-            return new PublicationContextCreator(metadataService, docTp).createBook();
-        }
-        return ScopusConstants.EMPTY_PUBLICATION_CONTEXT;
-    }
-
-    private boolean isJournal() {
-        return Optional.ofNullable(docTp)
-            .map(DocTp::getMeta)
-            .map(MetaTp::getSrctype)
-            .map(srcTyp -> JOURNAL.equals(ScopusSourceType.valueOfCode(srcTyp)))
-            .orElse(false);
-    }
-
-    private boolean isBook() {
-        return Optional.ofNullable(docTp)
-            .map(DocTp::getMeta)
-            .map(MetaTp::getSrctype)
-            .map(srcTyp -> BOOK.equals(ScopusSourceType.valueOfCode(srcTyp)))
-            .orElse(false);
-    }
 }
