@@ -158,6 +158,22 @@ public class MetadataServiceTest {
         assertThat(actualId, is(expectedId));
     }
 
+    @Test
+    public void getPublisherIdFromPublicationChannelsByGivenPublisherName()
+        throws IOException, InterruptedException {
+        var responseBody = IoUtils.stringFromResources(Path.of("publication_channels_26805_response.json"));
+        var httpResonse = mock(HttpResponse.class);
+        when(httpResonse.statusCode()).thenReturn(SC_OK);
+        when(httpResonse.body()).thenReturn(responseBody);
+        var httpClient = mock(HttpClient.class);
+        when(httpClient.send(any(HttpRequest.class), any())).thenReturn(httpResonse);
+        var metadataService = new MetadataService(httpClient, serverUriJournal, serverUriPublisher);
+        var publisherName = "Springer Nature";
+        var actualId = metadataService.fetchPublisherIdFromPublicationChannel(publisherName);
+        var expectedId = "https://api.dev.nva.aws.unit.no/publication-channels/publisher/26805";
+        assertThat(actualId, is(expectedId));
+    }
+
     @ParameterizedTest(name = "#{index} - {0}")
     @MethodSource({
         "provideMetadataWithLowercasePrefixes",
@@ -713,6 +729,10 @@ public class MetadataServiceTest {
                                     .withHeader("Content-Type", "text/html")
                                     .withBody(body)));
         stubFor(get(urlPathEqualTo("/publication-channels/journal"))
+                    .willReturn(aResponse()
+                                    .withHeader("Content-Type", "application/json")
+                                    .withBody(body)));
+        stubFor(get(urlPathEqualTo("/publication-channels/publisher"))
                     .willReturn(aResponse()
                                     .withHeader("Content-Type", "application/json")
                                     .withBody(body)));
