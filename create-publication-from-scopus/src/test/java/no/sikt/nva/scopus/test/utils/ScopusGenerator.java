@@ -1,6 +1,7 @@
 package no.sikt.nva.scopus.test.utils;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFieldsAndClasses;
+import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
@@ -12,8 +13,10 @@ import jakarta.xml.bind.JAXB;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
@@ -26,11 +29,14 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AbstractsTp;
+import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordTp;
 import no.scopus.generated.AuthorKeywordsTp;
+import no.scopus.generated.AuthorTp;
 import no.scopus.generated.BibrecordTp;
 import no.scopus.generated.CitationInfoTp;
 import no.scopus.generated.CitationTitleTp;
+import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
@@ -40,6 +46,7 @@ import no.scopus.generated.ItemidTp;
 import no.scopus.generated.ItemidlistTp;
 import no.scopus.generated.MetaTp;
 import no.scopus.generated.OrigItemTp;
+import no.scopus.generated.PersonalnameType;
 import no.scopus.generated.ProcessInfo;
 import no.scopus.generated.PublishercopyrightTp;
 import no.scopus.generated.RichstringWithMMLType;
@@ -154,12 +161,87 @@ public final class ScopusGenerator {
     }
 
     private static HeadTp randomHeadTp() {
+        List<?> authorsAndCollaborations = randomAuthorOrCollaborations();
         var head = new HeadTp();
+        head.getAuthorGroup().addAll(randomAuthorGroups(authorsAndCollaborations));
         head.setCitationTitle(randomCitationTitle());
         head.setAbstracts(randomAbstracts());
         head.setCitationInfo(randomCitationInfo());
-
         return head;
+    }
+
+    private static Collection<? extends AuthorGroupTp> randomAuthorGroups(List<?> authorsAndCollaborations) {
+        List<AuthorGroupTp> authorGroupTps = new ArrayList<>();
+        int max = 1000;
+        int min = 0;
+        var numbersOfAuthorGroups = (int) ((Math.random() * (max - min)) + min);
+        for (int authorGroupTpsIndex = 0; authorGroupTpsIndex > numbersOfAuthorGroups; authorGroupTpsIndex++) {
+            authorGroupTps.add(randomAuthorGroup(authorsAndCollaborations));
+        }
+        return authorGroupTps;
+    }
+
+    private static AuthorGroupTp randomAuthorGroup(List<?> authorsAndCollaborations) {
+        var authorGroup = new AuthorGroupTp();
+        authorGroup.getAuthorOrCollaboration()
+            .addAll(randomSubsetRandomAuthorsOrCollaborations(authorsAndCollaborations));
+        return authorGroup;
+    }
+
+    private static List<?> randomSubsetRandomAuthorsOrCollaborations(List<?> authorsAndCollaborations) {
+        int min = 0;
+        int max = authorsAndCollaborations.size();
+        var numbersOfAuthorOrCollaborations = (int) ((Math.random() * (max - min)) + min);
+        Collections.shuffle(authorsAndCollaborations);
+        return authorsAndCollaborations.subList(min, numbersOfAuthorOrCollaborations);
+    }
+
+    private static List<?> randomAuthorOrCollaborations() {
+        List<Object> authorOrCollaborations = new ArrayList<>();
+        int max = 200;
+        int min = 1;
+        var numbersOfAuthorOrCollaborations = (int) ((Math.random() * (max - min)) + min);
+        var sequenceNumber = min;
+        for (int authorOrCollaborationIndex = 0; authorOrCollaborationIndex > numbersOfAuthorOrCollaborations;
+            authorOrCollaborationIndex++) {
+            sequenceNumber = sequenceNumber + (int) ((Math.random() * (max - min)) + min);
+            authorOrCollaborations.add(randomAuthorOrCollaboration(sequenceNumber + ""));
+        }
+        return authorOrCollaborations;
+    }
+
+    private static Object randomAuthorOrCollaboration(String sequenceNumber) {
+        var shouldReturnAuthorTyp = randomBoolean();
+        return shouldReturnAuthorTyp ? randomAuthorTp(sequenceNumber) : randomCollaborationTp(sequenceNumber);
+    }
+
+    private static CollaborationTp randomCollaborationTp(String sequenceNumber) {
+        var collaborationTp = new CollaborationTp();
+        collaborationTp.setIndexedName(randomString());
+        collaborationTp.setSeq(sequenceNumber);
+        return collaborationTp;
+    }
+
+    private static AuthorTp randomAuthorTp(String sequenceNumber) {
+        var authorTp = new AuthorTp();
+        authorTp.setOrcid(randomOrcid());
+        authorTp.setPreferredName(randomPreferredName());
+        authorTp.setAuid(randomString());
+        authorTp.setSeq(sequenceNumber);
+        return authorTp;
+    }
+
+    private static PersonalnameType randomPreferredName() {
+        var personalNameType = new PersonalnameType();
+        personalNameType.setIndexedName(randomString());
+        personalNameType.setGivenName(randomString());
+        personalNameType.setSurname(randomString());
+        return personalNameType;
+    }
+
+    private static String randomOrcid() {
+        var shouldCreateOrcid = randomBoolean();
+        return shouldCreateOrcid ? randomString() : null;
     }
 
     private static CitationInfoTp randomCitationInfo() {
