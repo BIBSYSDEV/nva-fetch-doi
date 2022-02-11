@@ -61,8 +61,7 @@ public class ScopusDeleteHandler implements RequestHandler<S3Event, Void> {
     }
 
     private List<String> readIdentifiersToDelete(S3Event event) {
-        return attempt(() -> readFile(event))
-                .orElseThrow(fail -> logErrorAndThrowException(fail.getException()))
+        return readFile(event)
                 .lines()
                 .map(this::trimDeletePrefix)
                 .collect(Collectors.toList());
@@ -101,7 +100,8 @@ public class ScopusDeleteHandler implements RequestHandler<S3Event, Void> {
     private String readFile(S3Event event) {
         var s3Driver = new S3Driver(s3Client, extractBucketName(event));
         var fileUri = createS3BucketUri(event);
-        return s3Driver.getFile(new UriWrapper(fileUri).toS3bucketPath());
+        return attempt(() -> s3Driver.getFile(new UriWrapper(fileUri).toS3bucketPath()))
+                .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
     }
 
     private URI createS3BucketUri(S3Event event) {

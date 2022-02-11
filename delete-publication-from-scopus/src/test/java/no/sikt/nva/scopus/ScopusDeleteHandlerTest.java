@@ -2,10 +2,8 @@ package no.sikt.nva.scopus;
 
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
@@ -23,7 +21,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -52,8 +49,6 @@ class ScopusDeleteHandlerTest {
     public static final long SOME_FILE_SIZE = 100L;
 
     public static final String DELETE_MULTIPLE_IDENTIFIERS_FILE = "deleteMultipleIdentifiers.txt";
-    public static final String DELETE_SINGLE_IDENTIFIER_FILE = "deleteSingleIdentifier.txt";
-    public static final String HARDCODED_IDENTIFIER_IN_DELETE_SINGLE_FILE = "0000687314";
     public static final List<String> HARDCODED_IDENTIFIERS_IN_DELETE_MULTIPLE_FILE =
             Arrays.asList("0000687314", "0017752991", "33947568076", "85084744636");
 
@@ -72,29 +67,13 @@ class ScopusDeleteHandlerTest {
     }
 
     @Test
-    void shouldEmitEventWithSingleScopusIdentifierWhenInputFileContainsSingleScopusIdentifier() throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of(DELETE_SINGLE_IDENTIFIER_FILE));
-        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
-        var s3Event = createS3Event(uri);
-        assertThat(fakeEventBridgeClient.getRequestEntries().size(), is(equalTo(0)));
-        scopusDeleteHandler.handleRequest(s3Event, CONTEXT);
-        var actualIdentifiersFromEventBodies = getIdentifiersFromEventBodies();
-        assertThat(actualIdentifiersFromEventBodies.size(), is(equalTo(1)));
-        assertThat(actualIdentifiersFromEventBodies.get(0),
-                is(equalTo(HARDCODED_IDENTIFIER_IN_DELETE_SINGLE_FILE)));
-    }
-
-    @Test
     void shouldEmitEventsWithScopusIdentifiersWhenInputFileContainsMultipleScopusIdentifiers() throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of(DELETE_MULTIPLE_IDENTIFIERS_FILE));
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
         var s3Event = createS3Event(uri);
         scopusDeleteHandler.handleRequest(s3Event, CONTEXT);
         var actualIdentifiersFromEventBodies = getIdentifiersFromEventBodies();
-        assertThat(actualIdentifiersFromEventBodies.size(),
-                is(equalTo(HARDCODED_IDENTIFIERS_IN_DELETE_MULTIPLE_FILE.size())));
-        assertThat(actualIdentifiersFromEventBodies,
-                containsInAnyOrder(HARDCODED_IDENTIFIERS_IN_DELETE_MULTIPLE_FILE.toArray()));
+        assertEquals(actualIdentifiersFromEventBodies, HARDCODED_IDENTIFIERS_IN_DELETE_MULTIPLE_FILE);
     }
 
     @Test
