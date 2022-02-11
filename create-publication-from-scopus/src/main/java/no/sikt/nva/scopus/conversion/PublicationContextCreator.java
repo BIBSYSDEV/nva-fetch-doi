@@ -15,7 +15,15 @@ import no.scopus.generated.SourceTp;
 import no.sikt.nva.scopus.ScopusConstants;
 import no.sikt.nva.scopus.ScopusSourceType;
 import no.unit.nva.metadata.service.MetadataService;
-import no.unit.nva.model.contexttypes.*;
+import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.BookSeries;
+import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.Periodical;
+import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.Publisher;
+import no.unit.nva.model.contexttypes.PublishingHouse;
+import no.unit.nva.model.contexttypes.UnconfirmedJournal;
+import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.paths.UriWrapper;
 

@@ -112,6 +112,7 @@ class ScopusHandlerTest {
     private static final String HARDCODED_EXPECTED_KEYWORD_1_IN_0000469852 = "64Cu";
     private static final String HARDCODED_EXPECTED_KEYWORD_2_IN_0000469852 = "excretion";
     private static final String HARDCODED_EXPECTED_KEYWORD_3_IN_0000469852 = "sheep";
+    private static final String HARDCODED_EXPECTED_KEYWORD_4_IN_0000469852 = "infGG";
     private static final String XML_ENCODING_DECLARATION = "<?xml version=\"1.0\" encoding=\"UTF-8\" "
             + "standalone=\"yes\"?>";
 
@@ -372,6 +373,9 @@ class ScopusHandlerTest {
     @Test
     void shouldExtractAuthorKeyWordsAsPlainText() throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0018132378));
+        scopusFile = scopusFile.replace("<author-keyword xml:lang=\"eng\">sheep</author-keyword>",
+                "<author-keyword xml:lang=\"eng\">sheep</author-keyword>\n"
+                        + "<author-keyword xml:lang=\"eng\"><inf>inf</inf>GG</author-keyword>\n");
         var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -379,7 +383,8 @@ class ScopusHandlerTest {
         assertThat(actualPlaintextKeyWords, allOf(
                 hasItem(HARDCODED_EXPECTED_KEYWORD_1_IN_0000469852),
                 hasItem(HARDCODED_EXPECTED_KEYWORD_2_IN_0000469852),
-                hasItem(HARDCODED_EXPECTED_KEYWORD_3_IN_0000469852)));
+                hasItem(HARDCODED_EXPECTED_KEYWORD_3_IN_0000469852),
+                hasItem(HARDCODED_EXPECTED_KEYWORD_4_IN_0000469852)));
     }
 
     @Test
