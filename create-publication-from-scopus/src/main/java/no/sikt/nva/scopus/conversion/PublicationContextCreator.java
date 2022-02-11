@@ -97,7 +97,8 @@ public class PublicationContextCreator {
     }
 
     private String findPublisherName() {
-        Optional<PublisherTp> publisherTp = docTp.getItem().getItem().getBibrecord().getHead().getSource().getPublisher().stream().findFirst();
+        Optional<PublisherTp> publisherTp = docTp.getItem().getItem().getBibrecord().getHead().getSource()
+                .getPublisher().stream().findFirst();
         return publisherTp.map(PublisherTp::getPublishername).orElse(EMPTY_STRING);
     }
 

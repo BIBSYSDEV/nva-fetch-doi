@@ -28,7 +28,6 @@ import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.conversion.PublicationContextCreator;
-import no.sikt.nva.scopus.exception.UnsupportedXmlElementException;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -42,7 +41,6 @@ import nva.commons.core.paths.UriWrapper;
 @SuppressWarnings("PMD.GodClass")
 class ScopusConverter {
 
-    private static final String MALFORMED_CONTENT_MESSAGE = "Malformed content, cannot parse: %s";
     private final DocTp docTp;
     private final MetadataService metadataService;
 
@@ -158,12 +156,10 @@ class ScopusConverter {
             return extractContentString(((SupTp) content).getContent());
         } else if (content instanceof InfTp) {
             return extractContentString(((InfTp) content).getContent());
-        } else if (content instanceof ArrayList) {
+        } else {
             return ((ArrayList<?>) content).stream()
                 .map(this::extractContentString)
                 .collect(Collectors.joining());
-        } else {
-            throw new UnsupportedXmlElementException(String.format(MALFORMED_CONTENT_MESSAGE, content.getClass()));
         }
     }
 
