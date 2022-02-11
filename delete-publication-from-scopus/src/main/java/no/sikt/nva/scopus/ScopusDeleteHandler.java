@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import com.google.common.collect.Lists;
 import no.unit.nva.s3.S3Driver;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
@@ -31,6 +32,7 @@ public class ScopusDeleteHandler implements RequestHandler<S3Event, Void> {
     public static final String EVENT_TOPIC_IS_SET_IN_EVENT_BODY = "ReferToEventTopic";
     public static final String EMPTY_STRING = "";
     private static final Logger logger = LoggerFactory.getLogger(ScopusDeleteHandler.class);
+    private static final String EVENT_BUS = new Environment().readEnv("EVENTS_BUS");
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
 
@@ -81,6 +83,7 @@ public class ScopusDeleteHandler implements RequestHandler<S3Event, Void> {
         return PutEventsRequestEntry.builder()
                 .detailType(EVENT_TOPIC_IS_SET_IN_EVENT_BODY)
                 .time(Instant.now())
+                .eventBusName(EVENT_BUS)
                 .detail(createScopusDeleteEventBodyJson(identifier))
                 .source(context.getFunctionName())
                 .resources(context.getInvokedFunctionArn())

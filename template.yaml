@@ -220,6 +220,9 @@ Resources:
       Runtime: java11
       MemorySize: !Ref LambdaMemorySize
       Role: !GetAtt ReadFromScopusBucketsRole.Arn
+      Environment:
+        Variables:
+          EVENTS_BUS: !Ref NvaEventsBusName
       Events:
         Scopus:
           Type: S3
