@@ -72,13 +72,14 @@ public class PublicationContextCreator {
     }
 
     private PublishingHouse createPublisher() {
-        return createConfirmedPublisher().orElseGet(this::createUnconfirmedPublisher);
+        return fetchConfirmedPublisherFromPublicationChannels().orElseGet(this::createUnconfirmedPublisher);
     }
 
 
-    private Optional<PublishingHouse> createConfirmedPublisher() {
+    private Optional<PublishingHouse> fetchConfirmedPublisherFromPublicationChannels() {
         var publisherName = findPublisherName();
-        Optional<String> publisherID = metadataService.lookUpPublisherIdAtPublicationChannel(publisherName);
+        Optional<String> publisherID = Optional.ofNullable(metadataService
+                .fetchPublisherIdFromPublicationChannel(publisherName));
         return publisherID.map(id -> new Publisher(UriWrapper.fromUri(id).getUri()));
     }
 

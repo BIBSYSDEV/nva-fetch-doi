@@ -28,6 +28,7 @@ import no.unit.nva.metadata.type.OntologyProperty;
 import no.unit.nva.metadata.type.RawMetaTag;
 import nva.commons.apigateway.MediaTypes;
 import nva.commons.core.Environment;
+import nva.commons.core.SingletonCollector;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.any23.extractor.ExtractionException;
 import org.eclipse.rdf4j.model.IRI;
@@ -290,10 +291,16 @@ public class MetadataService {
         return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
-    public Optional<String> lookUpPublisherIdAtPublicationChannel(String publisherName) {
+    /**
+     * Fetches publisherId as URI from publication-channels by publisherName only with exact single match
+     * or returns null.
+     * @param publisherName the name of the publisher
+     * @return jsonString representing the publisher
+     */
+    public String fetchPublisherIdFromPublicationChannel(String publisherName) {
         return Optional.ofNullable(publisherName)
                 .flatMap(queryTerm -> queryPublicationChannelForPublisher(queryTerm))
                 .stream()
-                .findFirst();
+                .collect(SingletonCollector.collectOrElse(null));
     }
 }
