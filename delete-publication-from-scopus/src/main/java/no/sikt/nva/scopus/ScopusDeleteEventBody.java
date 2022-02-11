@@ -13,7 +13,7 @@ import static nva.commons.core.attempt.Try.attempt;
 
 public class ScopusDeleteEventBody implements EventBody {
 
-    public static final String TOPIC = "NvaFetchDoi.Scopus.Delete";
+    public static final String TOPIC = "FetchDoi.Delete.Scopus";
     public static final String SCOPUS_IDENTIFIER = "scopusIdentifier";
 
     @JsonProperty(SCOPUS_IDENTIFIER)
