@@ -189,7 +189,7 @@ Resources:
       Handler: no.unit.nva.doi.fetch.MainHandler::handleRequest
       Runtime: java11
       MemorySize: !Ref LambdaMemorySize
-      AutoPublishAlias: live
+#      AutoPublishAlias: live
 #      DeploymentPreference:
 #        Type: AllAtOnce
 #      ProvisionedConcurrencyConfig:
