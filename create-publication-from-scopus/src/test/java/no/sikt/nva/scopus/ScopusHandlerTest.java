@@ -386,15 +386,15 @@ class ScopusHandlerTest {
     }
 
     @Test
-    void shouldExtractAuthorOrcid() throws IOException {
+    void shouldExtractAuthorOrcidAndSequenceNumber() throws IOException {
         var authors = keepOnlyTheAuthors();
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualContributors = createPublicationRequest.getEntityDescription().getContributors();
-        authors.forEach(author -> checkAuthor(author, actualContributors));
+        authors.forEach(author -> checkAuthorOrcidAndSequenceNumber(author, actualContributors));
     }
 
-    private void checkAuthor(AuthorTp authorTp, List<Contributor> contributors){
+    private void checkAuthorOrcidAndSequenceNumber(AuthorTp authorTp, List<Contributor> contributors){
         if (nonNull(authorTp.getOrcid())) {
             var optionalContributor = findContributor(authorTp.getOrcid(), contributors);
             assertTrue(optionalContributor.isPresent());
