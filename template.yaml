@@ -219,7 +219,7 @@ Resources:
       Handler: no.sikt.nva.scopus.ScopusDeleteHandler::handleRequest
       Runtime: java11
       MemorySize: !Ref LambdaMemorySize
-      Role: !GetAtt ReadFromScopusBucketsRole.Arn
+      Role: !GetAtt ScopusHandlersRole.Arn
       Environment:
         Variables:
           EVENTS_BUS: !Ref NvaEventsBusName
@@ -229,10 +229,11 @@ Resources:
           Properties:
             Bucket: !Ref ScopusXmlBucket
             Events: 's3:ObjectCreated:*'
-            S3Key:
-              Rules:
-                - Name: suffix
-                  Value: '.txt'
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: '.txt'
 
 #  NvaFetchDoiFunctionScalableTarget:
 #    Type: AWS::ApplicationAutoScaling::ScalableTarget
@@ -286,10 +287,11 @@ Resources:
           Properties:
             Bucket: !Ref ScopusXmlBucket
             Events: 's3:ObjectCreated:*'
-            S3Key:
-              Rules:
-                - Name: suffix
-                  Value: '.xml'
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: '.xml'
 
 
   #============================ Deploy API ============================================================================#
