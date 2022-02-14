@@ -206,22 +206,21 @@ class ScopusConverter {
     }
 
     private PublicationInstance<? extends Pages> generatePublicationInstance() {
-        var citationType = getCitationType();
-        return citationType
-            .map(this::convertCitationTypeToPublicationInstance)
-            .orElseThrow(() -> new UnsupportedCitationTypeException(
-                getUnsupportedCitationTypeMessage()));
+        return getCitationType()
+            .flatMap(this::convertCitationTypeToPublicationInstance)
+            .orElseThrow(this::getUnsupportedCitationTypeException);
     }
 
-    private String getUnsupportedCitationTypeMessage() {
-        return String.format(UNSUPPORTED_CITATION_TYPE_MESSAGE, docTp.getMeta().getEid());
+    private UnsupportedCitationTypeException getUnsupportedCitationTypeException() {
+        return new UnsupportedCitationTypeException(
+            String.format(UNSUPPORTED_CITATION_TYPE_MESSAGE, docTp.getMeta().getEid()));
     }
 
-    private PublicationInstance<? extends Pages> convertCitationTypeToPublicationInstance(
+    private Optional<PublicationInstance<? extends Pages>> convertCitationTypeToPublicationInstance(
         CitationtypeAtt citationtypeAtt) {
         return CitationtypeAtt.AR.equals(citationtypeAtt)
-                   ? new JournalArticle()
-                   : null;
+                   ? Optional.of(new JournalArticle())
+                   : Optional.empty();
     }
 
     private Optional<CitationtypeAtt> getCitationType() {

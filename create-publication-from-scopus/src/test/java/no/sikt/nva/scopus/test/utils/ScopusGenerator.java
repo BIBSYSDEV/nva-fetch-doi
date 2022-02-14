@@ -12,10 +12,7 @@ import jakarta.xml.bind.JAXB;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Collection;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
@@ -63,13 +60,14 @@ public final class ScopusGenerator {
     private static final Set<String> IGNORED_FIELDS = readIgnoredFields();
     private final DocTp document;
 
-    public ScopusGenerator() {
-        this.document = randomDocument();
+
+    public ScopusGenerator(CitationtypeAtt citationtypeAtt) {
+        this.document = randomDocument(citationtypeAtt);
     }
 
-    public static DocTp randomDocument() {
+    public static DocTp randomDocument(CitationtypeAtt citationtypeAtt) {
         DocTp docTp = new DocTp();
-        docTp.setItem(randomItemTp());
+        docTp.setItem(randomItemTp(citationtypeAtt));
         docTp.setMeta(randomMetaTp());
         assertThat(docTp, doesNotHaveEmptyValuesIgnoringFieldsAndClasses(NOT_BEAN_CLASSES, IGNORED_FIELDS));
         return docTp;
@@ -102,15 +100,15 @@ public final class ScopusGenerator {
         return new UriWrapper(randomDoi()).getPath().removeRoot().toString();
     }
 
-    private static ItemTp randomItemTp() {
+    private static ItemTp randomItemTp(CitationtypeAtt citationtypeAtt) {
         var item = new ItemTp();
-        item.setItem(randomOriginalItem());
+        item.setItem(randomOriginalItem(citationtypeAtt));
         return item;
     }
 
-    private static OrigItemTp randomOriginalItem() {
+    private static OrigItemTp randomOriginalItem(CitationtypeAtt citationtypeAtt) {
         var item = new OrigItemTp();
-        item.setBibrecord(randomBibRecord());
+        item.setBibrecord(randomBibRecord(citationtypeAtt));
         item.setProcessInfo(randomProcessInfo());
         return item;
     }
@@ -152,73 +150,33 @@ public final class ScopusGenerator {
         return attempt(() -> DatatypeFactory.newInstance().newXMLGregorianCalendar(calendar)).orElseThrow();
     }
 
-    private static BibrecordTp randomBibRecord() {
+    private static BibrecordTp randomBibRecord(CitationtypeAtt citationtypeAtt) {
         var bibRecord = new BibrecordTp();
         bibRecord.setItemInfo(randomItemInfo());
-        bibRecord.setHead(randomHeadTp());
+        bibRecord.setHead(randomHeadTp(citationtypeAtt));
         return bibRecord;
     }
 
-    private static HeadTp randomHeadTp() {
+    private static HeadTp randomHeadTp(CitationtypeAtt citationtypeAtt) {
         var head = new HeadTp();
         head.setCitationTitle(randomCitationTitle());
         head.setAbstracts(randomAbstracts());
-        head.setCitationInfo(randomCitationInfo());
+        head.setCitationInfo(randomCitationInfo(citationtypeAtt));
 
         return head;
     }
 
-    private static CitationInfoTp randomCitationInfo() {
+    private static CitationInfoTp randomCitationInfo(CitationtypeAtt citationtypeAtt) {
         var citationInfo = new CitationInfoTp();
         citationInfo.setAuthorKeywords(randomAuthorKeywordsTp());
-        citationInfo.getCitationType().add(randomCitationType());
+        citationInfo.getCitationType().add(setCitationType(citationtypeAtt));
         return citationInfo;
     }
 
-    private static CitationTypeTp randomCitationType() {
+    private static CitationTypeTp setCitationType(CitationtypeAtt citationtypeAtt) {
         var citationType = new CitationTypeTp();
-        citationType.setCode(articleCitationTypeAtt());
+        citationType.setCode(citationtypeAtt);
         return citationType;
-    }
-
-    private static CitationtypeAtt articleCitationTypeAtt() {
-        return CitationtypeAtt.AR;
-    }
-
-    private static CitationTypeTp randumUnsupportedCitationType() {
-        var citationType = new CitationTypeTp();
-        citationType.setCode(randomUnSupportedCitationTypeAtt());
-        return citationType;
-    }
-
-    private static CitationtypeAtt randomUnSupportedCitationTypeAtt() {
-        List<CitationtypeAtt> citationTypeAttList = new ArrayList<>(
-            List.of(CitationtypeAtt.AB, CitationtypeAtt.BK,
-                    CitationtypeAtt.BR, CitationtypeAtt.BZ,
-                    CitationtypeAtt.CB,
-                    CitationtypeAtt.CH, CitationtypeAtt.CP,
-                    CitationtypeAtt.CR, CitationtypeAtt.DI,
-                    CitationtypeAtt.DP, CitationtypeAtt.ED,
-                    CitationtypeAtt.ER, CitationtypeAtt.IP,
-                    CitationtypeAtt.LE, CitationtypeAtt.MM,
-                    CitationtypeAtt.NO, CitationtypeAtt.PA,
-                    CitationtypeAtt.PP, CitationtypeAtt.RE,
-                    CitationtypeAtt.RF, CitationtypeAtt.RP,
-                    CitationtypeAtt.SH, CitationtypeAtt.ST,
-                    CitationtypeAtt.TB, CitationtypeAtt.WP));
-        Collections.shuffle(citationTypeAttList);
-        return citationTypeAttList.stream().findFirst().get();
-    }
-
-    public void replaceSupportedCitationTypeWithUnsuportedCitationType() {
-        document
-            .getItem()
-            .getItem()
-            .getBibrecord()
-            .getHead()
-            .getCitationInfo()
-            .getCitationType()
-            .set(0, randumUnsupportedCitationType());
     }
 
     private static AuthorKeywordsTp randomAuthorKeywordsTp() {
