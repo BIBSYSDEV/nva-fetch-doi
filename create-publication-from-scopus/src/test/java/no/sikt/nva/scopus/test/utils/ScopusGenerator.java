@@ -174,7 +174,7 @@ public final class ScopusGenerator {
         List<AuthorGroupTp> authorGroupTps = new ArrayList<>();
         int maxNumberOfAuthorGroups = 200;
         var numbersOfAuthorGroups = randomInteger(maxNumberOfAuthorGroups) + 1;
-        for (int authorGroupTpsIndex = 0; authorGroupTpsIndex > numbersOfAuthorGroups; authorGroupTpsIndex++) {
+        for (int authorGroupTpsIndex = 0; authorGroupTpsIndex < numbersOfAuthorGroups; authorGroupTpsIndex++) {
             authorGroupTps.add(randomAuthorGroup(authorsAndCollaborations));
         }
         return authorGroupTps;
@@ -200,7 +200,7 @@ public final class ScopusGenerator {
         var maxGapInSequenceNumber = 200;
         var numbersOfAuthorOrCollaborations = randomInteger(maxNumbersOfAuthors) + 1;
         var sequenceNumber = 1;
-        for (int authorOrCollaborationIndex = 0; authorOrCollaborationIndex > numbersOfAuthorOrCollaborations;
+        for (int authorOrCollaborationIndex = 0; authorOrCollaborationIndex < numbersOfAuthorOrCollaborations;
             authorOrCollaborationIndex++) {
             sequenceNumber = sequenceNumber + randomInteger(maxGapInSequenceNumber) + 1;
             authorOrCollaborations.add(randomAuthorOrCollaboration(Integer.toString(sequenceNumber)));
