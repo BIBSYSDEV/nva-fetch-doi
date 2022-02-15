@@ -58,7 +58,8 @@ import nva.commons.core.paths.UriWrapper;
 
 public final class ScopusGenerator {
 
-    private int minimumSequenceNumber = 0;
+
+    private int minimumSequenceNumber;
     public static final Set<Class<?>> NOT_BEAN_CLASSES = Set.of(XMLGregorianCalendar.class);
     public static final int SMALL_NUMBER = 10;
     public static final String SCOPUS_IDENTIFIER_TYPE = "SCP";
@@ -67,6 +68,7 @@ public final class ScopusGenerator {
 
     public ScopusGenerator() {
         this.document = randomDocument();
+        this.minimumSequenceNumber = 1;
     }
 
     public DocTp randomDocument() {
@@ -194,37 +196,37 @@ public final class ScopusGenerator {
 
     private List<?> randomAuthorOrCollaborations() {
         int maxNumbersOfAuthors = 200;
-        //return authorOrCollaborations;
         return IntStream.range(0, randomInteger(maxNumbersOfAuthors) + 1)
             .boxed()
-            .map(ignored -> randomAuthorOrCollaboration(generateSequenceNumber()))
+            .map(index -> randomAuthorOrCollaboration())
             .collect(Collectors.toList());
     }
 
     private String generateSequenceNumber() {
         var maxGapInSequenceNumber = 200;
-        minimumSequenceNumber += randomInteger(maxGapInSequenceNumber) +1;
-        return Integer.toString(minimumSequenceNumber);
+        var sequenceNumber = getMinimumSequenceNumber() + randomInteger(maxGapInSequenceNumber) + 1;
+        setMinimumSequenceNumber(sequenceNumber);
+        return Integer.toString(sequenceNumber);
     }
 
-    private static Object randomAuthorOrCollaboration(String sequenceNumber) {
+    private Object randomAuthorOrCollaboration() {
         var shouldReturnAuthorTyp = randomBoolean();
-        return shouldReturnAuthorTyp ? randomAuthorTp(sequenceNumber) : randomCollaborationTp(sequenceNumber);
+        return shouldReturnAuthorTyp ? randomAuthorTp() : randomCollaborationTp();
     }
 
-    private static CollaborationTp randomCollaborationTp(String sequenceNumber) {
+    private CollaborationTp randomCollaborationTp() {
         var collaborationTp = new CollaborationTp();
         collaborationTp.setIndexedName(randomString());
-        collaborationTp.setSeq(sequenceNumber);
+        collaborationTp.setSeq(generateSequenceNumber());
         return collaborationTp;
     }
 
-    private static AuthorTp randomAuthorTp(String sequenceNumber) {
+    private AuthorTp randomAuthorTp() {
         var authorTp = new AuthorTp();
         authorTp.setOrcid(randomOrcid());
         authorTp.setPreferredName(randomPreferredName());
         authorTp.setAuid(randomString());
-        authorTp.setSeq(sequenceNumber);
+        authorTp.setSeq(generateSequenceNumber());
         return authorTp;
     }
 
@@ -392,5 +394,13 @@ public final class ScopusGenerator {
 
     private static Set<String> readIgnoredFields() {
         return new HashSet<>(IoUtils.linesfromResource(Path.of("conversion", "ignoredScopusFields.txt")));
+    }
+
+    private int getMinimumSequenceNumber() {
+        return minimumSequenceNumber;
+    }
+
+    private void setMinimumSequenceNumber(int minimumSequenceNumber) {
+        this.minimumSequenceNumber = minimumSequenceNumber;
     }
 }
