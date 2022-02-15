@@ -13,7 +13,6 @@ import jakarta.xml.bind.JAXB;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -171,13 +170,11 @@ public final class ScopusGenerator {
     }
 
     private static Collection<? extends AuthorGroupTp> randomAuthorGroups(List<?> authorsAndCollaborations) {
-        List<AuthorGroupTp> authorGroupTps = new ArrayList<>();
         int maxNumberOfAuthorGroups = 200;
-        var numbersOfAuthorGroups = randomInteger(maxNumberOfAuthorGroups) + 1;
-        for (int authorGroupTpsIndex = 0; authorGroupTpsIndex < numbersOfAuthorGroups; authorGroupTpsIndex++) {
-            authorGroupTps.add(randomAuthorGroup(authorsAndCollaborations));
-        }
-        return authorGroupTps;
+        return IntStream.range(0, randomInteger(maxNumberOfAuthorGroups) + 1)
+            .boxed()
+            .map(ignored -> randomAuthorGroup(authorsAndCollaborations))
+            .collect(Collectors.toList());
     }
 
     private static AuthorGroupTp randomAuthorGroup(List<?> authorsAndCollaborations) {
@@ -189,23 +186,23 @@ public final class ScopusGenerator {
 
     private static List<?> randomSubsetRandomAuthorsOrCollaborations(List<?> authorsAndCollaborations) {
         int min = 0;
-        var numbersOfAuthorOrCollaborations = randomInteger(authorsAndCollaborations.size()) + 1;
+        var numbersOfAuthorOrCollaborations = randomInteger(authorsAndCollaborations.size());
         Collections.shuffle(authorsAndCollaborations);
         return authorsAndCollaborations.subList(min, numbersOfAuthorOrCollaborations);
     }
 
     private static List<?> randomAuthorOrCollaborations() {
-        List<Object> authorOrCollaborations = new ArrayList<>();
         int maxNumbersOfAuthors = 200;
+        //return authorOrCollaborations;
+        return IntStream.range(0, randomInteger(maxNumbersOfAuthors) + 1)
+            .boxed()
+            .map(index -> randomAuthorOrCollaboration(generateSequenceNumber(index)))
+            .collect(Collectors.toList());
+    }
+
+    private static String generateSequenceNumber(int base) {
         var maxGapInSequenceNumber = 200;
-        var numbersOfAuthorOrCollaborations = randomInteger(maxNumbersOfAuthors) + 1;
-        var sequenceNumber = 1;
-        for (int authorOrCollaborationIndex = 0; authorOrCollaborationIndex < numbersOfAuthorOrCollaborations;
-            authorOrCollaborationIndex++) {
-            sequenceNumber = sequenceNumber + randomInteger(maxGapInSequenceNumber) + 1;
-            authorOrCollaborations.add(randomAuthorOrCollaboration(Integer.toString(sequenceNumber)));
-        }
-        return authorOrCollaborations;
+        return Integer.toString(base + randomInteger(maxGapInSequenceNumber));
     }
 
     private static Object randomAuthorOrCollaboration(String sequenceNumber) {

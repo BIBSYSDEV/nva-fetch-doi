@@ -507,8 +507,17 @@ class ScopusHandlerTest {
     }
 
     private List<Object> keepOnlyTheCollaborationsAndAuthors() {
-        return scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getAuthorGroup().stream().map(
-            AuthorGroupTp::getAuthorOrCollaboration).flatMap(Collection::stream).collect(Collectors.toList());
+        return scopusData
+            .getDocument()
+            .getItem()
+            .getItem()
+            .getBibrecord()
+            .getHead()
+            .getAuthorGroup()
+            .stream()
+            .map(AuthorGroupTp::getAuthorOrCollaboration)
+            .flatMap(Collection::stream)
+            .collect(Collectors.toList());
     }
 
     private S3Event createS3Event(String expectedObjectKey) {
