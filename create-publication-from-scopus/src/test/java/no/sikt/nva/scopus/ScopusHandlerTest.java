@@ -394,7 +394,7 @@ class ScopusHandlerTest {
         authors.forEach(author -> checkAuthorOrcidAndSequenceNumber(author, actualContributors));
     }
 
-    private void checkAuthorOrcidAndSequenceNumber(AuthorTp authorTp, List<Contributor> contributors){
+    private void checkAuthorOrcidAndSequenceNumber(AuthorTp authorTp, List<Contributor> contributors) {
         if (nonNull(authorTp.getOrcid())) {
             var optionalContributor = findContributor(authorTp.getOrcid(), contributors);
             assertTrue(optionalContributor.isPresent());
@@ -513,8 +513,17 @@ class ScopusHandlerTest {
     }
 
     private List<Object> keepOnlyTheCollaborationsAndAuthors() {
-        return scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getAuthorGroup().stream().map(
-            AuthorGroupTp::getAuthorOrCollaboration).flatMap(Collection::stream).collect(Collectors.toList());
+        return scopusData
+            .getDocument()
+            .getItem()
+            .getItem()
+            .getBibrecord()
+            .getHead()
+            .getAuthorGroup()
+            .stream()
+            .map(AuthorGroupTp::getAuthorOrCollaboration)
+            .flatMap(Collection::stream)
+            .collect(Collectors.toList());
     }
 
     private S3Event createS3Event(String expectedObjectKey) {
