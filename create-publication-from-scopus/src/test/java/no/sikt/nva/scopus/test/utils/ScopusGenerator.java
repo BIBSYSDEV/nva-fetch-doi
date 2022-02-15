@@ -195,7 +195,6 @@ public final class ScopusGenerator {
 
     private List<?> randomAuthorOrCollaborations() {
         int maxNumbersOfAuthors = 200;
-        //return authorOrCollaborations;
         return IntStream.range(0, randomInteger(maxNumbersOfAuthors) + 1)
             .boxed()
             .map(index -> randomAuthorOrCollaboration())
