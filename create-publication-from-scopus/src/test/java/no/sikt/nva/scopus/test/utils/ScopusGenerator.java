@@ -58,6 +58,7 @@ import nva.commons.core.paths.UriWrapper;
 
 public final class ScopusGenerator {
 
+    private int minimumSequenceNumber = 0;
     public static final Set<Class<?>> NOT_BEAN_CLASSES = Set.of(XMLGregorianCalendar.class);
     public static final int SMALL_NUMBER = 10;
     public static final String SCOPUS_IDENTIFIER_TYPE = "SCP";
@@ -68,7 +69,7 @@ public final class ScopusGenerator {
         this.document = randomDocument();
     }
 
-    public static DocTp randomDocument() {
+    public DocTp randomDocument() {
         DocTp docTp = new DocTp();
         docTp.setItem(randomItemTp());
         docTp.setMeta(randomMetaTp());
@@ -102,13 +103,13 @@ public final class ScopusGenerator {
         return new UriWrapper(randomDoi()).getPath().removeRoot().toString();
     }
 
-    private static ItemTp randomItemTp() {
+    private ItemTp randomItemTp() {
         var item = new ItemTp();
         item.setItem(randomOriginalItem());
         return item;
     }
 
-    private static OrigItemTp randomOriginalItem() {
+    private OrigItemTp randomOriginalItem() {
         var item = new OrigItemTp();
         item.setBibrecord(randomBibRecord());
         item.setProcessInfo(randomProcessInfo());
@@ -152,14 +153,14 @@ public final class ScopusGenerator {
         return attempt(() -> DatatypeFactory.newInstance().newXMLGregorianCalendar(calendar)).orElseThrow();
     }
 
-    private static BibrecordTp randomBibRecord() {
+    private BibrecordTp randomBibRecord() {
         var bibRecord = new BibrecordTp();
         bibRecord.setItemInfo(randomItemInfo());
         bibRecord.setHead(randomHeadTp());
         return bibRecord;
     }
 
-    private static HeadTp randomHeadTp() {
+    private HeadTp randomHeadTp() {
         List<?> authorsAndCollaborations = randomAuthorOrCollaborations();
         var head = new HeadTp();
         head.getAuthorGroup().addAll(randomAuthorGroups(authorsAndCollaborations));
@@ -191,18 +192,19 @@ public final class ScopusGenerator {
         return authorsAndCollaborations.subList(min, numbersOfAuthorOrCollaborations);
     }
 
-    private static List<?> randomAuthorOrCollaborations() {
+    private List<?> randomAuthorOrCollaborations() {
         int maxNumbersOfAuthors = 200;
         //return authorOrCollaborations;
         return IntStream.range(0, randomInteger(maxNumbersOfAuthors) + 1)
             .boxed()
-            .map(index -> randomAuthorOrCollaboration(generateSequenceNumber(index)))
+            .map(ignored -> randomAuthorOrCollaboration(generateSequenceNumber()))
             .collect(Collectors.toList());
     }
 
-    private static String generateSequenceNumber(int base) {
+    private String generateSequenceNumber() {
         var maxGapInSequenceNumber = 200;
-        return Integer.toString(base + randomInteger(maxGapInSequenceNumber));
+        minimumSequenceNumber += randomInteger(maxGapInSequenceNumber) +1;
+        return Integer.toString(minimumSequenceNumber);
     }
 
     private static Object randomAuthorOrCollaboration(String sequenceNumber) {

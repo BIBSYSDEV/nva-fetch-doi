@@ -52,6 +52,7 @@ import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.BibrecordTp;
 import no.scopus.generated.CitationTitleTp;
+import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
 import no.scopus.generated.ItemTp;
@@ -196,11 +197,15 @@ class ScopusHandlerTest {
     @Test
     void shouldExtractContributorsNamesAndSequenceNumberCorrectly() throws IOException {
         var authors = keepOnlyTheAuthors();
+        var collaborations = keepOnlyTheCollaborations();
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualContributors = createPublicationRequest.getEntityDescription().getContributors();
         authors.forEach(author -> checkAuthorName(author, actualContributors));
+        collaborations.forEach(collaboration -> checkCollaborationName(collaboration, actualContributors));
     }
+
+
 
     @Test
     void shouldExtractAuthorKeywordsAsXML() throws IOException {
@@ -381,15 +386,22 @@ class ScopusHandlerTest {
     }
 
     private void checkAuthorName(AuthorTp authorTp, List<Contributor> contributors) {
-        var optionalContributor = findContributorSequence(authorTp, contributors);
+        var optionalContributor = findContributorBySequence(authorTp.getSeq(), contributors);
         assertTrue(optionalContributor.isPresent());
         var contributor = optionalContributor.get();
         assertEquals(getExpectedFullAuthorName(authorTp), contributor.getIdentity().getName());
     }
 
-    private Optional<Contributor> findContributorSequence(AuthorTp authorTp, List<Contributor> contributors) {
+    private void checkCollaborationName(CollaborationTp collaboration, List<Contributor> contributors) {
+        var optionalContributor = findContributorBySequence(collaboration.getSeq(), contributors);
+        assertTrue(optionalContributor.isPresent());
+        var contributor = optionalContributor.get();
+        assertEquals(collaboration.getIndexedName(), contributor.getIdentity().getName());
+    }
+
+    private Optional<Contributor> findContributorBySequence(String sequence, List<Contributor> contributors) {
         return contributors.stream()
-            .filter(contributor -> authorTp.getSeq().equals(Integer.toString(contributor.getSequence())))
+            .filter(contributor -> sequence.equals(Integer.toString(contributor.getSequence())))
             .findFirst();
     }
 
@@ -502,8 +514,17 @@ class ScopusHandlerTest {
             this::isAuthorTp).map(author -> (AuthorTp) author).collect(Collectors.toList());
     }
 
+    private List<CollaborationTp> keepOnlyTheCollaborations() {
+        return keepOnlyTheCollaborationsAndAuthors().stream().filter(
+            this::isCollaborationTp).map(collaboration -> (CollaborationTp) collaboration).collect(Collectors.toList());
+    }
+
     private boolean isAuthorTp(Object object) {
         return object instanceof AuthorTp;
+    }
+
+    private boolean isCollaborationTp(Object object) {
+        return object instanceof CollaborationTp;
     }
 
     private List<Object> keepOnlyTheCollaborationsAndAuthors() {
