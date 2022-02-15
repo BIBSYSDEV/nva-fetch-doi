@@ -1,6 +1,7 @@
 package no.sikt.nva.scopus.test.utils;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFieldsAndClasses;
+import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
@@ -12,6 +13,7 @@ import jakarta.xml.bind.JAXB;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.GregorianCalendar;
@@ -34,6 +36,7 @@ import no.scopus.generated.CitationTitleTp;
 import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
+import no.scopus.generated.IssnTp;
 import no.scopus.generated.ItemInfoTp;
 import no.scopus.generated.ItemTp;
 import no.scopus.generated.ItemidTp;
@@ -44,8 +47,12 @@ import no.scopus.generated.ProcessInfo;
 import no.scopus.generated.PublishercopyrightTp;
 import no.scopus.generated.RichstringWithMMLType;
 import no.scopus.generated.ShortTitle;
+import no.scopus.generated.SourceTp;
+import no.scopus.generated.SourcetitleTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
+import no.sikt.nva.scopus.ScopusConstants;
+import no.sikt.nva.scopus.ScopusSourceType;
 import no.unit.nva.language.LanguageConstants;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
@@ -57,12 +64,25 @@ public final class ScopusGenerator {
     public static final String SCOPUS_IDENTIFIER_TYPE = "SCP";
     private static final Set<String> IGNORED_FIELDS = readIgnoredFields();
     private final DocTp document;
+    private final String srcType;
+    //ToDO: replace with randomIssn
+    private static final String HARDCODED_VALID_ISSN = "14740036";
 
     public ScopusGenerator() {
+        this.srcType = ScopusSourceType.JOURNAL.code;
         this.document = randomDocument();
     }
 
-    public static DocTp randomDocument() {
+    private ScopusGenerator(String srcType){
+        this.srcType = srcType;
+        this.document = randomDocument();
+    }
+
+    public ScopusGenerator createWithSpecifiedSrcType(String srcType){
+        return new ScopusGenerator(srcType);
+    }
+
+    public DocTp randomDocument() {
         DocTp docTp = new DocTp();
         docTp.setItem(randomItemTp());
         docTp.setMeta(randomMetaTp());
@@ -86,9 +106,11 @@ public final class ScopusGenerator {
         return xmlWriter.toString();
     }
 
-    private static MetaTp randomMetaTp() {
+    private MetaTp randomMetaTp() {
         var meta = new MetaTp();
         meta.setDoi(randomScopusDoi());
+        meta.setSrctype(srcType);
+        meta.setEid(randomString());
         return meta;
     }
 
@@ -158,8 +180,45 @@ public final class ScopusGenerator {
         head.setCitationTitle(randomCitationTitle());
         head.setAbstracts(randomAbstracts());
         head.setCitationInfo(randomCitationInfo());
-
+        head.setSource(randomSource());
         return head;
+    }
+
+    private static SourceTp randomSource() {
+        SourceTp sourceTp = new SourceTp();
+        sourceTp.setArticleNumber(randomString());
+        sourceTp.setSourcetitle(randomSourceTitle());
+        sourceTp.setArticleNumber(randomString());
+        sourceTp.getIssn().addAll(randomIssns());
+        return sourceTp;
+    }
+
+    private static Collection<? extends IssnTp> randomIssns() {
+        List<IssnTp> issnTpList = new ArrayList<>();
+        if (randomBoolean()) {
+            issnTpList.add(randomIssn(ScopusConstants.ISSN_TYPE_ELECTRONIC));
+        }
+        if(randomBoolean()) {
+            issnTpList.add(randomIssn(ScopusConstants.ISSN_TYPE_PRINT));
+        }
+        if(randomBoolean()) {
+            issnTpList.add(randomIssn(randomString()));
+        }
+        return issnTpList;
+    }
+
+
+    private static IssnTp randomIssn(String issnType) {
+        IssnTp issnTp = new IssnTp();
+        issnTp.setContent(HARDCODED_VALID_ISSN);
+        issnTp.setType(issnType);
+        return  issnTp;
+    }
+
+    private static SourcetitleTp randomSourceTitle() {
+        SourcetitleTp sourcetitleTp = new SourcetitleTp();
+        sourcetitleTp.getContent().add(randomString());
+        return  sourcetitleTp;
     }
 
     private static CitationInfoTp randomCitationInfo() {

@@ -14,7 +14,6 @@ public class ScopusConstants {
     //Journal constants:
     public static final String ISSN_TYPE_ELECTRONIC = "electronic";
     public static final String ISSN_TYPE_PRINT = "print";
-    public static final PublicationContext EMPTY_PUBLICATION_CONTEXT = null;
 
     @JacocoGenerated
     public ScopusConstants() {
