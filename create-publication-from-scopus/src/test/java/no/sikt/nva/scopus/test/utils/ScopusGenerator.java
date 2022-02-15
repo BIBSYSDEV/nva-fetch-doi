@@ -1,5 +1,6 @@
 package no.sikt.nva.scopus.test.utils;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFieldsAndClasses;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
@@ -59,15 +60,24 @@ public final class ScopusGenerator {
     public static final String SCOPUS_IDENTIFIER_TYPE = "SCP";
     private static final Set<String> IGNORED_FIELDS = readIgnoredFields();
     private final DocTp document;
+    private CitationtypeAtt citationtypeAtt;
 
-
-    public ScopusGenerator(CitationtypeAtt citationtypeAtt) {
-        this.document = randomDocument(citationtypeAtt);
+    public ScopusGenerator() {
+        this.document = randomDocument();
     }
 
-    public static DocTp randomDocument(CitationtypeAtt citationtypeAtt) {
+    private ScopusGenerator(CitationtypeAtt citationtypeAtt) {
+        this.citationtypeAtt = citationtypeAtt;
+        this.document = randomDocument();
+    }
+
+    public ScopusGenerator create(CitationtypeAtt citationtypeAtt) {
+        return new ScopusGenerator(citationtypeAtt);
+    }
+
+    public DocTp randomDocument() {
         DocTp docTp = new DocTp();
-        docTp.setItem(randomItemTp(citationtypeAtt));
+        docTp.setItem(randomItemTp());
         docTp.setMeta(randomMetaTp());
         assertThat(docTp, doesNotHaveEmptyValuesIgnoringFieldsAndClasses(NOT_BEAN_CLASSES, IGNORED_FIELDS));
         return docTp;
@@ -100,15 +110,15 @@ public final class ScopusGenerator {
         return new UriWrapper(randomDoi()).getPath().removeRoot().toString();
     }
 
-    private static ItemTp randomItemTp(CitationtypeAtt citationtypeAtt) {
+    private ItemTp randomItemTp() {
         var item = new ItemTp();
-        item.setItem(randomOriginalItem(citationtypeAtt));
+        item.setItem(randomOriginalItem());
         return item;
     }
 
-    private static OrigItemTp randomOriginalItem(CitationtypeAtt citationtypeAtt) {
+    private OrigItemTp randomOriginalItem() {
         var item = new OrigItemTp();
-        item.setBibrecord(randomBibRecord(citationtypeAtt));
+        item.setBibrecord(randomBibRecord());
         item.setProcessInfo(randomProcessInfo());
         return item;
     }
@@ -150,33 +160,41 @@ public final class ScopusGenerator {
         return attempt(() -> DatatypeFactory.newInstance().newXMLGregorianCalendar(calendar)).orElseThrow();
     }
 
-    private static BibrecordTp randomBibRecord(CitationtypeAtt citationtypeAtt) {
+    private BibrecordTp randomBibRecord() {
         var bibRecord = new BibrecordTp();
         bibRecord.setItemInfo(randomItemInfo());
-        bibRecord.setHead(randomHeadTp(citationtypeAtt));
+        bibRecord.setHead(randomHeadTp());
         return bibRecord;
     }
 
-    private static HeadTp randomHeadTp(CitationtypeAtt citationtypeAtt) {
+    private HeadTp randomHeadTp() {
         var head = new HeadTp();
         head.setCitationTitle(randomCitationTitle());
         head.setAbstracts(randomAbstracts());
-        head.setCitationInfo(randomCitationInfo(citationtypeAtt));
+        head.setCitationInfo(randomCitationInfo());
 
         return head;
     }
 
-    private static CitationInfoTp randomCitationInfo(CitationtypeAtt citationtypeAtt) {
+    private CitationInfoTp randomCitationInfo() {
         var citationInfo = new CitationInfoTp();
         citationInfo.setAuthorKeywords(randomAuthorKeywordsTp());
-        citationInfo.getCitationType().add(setCitationType(citationtypeAtt));
+        citationInfo.getCitationType().add(createCitationType());
         return citationInfo;
     }
 
-    private static CitationTypeTp setCitationType(CitationtypeAtt citationtypeAtt) {
+    private CitationTypeTp createCitationType() {
         var citationType = new CitationTypeTp();
-        citationType.setCode(citationtypeAtt);
+        citationType.setCode(createCitationTypeAtt());
         return citationType;
+    }
+
+    private CitationtypeAtt createCitationTypeAtt() {
+        return nonNull(citationtypeAtt) ? citationtypeAtt : randomSupportedCitationType();
+    }
+
+    private CitationtypeAtt randomSupportedCitationType() {
+        return CitationtypeAtt.AR;
     }
 
     private static AuthorKeywordsTp randomAuthorKeywordsTp() {

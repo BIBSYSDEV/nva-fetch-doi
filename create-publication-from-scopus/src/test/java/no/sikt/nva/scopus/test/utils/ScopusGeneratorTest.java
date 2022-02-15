@@ -8,6 +8,7 @@ class ScopusGeneratorTest {
 
     @Test
     void shouldReturnDocumentWithAllKnownFieldsNonEmpty() {
-        assertDoesNotThrow(() -> ScopusGenerator.randomDocument(CitationtypeAtt.AR));
+        var scopusGenerator = new ScopusGenerator();
+        assertDoesNotThrow(scopusGenerator::randomDocument);
     }
 }

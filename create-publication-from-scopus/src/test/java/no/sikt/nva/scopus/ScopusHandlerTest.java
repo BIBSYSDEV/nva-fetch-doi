@@ -144,6 +144,7 @@ class ScopusHandlerTest {
 
     private HttpClient httpClient;
     private FakeEventBridgeClient eventBridgeClient;
+    private ScopusGenerator scopusData;
 
     @BeforeEach
     public void init() {
@@ -154,6 +155,7 @@ class ScopusHandlerTest {
         metadataService = new MetadataService(httpClient, serverUri);
         eventBridgeClient = new FakeEventBridgeClient();
         scopusHandler = new ScopusHandler(s3Client, metadataService, eventBridgeClient);
+        scopusData = new ScopusGenerator();
     }
 
     @AfterEach
@@ -174,7 +176,6 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractOnlyScopusIdentifierIgnoreAllOtherIdentifiersAndStoreItInPublication() throws IOException {
-        var scopusData = new ScopusGenerator(randomSupportedCitationTypeAtt());
         var scopusIdentifiers = keepOnlyTheScopusIdentifiers(scopusData);
         var s3Event = createNewScopusPublicationEvent(scopusData);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -186,7 +187,6 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractDoiAndPlaceItInsideReferenceObject() throws IOException {
-        var scopusData = new ScopusGenerator(randomSupportedCitationTypeAtt());
         var expectedURI = Doi.fromDoiIdentifier(scopusData.getDocument().getMeta().getDoi()).getUri();
         var s3Event = createNewScopusPublicationEvent(scopusData);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -195,7 +195,6 @@ class ScopusHandlerTest {
 
     @Test
     void shouldReturnCreatePublicationRequestWithMainTitle() throws IOException {
-        var scopusData = new ScopusGenerator(randomSupportedCitationTypeAtt());
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var titleObject = extractTitle(scopusData);
@@ -376,7 +375,6 @@ class ScopusHandlerTest {
 
     @Test
     void shouldEmitMessageToEventReferenceContainingS3UriPointingToNewCreatePublicationRequest() throws IOException {
-        var scopusData = new ScopusGenerator(randomSupportedCitationTypeAtt());
         var event = createNewScopusPublicationEvent(scopusData);
         var expectedRequest = scopusHandler.handleRequest(event, CONTEXT);
         var emittedEvent = fetchEmittedEvent();
@@ -389,7 +387,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractJournalArticle() throws IOException {
-        var scopusData = new ScopusGenerator(CitationtypeAtt.AR);
+        scopusData = scopusData.create(CitationtypeAtt.AR);
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -405,7 +403,7 @@ class ScopusHandlerTest {
         mode = Mode.EXCLUDE)
     void shouldNotGenerateCreatePublicationFromUnsupportedPublicationTypes(CitationtypeAtt citationtypeAtt)
         throws IOException {
-        var scopusData = new ScopusGenerator(citationtypeAtt);
+        scopusData = scopusData.create(citationtypeAtt);
         //eid is chosen becuase it seems to match the file name in the bucket.
         var eid = scopusData.getDocument().getMeta().getEid();
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
@@ -553,9 +551,5 @@ class ScopusHandlerTest {
                                            ResponseTransformer<GetObjectResponse, ReturnT> responseTransformer) {
             throw new RuntimeException(expectedErrorMessage);
         }
-    }
-
-    private static CitationtypeAtt randomSupportedCitationTypeAtt() {
-        return CitationtypeAtt.AR;
     }
 }
