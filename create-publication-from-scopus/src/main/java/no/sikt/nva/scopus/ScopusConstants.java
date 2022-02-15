@@ -1,6 +1,5 @@
 package no.sikt.nva.scopus;
 
-import no.unit.nva.model.contexttypes.PublicationContext;
 import nva.commons.core.JacocoGenerated;
 
 public class ScopusConstants {

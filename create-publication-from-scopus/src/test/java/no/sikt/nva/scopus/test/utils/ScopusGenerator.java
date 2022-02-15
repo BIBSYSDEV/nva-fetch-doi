@@ -73,12 +73,12 @@ public final class ScopusGenerator {
         this.document = randomDocument();
     }
 
-    private ScopusGenerator(String srcType){
+    private ScopusGenerator(String srcType) {
         this.srcType = srcType;
         this.document = randomDocument();
     }
 
-    public ScopusGenerator createWithSpecifiedSrcType(String srcType){
+    public ScopusGenerator createWithSpecifiedSrcType(String srcType) {
         return new ScopusGenerator(srcType);
     }
 
@@ -198,27 +198,26 @@ public final class ScopusGenerator {
         if (randomBoolean()) {
             issnTpList.add(randomIssn(ScopusConstants.ISSN_TYPE_ELECTRONIC));
         }
-        if(randomBoolean()) {
+        if (randomBoolean()) {
             issnTpList.add(randomIssn(ScopusConstants.ISSN_TYPE_PRINT));
         }
-        if(randomBoolean()) {
+        if (randomBoolean()) {
             issnTpList.add(randomIssn(randomString()));
         }
         return issnTpList;
     }
 
-
     private static IssnTp randomIssn(String issnType) {
         IssnTp issnTp = new IssnTp();
         issnTp.setContent(HARDCODED_VALID_ISSN);
         issnTp.setType(issnType);
-        return  issnTp;
+        return issnTp;
     }
 
     private static SourcetitleTp randomSourceTitle() {
         SourcetitleTp sourcetitleTp = new SourcetitleTp();
         sourcetitleTp.getContent().add(randomString());
-        return  sourcetitleTp;
+        return sourcetitleTp;
     }
 
     private static CitationInfoTp randomCitationInfo() {

@@ -293,7 +293,7 @@ class ScopusConverter {
     private PublicationContext getPublicationContext() {
         if (isJournal()) {
             return new JournalCreator(metadataService, docTp).createJournal();
-        }else {
+        } else {
             throw new UnsupportedSrcTypeException(String.format(UNSUPPORTED_SOURCE_TYPE, docTp.getMeta().getEid()));
         }
     }
