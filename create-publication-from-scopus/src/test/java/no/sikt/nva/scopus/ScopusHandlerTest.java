@@ -97,9 +97,6 @@ class ScopusHandlerTest {
     public static final String E_ISSN_0000469852 = "1474-0036";
     public static final String START_OF_QUERY = "/?";
     private static final String EXPECTED_RESULTS_PATH = "expectedResults";
-    private static final String IDENTITY_FIELD_NAME = "identity";
-    private static final String NAME_FIELD_NAME = "name";
-    private static final String SEQUENCE_FIELD_NAME = "sequence";
     private static final String SCOPUS_XML_0000469852 = "2-s2.0-0000469852.xml";
     private static final String SCOPUS_XML_0018132378 = "2-s2.0-0018132378.xml";
     private static final String EXPECTED_PUBLICATION_YEAR_IN_0018132378 = "1978";
@@ -119,14 +116,6 @@ class ScopusHandlerTest {
     private static final String HARDCODED_EXPECTED_KEYWORD_3_IN_0000469852 = "sheep";
     private static final String XML_ENCODING_DECLARATION = "<?xml version=\"1.0\" encoding=\"UTF-8\" "
                                                            + "standalone=\"yes\"?>";
-
-    private static final String SCOPUS_XML_85114653695 = "2-s2.0-85114653695.xml";
-    private static final String CONTRIBUTOR_1_NAME_IN_85114653695 = "Morra A.";
-    private static final String CONTRIBUTOR_2_NAME_IN_85114653695 = "Escala-Garcia M.";
-    private static final String CONTRIBUTOR_151_NAME_IN_85114653695 = "NBCS Collaborators";
-    private static final int CONTRIBUTOR_1_SEQUENCE_NUMBER = 1;
-    private static final int CONTRIBUTOR_2_SEQUENCE_NUMBER = 2;
-    private static final int CONTRIBUTOR_151_SEQUENCE_NUMBER = 151;
     private static final String PUBLICATION_DAY_FIELD_NAME = "day";
     private static final String PUBLICATION_MONTH_FIELD_NAME = "month";
     private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
@@ -206,23 +195,11 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractContributorsNamesAndSequenceNumberCorrectly() throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_85114653695));
-        var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
-        var s3Event = createS3Event(uri);
+        var authors = keepOnlyTheAuthors();
+        var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualContributors = createPublicationRequest.getEntityDescription().getContributors();
-        assertThat(actualContributors, hasItem(allOf(
-            hasProperty(IDENTITY_FIELD_NAME,
-                        hasProperty(NAME_FIELD_NAME, is(CONTRIBUTOR_1_NAME_IN_85114653695))),
-            hasProperty(SEQUENCE_FIELD_NAME, is(CONTRIBUTOR_1_SEQUENCE_NUMBER)))));
-        assertThat(actualContributors, hasItem(allOf(
-            hasProperty(IDENTITY_FIELD_NAME,
-                        hasProperty(NAME_FIELD_NAME, is(CONTRIBUTOR_2_NAME_IN_85114653695))),
-            hasProperty(SEQUENCE_FIELD_NAME, is(CONTRIBUTOR_2_SEQUENCE_NUMBER)))));
-        assertThat(actualContributors, hasItem(allOf(
-            hasProperty(IDENTITY_FIELD_NAME,
-                        hasProperty(NAME_FIELD_NAME, is(CONTRIBUTOR_151_NAME_IN_85114653695))),
-            hasProperty(SEQUENCE_FIELD_NAME, is(CONTRIBUTOR_151_SEQUENCE_NUMBER)))));
+        authors.forEach(author -> checkAuthorName(author, actualContributors));
     }
 
     @Test
@@ -394,13 +371,26 @@ class ScopusHandlerTest {
         authors.forEach(author -> checkAuthorOrcidAndSequenceNumber(author, actualContributors));
     }
 
-    private void checkAuthorOrcidAndSequenceNumber(AuthorTp authorTp, List<Contributor> contributors){
+    private void checkAuthorOrcidAndSequenceNumber(AuthorTp authorTp, List<Contributor> contributors) {
         if (nonNull(authorTp.getOrcid())) {
-            var optionalContributor = findContributor(authorTp.getOrcid(), contributors);
+            var optionalContributor = findContributorByAuid(authorTp.getOrcid(), contributors);
             assertTrue(optionalContributor.isPresent());
             var contributor = optionalContributor.get();
-            assertEquals(contributor.getSequence().toString(), authorTp.getSeq());
+            assertEquals(authorTp.getSeq(), contributor.getSequence().toString());
         }
+    }
+
+    private void checkAuthorName(AuthorTp authorTp, List<Contributor> contributors) {
+        var optionalContributor = findContributorSequence(authorTp, contributors);
+        assertTrue(optionalContributor.isPresent());
+        var contributor = optionalContributor.get();
+        assertEquals(getExpectedFullAuthorName(authorTp), contributor.getIdentity().getName());
+    }
+
+    private Optional<Contributor> findContributorSequence(AuthorTp authorTp, List<Contributor> contributors) {
+        return contributors.stream()
+            .filter(contributor -> authorTp.getSeq().equals(Integer.toString(contributor.getSequence())))
+            .findFirst();
     }
 
     private EventReference fetchEmittedEvent() {
@@ -408,6 +398,10 @@ class ScopusHandlerTest {
             .map(PutEventsRequestEntry::detail)
             .map(EventReference::fromJson)
             .collect(SingletonCollector.collect());
+    }
+
+    private String getExpectedFullAuthorName(AuthorTp authorTp) {
+        return authorTp.getPreferredName().getGivenName() + " " + authorTp.getPreferredName().getSurname();
     }
 
     private S3Event createNewScopusPublicationEvent() throws IOException {
@@ -497,7 +491,7 @@ class ScopusHandlerTest {
             .collect(Collectors.toList());
     }
 
-    private Optional<Contributor> findContributor(String orcid, List<Contributor> contributors) {
+    private Optional<Contributor> findContributorByAuid(String orcid, List<Contributor> contributors) {
         return contributors.stream()
             .filter(contributor -> orcid.equals(contributor.getIdentity().getOrcId()))
             .findFirst();

@@ -246,7 +246,7 @@ class ScopusConverter {
     }
 
     private String determineContributorName(AuthorTp author) {
-        return author.getPreferredName().getIndexedName();
+        return author.getPreferredName().getGivenName() + " " + author.getPreferredName().getSurname();
     }
 
     private String determineContributorName(CollaborationTp collaborationTp) {
