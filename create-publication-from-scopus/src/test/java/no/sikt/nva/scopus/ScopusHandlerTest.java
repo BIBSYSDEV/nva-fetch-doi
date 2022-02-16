@@ -392,7 +392,7 @@ class ScopusHandlerTest {
     }
 
     @Test
-    void shouldExtractJournalArticle() throws IOException {
+    void shouldExtractJournalArticleWhenScopusCitationTypeIsArticle() throws IOException {
         scopusData = ScopusGenerator.create(CitationtypeAtt.AR);
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
@@ -402,7 +402,7 @@ class ScopusHandlerTest {
         assertThat(actualPublicationInstance, isA(JournalArticle.class));
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name ="should not generate CreatePublicationRequest when CitationType is:{0}")
     @EnumSource(
         value = CitationtypeAtt.class,
         names = {"AR"},
@@ -410,7 +410,7 @@ class ScopusHandlerTest {
     void shouldNotGenerateCreatePublicationFromUnsupportedPublicationTypes(CitationtypeAtt citationtypeAtt)
         throws IOException {
         scopusData = ScopusGenerator.create(citationtypeAtt);
-        //eid is chosen becuase it seems to match the file name in the bucket.
+        //eid is chosen because it seems to match the file name in the bucket.
         var eid = scopusData.getDocument().getMeta().getEid();
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
