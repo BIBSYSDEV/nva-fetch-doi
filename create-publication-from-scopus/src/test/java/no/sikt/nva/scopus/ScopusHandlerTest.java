@@ -4,6 +4,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
 import static no.sikt.nva.scopus.ScopusConverter.UNSUPPORTED_SOURCE_TYPE;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
@@ -23,9 +24,10 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
-
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.RequestParametersEntity;
@@ -37,7 +39,6 @@ import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotificatio
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.UserIdentityEntity;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.github.tomakehurst.wiremock.WireMockServer;
-
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -48,6 +49,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import no.scopus.generated.AuthorGroupTp;
+import no.scopus.generated.AuthorTp;
 import no.scopus.generated.BibrecordTp;
 import no.scopus.generated.CitationTitleTp;
 import no.scopus.generated.DocTp;
@@ -61,10 +64,11 @@ import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.sikt.nva.scopus.test.utils.ScopusGenerator;
 import no.sikt.nva.testing.http.WiremockHttpClient;
 import no.unit.nva.doi.models.Doi;
-import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.metadata.CreatePublicationRequest;
+import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.s3.S3Driver;
@@ -388,6 +392,24 @@ class ScopusHandlerTest {
         assertThat(request, is(equalTo(expectedRequest)));
     }
 
+    @Test
+    void shouldExtractAuthorOrcidAndSequenceNumber() throws IOException {
+        var authors = keepOnlyTheAuthors();
+        var s3Event = createNewScopusPublicationEvent();
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualContributors = createPublicationRequest.getEntityDescription().getContributors();
+        authors.forEach(author -> checkAuthorOrcidAndSequenceNumber(author, actualContributors));
+    }
+
+    private void checkAuthorOrcidAndSequenceNumber(AuthorTp authorTp, List<Contributor> contributors) {
+        if (nonNull(authorTp.getOrcid())) {
+            var optionalContributor = findContributor(authorTp.getOrcid(), contributors);
+            assertTrue(optionalContributor.isPresent());
+            var contributor = optionalContributor.get();
+            assertEquals(contributor.getSequence().toString(), authorTp.getSeq());
+        }
+    }
+
     private EventReference fetchEmittedEvent() {
         return eventBridgeClient.getRequestEntries().stream()
             .map(PutEventsRequestEntry::detail)
@@ -470,6 +492,35 @@ class ScopusHandlerTest {
             .stream()
             .filter(identifier -> identifier.getIdtype()
                 .equalsIgnoreCase(ScopusConstants.SCOPUS_ITEM_IDENTIFIER_SCP_FIELD_NAME))
+            .collect(Collectors.toList());
+    }
+
+    private Optional<Contributor> findContributor(String orcid, List<Contributor> contributors) {
+        return contributors.stream()
+            .filter(contributor -> orcid.equals(contributor.getIdentity().getOrcId()))
+            .findFirst();
+    }
+
+    private List<AuthorTp> keepOnlyTheAuthors() {
+        return keepOnlyTheCollaborationsAndAuthors().stream().filter(
+            this::isAuthorTp).map(author -> (AuthorTp) author).collect(Collectors.toList());
+    }
+
+    private boolean isAuthorTp(Object object) {
+        return object instanceof AuthorTp;
+    }
+
+    private List<Object> keepOnlyTheCollaborationsAndAuthors() {
+        return scopusData
+            .getDocument()
+            .getItem()
+            .getItem()
+            .getBibrecord()
+            .getHead()
+            .getAuthorGroup()
+            .stream()
+            .map(AuthorGroupTp::getAuthorOrCollaboration)
+            .flatMap(Collection::stream)
             .collect(Collectors.toList());
     }
 
