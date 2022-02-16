@@ -64,10 +64,22 @@ public final class ScopusGenerator {
     public static final String SCOPUS_IDENTIFIER_TYPE = "SCP";
     private static final Set<String> IGNORED_FIELDS = readIgnoredFields();
     private final DocTp document;
+    private final AbstractsTp abstractsTp;
 
     public ScopusGenerator() {
         this.document = randomDocument();
         this.minimumSequenceNumber = 1;
+        this.abstractsTp = randomAbstracts();
+    }
+
+    private ScopusGenerator(AbstractsTp abstractsTp) {
+        this.document = randomDocument();
+        this.minimumSequenceNumber = 1;
+        this.abstractsTp = abstractsTp;
+    }
+
+    public static ScopusGenerator createWithSpecifiedAbstract(AbstractsTp abstractsTp) {
+        return new ScopusGenerator(abstractsTp);
     }
 
     public DocTp randomDocument() {
@@ -166,7 +178,7 @@ public final class ScopusGenerator {
         var head = new HeadTp();
         head.getAuthorGroup().addAll(randomAuthorGroups(authorsAndCollaborations));
         head.setCitationTitle(randomCitationTitle());
-        head.setAbstracts(randomAbstracts());
+        head.setAbstracts(abstractsTp);
         head.setCitationInfo(randomCitationInfo());
         return head;
     }

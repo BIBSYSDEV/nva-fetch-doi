@@ -23,6 +23,7 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -371,6 +372,13 @@ class ScopusHandlerTest {
         assertThat(actualMainAbstract, stringContainsInOrder(XML_ENCODING_DECLARATION,
                                                              EXPECTED_ABSTRACT_NAME_SPACE,
                                                              expectedAbstract));
+    }
+
+    @Test
+    void shouldNotThrowExceptionWhenScopusXMLDoesNotContainAbstract() throws IOException {
+        scopusData = ScopusGenerator.createWithSpecifiedAbstract(null);
+        var event = createNewScopusPublicationEvent();
+        assertDoesNotThrow(()->  scopusHandler.handleRequest(event, CONTEXT));
     }
 
     @Test

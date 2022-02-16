@@ -1,6 +1,7 @@
 package no.sikt.nva.scopus;
 
 import static java.util.Collections.emptyList;
+import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.sikt.nva.scopus.ScopusSourceType.JOURNAL;
 import jakarta.xml.bind.JAXB;
@@ -117,11 +118,15 @@ class ScopusConverter {
     }
 
     private Optional<AbstractTp> getMainAbstract() {
-        return getAbstracts().stream().filter(this::isOriginalAbstract).findFirst();
+        return nonNull(getAbstracts())
+                   ? getAbstracts().stream().filter(this::isOriginalAbstract).findFirst()
+                   : Optional.empty();
     }
 
     private List<AbstractTp> getAbstracts() {
-        return extractHead().getAbstracts().getAbstract();
+        return nonNull(extractHead().getAbstracts())
+                   ? extractHead().getAbstracts().getAbstract()
+                   : null;
     }
 
     private boolean isOriginalAbstract(AbstractTp abstractTp) {
