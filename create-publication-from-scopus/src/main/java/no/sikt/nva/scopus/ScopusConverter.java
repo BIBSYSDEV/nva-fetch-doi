@@ -1,6 +1,7 @@
 package no.sikt.nva.scopus;
 
 import static java.util.Collections.emptyList;
+import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.sikt.nva.scopus.ScopusSourceType.JOURNAL;
 import jakarta.xml.bind.JAXB;
@@ -192,7 +193,9 @@ class ScopusConverter {
     }
 
     private URI extractDOI() {
-        return UriWrapper.fromUri(DOI_OPEN_URL_FORMAT).addChild(docTp.getMeta().getDoi()).getUri();
+        return nonNull(docTp.getMeta().getDoi())
+                   ? UriWrapper.fromUri(DOI_OPEN_URL_FORMAT).addChild(docTp.getMeta().getDoi()).getUri()
+                   : null;
     }
 
     private Optional<TitletextTp> getMainTitleTextTp() {

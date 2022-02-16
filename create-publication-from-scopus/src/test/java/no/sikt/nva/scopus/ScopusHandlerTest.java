@@ -7,6 +7,7 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
+import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -23,6 +24,7 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -186,7 +188,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractDoiAndPlaceItInsideReferenceObject() throws IOException {
-        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        scopusData = ScopusGenerator.createScopusGeneratorWithSpecifiDoi(randomDoi());
         var expectedURI = Doi.fromDoiIdentifier(scopusData.getDocument().getMeta().getDoi()).getUri();
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -392,6 +394,13 @@ class ScopusHandlerTest {
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualContributors = createPublicationRequest.getEntityDescription().getContributors();
         authors.forEach(author -> checkAuthorOrcidAndSequenceNumber(author, actualContributors));
+    }
+
+    @Test
+    void shouldNotThrowExceptionWhenDoiInScopusIsNull() throws IOException {
+        scopusData = ScopusGenerator.createScopusGeneratorWithSpecifiDoi(null);
+        var s3Event = createNewScopusPublicationEvent();
+        assertDoesNotThrow(() -> scopusHandler.handleRequest(s3Event, CONTEXT));
     }
 
     private void checkAuthorOrcidAndSequenceNumber(AuthorTp authorTp, List<Contributor> contributors) {

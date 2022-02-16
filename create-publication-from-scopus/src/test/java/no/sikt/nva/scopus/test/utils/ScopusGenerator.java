@@ -1,5 +1,6 @@
 package no.sikt.nva.scopus.test.utils;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFieldsAndClasses;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
@@ -12,6 +13,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import jakarta.xml.bind.JAXB;
 import java.io.Serializable;
 import java.io.StringWriter;
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.Calendar;
 import java.util.Collection;
@@ -64,10 +66,22 @@ public final class ScopusGenerator {
     public static final String SCOPUS_IDENTIFIER_TYPE = "SCP";
     private static final Set<String> IGNORED_FIELDS = readIgnoredFields();
     private final DocTp document;
+    private final URI doi;
 
     public ScopusGenerator() {
+        this.doi = randomDoi();
         this.document = randomDocument();
         this.minimumSequenceNumber = 1;
+    }
+
+    private ScopusGenerator(URI doi) {
+        this.doi = doi;
+        this.document = randomDocument();
+        this.minimumSequenceNumber = 1;
+    }
+
+    public static ScopusGenerator createScopusGeneratorWithSpecifiDoi(URI doi) {
+        return new ScopusGenerator(doi);
     }
 
     public DocTp randomDocument() {
@@ -94,14 +108,16 @@ public final class ScopusGenerator {
         return xmlWriter.toString();
     }
 
-    private static MetaTp randomMetaTp() {
+    private MetaTp randomMetaTp() {
         var meta = new MetaTp();
         meta.setDoi(randomScopusDoi());
         return meta;
     }
 
-    private static String randomScopusDoi() {
-        return new UriWrapper(randomDoi()).getPath().removeRoot().toString();
+    private String randomScopusDoi() {
+        return nonNull(doi)
+                   ? new UriWrapper(doi).getPath().removeRoot().toString()
+                   : null;
     }
 
     private ItemTp randomItemTp() {
