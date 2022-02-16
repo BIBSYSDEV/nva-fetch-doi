@@ -87,7 +87,6 @@ public class MainHandlerTest {
     public static final String JUNIT = "junit";
     public static final String ALL_ORIGINS = "*";
     public static final String INVALID_HOST_STRING = "https://\\.)_";
-    public static final String HTTP = "http";
     private static final String SOME_ERROR_MESSAGE = "SomeErrorMessage";
     private Environment environment;
     private Context context;
@@ -101,7 +100,6 @@ public class MainHandlerTest {
         context = getMockContext();
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALL_ORIGINS);
         when(environment.readEnv(MainHandler.PUBLICATION_API_HOST_ENV)).thenReturn("localhost:3000");
-        when(environment.readEnv(MainHandler.PUBLICATION_API_SCHEME_ENV)).thenReturn("http");
     }
 
     @Test
@@ -440,7 +438,6 @@ public class MainHandlerTest {
         Environment environment = mock(Environment.class);
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALL_ORIGINS);
         when(environment.readEnv(MainHandler.PUBLICATION_API_HOST_ENV)).thenReturn(INVALID_HOST_STRING);
-        when(environment.readEnv(MainHandler.PUBLICATION_API_SCHEME_ENV)).thenReturn(HTTP);
         return environment;
     }
 }

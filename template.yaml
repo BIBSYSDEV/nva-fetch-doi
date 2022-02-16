@@ -5,15 +5,6 @@ Description: >
 
   Sample SAM Template for AWS
 
-Globals:
-  Function:
-    Timeout: 900
-  Api:
-    Cors:
-      AllowMethods: "'POST,OPTIONS'"
-      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-      AllowOrigin: "'*'"
-
 Parameters:
   CognitoAuthorizerArn:
     Type: 'AWS::SSM::Parameter::Value<String>'
@@ -37,17 +28,6 @@ Parameters:
   CrossrefPlusApiTokenKey:
     Type: String
     Default: token
-  MaxConcurrency:
-    Type: String
-    Description: Maximum capacity for provisioned concurrency
-    Default: 10
-  MinConcurrency:
-    Type: String
-    Description: Minimum capacity for provisioned concurrency
-    Default: 1
-  LambdaMemorySize:
-    Type: Number
-    Default: 1408
   ScopusZipBucketName:
     Type: String
     Default: "scopus-zip-files"
@@ -69,6 +49,16 @@ Parameters:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/Events/EventsBusName'
 
+Globals:
+  Function:
+    Timeout: 900
+    MemorySize: 1798
+    Runtime: java11
+  Api:
+    Cors:
+      AllowMethods: "'POST,OPTIONS'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      AllowOrigin: "'*'"
 Resources:
   ApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
@@ -100,7 +90,7 @@ Resources:
                       $ref: '#/components/schemas/DoiLookup'
               x-amazon-apigateway-integration:
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchDoiFunction.Arn}/invocations
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchDoiFunction.Arn}:live/invocations
                 responses: {}
                 httpMethod: POST
                 type: AWS_PROXY
@@ -187,8 +177,6 @@ Resources:
     Properties:
       CodeUri: create-publication-from-doi
       Handler: no.unit.nva.doi.fetch.MainHandler::handleRequest
-      Runtime: java11
-      MemorySize: !Ref LambdaMemorySize
       AutoPublishAlias: live
       DeploymentPreference:
         Type: AllAtOnce
@@ -198,11 +186,11 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          PUBLICATION_API_SCHEME: https
-          PUBLICATION_API_HOST:  !Join [ '.', [ 'api', !Ref CustomDomain ] ]
+          PUBLICATION_API_HOST: !Ref ApiDomain
           BARE_PROXY_API_URI: !Sub 'https://${CustomDomain}'
           CROSSREFPLUSAPITOKEN_NAME: !Ref CrossrefPlusApiTokenName
           CROSSREFPLUSAPITOKEN_KEY:  !Ref CrossrefPlusApiTokenKey
+          API_HOST: !Ref ApiDomain
           ID_NAMESPACE: !Sub 'https://api.${CustomDomain}/${CustomDomainBasePath}'
       Events:
         NvaDoi:
@@ -212,14 +200,65 @@ Resources:
             Method: post
             RestApiId: !Ref NvaFetchDoiFunctionApi
 
+  NvaScopusDeleteFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: delete-publication-from-scopus
+      Handler: no.sikt.nva.scopus.ScopusDeleteHandler::handleRequest
+      Role: !GetAtt ScopusHandlersRole.Arn
+      Environment:
+        Variables:
+          EVENTS_BUS: !Ref NvaEventsBusName
+      Events:
+        Scopus:
+          Type: S3
+          Properties:
+            Bucket: !Ref ScopusXmlBucket
+            Events: 's3:ObjectCreated:*'
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: '.txt'
 
+  NvaFetchDoiFunctionScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MaxCapacity: 10
+      MinCapacity: 1
+      ResourceId: !Sub function:${NvaFetchDoiFunction}:live # You need to specify an alis or version here
+      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
+      ScalableDimension: lambda:function:ProvisionedConcurrency
+      ServiceNamespace: lambda
+    DependsOn: NvaFetchDoiFunctionAliaslive # This is your function logical ID + "Alias" + what you use for AutoPublishAlias
+
+  NvaFetchDoiFunctionScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: NvaFetchDoiFunctionScalingPolicy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref NvaFetchDoiFunctionScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 0.70 # Any value between 0.1 and 0.9 can be used here
+        PredefinedMetricSpecification:
+          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
+
+
+  NvaFetchDoiFunctionBasePathMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    Properties:
+      BasePath: !Ref CustomDomainBasePath
+      DomainName: !Join [ '.', [ 'api', !Ref CustomDomain ] ]
+      RestApiId: !Ref NvaFetchDoiFunctionApi
+      Stage: !Ref NvaFetchDoiFunctionApi.Stage
+
+
+#============Event based functions====================================================================================#
   NvaScopusFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: create-publication-from-scopus
       Handler: no.sikt.nva.scopus.ScopusHandler::handleRequest
-      Runtime: java11
-      MemorySize: !Ref LambdaMemorySize
       Role: !GetAtt ScopusHandlersRole.Arn
       Environment:
         Variables:
@@ -232,35 +271,12 @@ Resources:
           Properties:
             Bucket: !Ref ScopusXmlBucket
             Events: 's3:ObjectCreated:*'
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: '.xml'
 
-  NvaFetchDoiFunctionScalableTarget:
-    Type: AWS::ApplicationAutoScaling::ScalableTarget
-    Properties:
-      MaxCapacity: !Ref MaxConcurrency
-      MinCapacity: !Ref MinConcurrency
-      ResourceId: !Sub function:${NvaFetchDoiFunction}:live
-      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
-      ScalableDimension: lambda:function:ProvisionedConcurrency
-      ServiceNamespace: lambda
-    DependsOn: NvaFetchDoiFunctionAliaslive
-  NvaFetchDoiFunctionScalingPolicy:
-    Type: AWS::ApplicationAutoScaling::ScalingPolicy
-    Properties:
-      PolicyName: NvaFetchDoiFunctionScalingPolicy
-      PolicyType: TargetTrackingScaling
-      ScalingTargetId: !Ref NvaFetchDoiFunctionScalableTarget
-      TargetTrackingScalingPolicyConfiguration:
-        TargetValue: 0.7
-        PredefinedMetricSpecification:
-          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
-
-  NvaFetchDoiFunctionBasePathMapping:
-    Type: AWS::ApiGateway::BasePathMapping
-    Properties:
-      BasePath: !Ref CustomDomainBasePath
-      DomainName: !Join [ '.', [ 'api', !Ref CustomDomain ] ]
-      RestApiId: !Ref NvaFetchDoiFunctionApi
-      Stage: !Ref NvaFetchDoiFunctionApi.Stage
 
   #============================ Deploy API ============================================================================#
   # This solves the problem described here:
@@ -395,7 +411,6 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: index.lambda_handler
-      MemorySize: !Ref LambdaMemorySize
       Runtime: python3.8
       Environment:
         Variables:
