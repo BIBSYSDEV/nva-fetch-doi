@@ -7,6 +7,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import jakarta.xml.bind.JAXB;
@@ -65,8 +66,7 @@ public final class ScopusGenerator {
     private static final Set<String> IGNORED_FIELDS = readIgnoredFields();
     private final DocTp document;
     private final String srcType;
-    //ToDO: replace with randomIssn
-    private static final String HARDCODED_VALID_ISSN = "14740036";
+    private static final String ISSN_DELIMINETER = "-";
 
     public ScopusGenerator() {
         this.srcType = ScopusSourceType.JOURNAL.code;
@@ -189,27 +189,29 @@ public final class ScopusGenerator {
         sourceTp.setArticleNumber(randomString());
         sourceTp.setSourcetitle(randomSourceTitle());
         sourceTp.setArticleNumber(randomString());
-        sourceTp.getIssn().addAll(randomIssns());
+        sourceTp.getIssn().addAll(randomIssnTypes());
         return sourceTp;
     }
 
-    private static Collection<? extends IssnTp> randomIssns() {
+    private static Collection<? extends IssnTp> randomIssnTypes() {
         List<IssnTp> issnTpList = new ArrayList<>();
         if (randomBoolean()) {
-            issnTpList.add(randomIssn(ScopusConstants.ISSN_TYPE_ELECTRONIC));
+            issnTpList.add(randomIssnType(ScopusConstants.ISSN_TYPE_ELECTRONIC));
         }
         if (randomBoolean()) {
-            issnTpList.add(randomIssn(ScopusConstants.ISSN_TYPE_PRINT));
+            issnTpList.add(randomIssnType(ScopusConstants.ISSN_TYPE_PRINT));
         }
         if (randomBoolean()) {
-            issnTpList.add(randomIssn(randomString()));
+            issnTpList.add(randomIssnType(randomString()));
         }
         return issnTpList;
     }
 
-    private static IssnTp randomIssn(String issnType) {
+    private static IssnTp randomIssnType(String issnType) {
         IssnTp issnTp = new IssnTp();
-        issnTp.setContent(HARDCODED_VALID_ISSN);
+        //the issn from scopus xml comes without "-".
+        var issnCode = randomIssn().replace(ISSN_DELIMINETER, "");
+        issnTp.setContent(issnCode);
         issnTp.setType(issnType);
         return issnTp;
     }
