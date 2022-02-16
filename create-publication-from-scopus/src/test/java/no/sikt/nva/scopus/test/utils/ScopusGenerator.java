@@ -79,7 +79,7 @@ public final class ScopusGenerator {
         this.document = randomDocument();
     }
 
-    public ScopusGenerator create(CitationtypeAtt citationtypeAtt) {
+    public static ScopusGenerator create(CitationtypeAtt citationtypeAtt) {
         return new ScopusGenerator(citationtypeAtt);
     }
 
@@ -185,7 +185,6 @@ public final class ScopusGenerator {
         return head;
     }
 
-
     private static Collection<? extends AuthorGroupTp> randomAuthorGroups(List<?> authorsAndCollaborations) {
         int maxNumberOfAuthorGroups = 200;
         return IntStream.range(0, randomInteger(maxNumberOfAuthorGroups) + 1)
@@ -274,6 +273,7 @@ public final class ScopusGenerator {
         return nonNull(citationtypeAtt) ? citationtypeAtt : randomSupportedCitationType();
     }
 
+    //TODO: enrich method when we are supporting more citationTypes
     private CitationtypeAtt randomSupportedCitationType() {
         return CitationtypeAtt.AR;
     }

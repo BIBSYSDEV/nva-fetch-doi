@@ -393,7 +393,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractJournalArticle() throws IOException {
-        scopusData = scopusData.create(CitationtypeAtt.AR);
+        scopusData = ScopusGenerator.create(CitationtypeAtt.AR);
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -409,7 +409,7 @@ class ScopusHandlerTest {
         mode = Mode.EXCLUDE)
     void shouldNotGenerateCreatePublicationFromUnsupportedPublicationTypes(CitationtypeAtt citationtypeAtt)
         throws IOException {
-        scopusData = scopusData.create(citationtypeAtt);
+        scopusData = ScopusGenerator.create(citationtypeAtt);
         //eid is chosen becuase it seems to match the file name in the bucket.
         var eid = scopusData.getDocument().getMeta().getEid();
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
