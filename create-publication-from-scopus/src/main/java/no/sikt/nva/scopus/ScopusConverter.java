@@ -54,9 +54,9 @@ class ScopusConverter {
     private static final String MALFORMED_CONTENT_MESSAGE = "Malformed content, cannot parse: %s";
     public static final String UNSUPPORTED_CITATION_TYPE_MESSAGE = "Unsupported citation type, cannot convert "
                                                                    + "eid %s";
-    public static final String DASH = "-";
     private final DocTp docTp;
     private final MetadataService metadataService;
+    public static final String NAME_DELIMITER = ", ";
 
     protected ScopusConverter(DocTp docTp, MetadataService metadataService) {
         this.docTp = docTp;
@@ -287,7 +287,7 @@ class ScopusConverter {
     }
 
     private String determineContributorName(AuthorTp author) {
-        return author.getPreferredName().getGivenName() + " " + author.getPreferredName().getSurname();
+        return author.getPreferredName().getSurname() + NAME_DELIMITER + author.getPreferredName().getSurname();
     }
 
     private String determineContributorName(CollaborationTp collaborationTp) {

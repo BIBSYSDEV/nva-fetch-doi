@@ -6,6 +6,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
+import static no.sikt.nva.scopus.ScopusConverter.NAME_DELIMITER;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -448,7 +449,7 @@ class ScopusHandlerTest {
     }
 
     private String getExpectedFullAuthorName(AuthorTp authorTp) {
-        return authorTp.getPreferredName().getGivenName() + " " + authorTp.getPreferredName().getSurname();
+        return authorTp.getPreferredName().getSurname() + NAME_DELIMITER + authorTp.getPreferredName().getSurname();
     }
 
     private S3Event createNewScopusPublicationEvent() throws IOException {
