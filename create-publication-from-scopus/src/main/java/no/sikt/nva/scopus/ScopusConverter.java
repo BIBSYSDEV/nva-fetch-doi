@@ -129,11 +129,15 @@ class ScopusConverter {
     }
 
     private Optional<AbstractTp> getMainAbstract() {
-        return getAbstracts().stream().filter(this::isOriginalAbstract).findFirst();
+        return nonNull(getAbstracts())
+                   ? getAbstracts().stream().filter(this::isOriginalAbstract).findFirst()
+                   : Optional.empty();
     }
 
     private List<AbstractTp> getAbstracts() {
-        return extractHead().getAbstracts().getAbstract();
+        return nonNull(extractHead().getAbstracts())
+                   ? extractHead().getAbstracts().getAbstract()
+                   : null;
     }
 
     private boolean isOriginalAbstract(AbstractTp abstractTp) {

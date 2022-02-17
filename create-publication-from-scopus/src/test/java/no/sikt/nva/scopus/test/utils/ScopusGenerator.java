@@ -75,6 +75,7 @@ public final class ScopusGenerator {
     public static final String SCOPUS_IDENTIFIER_TYPE = "SCP";
     private static final Set<String> IGNORED_FIELDS = readIgnoredFields();
     private final DocTp document;
+    private final AbstractsTp abstractsTp;
     private static final String ISSN_DELIMINETER = "-";
     private final URI doi;
     private CitationtypeAtt citationtypeAtt;
@@ -83,7 +84,16 @@ public final class ScopusGenerator {
     public ScopusGenerator() {
         this.doi = randomDoi();
         this.minimumSequenceNumber = 1;
+        this.abstractsTp = randomAbstracts();
         this.srcType = ScopusSourceType.JOURNAL.code;
+        this.document = randomDocument();
+    }
+
+    private ScopusGenerator(AbstractsTp abstractsTp) {
+        this.doi = randomDoi();
+        this.srcType = ScopusSourceType.JOURNAL.code;
+        this.minimumSequenceNumber = 1;
+        this.abstractsTp = abstractsTp;
         this.document = randomDocument();
     }
 
@@ -91,6 +101,7 @@ public final class ScopusGenerator {
         this.doi = doi;
         this.minimumSequenceNumber = 1;
         this.srcType = ScopusSourceType.JOURNAL.code;
+        this.abstractsTp = randomAbstracts();
         this.document = randomDocument();
     }
 
@@ -98,6 +109,7 @@ public final class ScopusGenerator {
         this.srcType = srcType;
         this.minimumSequenceNumber = 1;
         this.doi = randomDoi();
+        this.abstractsTp = randomAbstracts();
         this.document = randomDocument();
     }
 
@@ -105,7 +117,12 @@ public final class ScopusGenerator {
         this.doi = randomDoi();
         this.citationtypeAtt = citationtypeAtt;
         this.srcType = ScopusSourceType.JOURNAL.code;
+        this.abstractsTp = randomAbstracts();
         this.document = randomDocument();
+    }
+
+    public static ScopusGenerator createWithSpecifiedAbstract(AbstractsTp abstractsTp) {
+        return new ScopusGenerator(abstractsTp);
     }
 
     public static ScopusGenerator createScopusGeneratorWithSpecificDoi(URI doi) {
@@ -220,7 +237,7 @@ public final class ScopusGenerator {
         var head = new HeadTp();
         head.getAuthorGroup().addAll(randomAuthorGroups(authorsAndCollaborations));
         head.setCitationTitle(randomCitationTitle());
-        head.setAbstracts(randomAbstracts());
+        head.setAbstracts(abstractsTp);
         head.setCitationInfo(randomCitationInfo());
         head.setSource(randomSource());
         return head;

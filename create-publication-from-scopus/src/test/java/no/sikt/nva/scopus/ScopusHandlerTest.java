@@ -216,8 +216,6 @@ class ScopusHandlerTest {
         collaborations.forEach(collaboration -> checkCollaborationName(collaboration, actualContributors));
     }
 
-
-
     @Test
     void shouldExtractAuthorKeywordsAsXML() throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0018132378));
@@ -370,6 +368,13 @@ class ScopusHandlerTest {
         assertThat(actualMainAbstract, stringContainsInOrder(XML_ENCODING_DECLARATION,
                                                              EXPECTED_ABSTRACT_NAME_SPACE,
                                                              expectedAbstract));
+    }
+
+    @Test
+    void shouldNotThrowExceptionWhenScopusXmlDoesNotContainAbstract() throws IOException {
+        scopusData = ScopusGenerator.createWithSpecifiedAbstract(null);
+        var event = createNewScopusPublicationEvent();
+        assertDoesNotThrow(() -> scopusHandler.handleRequest(event, CONTEXT));
     }
 
     @Test
