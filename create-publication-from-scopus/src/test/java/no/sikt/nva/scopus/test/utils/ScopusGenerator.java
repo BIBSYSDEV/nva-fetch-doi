@@ -31,38 +31,7 @@ import java.util.stream.Stream;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import no.scopus.generated.AbstractTp;
-import no.scopus.generated.AbstractsTp;
-import no.scopus.generated.AuthorGroupTp;
-import no.scopus.generated.AuthorKeywordTp;
-import no.scopus.generated.AuthorKeywordsTp;
-import no.scopus.generated.AuthorTp;
-import no.scopus.generated.BibrecordTp;
-import no.scopus.generated.CitationInfoTp;
-import no.scopus.generated.CitationTitleTp;
-import no.scopus.generated.CitationTypeTp;
-import no.scopus.generated.CitationtypeAtt;
-import no.scopus.generated.CollaborationTp;
-import no.scopus.generated.DateSortTp;
-import no.scopus.generated.DocTp;
-import no.scopus.generated.HeadTp;
-import no.scopus.generated.IssnTp;
-import no.scopus.generated.ItemInfoTp;
-import no.scopus.generated.ItemTp;
-import no.scopus.generated.ItemidTp;
-import no.scopus.generated.ItemidlistTp;
-import no.scopus.generated.MetaTp;
-import no.scopus.generated.OrigItemTp;
-import no.scopus.generated.PersonalnameType;
-import no.scopus.generated.ProcessInfo;
-import no.scopus.generated.PublisherTp;
-import no.scopus.generated.PublishercopyrightTp;
-import no.scopus.generated.RichstringWithMMLType;
-import no.scopus.generated.ShortTitle;
-import no.scopus.generated.SourceTp;
-import no.scopus.generated.SourcetitleTp;
-import no.scopus.generated.TitletextTp;
-import no.scopus.generated.YesnoAtt;
+import no.scopus.generated.*;
 import no.sikt.nva.scopus.ScopusConstants;
 import no.sikt.nva.scopus.ScopusSourceType;
 import no.unit.nva.language.LanguageConstants;
@@ -173,8 +142,8 @@ public final class ScopusGenerator {
 
     private String randomScopusDoi() {
         return nonNull(doi)
-                   ? new UriWrapper(doi).getPath().removeRoot().toString()
-                   : null;
+                ? new UriWrapper(doi).getPath().removeRoot().toString()
+                : null;
     }
 
     private ItemTp randomItemTp() {
@@ -257,6 +226,7 @@ public final class ScopusGenerator {
         sourceTp.setSourcetitle(randomSourceTitle());
         sourceTp.setArticleNumber(randomString());
         sourceTp.getIssn().addAll(randomIssnTypes());
+        sourceTp.getPublisher().add(randomPublisher());
         return sourceTp;
     }
 
@@ -283,12 +253,6 @@ public final class ScopusGenerator {
         return issnTp;
     }
 
-    private static SourceTp randomSource() {
-        var source = new SourceTp();
-        source.getPublisher().add(randomPublisher());
-        return source;
-    }
-
     private static PublisherTp randomPublisher() {
         var publisher = new PublisherTp();
         publisher.setPublishername(randomString());
@@ -298,23 +262,23 @@ public final class ScopusGenerator {
     private static Collection<? extends AuthorGroupTp> randomAuthorGroups(List<?> authorsAndCollaborations) {
         int maxNumberOfAuthorGroups = 200;
         return IntStream.range(0, randomInteger(maxNumberOfAuthorGroups) + 1)
-            .boxed()
-            .map(ignored -> randomAuthorGroup(authorsAndCollaborations))
-            .collect(Collectors.toList());
+                .boxed()
+                .map(ignored -> randomAuthorGroup(authorsAndCollaborations))
+                .collect(Collectors.toList());
     }
 
     private List<?> randomAuthorOrCollaborations() {
         int maxNumbersOfAuthors = 200;
         return IntStream.range(0, randomInteger(maxNumbersOfAuthors) + 1)
-            .boxed()
-            .map(index -> randomAuthorOrCollaboration())
-            .collect(Collectors.toList());
+                .boxed()
+                .map(index -> randomAuthorOrCollaboration())
+                .collect(Collectors.toList());
     }
 
     private static AuthorGroupTp randomAuthorGroup(List<?> authorsAndCollaborations) {
         var authorGroup = new AuthorGroupTp();
         authorGroup.getAuthorOrCollaboration()
-            .addAll(randomSubsetRandomAuthorsOrCollaborations(authorsAndCollaborations));
+                .addAll(randomSubsetRandomAuthorsOrCollaborations(authorsAndCollaborations));
         return authorGroup;
     }
 

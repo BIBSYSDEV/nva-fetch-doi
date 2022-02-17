@@ -6,8 +6,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
-import static no.sikt.nva.scopus.ScopusConverter.UNSUPPORTED_SOURCE_TYPE;
 import static no.sikt.nva.scopus.ScopusConverter.NAME_DELIMITER;
+import static no.sikt.nva.scopus.conversion.PublicationContextCreator.UNSUPPORTED_SOURCE_TYPE;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -141,7 +141,8 @@ class ScopusHandlerTest {
     private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
     private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
     private static final String EXPECTED_ABSTRACT_NAME_SPACE = "<abstractTp";
-    public static final char JOURNAL_SOURCETYPE_IDENTIFYING_CHAR = 'j';
+    private static final String JOURNAL_SOURCETYPE_IDENTIFYING_CHAR = "j";
+    private static final String BOOK_SOURCETYPE_IDENTIFYING_CHAR = "b";
 
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
@@ -364,14 +365,6 @@ class ScopusHandlerTest {
         scopusData = scopusData.createWithSpecifiedSrcType(randomUnsupportedSrcType);
         var expectedMessage = String.format(UNSUPPORTED_SOURCE_TYPE, scopusData.getDocument().getMeta().getEid());
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
-    void shouldReturnDefaultPublicationContextWhenEventWithS3UriThatPointsToScopusXmlWithoutKnownSourceType()
-        throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
-        var randomChar = getRandomCharBesidesUnwantedChar(JOURNAL_SOURCETYPE_IDENTIFYING_CHAR,
-                BOOK_SOURCETYPE_IDENTIFYING_CHAR);
-        scopusFile = scopusFile.replace("<xocs:srctype>j</xocs:srctype>", "<xocs:srctype>" + randomChar
-                                                                          + "</xocs:srctype>");
-        var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
         var s3Event = createS3Event(uri);
         var appender = LogUtils.getTestingAppenderForRootLogger();
         assertThrows(UnsupportedSrcTypeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
@@ -557,7 +550,6 @@ class ScopusHandlerTest {
             .collect(SingletonCollector.collect());
     }
 
-    //nå er det bare 'j' som kommer inn som param, men jeg tror vi kan bruke metoden om igjen med andre sourceTypes
     private String getRandomCharBesidesUnwantedChar(String... unwantedChar) {
         String randomChar;
         do {

@@ -14,6 +14,7 @@ import no.scopus.generated.PublisherTp;
 import no.scopus.generated.SourceTp;
 import no.sikt.nva.scopus.ScopusConstants;
 import no.sikt.nva.scopus.ScopusSourceType;
+import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.BookSeries;
@@ -29,6 +30,7 @@ import nva.commons.core.paths.UriWrapper;
 
 public class PublicationContextCreator {
 
+    public static final String UNSUPPORTED_SOURCE_TYPE = "Unsupported source type, in %s";
     public static final String DASH = "-";
     public static final int START_YEAR_FOR_LEVEL_INFO = 2004;
     public static final String EMPTY_STRING = "";
@@ -48,7 +50,7 @@ public class PublicationContextCreator {
         if (isBook()) {
             return createBook();
         }
-        return ScopusConstants.EMPTY_PUBLICATION_CONTEXT;
+        throw new UnsupportedSrcTypeException(String.format(UNSUPPORTED_SOURCE_TYPE, docTp.getMeta().getEid()));
     }
 
     private boolean isJournal() {

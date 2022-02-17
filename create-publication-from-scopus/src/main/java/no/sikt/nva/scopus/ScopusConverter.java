@@ -3,7 +3,6 @@ package no.sikt.nva.scopus;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
-import static no.sikt.nva.scopus.ScopusSourceType.JOURNAL;
 import jakarta.xml.bind.JAXB;
 import jakarta.xml.bind.JAXBElement;
 import no.scopus.generated.AbstractTp;
@@ -25,9 +24,6 @@ import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
-import no.sikt.nva.scopus.conversion.JournalCreator;
-import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
-import no.sikt.nva.scopus.exception.UnsupportedXmlElementException;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -50,13 +46,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static java.util.Collections.emptyList;
-import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 
 @SuppressWarnings("PMD.GodClass")
 class ScopusConverter {
 
-    public static final String UNSUPPORTED_SOURCE_TYPE = "Unsupported source type, in %s";
     public static final String UNSUPPORTED_CITATION_TYPE_MESSAGE = "Unsupported citation type, cannot convert eid %s";
     private final DocTp docTp;
     private final MetadataService metadataService;
@@ -338,19 +331,4 @@ class ScopusConverter {
                                         itemIdTp.getValue());
     }
 
-    private PublicationContext getPublicationContext() {
-        if (isJournal()) {
-            return new JournalCreator(metadataService, docTp).createJournal();
-        } else {
-            throw new UnsupportedSrcTypeException(String.format(UNSUPPORTED_SOURCE_TYPE, docTp.getMeta().getEid()));
-        }
-    }
-
-    private boolean isJournal() {
-        return Optional.ofNullable(docTp)
-            .map(DocTp::getMeta)
-            .map(MetaTp::getSrctype)
-            .map(srcTyp -> JOURNAL.equals(ScopusSourceType.valueOfCode(srcTyp)))
-            .orElse(false);
-    }
 }
