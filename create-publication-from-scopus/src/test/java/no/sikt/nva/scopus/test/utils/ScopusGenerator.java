@@ -37,6 +37,8 @@ import no.scopus.generated.AuthorTp;
 import no.scopus.generated.BibrecordTp;
 import no.scopus.generated.CitationInfoTp;
 import no.scopus.generated.CitationTitleTp;
+import no.scopus.generated.CitationTypeTp;
+import no.scopus.generated.CitationtypeAtt;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
@@ -60,6 +62,7 @@ import nva.commons.core.paths.UriWrapper;
 
 public final class ScopusGenerator {
 
+
     private int minimumSequenceNumber;
     public static final Set<Class<?>> NOT_BEAN_CLASSES = Set.of(XMLGregorianCalendar.class);
     public static final int SMALL_NUMBER = 10;
@@ -67,6 +70,7 @@ public final class ScopusGenerator {
     private static final Set<String> IGNORED_FIELDS = readIgnoredFields();
     private final DocTp document;
     private final URI doi;
+    private CitationtypeAtt citationtypeAtt;
 
     public ScopusGenerator() {
         this.doi = randomDoi();
@@ -74,14 +78,25 @@ public final class ScopusGenerator {
         this.minimumSequenceNumber = 1;
     }
 
+
     private ScopusGenerator(URI doi) {
         this.doi = doi;
         this.document = randomDocument();
         this.minimumSequenceNumber = 1;
     }
 
+    private ScopusGenerator(CitationtypeAtt citationtypeAtt) {
+        this.doi = randomDoi();
+        this.citationtypeAtt = citationtypeAtt;
+        this.document = randomDocument();
+    }
+
     public static ScopusGenerator createScopusGeneratorWithSpecifiDoi(URI doi) {
         return new ScopusGenerator(doi);
+    }
+
+    public static ScopusGenerator create(CitationtypeAtt citationtypeAtt) {
+        return new ScopusGenerator(citationtypeAtt);
     }
 
     public DocTp randomDocument() {
@@ -111,6 +126,7 @@ public final class ScopusGenerator {
     private MetaTp randomMetaTp() {
         var meta = new MetaTp();
         meta.setDoi(randomScopusDoi());
+        meta.setEid(randomString());
         return meta;
     }
 
@@ -258,10 +274,26 @@ public final class ScopusGenerator {
         return shouldCreateOrcid ? randomString() : null;
     }
 
-    private static CitationInfoTp randomCitationInfo() {
+    private CitationInfoTp randomCitationInfo() {
         var citationInfo = new CitationInfoTp();
         citationInfo.setAuthorKeywords(randomAuthorKeywordsTp());
+        citationInfo.getCitationType().add(createCitationType());
         return citationInfo;
+    }
+
+    private CitationTypeTp createCitationType() {
+        var citationType = new CitationTypeTp();
+        citationType.setCode(createCitationTypeAtt());
+        return citationType;
+    }
+
+    private CitationtypeAtt createCitationTypeAtt() {
+        return nonNull(citationtypeAtt) ? citationtypeAtt : randomSupportedCitationType();
+    }
+
+    //TODO: enrich method when we are supporting more citationTypes
+    private CitationtypeAtt randomSupportedCitationType() {
+        return CitationtypeAtt.AR;
     }
 
     private static AuthorKeywordsTp randomAuthorKeywordsTp() {

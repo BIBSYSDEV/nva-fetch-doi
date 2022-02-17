@@ -6,6 +6,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
+import static no.sikt.nva.scopus.ScopusConverter.NAME_DELIMITER;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -17,6 +18,7 @@ import static org.hamcrest.Matchers.equalToObject;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -54,6 +56,8 @@ import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.BibrecordTp;
 import no.scopus.generated.CitationTitleTp;
+import no.scopus.generated.CollaborationTp;
+import no.scopus.generated.CitationtypeAtt;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
 import no.scopus.generated.ItemTp;
@@ -61,6 +65,7 @@ import no.scopus.generated.ItemidTp;
 import no.scopus.generated.OrigItemTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
+import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
 import no.sikt.nva.scopus.test.utils.ScopusGenerator;
 import no.sikt.nva.testing.http.WiremockHttpClient;
 import no.unit.nva.doi.models.Doi;
@@ -71,6 +76,7 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeS3Client;
@@ -83,6 +89,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.EnumSource.Mode;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
@@ -99,9 +108,6 @@ class ScopusHandlerTest {
     public static final String E_ISSN_0000469852 = "1474-0036";
     public static final String START_OF_QUERY = "/?";
     private static final String EXPECTED_RESULTS_PATH = "expectedResults";
-    private static final String IDENTITY_FIELD_NAME = "identity";
-    private static final String NAME_FIELD_NAME = "name";
-    private static final String SEQUENCE_FIELD_NAME = "sequence";
     private static final String SCOPUS_XML_0000469852 = "2-s2.0-0000469852.xml";
     private static final String SCOPUS_XML_0018132378 = "2-s2.0-0018132378.xml";
     private static final String EXPECTED_PUBLICATION_YEAR_IN_0018132378 = "1978";
@@ -121,14 +127,6 @@ class ScopusHandlerTest {
     private static final String HARDCODED_EXPECTED_KEYWORD_3_IN_0000469852 = "sheep";
     private static final String XML_ENCODING_DECLARATION = "<?xml version=\"1.0\" encoding=\"UTF-8\" "
                                                            + "standalone=\"yes\"?>";
-
-    private static final String SCOPUS_XML_85114653695 = "2-s2.0-85114653695.xml";
-    private static final String CONTRIBUTOR_1_NAME_IN_85114653695 = "Morra A.";
-    private static final String CONTRIBUTOR_2_NAME_IN_85114653695 = "Escala-Garcia M.";
-    private static final String CONTRIBUTOR_151_NAME_IN_85114653695 = "NBCS Collaborators";
-    private static final int CONTRIBUTOR_1_SEQUENCE_NUMBER = 1;
-    private static final int CONTRIBUTOR_2_SEQUENCE_NUMBER = 2;
-    private static final int CONTRIBUTOR_151_SEQUENCE_NUMBER = 151;
     private static final String PUBLICATION_DAY_FIELD_NAME = "day";
     private static final String PUBLICATION_MONTH_FIELD_NAME = "month";
     private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
@@ -143,9 +141,9 @@ class ScopusHandlerTest {
     private URI serverUri;
     private MetadataService metadataService;
 
-    private ScopusGenerator scopusData;
     private HttpClient httpClient;
     private FakeEventBridgeClient eventBridgeClient;
+    private ScopusGenerator scopusData;
 
     @BeforeEach
     public void init() {
@@ -199,7 +197,7 @@ class ScopusHandlerTest {
     void shouldReturnCreatePublicationRequestWithMainTitle() throws IOException {
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
-        var titleObject = extractTitle();
+        var titleObject = extractTitle(scopusData);
         var titleObjectAsXmlString = ScopusGenerator.toXml(titleObject);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualMainTitle = createPublicationRequest.getEntityDescription().getMainTitle();
@@ -208,24 +206,16 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractContributorsNamesAndSequenceNumberCorrectly() throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_85114653695));
-        var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
-        var s3Event = createS3Event(uri);
+        var authors = keepOnlyTheAuthors();
+        var collaborations = keepOnlyTheCollaborations();
+        var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualContributors = createPublicationRequest.getEntityDescription().getContributors();
-        assertThat(actualContributors, hasItem(allOf(
-            hasProperty(IDENTITY_FIELD_NAME,
-                        hasProperty(NAME_FIELD_NAME, is(CONTRIBUTOR_1_NAME_IN_85114653695))),
-            hasProperty(SEQUENCE_FIELD_NAME, is(CONTRIBUTOR_1_SEQUENCE_NUMBER)))));
-        assertThat(actualContributors, hasItem(allOf(
-            hasProperty(IDENTITY_FIELD_NAME,
-                        hasProperty(NAME_FIELD_NAME, is(CONTRIBUTOR_2_NAME_IN_85114653695))),
-            hasProperty(SEQUENCE_FIELD_NAME, is(CONTRIBUTOR_2_SEQUENCE_NUMBER)))));
-        assertThat(actualContributors, hasItem(allOf(
-            hasProperty(IDENTITY_FIELD_NAME,
-                        hasProperty(NAME_FIELD_NAME, is(CONTRIBUTOR_151_NAME_IN_85114653695))),
-            hasProperty(SEQUENCE_FIELD_NAME, is(CONTRIBUTOR_151_SEQUENCE_NUMBER)))));
+        authors.forEach(author -> checkAuthorName(author, actualContributors));
+        collaborations.forEach(collaboration -> checkCollaborationName(collaboration, actualContributors));
     }
+
+
 
     @Test
     void shouldExtractAuthorKeywordsAsXML() throws IOException {
@@ -388,6 +378,35 @@ class ScopusHandlerTest {
     }
 
     @Test
+    void shouldExtractJournalArticleWhenScopusCitationTypeIsArticle() throws IOException {
+        scopusData = ScopusGenerator.create(CitationtypeAtt.AR);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationInstance =
+            createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
+        assertThat(actualPublicationInstance, isA(JournalArticle.class));
+    }
+
+    @ParameterizedTest(name ="should not generate CreatePublicationRequest when CitationType is:{0}")
+    @EnumSource(
+        value = CitationtypeAtt.class,
+        names = {"AR"},
+        mode = Mode.EXCLUDE)
+    void shouldNotGenerateCreatePublicationFromUnsupportedPublicationTypes(CitationtypeAtt citationtypeAtt)
+        throws IOException {
+        scopusData = ScopusGenerator.create(citationtypeAtt);
+        //eid is chosen because it seems to match the file name in the bucket.
+        var eid = scopusData.getDocument().getMeta().getEid();
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        var expectedMessage = String.format(ScopusConverter.UNSUPPORTED_CITATION_TYPE_MESSAGE, eid);
+        var appender = LogUtils.getTestingAppenderForRootLogger();
+        assertThrows(UnsupportedCitationTypeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
+        assertThat(appender.getMessages(), containsString(expectedMessage));
+    }
+
+    @Test
     void shouldExtractAuthorOrcidAndSequenceNumber() throws IOException {
         var authors = keepOnlyTheAuthors();
         var s3Event = createNewScopusPublicationEvent();
@@ -405,11 +424,31 @@ class ScopusHandlerTest {
 
     private void checkAuthorOrcidAndSequenceNumber(AuthorTp authorTp, List<Contributor> contributors) {
         if (nonNull(authorTp.getOrcid())) {
-            var optionalContributor = findContributor(authorTp.getOrcid(), contributors);
+            var optionalContributor = findContributorByAuid(authorTp.getOrcid(), contributors);
             assertTrue(optionalContributor.isPresent());
             var contributor = optionalContributor.get();
-            assertEquals(contributor.getSequence().toString(), authorTp.getSeq());
+            assertEquals(authorTp.getSeq(), contributor.getSequence().toString());
         }
+    }
+
+    private void checkAuthorName(AuthorTp authorTp, List<Contributor> contributors) {
+        var optionalContributor = findContributorBySequence(authorTp.getSeq(), contributors);
+        assertTrue(optionalContributor.isPresent());
+        var contributor = optionalContributor.get();
+        assertEquals(getExpectedFullAuthorName(authorTp), contributor.getIdentity().getName());
+    }
+
+    private void checkCollaborationName(CollaborationTp collaboration, List<Contributor> contributors) {
+        var optionalContributor = findContributorBySequence(collaboration.getSeq(), contributors);
+        assertTrue(optionalContributor.isPresent());
+        var contributor = optionalContributor.get();
+        assertEquals(collaboration.getIndexedName(), contributor.getIdentity().getName());
+    }
+
+    private Optional<Contributor> findContributorBySequence(String sequence, List<Contributor> contributors) {
+        return contributors.stream()
+            .filter(contributor -> sequence.equals(Integer.toString(contributor.getSequence())))
+            .findFirst();
     }
 
     private EventReference fetchEmittedEvent() {
@@ -417,6 +456,10 @@ class ScopusHandlerTest {
             .map(PutEventsRequestEntry::detail)
             .map(EventReference::fromJson)
             .collect(SingletonCollector.collect());
+    }
+
+    private String getExpectedFullAuthorName(AuthorTp authorTp) {
+        return authorTp.getPreferredName().getSurname() + NAME_DELIMITER + authorTp.getPreferredName().getSurname();
     }
 
     private S3Event createNewScopusPublicationEvent() throws IOException {
@@ -428,7 +471,7 @@ class ScopusHandlerTest {
         return UnixPath.of(randomString());
     }
 
-    private TitletextTp extractTitle() {
+    private TitletextTp extractTitle(ScopusGenerator scopusData) {
         return Optional.of(scopusData.getDocument())
             .map(DocTp::getItem)
             .map(ItemTp::getItem)
@@ -504,9 +547,10 @@ class ScopusHandlerTest {
             .filter(identifier -> identifier.getIdtype()
                 .equalsIgnoreCase(ScopusConstants.SCOPUS_ITEM_IDENTIFIER_SCP_FIELD_NAME))
             .collect(Collectors.toList());
+
     }
 
-    private Optional<Contributor> findContributor(String orcid, List<Contributor> contributors) {
+    private Optional<Contributor> findContributorByAuid(String orcid, List<Contributor> contributors) {
         return contributors.stream()
             .filter(contributor -> orcid.equals(contributor.getIdentity().getOrcId()))
             .findFirst();
@@ -517,8 +561,17 @@ class ScopusHandlerTest {
             this::isAuthorTp).map(author -> (AuthorTp) author).collect(Collectors.toList());
     }
 
+    private List<CollaborationTp> keepOnlyTheCollaborations() {
+        return keepOnlyTheCollaborationsAndAuthors().stream().filter(
+            this::isCollaborationTp).map(collaboration -> (CollaborationTp) collaboration).collect(Collectors.toList());
+    }
+
     private boolean isAuthorTp(Object object) {
         return object instanceof AuthorTp;
+    }
+
+    private boolean isCollaborationTp(Object object) {
+        return object instanceof CollaborationTp;
     }
 
     private List<Object> keepOnlyTheCollaborationsAndAuthors() {
