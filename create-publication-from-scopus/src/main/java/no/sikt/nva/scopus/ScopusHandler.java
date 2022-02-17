@@ -87,7 +87,7 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
         var s3Writer = new S3Driver(s3Client, EVENTS_BUCKET);
         return attempt(() -> constructPathForEventBody(request))
             .map(path -> s3Writer.insertFile(path, request.toJsonString()))
-            .orElseThrow();
+            .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
     }
 
     private PutEventsRequest createPutEventRequest(EventReference eventToEmit, Context context) {
