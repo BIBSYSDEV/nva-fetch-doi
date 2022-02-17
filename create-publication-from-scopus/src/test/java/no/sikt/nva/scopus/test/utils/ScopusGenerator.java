@@ -1,5 +1,6 @@
 package no.sikt.nva.scopus.test.utils;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFieldsAndClasses;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
@@ -35,6 +36,8 @@ import no.scopus.generated.AuthorTp;
 import no.scopus.generated.BibrecordTp;
 import no.scopus.generated.CitationInfoTp;
 import no.scopus.generated.CitationTitleTp;
+import no.scopus.generated.CitationTypeTp;
+import no.scopus.generated.CitationtypeAtt;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
@@ -64,10 +67,20 @@ public final class ScopusGenerator {
     public static final String SCOPUS_IDENTIFIER_TYPE = "SCP";
     private static final Set<String> IGNORED_FIELDS = readIgnoredFields();
     private final DocTp document;
+    private CitationtypeAtt citationtypeAtt;
 
     public ScopusGenerator() {
         this.document = randomDocument();
         this.minimumSequenceNumber = 1;
+    }
+
+    private ScopusGenerator(CitationtypeAtt citationtypeAtt) {
+        this.citationtypeAtt = citationtypeAtt;
+        this.document = randomDocument();
+    }
+
+    public static ScopusGenerator create(CitationtypeAtt citationtypeAtt) {
+        return new ScopusGenerator(citationtypeAtt);
     }
 
     public DocTp randomDocument() {
@@ -97,6 +110,7 @@ public final class ScopusGenerator {
     private static MetaTp randomMetaTp() {
         var meta = new MetaTp();
         meta.setDoi(randomScopusDoi());
+        meta.setEid(randomString());
         return meta;
     }
 
@@ -242,10 +256,26 @@ public final class ScopusGenerator {
         return shouldCreateOrcid ? randomString() : null;
     }
 
-    private static CitationInfoTp randomCitationInfo() {
+    private CitationInfoTp randomCitationInfo() {
         var citationInfo = new CitationInfoTp();
         citationInfo.setAuthorKeywords(randomAuthorKeywordsTp());
+        citationInfo.getCitationType().add(createCitationType());
         return citationInfo;
+    }
+
+    private CitationTypeTp createCitationType() {
+        var citationType = new CitationTypeTp();
+        citationType.setCode(createCitationTypeAtt());
+        return citationType;
+    }
+
+    private CitationtypeAtt createCitationTypeAtt() {
+        return nonNull(citationtypeAtt) ? citationtypeAtt : randomSupportedCitationType();
+    }
+
+    //TODO: enrich method when we are supporting more citationTypes
+    private CitationtypeAtt randomSupportedCitationType() {
+        return CitationtypeAtt.AR;
     }
 
     private static AuthorKeywordsTp randomAuthorKeywordsTp() {
