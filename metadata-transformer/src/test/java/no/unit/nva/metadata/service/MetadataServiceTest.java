@@ -140,7 +140,7 @@ public class MetadataServiceTest {
     }
 
     @Test
-    public void getJournalIdFromPublicationChannelsByGivenJournalName()
+    public void shouldReturnJournalIdFromPublicationChannelsByGivenJournalName()
         throws IOException, InterruptedException {
         var responseBody = IoUtils.stringFromResources(Path.of("publication_channels_442850_response.json"));
         var httpResonse = mock(HttpResponse.class);
@@ -159,7 +159,7 @@ public class MetadataServiceTest {
     }
 
     @Test
-    public void getPublisherIdFromPublicationChannelsByGivenPublisherName()
+    public void shouldReturnPublisherIdFromPublicationChannelsByGivenPublisherName()
         throws IOException, InterruptedException {
         var responseBody = IoUtils.stringFromResources(Path.of("publication_channels_26805_response.json"));
         var httpResonse = mock(HttpResponse.class);

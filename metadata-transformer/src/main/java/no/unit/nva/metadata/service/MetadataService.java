@@ -62,6 +62,8 @@ public class MetadataService {
     private static final String DOI_FIRST_PART = "10";
     private static final String HTTPS = "https";
     private static final String HTTP = "http";
+    public static final String QUERY_PARAM_QUERY = "query";
+    public static final String QUERY_PARAM_YEAR = "year";
     private final HttpClient httpClient;
     private final TranslatorService translatorService;
     private final Repository db = new SailRepository(new MemoryStore());
@@ -262,8 +264,8 @@ public class MetadataService {
         throws IOException, InterruptedException {
         var searchTerm = URLEncoder.encode(term, StandardCharsets.UTF_8.toString());
         var uri = new UriWrapper(publicationChannelsHostUri)
-            .addQueryParameter("query", searchTerm)
-            .addQueryParameter("year", Integer.toString(year))
+            .addQueryParameter(QUERY_PARAM_QUERY, searchTerm)
+            .addQueryParameter(QUERY_PARAM_YEAR, Integer.toString(year))
             .getUri();
 
         var request = HttpRequest.newBuilder()
@@ -279,7 +281,7 @@ public class MetadataService {
         throws IOException, InterruptedException {
         var searchTerm = URLEncoder.encode(term, StandardCharsets.UTF_8.toString());
         var uri = new UriWrapper(publicationChannelsHostUriPublisher)
-            .addQueryParameter("query", searchTerm)
+            .addQueryParameter(QUERY_PARAM_QUERY, searchTerm)
             .getUri();
 
         var request = HttpRequest.newBuilder()

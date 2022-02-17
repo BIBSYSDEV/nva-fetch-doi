@@ -45,10 +45,13 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import com.google.common.io.CharStreams;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.BibrecordTp;
@@ -143,7 +146,8 @@ class ScopusHandlerTest {
     private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
     private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
     private static final String EXPECTED_ABSTRACT_NAME_SPACE = "<abstractTp";
-    public static final char JOURNAL_SOURCETYPE_IDENTIFYING_CHAR = 'j';
+    public static final String JOURNAL_SOURCETYPE_IDENTIFYING_CHAR = "j";
+    public static final String BOOK_SOURCETYPE_IDENTIFYING_CHAR = "b";
 
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
@@ -321,9 +325,9 @@ class ScopusHandlerTest {
         assertThat(actualPublicationContext, instanceOf(Book.class));
         var actualPublisher = ((Book) actualPublicationContext).getPublisher();
         assertThat(actualPublisher, instanceOf(UnconfirmedPublisher.class));
-        String expectedPublishername = scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource()
+        var expectedPublishername = scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource()
                 .getPublisher().get(0).getPublishername();
-        String actualPublisherName = ((UnconfirmedPublisher) actualPublisher).getName();
+        var actualPublisherName = ((UnconfirmedPublisher) actualPublisher).getName();
         assertThat(actualPublisherName, is(expectedPublishername));
     }
 
@@ -372,7 +376,8 @@ class ScopusHandlerTest {
     void shouldReturnDefaultPublicationContextWhenEventWithS3UriThatPointsToScopusXmlWithoutKnownSourceType()
         throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
-        var randomChar = getRandomCharBesidesUnwantedChar(JOURNAL_SOURCETYPE_IDENTIFYING_CHAR);
+        var randomChar = getRandomCharBesidesUnwantedChar(JOURNAL_SOURCETYPE_IDENTIFYING_CHAR,
+                BOOK_SOURCETYPE_IDENTIFYING_CHAR);
         scopusFile = scopusFile.replace("<xocs:srctype>j</xocs:srctype>", "<xocs:srctype>" + randomChar
                                                                           + "</xocs:srctype>");
         var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
@@ -450,7 +455,7 @@ class ScopusHandlerTest {
         assertThat(actualPublicationInstance, isA(JournalArticle.class));
     }
 
-    @ParameterizedTest(name ="should not generate CreatePublicationRequest when CitationType is:{0}")
+    @ParameterizedTest(name="should not generate CreatePublicationRequest when CitationType is:{0}")
     @EnumSource(
         value = CitationtypeAtt.class,
         names = {"AR"},
@@ -517,11 +522,11 @@ class ScopusHandlerTest {
     }
 
     //nå er det bare 'j' som kommer inn som param, men jeg tror vi kan bruke metoden om igjen med andre sourceTypes
-    private char getRandomCharBesidesUnwantedChar(char unwantedChar) {
-        var randomChar = unwantedChar;
+    private String getRandomCharBesidesUnwantedChar(String... unwantedChar) {
+        String randomChar;
         do {
-            randomChar = randomString().toLowerCase().charAt(0);
-        } while (randomChar == unwantedChar);
+            randomChar = randomString().toLowerCase().substring(0,1);
+        } while (Arrays.stream(unwantedChar).anyMatch(randomChar::equals));
         return randomChar;
     }
 
