@@ -14,6 +14,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import jakarta.xml.bind.JAXB;
 import java.io.Serializable;
 import java.io.StringWriter;
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -68,32 +69,47 @@ import nva.commons.core.paths.UriWrapper;
 
 public final class ScopusGenerator {
 
-
     private int minimumSequenceNumber;
     public static final Set<Class<?>> NOT_BEAN_CLASSES = Set.of(XMLGregorianCalendar.class);
     public static final int SMALL_NUMBER = 10;
     public static final String SCOPUS_IDENTIFIER_TYPE = "SCP";
     private static final Set<String> IGNORED_FIELDS = readIgnoredFields();
     private final DocTp document;
-    private final String srcType;
     private static final String ISSN_DELIMINETER = "-";
+    private final URI doi;
     private CitationtypeAtt citationtypeAtt;
+    private final String srcType;
 
     public ScopusGenerator() {
+        this.doi = randomDoi();
+        this.minimumSequenceNumber = 1;
         this.srcType = ScopusSourceType.JOURNAL.code;
         this.document = randomDocument();
+    }
+
+    private ScopusGenerator(URI doi) {
+        this.doi = doi;
         this.minimumSequenceNumber = 1;
+        this.srcType = ScopusSourceType.JOURNAL.code;
+        this.document = randomDocument();
     }
 
     private ScopusGenerator(String srcType) {
         this.srcType = srcType;
+        this.minimumSequenceNumber = 1;
+        this.doi = randomDoi();
         this.document = randomDocument();
     }
 
     private ScopusGenerator(CitationtypeAtt citationtypeAtt) {
+        this.doi = randomDoi();
         this.citationtypeAtt = citationtypeAtt;
         this.srcType = ScopusSourceType.JOURNAL.code;
         this.document = randomDocument();
+    }
+
+    public static ScopusGenerator createScopusGeneratorWithSpecificDoi(URI doi) {
+        return new ScopusGenerator(doi);
     }
 
     public ScopusGenerator createWithSpecifiedSrcType(String srcType) {
@@ -136,8 +152,10 @@ public final class ScopusGenerator {
         return meta;
     }
 
-    private static String randomScopusDoi() {
-        return new UriWrapper(randomDoi()).getPath().removeRoot().toString();
+    private String randomScopusDoi() {
+        return nonNull(doi)
+                   ? new UriWrapper(doi).getPath().removeRoot().toString()
+                   : null;
     }
 
     private ItemTp randomItemTp() {
@@ -208,16 +226,11 @@ public final class ScopusGenerator {
         return head;
     }
 
-
-
-
-
     private static SourcetitleTp randomSourceTitle() {
         SourcetitleTp sourcetitleTp = new SourcetitleTp();
         sourcetitleTp.getContent().add(randomString());
         return sourcetitleTp;
     }
-
 
     private static SourceTp randomSource() {
         SourceTp sourceTp = new SourceTp();
