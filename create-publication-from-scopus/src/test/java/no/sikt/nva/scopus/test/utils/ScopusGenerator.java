@@ -68,6 +68,7 @@ import nva.commons.core.paths.UriWrapper;
 
 public final class ScopusGenerator {
 
+
     private int minimumSequenceNumber;
     public static final Set<Class<?>> NOT_BEAN_CLASSES = Set.of(XMLGregorianCalendar.class);
     public static final int SMALL_NUMBER = 10;
