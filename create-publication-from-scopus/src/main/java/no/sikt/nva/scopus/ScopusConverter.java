@@ -1,5 +1,9 @@
 package no.sikt.nva.scopus;
 
+import static java.util.Collections.emptyList;
+import static java.util.Objects.nonNull;
+import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
+import static no.sikt.nva.scopus.ScopusSourceType.JOURNAL;
 import jakarta.xml.bind.JAXB;
 import jakarta.xml.bind.JAXBElement;
 import no.scopus.generated.AbstractTp;
@@ -21,6 +25,9 @@ import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
+import no.sikt.nva.scopus.conversion.JournalCreator;
+import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
+import no.sikt.nva.scopus.exception.UnsupportedXmlElementException;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -49,9 +56,11 @@ import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 @SuppressWarnings("PMD.GodClass")
 class ScopusConverter {
 
+    public static final String UNSUPPORTED_SOURCE_TYPE = "Unsupported source type, in %s";
     public static final String UNSUPPORTED_CITATION_TYPE_MESSAGE = "Unsupported citation type, cannot convert eid %s";
     private final DocTp docTp;
     private final MetadataService metadataService;
+    public static final String NAME_DELIMITER = ", ";
 
     protected ScopusConverter(DocTp docTp, MetadataService metadataService) {
         this.docTp = docTp;
@@ -121,11 +130,15 @@ class ScopusConverter {
     }
 
     private Optional<AbstractTp> getMainAbstract() {
-        return getAbstracts().stream().filter(this::isOriginalAbstract).findFirst();
+        return nonNull(getAbstracts())
+                   ? getAbstracts().stream().filter(this::isOriginalAbstract).findFirst()
+                   : Optional.empty();
     }
 
     private List<AbstractTp> getAbstracts() {
-        return extractHead().getAbstracts().getAbstract();
+        return nonNull(extractHead().getAbstracts())
+                   ? extractHead().getAbstracts().getAbstract()
+                   : null;
     }
 
     private boolean isOriginalAbstract(AbstractTp abstractTp) {
@@ -195,7 +208,9 @@ class ScopusConverter {
     }
 
     private URI extractDOI() {
-        return UriWrapper.fromUri(DOI_OPEN_URL_FORMAT).addChild(docTp.getMeta().getDoi()).getUri();
+        return nonNull(docTp.getMeta().getDoi())
+                   ? UriWrapper.fromUri(DOI_OPEN_URL_FORMAT).addChild(docTp.getMeta().getDoi()).getUri()
+                   : null;
     }
 
     private PublicationInstance<? extends Pages> generatePublicationInstance() {
@@ -280,7 +295,7 @@ class ScopusConverter {
     }
 
     private String determineContributorName(AuthorTp author) {
-        return author.getPreferredName().getIndexedName();
+        return author.getPreferredName().getSurname() + NAME_DELIMITER + author.getPreferredName().getSurname();
     }
 
     private String determineContributorName(CollaborationTp collaborationTp) {
@@ -323,4 +338,19 @@ class ScopusConverter {
                                         itemIdTp.getValue());
     }
 
+    private PublicationContext getPublicationContext() {
+        if (isJournal()) {
+            return new JournalCreator(metadataService, docTp).createJournal();
+        } else {
+            throw new UnsupportedSrcTypeException(String.format(UNSUPPORTED_SOURCE_TYPE, docTp.getMeta().getEid()));
+        }
+    }
+
+    private boolean isJournal() {
+        return Optional.ofNullable(docTp)
+            .map(DocTp::getMeta)
+            .map(MetaTp::getSrctype)
+            .map(srcTyp -> JOURNAL.equals(ScopusSourceType.valueOfCode(srcTyp)))
+            .orElse(false);
+    }
 }

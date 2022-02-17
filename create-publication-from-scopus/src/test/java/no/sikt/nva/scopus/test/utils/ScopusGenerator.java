@@ -8,12 +8,15 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import jakarta.xml.bind.JAXB;
 import java.io.Serializable;
 import java.io.StringWriter;
+import java.net.URI;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -43,6 +46,7 @@ import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
+import no.scopus.generated.IssnTp;
 import no.scopus.generated.ItemInfoTp;
 import no.scopus.generated.ItemTp;
 import no.scopus.generated.ItemidTp;
@@ -56,8 +60,11 @@ import no.scopus.generated.PublishercopyrightTp;
 import no.scopus.generated.RichstringWithMMLType;
 import no.scopus.generated.ShortTitle;
 import no.scopus.generated.SourceTp;
+import no.scopus.generated.SourcetitleTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
+import no.sikt.nva.scopus.ScopusConstants;
+import no.sikt.nva.scopus.ScopusSourceType;
 import no.unit.nva.language.LanguageConstants;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
@@ -70,16 +77,62 @@ public final class ScopusGenerator {
     public static final String SCOPUS_IDENTIFIER_TYPE = "SCP";
     private static final Set<String> IGNORED_FIELDS = readIgnoredFields();
     private final DocTp document;
+    private final AbstractsTp abstractsTp;
+    private static final String ISSN_DELIMINETER = "-";
+    private final URI doi;
     private CitationtypeAtt citationtypeAtt;
+    private final String srcType;
 
     public ScopusGenerator() {
-        this.document = randomDocument();
+        this.doi = randomDoi();
         this.minimumSequenceNumber = 1;
+        this.abstractsTp = randomAbstracts();
+        this.srcType = ScopusSourceType.JOURNAL.code;
+        this.document = randomDocument();
+    }
+
+    private ScopusGenerator(AbstractsTp abstractsTp) {
+        this.doi = randomDoi();
+        this.srcType = ScopusSourceType.JOURNAL.code;
+        this.minimumSequenceNumber = 1;
+        this.abstractsTp = abstractsTp;
+        this.document = randomDocument();
+    }
+
+    private ScopusGenerator(URI doi) {
+        this.doi = doi;
+        this.minimumSequenceNumber = 1;
+        this.srcType = ScopusSourceType.JOURNAL.code;
+        this.abstractsTp = randomAbstracts();
+        this.document = randomDocument();
+    }
+
+    private ScopusGenerator(String srcType) {
+        this.srcType = srcType;
+        this.minimumSequenceNumber = 1;
+        this.doi = randomDoi();
+        this.abstractsTp = randomAbstracts();
+        this.document = randomDocument();
     }
 
     private ScopusGenerator(CitationtypeAtt citationtypeAtt) {
+        this.doi = randomDoi();
         this.citationtypeAtt = citationtypeAtt;
+        this.srcType = ScopusSourceType.JOURNAL.code;
+        this.abstractsTp = randomAbstracts();
         this.document = randomDocument();
+    }
+
+    public static ScopusGenerator createWithSpecifiedAbstract(AbstractsTp abstractsTp) {
+        return new ScopusGenerator(abstractsTp);
+    }
+
+    public static ScopusGenerator createScopusGeneratorWithSpecificDoi(URI doi) {
+        return new ScopusGenerator(doi);
+    }
+
+    public ScopusGenerator createWithSpecifiedSrcType(String srcType) {
+        return new ScopusGenerator(srcType);
     }
 
     public static ScopusGenerator create(CitationtypeAtt citationtypeAtt) {
@@ -110,15 +163,18 @@ public final class ScopusGenerator {
         return xmlWriter.toString();
     }
 
-    private static MetaTp randomMetaTp() {
+    private MetaTp randomMetaTp() {
         var meta = new MetaTp();
         meta.setDoi(randomScopusDoi());
+        meta.setSrctype(srcType);
         meta.setEid(randomString());
         return meta;
     }
 
-    private static String randomScopusDoi() {
-        return new UriWrapper(randomDoi()).getPath().removeRoot().toString();
+    private String randomScopusDoi() {
+        return nonNull(doi)
+                   ? new UriWrapper(doi).getPath().removeRoot().toString()
+                   : null;
     }
 
     private ItemTp randomItemTp() {
@@ -183,10 +239,48 @@ public final class ScopusGenerator {
         var head = new HeadTp();
         head.getAuthorGroup().addAll(randomAuthorGroups(authorsAndCollaborations));
         head.setCitationTitle(randomCitationTitle());
-        head.setAbstracts(randomAbstracts());
+        head.setAbstracts(abstractsTp);
         head.setCitationInfo(randomCitationInfo());
         head.setSource(randomSource());
         return head;
+    }
+
+    private static SourcetitleTp randomSourceTitle() {
+        SourcetitleTp sourcetitleTp = new SourcetitleTp();
+        sourcetitleTp.getContent().add(randomString());
+        return sourcetitleTp;
+    }
+
+    private static SourceTp randomSource() {
+        SourceTp sourceTp = new SourceTp();
+        sourceTp.setArticleNumber(randomString());
+        sourceTp.setSourcetitle(randomSourceTitle());
+        sourceTp.setArticleNumber(randomString());
+        sourceTp.getIssn().addAll(randomIssnTypes());
+        return sourceTp;
+    }
+
+    private static Collection<? extends IssnTp> randomIssnTypes() {
+        List<IssnTp> issnTpList = new ArrayList<>();
+        if (randomBoolean()) {
+            issnTpList.add(randomIssnType(ScopusConstants.ISSN_TYPE_ELECTRONIC));
+        }
+        if (randomBoolean()) {
+            issnTpList.add(randomIssnType(ScopusConstants.ISSN_TYPE_PRINT));
+        }
+        if (randomBoolean()) {
+            issnTpList.add(randomIssnType(randomString()));
+        }
+        return issnTpList;
+    }
+
+    private static IssnTp randomIssnType(String issnType) {
+        IssnTp issnTp = new IssnTp();
+        //the issn from scopus xml comes without "-".
+        var issnCode = randomIssn().replace(ISSN_DELIMINETER, "");
+        issnTp.setContent(issnCode);
+        issnTp.setType(issnType);
+        return issnTp;
     }
 
     private static SourceTp randomSource() {
@@ -209,6 +303,14 @@ public final class ScopusGenerator {
             .collect(Collectors.toList());
     }
 
+    private List<?> randomAuthorOrCollaborations() {
+        int maxNumbersOfAuthors = 200;
+        return IntStream.range(0, randomInteger(maxNumbersOfAuthors) + 1)
+            .boxed()
+            .map(index -> randomAuthorOrCollaboration())
+            .collect(Collectors.toList());
+    }
+
     private static AuthorGroupTp randomAuthorGroup(List<?> authorsAndCollaborations) {
         var authorGroup = new AuthorGroupTp();
         authorGroup.getAuthorOrCollaboration()
@@ -223,12 +325,9 @@ public final class ScopusGenerator {
         return authorsAndCollaborations.subList(min, numbersOfAuthorOrCollaborations);
     }
 
-    private List<?> randomAuthorOrCollaborations() {
-        int maxNumbersOfAuthors = 200;
-        return IntStream.range(0, randomInteger(maxNumbersOfAuthors) + 1)
-            .boxed()
-            .map(index -> randomAuthorOrCollaboration())
-            .collect(Collectors.toList());
+    private Object randomAuthorOrCollaboration() {
+        var shouldReturnAuthorTyp = randomBoolean();
+        return shouldReturnAuthorTyp ? randomAuthorTp() : randomCollaborationTp();
     }
 
     private String generateSequenceNumber() {
@@ -238,9 +337,9 @@ public final class ScopusGenerator {
         return Integer.toString(sequenceNumber);
     }
 
-    private Object randomAuthorOrCollaboration() {
-        var shouldReturnAuthorTyp = randomBoolean();
-        return shouldReturnAuthorTyp ? randomAuthorTp() : randomCollaborationTp();
+    private static String randomOrcid() {
+        var shouldCreateOrcid = randomBoolean();
+        return shouldCreateOrcid ? randomString() : null;
     }
 
     private CollaborationTp randomCollaborationTp() {
@@ -265,11 +364,6 @@ public final class ScopusGenerator {
         personalNameType.setGivenName(randomString());
         personalNameType.setSurname(randomString());
         return personalNameType;
-    }
-
-    private static String randomOrcid() {
-        var shouldCreateOrcid = randomBoolean();
-        return shouldCreateOrcid ? randomString() : null;
     }
 
     private CitationInfoTp randomCitationInfo() {
