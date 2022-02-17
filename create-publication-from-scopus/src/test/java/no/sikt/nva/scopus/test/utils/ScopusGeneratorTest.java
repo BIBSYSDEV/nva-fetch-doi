@@ -7,7 +7,7 @@ class ScopusGeneratorTest {
 
     @Test
     void shouldReturnDocumentWithAllKnownFieldsNonEmpty() {
-        ScopusGenerator scopusGenerator = new ScopusGenerator();
+        var scopusGenerator = new ScopusGenerator();
         assertDoesNotThrow(scopusGenerator::randomDocument);
     }
 }
