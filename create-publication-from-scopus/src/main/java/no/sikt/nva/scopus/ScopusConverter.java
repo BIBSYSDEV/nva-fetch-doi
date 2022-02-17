@@ -18,6 +18,8 @@ import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordTp;
 import no.scopus.generated.AuthorKeywordsTp;
 import no.scopus.generated.AuthorTp;
+import no.scopus.generated.CitationTypeTp;
+import no.scopus.generated.CitationtypeAtt;
 import no.scopus.generated.CitationInfoTp;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DateSortTp;
@@ -29,6 +31,7 @@ import no.scopus.generated.MetaTp;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
+import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
 import no.sikt.nva.scopus.conversion.JournalCreator;
 import no.sikt.nva.scopus.exception.UnsupportedXmlElementException;
 import no.unit.nva.metadata.CreatePublicationRequest;
@@ -40,12 +43,18 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.pages.Pages;
 import nva.commons.core.paths.UriWrapper;
 
 @SuppressWarnings("PMD.GodClass")
 class ScopusConverter {
 
     private static final String MALFORMED_CONTENT_MESSAGE = "Malformed content, cannot parse: %s";
+    public static final String UNSUPPORTED_CITATION_TYPE_MESSAGE = "Unsupported citation type, cannot convert "
+                                                                   + "eid %s";
+    public static final String DASH = "-";
     private final DocTp docTp;
     private final MetadataService metadataService;
 
@@ -186,6 +195,7 @@ class ScopusConverter {
 
     private Reference generateReference() {
         Reference reference = new Reference();
+        reference.setPublicationInstance(generatePublicationInstance());
         reference.setDoi(extractDOI());
         reference.setPublicationContext(getPublicationContext());
         return reference;
@@ -193,6 +203,37 @@ class ScopusConverter {
 
     private URI extractDOI() {
         return UriWrapper.fromUri(DOI_OPEN_URL_FORMAT).addChild(docTp.getMeta().getDoi()).getUri();
+    }
+
+    private PublicationInstance<? extends Pages> generatePublicationInstance() {
+        return getCitationType()
+            .flatMap(this::convertCitationTypeToPublicationInstance)
+            .orElseThrow(this::getUnsupportedCitationTypeException);
+    }
+
+    private UnsupportedCitationTypeException getUnsupportedCitationTypeException() {
+        return new UnsupportedCitationTypeException(
+            String.format(UNSUPPORTED_CITATION_TYPE_MESSAGE, docTp.getMeta().getEid()));
+    }
+
+    private Optional<PublicationInstance<? extends Pages>> convertCitationTypeToPublicationInstance(
+        CitationtypeAtt citationtypeAtt) {
+        return CitationtypeAtt.AR.equals(citationtypeAtt)
+                   ? Optional.of(new JournalArticle())
+                   : Optional.empty();
+    }
+
+    private Optional<CitationtypeAtt> getCitationType() {
+        return docTp
+            .getItem()
+            .getItem()
+            .getBibrecord()
+            .getHead()
+            .getCitationInfo()
+            .getCitationType()
+            .stream()
+            .findFirst()
+            .map(CitationTypeTp::getCode);
     }
 
     private Optional<TitletextTp> getMainTitleTextTp() {
