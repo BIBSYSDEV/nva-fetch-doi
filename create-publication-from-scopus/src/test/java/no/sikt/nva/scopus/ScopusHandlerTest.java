@@ -6,6 +6,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
+import static no.sikt.nva.scopus.ScopusConverter.UNSUPPORTED_SOURCE_TYPE;
 import static no.sikt.nva.scopus.ScopusConverter.NAME_DELIMITER;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -63,6 +64,7 @@ import no.scopus.generated.ItemidTp;
 import no.scopus.generated.OrigItemTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
+import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
 import no.sikt.nva.scopus.test.utils.ScopusGenerator;
 import no.sikt.nva.testing.http.WiremockHttpClient;
@@ -130,7 +132,6 @@ class ScopusHandlerTest {
     private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
     private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
     private static final String EXPECTED_ABSTRACT_NAME_SPACE = "<abstractTp";
-    public static final char JOURNAL_SOURCETYPE_IDENTIFYING_CHAR = 'j';
 
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
@@ -308,18 +309,24 @@ class ScopusHandlerTest {
     }
 
     @Test
-    void shouldReturnDefaultPublicationContextWhenEventWithS3UriThatPointsToScopusXmlWithoutKnownSourceType()
-        throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
-        var randomChar = getRandomCharBesidesUnwantedChar(JOURNAL_SOURCETYPE_IDENTIFYING_CHAR);
-        scopusFile = scopusFile.replace("<xocs:srctype>j</xocs:srctype>", "<xocs:srctype>" + randomChar
-                                                                          + "</xocs:srctype>");
-        var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
+    void shouldThrowExceptionWhenSrcTypeIsNotSuppoerted() throws IOException {
+        List<String> supportedScrTypes = List.of(ScopusSourceType.JOURNAL.code);
+        var randomUnsupportedSrcType = randomStringWithExclusion(supportedScrTypes);
+        scopusData = scopusData.createWithSpecifiedSrcType(randomUnsupportedSrcType);
+        var expectedMessage = String.format(UNSUPPORTED_SOURCE_TYPE, scopusData.getDocument().getMeta().getEid());
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
-        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
-        var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
-            .getPublicationContext();
-        assertThat(actualPublicationContext, is(ScopusConstants.EMPTY_PUBLICATION_CONTEXT));
+        var appender = LogUtils.getTestingAppenderForRootLogger();
+        assertThrows(UnsupportedSrcTypeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
+        assertThat(appender.getMessages(), containsString(expectedMessage));
+    }
+
+    private String randomStringWithExclusion(List<String> exclusions) {
+        var randomString = randomString();
+        while (exclusions.contains(randomString)) {
+            randomString = randomString();
+        }
+        return randomString;
     }
 
     @Test
@@ -385,7 +392,7 @@ class ScopusHandlerTest {
         assertThat(actualPublicationInstance, isA(JournalArticle.class));
     }
 
-    @ParameterizedTest(name ="should not generate CreatePublicationRequest when CitationType is:{0}")
+    @ParameterizedTest(name = "should not generate CreatePublicationRequest when CitationType is:{0}")
     @EnumSource(
         value = CitationtypeAtt.class,
         names = {"AR"},
@@ -475,15 +482,6 @@ class ScopusHandlerTest {
             .collect(SingletonCollector.collect());
     }
 
-    //nå er det bare 'j' som kommer inn som param, men jeg tror vi kan bruke metoden om igjen med andre sourceTypes
-    private char getRandomCharBesidesUnwantedChar(char unwantedChar) {
-        var randomChar = unwantedChar;
-        do {
-            randomChar = randomString().toLowerCase().charAt(0);
-        } while (randomChar == unwantedChar);
-        return randomChar;
-    }
-
     private URI createExpectedQueryUriForJournalWithEIssn(String electronicIssn, String year) {
         return new UriWrapper(serverUri)
             .addQueryParameter("query", electronicIssn)
@@ -537,7 +535,6 @@ class ScopusHandlerTest {
             .filter(identifier -> identifier.getIdtype()
                 .equalsIgnoreCase(ScopusConstants.SCOPUS_ITEM_IDENTIFIER_SCP_FIELD_NAME))
             .collect(Collectors.toList());
-
     }
 
     private Optional<Contributor> findContributorByAuid(String orcid, List<Contributor> contributors) {
