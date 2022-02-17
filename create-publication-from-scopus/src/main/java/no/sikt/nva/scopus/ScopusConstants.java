@@ -1,6 +1,5 @@
 package no.sikt.nva.scopus;
 
-import no.unit.nva.model.contexttypes.PublicationContext;
 import nva.commons.core.JacocoGenerated;
 
 public class ScopusConstants {
@@ -14,7 +13,6 @@ public class ScopusConstants {
     //Journal constants:
     public static final String ISSN_TYPE_ELECTRONIC = "electronic";
     public static final String ISSN_TYPE_PRINT = "print";
-    public static final PublicationContext EMPTY_PUBLICATION_CONTEXT = null;
 
     @JacocoGenerated
     public ScopusConstants() {

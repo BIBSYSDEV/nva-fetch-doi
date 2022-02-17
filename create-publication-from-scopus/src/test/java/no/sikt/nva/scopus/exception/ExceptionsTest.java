@@ -12,4 +12,10 @@ public class ExceptionsTest {
         UnsupportedXmlElementException exception = new UnsupportedXmlElementException(MESSAGE);
         assertNotNull(exception);
     }
+
+    @Test
+    public void canCreateUnsupportedScrTypeExcetption() {
+        UnsupportedSrcTypeException exception = new UnsupportedSrcTypeException(MESSAGE);
+        assertNotNull(exception);
+    }
 }
