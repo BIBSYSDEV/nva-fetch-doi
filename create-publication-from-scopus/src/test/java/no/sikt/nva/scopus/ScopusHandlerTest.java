@@ -455,7 +455,7 @@ class ScopusHandlerTest {
         assertThat(actualPublicationInstance, isA(JournalArticle.class));
     }
 
-    @ParameterizedTest(name="should not generate CreatePublicationRequest when CitationType is:{0}")
+    @ParameterizedTest(name = "should not generate CreatePublicationRequest when CitationType is:{0}")
     @EnumSource(
         value = CitationtypeAtt.class,
         names = {"AR"},
