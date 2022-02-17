@@ -1,6 +1,8 @@
 package no.sikt.nva.scopus.test.utils;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFieldsAndClasses;
+import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
@@ -14,6 +16,7 @@ import java.io.StringWriter;
 import java.nio.file.Path;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
@@ -27,11 +30,16 @@ import javax.xml.datatype.XMLGregorianCalendar;
 
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AbstractsTp;
+import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordTp;
 import no.scopus.generated.AuthorKeywordsTp;
+import no.scopus.generated.AuthorTp;
 import no.scopus.generated.BibrecordTp;
 import no.scopus.generated.CitationInfoTp;
 import no.scopus.generated.CitationTitleTp;
+import no.scopus.generated.CitationTypeTp;
+import no.scopus.generated.CitationtypeAtt;
+import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
@@ -41,6 +49,7 @@ import no.scopus.generated.ItemidTp;
 import no.scopus.generated.ItemidlistTp;
 import no.scopus.generated.MetaTp;
 import no.scopus.generated.OrigItemTp;
+import no.scopus.generated.PersonalnameType;
 import no.scopus.generated.ProcessInfo;
 import no.scopus.generated.PublisherTp;
 import no.scopus.generated.PublishercopyrightTp;
@@ -55,17 +64,29 @@ import nva.commons.core.paths.UriWrapper;
 
 public final class ScopusGenerator {
 
+    private int minimumSequenceNumber;
     public static final Set<Class<?>> NOT_BEAN_CLASSES = Set.of(XMLGregorianCalendar.class);
     public static final int SMALL_NUMBER = 10;
     public static final String SCOPUS_IDENTIFIER_TYPE = "SCP";
     private static final Set<String> IGNORED_FIELDS = readIgnoredFields();
     private final DocTp document;
+    private CitationtypeAtt citationtypeAtt;
 
     public ScopusGenerator() {
         this.document = randomDocument();
+        this.minimumSequenceNumber = 1;
     }
 
-    public static DocTp randomDocument() {
+    private ScopusGenerator(CitationtypeAtt citationtypeAtt) {
+        this.citationtypeAtt = citationtypeAtt;
+        this.document = randomDocument();
+    }
+
+    public static ScopusGenerator create(CitationtypeAtt citationtypeAtt) {
+        return new ScopusGenerator(citationtypeAtt);
+    }
+
+    public DocTp randomDocument() {
         DocTp docTp = new DocTp();
         docTp.setItem(randomItemTp());
         docTp.setMeta(randomMetaTp());
@@ -92,6 +113,7 @@ public final class ScopusGenerator {
     private static MetaTp randomMetaTp() {
         var meta = new MetaTp();
         meta.setDoi(randomScopusDoi());
+        meta.setEid(randomString());
         return meta;
     }
 
@@ -99,13 +121,13 @@ public final class ScopusGenerator {
         return new UriWrapper(randomDoi()).getPath().removeRoot().toString();
     }
 
-    private static ItemTp randomItemTp() {
+    private ItemTp randomItemTp() {
         var item = new ItemTp();
         item.setItem(randomOriginalItem());
         return item;
     }
 
-    private static OrigItemTp randomOriginalItem() {
+    private OrigItemTp randomOriginalItem() {
         var item = new OrigItemTp();
         item.setBibrecord(randomBibRecord());
         item.setProcessInfo(randomProcessInfo());
@@ -149,15 +171,17 @@ public final class ScopusGenerator {
         return attempt(() -> DatatypeFactory.newInstance().newXMLGregorianCalendar(calendar)).orElseThrow();
     }
 
-    private static BibrecordTp randomBibRecord() {
+    private BibrecordTp randomBibRecord() {
         var bibRecord = new BibrecordTp();
         bibRecord.setItemInfo(randomItemInfo());
         bibRecord.setHead(randomHeadTp());
         return bibRecord;
     }
 
-    private static HeadTp randomHeadTp() {
+    private HeadTp randomHeadTp() {
+        List<?> authorsAndCollaborations = randomAuthorOrCollaborations();
         var head = new HeadTp();
+        head.getAuthorGroup().addAll(randomAuthorGroups(authorsAndCollaborations));
         head.setCitationTitle(randomCitationTitle());
         head.setAbstracts(randomAbstracts());
         head.setCitationInfo(randomCitationInfo());
@@ -177,10 +201,97 @@ public final class ScopusGenerator {
         return publisher;
     }
 
-    private static CitationInfoTp randomCitationInfo() {
+    private static Collection<? extends AuthorGroupTp> randomAuthorGroups(List<?> authorsAndCollaborations) {
+        int maxNumberOfAuthorGroups = 200;
+        return IntStream.range(0, randomInteger(maxNumberOfAuthorGroups) + 1)
+            .boxed()
+            .map(ignored -> randomAuthorGroup(authorsAndCollaborations))
+            .collect(Collectors.toList());
+    }
+
+    private static AuthorGroupTp randomAuthorGroup(List<?> authorsAndCollaborations) {
+        var authorGroup = new AuthorGroupTp();
+        authorGroup.getAuthorOrCollaboration()
+            .addAll(randomSubsetRandomAuthorsOrCollaborations(authorsAndCollaborations));
+        return authorGroup;
+    }
+
+    private static List<?> randomSubsetRandomAuthorsOrCollaborations(List<?> authorsAndCollaborations) {
+        int min = 0;
+        var numbersOfAuthorOrCollaborations = randomInteger(authorsAndCollaborations.size());
+        Collections.shuffle(authorsAndCollaborations);
+        return authorsAndCollaborations.subList(min, numbersOfAuthorOrCollaborations);
+    }
+
+    private List<?> randomAuthorOrCollaborations() {
+        int maxNumbersOfAuthors = 200;
+        return IntStream.range(0, randomInteger(maxNumbersOfAuthors) + 1)
+            .boxed()
+            .map(index -> randomAuthorOrCollaboration())
+            .collect(Collectors.toList());
+    }
+
+    private String generateSequenceNumber() {
+        var maxGapInSequenceNumber = 200;
+        var sequenceNumber = getMinimumSequenceNumber() + randomInteger(maxGapInSequenceNumber) + 1;
+        setMinimumSequenceNumber(sequenceNumber);
+        return Integer.toString(sequenceNumber);
+    }
+
+    private Object randomAuthorOrCollaboration() {
+        var shouldReturnAuthorTyp = randomBoolean();
+        return shouldReturnAuthorTyp ? randomAuthorTp() : randomCollaborationTp();
+    }
+
+    private CollaborationTp randomCollaborationTp() {
+        var collaborationTp = new CollaborationTp();
+        collaborationTp.setIndexedName(randomString());
+        collaborationTp.setSeq(generateSequenceNumber());
+        return collaborationTp;
+    }
+
+    private AuthorTp randomAuthorTp() {
+        var authorTp = new AuthorTp();
+        authorTp.setOrcid(randomOrcid());
+        authorTp.setPreferredName(randomPreferredName());
+        authorTp.setAuid(randomString());
+        authorTp.setSeq(generateSequenceNumber());
+        return authorTp;
+    }
+
+    private static PersonalnameType randomPreferredName() {
+        var personalNameType = new PersonalnameType();
+        personalNameType.setIndexedName(randomString());
+        personalNameType.setGivenName(randomString());
+        personalNameType.setSurname(randomString());
+        return personalNameType;
+    }
+
+    private static String randomOrcid() {
+        var shouldCreateOrcid = randomBoolean();
+        return shouldCreateOrcid ? randomString() : null;
+    }
+
+    private CitationInfoTp randomCitationInfo() {
         var citationInfo = new CitationInfoTp();
         citationInfo.setAuthorKeywords(randomAuthorKeywordsTp());
+        citationInfo.getCitationType().add(createCitationType());
         return citationInfo;
+    }
+
+    private CitationTypeTp createCitationType() {
+        var citationType = new CitationTypeTp();
+        citationType.setCode(createCitationTypeAtt());
+        return citationType;
+    }
+
+    private CitationtypeAtt createCitationTypeAtt() {
+        return nonNull(citationtypeAtt) ? citationtypeAtt : randomSupportedCitationType();
+    }
+
+    //TODO: enrich method when we are supporting more citationTypes
+    private CitationtypeAtt randomSupportedCitationType() {
+        return CitationtypeAtt.AR;
     }
 
     private static AuthorKeywordsTp randomAuthorKeywordsTp() {
@@ -328,5 +439,13 @@ public final class ScopusGenerator {
 
     private static Set<String> readIgnoredFields() {
         return new HashSet<>(IoUtils.linesfromResource(Path.of("conversion", "ignoredScopusFields.txt")));
+    }
+
+    private int getMinimumSequenceNumber() {
+        return minimumSequenceNumber;
+    }
+
+    private void setMinimumSequenceNumber(int minimumSequenceNumber) {
+        this.minimumSequenceNumber = minimumSequenceNumber;
     }
 }
