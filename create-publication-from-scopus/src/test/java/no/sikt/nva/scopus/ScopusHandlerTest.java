@@ -471,7 +471,7 @@ class ScopusHandlerTest {
     }
 
     private String getExpectedFullAuthorName(AuthorTp authorTp) {
-        return authorTp.getPreferredName().getSurname() + NAME_DELIMITER + authorTp.getPreferredName().getSurname();
+        return authorTp.getPreferredName().getSurname() + NAME_DELIMITER + authorTp.getPreferredName().getGivenName();
     }
 
     private S3Event createNewScopusPublicationEvent() throws IOException {
