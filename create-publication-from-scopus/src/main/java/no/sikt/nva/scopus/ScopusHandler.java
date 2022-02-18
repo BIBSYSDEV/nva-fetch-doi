@@ -55,7 +55,9 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     @Override
     public CreatePublicationRequest handleRequest(S3Event event, Context context) {
         var request = createPublicationRequest(event);
+        System.out.println("Initialise emitEventBridge");
         emitEventToEventBridge(context, request);
+        System.out.println("Handle request is done");
         return request;
     }
 
