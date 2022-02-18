@@ -5,7 +5,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static j2html.TagCreator.body;
 import static j2html.TagCreator.div;
 import static j2html.TagCreator.head;
@@ -15,10 +15,13 @@ import static j2html.TagCreator.span;
 import static j2html.TagCreator.title;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
+import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider.CITATION_AUTHOR;
 import static no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider.DC_CONTRIBUTOR;
 import static no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider.DC_CREATOR;
-import static org.apache.http.HttpStatus.SC_OK;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -33,17 +36,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import j2html.tags.ContainerTag;
 import j2html.tags.EmptyTag;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -75,7 +79,7 @@ import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.instancetypes.PublicationInstance;
-import nva.commons.core.ioutils.IoUtils;
+import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import org.junit.jupiter.api.AfterEach;
@@ -121,14 +125,16 @@ public class MetadataServiceTest {
     private static final TestAppender logger = LogUtils.getTestingAppenderForRootLogger();
     private WireMockServer wireMockServer;
 
-    private URI serverUri;
+    private URI serverUriJournal;
+    private URI serverUriPublisher;
     private HttpClient httpClient;
 
     @BeforeEach
     public void initialize() {
-        wireMockServer = new WireMockServer(WireMockConfiguration.options().dynamicPort());
+        wireMockServer = new WireMockServer(options().dynamicPort());
         wireMockServer.start();
-        this.serverUri = URI.create(wireMockServer.baseUrl());
+        this.serverUriJournal = URI.create(wireMockServer.baseUrl() + "/journal");
+        this.serverUriPublisher = URI.create(wireMockServer.baseUrl() + "/publisher");
         this.httpClient = WiremockHttpClient.create();
     }
 
@@ -138,22 +144,26 @@ public class MetadataServiceTest {
     }
 
     @Test
-    public void getJournalIdFromPublicationChannelsByGivenJournalName()
-        throws IOException, InterruptedException {
-        var responseBody = IoUtils.stringFromResources(Path.of("publication_channels_442850_response.json"));
-        var httpResonse = mock(HttpResponse.class);
-        when(httpResonse.statusCode()).thenReturn(SC_OK);
-        when(httpResonse.body()).thenReturn(responseBody);
-        var httpClient = mock(HttpClient.class);
-        when(httpClient.send(any(HttpRequest.class), any())).thenReturn(httpResonse);
-        var metadataService = new MetadataService(httpClient, serverUri);
-        var name = "Edinburgh Journal of Botany";
-        var year = 2010;
-        var actualId =
-            metadataService.lookUpJournalIdAtPublicationChannel(name, null, null, year)
+    public void shouldReturnJournalIdFromPublicationChannelsByGivenJournalName() {
+        var expectedJournalName = randomString();
+        var expectedYear = randomInteger();
+        var queryUri = createExpectedQueryUriForJournalName(expectedJournalName, String.valueOf(expectedYear));
+        var expectedJournalUri = mockedPublicationChannelsReturnsUri(queryUri);
+        var metadataService = new MetadataService(httpClient, serverUriJournal, serverUriPublisher);
+        var actualId = metadataService.lookUpJournalIdAtPublicationChannel(
+                expectedJournalName, null, null, Integer.valueOf(expectedYear))
                 .orElseThrow();
-        var expectedId = "https://api.dev.nva.aws.unit.no/publication-channels/journal/440074/2010";
-        assertThat(actualId, is(expectedId));
+        assertThat(actualId, is(expectedJournalUri.toString()));
+    }
+
+    @Test
+    public void shouldReturnPublisherIdFromPublicationChannelsByGivenPublisherName() {
+        var expectedPublisherName = randomString();
+        var queryUri = createExpectedQueryUriForPublisherWithName(expectedPublisherName);
+        var expectedPublisherUri = mockedPublicationChannelsReturnsUri(queryUri);
+        var metadataService = new MetadataService(httpClient, serverUriJournal, serverUriPublisher);
+        var actualPublisherUri = metadataService.fetchPublisherIdFromPublicationChannel(expectedPublisherName);
+        assertThat(actualPublisherUri, is(expectedPublisherUri.toString()));
     }
 
     @ParameterizedTest(name = "#{index} - {0}")
@@ -163,10 +173,9 @@ public class MetadataServiceTest {
     })
     void getCreatePublicationParsesHtmlAndReturnsMetadata(String ignored,
                                                           String html,
-                                                          CreatePublicationRequest expectedRequest)
-        throws IOException {
+                                                          CreatePublicationRequest expectedRequest) {
         URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
-        MetadataService metadataService = new MetadataService(httpClient, serverUri);
+        MetadataService metadataService = new MetadataService(httpClient, serverUriJournal, serverUriPublisher);
         Optional<CreatePublicationRequest> request = metadataService.generateCreatePublicationRequest(uri);
         CreatePublicationRequest actual = request.orElseThrow();
         actual.setContext(null);
@@ -698,6 +707,44 @@ public class MetadataServiceTest {
             .build();
     }
 
+    private URI createExpectedQueryUriForJournalName(String name, String year) {
+        return new UriWrapper(serverUriPublisher)
+                .addQueryParameter(MetadataService.QUERY_PARAM_QUERY, name)
+                .addQueryParameter(MetadataService.QUERY_PARAM_YEAR, year)
+                .getUri();
+    }
+
+    private URI createExpectedQueryUriForPublisherWithName(String name) {
+        return new UriWrapper(serverUriPublisher)
+                .addQueryParameter(MetadataService.QUERY_PARAM_QUERY, name)
+                .getUri();
+    }
+
+    private URI mockedPublicationChannelsReturnsUri(URI queryUri) {
+        configureFor("localhost", wireMockServer.port());
+        var uri = randomUri();
+        ArrayNode publicationChannelsResponseBody = createPublicationChannelsResponseWithUri(uri);
+        stubFor(get("/publisher?" + queryUri
+                .getQuery())
+                .willReturn(aResponse().withBody(publicationChannelsResponseBody
+                        .toPrettyString()).withStatus(HttpURLConnection.HTTP_OK)));
+        stubFor(get("/journal?" + queryUri
+                .getQuery())
+                .willReturn(aResponse().withBody(publicationChannelsResponseBody
+                        .toPrettyString()).withStatus(HttpURLConnection.HTTP_OK)));
+        return uri;
+    }
+
+    private ArrayNode createPublicationChannelsResponseWithUri(URI uri) {
+        var publicationChannelsResponseBodyElement = dtoObjectMapper.createObjectNode();
+        publicationChannelsResponseBodyElement.put("id", uri.toString());
+
+        var publicationChannelsResponseBody = dtoObjectMapper.createArrayNode();
+        publicationChannelsResponseBody.add(publicationChannelsResponseBodyElement);
+
+        return publicationChannelsResponseBody;
+    }
+
     private URI prepareWebServerAndReturnUriToMetadata(String filename, String body) {
         startMock(filename, body);
         var uriString = String.format(URI_TEMPLATE, wireMockServer.port(), filename);
@@ -709,10 +756,6 @@ public class MetadataServiceTest {
         stubFor(get(urlEqualTo("/article/" + filename))
                     .willReturn(aResponse()
                                     .withHeader("Content-Type", "text/html")
-                                    .withBody(body)));
-        stubFor(get(urlPathEqualTo("/publication-channels/journal"))
-                    .willReturn(aResponse()
-                                    .withHeader("Content-Type", "application/json")
                                     .withBody(body)));
     }
 

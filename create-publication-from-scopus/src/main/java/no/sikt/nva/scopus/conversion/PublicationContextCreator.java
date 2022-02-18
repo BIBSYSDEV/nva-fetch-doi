@@ -1,34 +1,107 @@
 package no.sikt.nva.scopus.conversion;
 
+import static no.sikt.nva.scopus.ScopusSourceType.BOOK;
+import static no.sikt.nva.scopus.ScopusSourceType.JOURNAL;
 import static nva.commons.core.attempt.Try.attempt;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.IssnTp;
 import no.scopus.generated.MetaTp;
+import no.scopus.generated.PublisherTp;
 import no.scopus.generated.SourceTp;
 import no.sikt.nva.scopus.ScopusConstants;
+import no.sikt.nva.scopus.ScopusSourceType;
+import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.unit.nva.metadata.service.MetadataService;
+import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.BookSeries;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Periodical;
+import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.Publisher;
+import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
+import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import nva.commons.core.SingletonCollector;
+import nva.commons.core.paths.UriWrapper;
 
-public class JournalCreator {
+public class PublicationContextCreator {
 
+    public static final String UNSUPPORTED_SOURCE_TYPE = "Unsupported source type, in %s";
     public static final String DASH = "-";
     public static final int START_YEAR_FOR_LEVEL_INFO = 2004;
+    public static final String EMPTY_STRING = "";
 
     private final MetadataService metadataService;
     private final DocTp docTp;
 
-    public JournalCreator(MetadataService metadataService, DocTp docTp) {
+    public PublicationContextCreator(MetadataService metadataService, DocTp docTp) {
         this.metadataService = metadataService;
         this.docTp = docTp;
     }
 
+    public PublicationContext getPublicationContext() {
+        if (isJournal()) {
+            return createJournal();
+        }
+        if (isBook()) {
+            return createBook();
+        }
+        throw new UnsupportedSrcTypeException(String.format(UNSUPPORTED_SOURCE_TYPE, docTp.getMeta().getEid()));
+    }
+
+    private boolean isJournal() {
+        return Optional.ofNullable(docTp)
+                .map(DocTp::getMeta)
+                .map(MetaTp::getSrctype)
+                .map(srcTyp -> JOURNAL.equals(ScopusSourceType.valueOfCode(srcTyp)))
+                .orElse(false);
+    }
+
+    private boolean isBook() {
+        return Optional.ofNullable(docTp)
+                .map(DocTp::getMeta)
+                .map(MetaTp::getSrctype)
+                .map(srcType -> BOOK.equals(ScopusSourceType.valueOfCode(srcType)))
+                .orElse(false);
+    }
+
     public Periodical createJournal() {
         return createConfirmedJournal().orElseGet(this::createUnconfirmedJournal);
+    }
+
+    public Book createBook() {
+        BookSeries bookSeries = null;
+        String seriesNumber = null;
+        PublishingHouse publishingHouse = createPublisher();
+        List<String> isbnList = Collections.emptyList();
+        return attempt(() -> new Book(bookSeries, seriesNumber, publishingHouse, isbnList)).orElseThrow();
+    }
+
+    private PublishingHouse createPublisher() {
+        return fetchConfirmedPublisherFromPublicationChannels().orElseGet(this::createUnconfirmedPublisher);
+    }
+
+
+    private Optional<PublishingHouse> fetchConfirmedPublisherFromPublicationChannels() {
+        var publisherName = findPublisherName();
+        Optional<String> publisherID = Optional.ofNullable(metadataService
+                .fetchPublisherIdFromPublicationChannel(publisherName));
+        return publisherID.map(id -> new Publisher(UriWrapper.fromUri(id).getUri()));
+    }
+
+    private UnconfirmedPublisher createUnconfirmedPublisher() {
+        var publisherName = findPublisherName();
+        return new UnconfirmedPublisher(publisherName);
+    }
+
+    private String findPublisherName() {
+        Optional<PublisherTp> publisherTp = docTp.getItem().getItem().getBibrecord().getHead().getSource()
+                .getPublisher().stream().findFirst();
+        return publisherTp.map(PublisherTp::getPublishername).orElse(EMPTY_STRING);
     }
 
     private Optional<Periodical> createConfirmedJournal() {

@@ -6,8 +6,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
-import static no.sikt.nva.scopus.ScopusConverter.UNSUPPORTED_SOURCE_TYPE;
 import static no.sikt.nva.scopus.ScopusConverter.NAME_DELIMITER;
+import static no.sikt.nva.scopus.conversion.PublicationContextCreator.UNSUPPORTED_SOURCE_TYPE;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -49,10 +49,13 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import com.google.common.io.CharStreams;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.BibrecordTp;
@@ -75,9 +78,12 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
+import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeEventBridgeClient;
@@ -127,6 +133,7 @@ class ScopusHandlerTest {
     private static final String HARDCODED_EXPECTED_KEYWORD_1_IN_0000469852 = "64Cu";
     private static final String HARDCODED_EXPECTED_KEYWORD_2_IN_0000469852 = "excretion";
     private static final String HARDCODED_EXPECTED_KEYWORD_3_IN_0000469852 = "sheep";
+    private static final String HARDCODED_EXPECTED_KEYWORD_4_IN_0000469852 = "infGG";
     private static final String XML_ENCODING_DECLARATION = "<?xml version=\"1.0\" encoding=\"UTF-8\" "
                                                            + "standalone=\"yes\"?>";
     private static final String PUBLICATION_DAY_FIELD_NAME = "day";
@@ -134,12 +141,15 @@ class ScopusHandlerTest {
     private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
     private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
     private static final String EXPECTED_ABSTRACT_NAME_SPACE = "<abstractTp";
+    private static final String JOURNAL_SOURCETYPE_IDENTIFYING_CHAR = "j";
+    private static final String BOOK_SOURCETYPE_IDENTIFYING_CHAR = "b";
 
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
     private ScopusHandler scopusHandler;
     private WireMockServer httpServer;
-    private URI serverUri;
+    private URI serverUriJournal;
+    private URI serverUriPublisher;
     private MetadataService metadataService;
 
     private HttpClient httpClient;
@@ -152,7 +162,7 @@ class ScopusHandlerTest {
         s3Driver = new S3Driver(s3Client, "ignoredValue");
         startWiremockServer();
         httpClient = WiremockHttpClient.create();
-        metadataService = new MetadataService(httpClient, serverUri);
+        metadataService = new MetadataService(httpClient, serverUriJournal, serverUriPublisher);
         eventBridgeClient = new FakeEventBridgeClient();
         scopusHandler = new ScopusHandler(s3Client, metadataService, eventBridgeClient);
         scopusData = new ScopusGenerator();
@@ -290,12 +300,51 @@ class ScopusHandlerTest {
     }
 
     @Test
+    void shouldReturnPublicationContextBookWithUnconfirmedPublisherWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeB()
+            throws IOException {
+        scopusData.getDocument().getMeta().setSrctype("b");
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
+                .getPublicationContext();
+        assertThat(actualPublicationContext, instanceOf(Book.class));
+        var actualPublisher = ((Book) actualPublicationContext).getPublisher();
+        assertThat(actualPublisher, instanceOf(UnconfirmedPublisher.class));
+        var expectedPublishername = scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource()
+                .getPublisher().get(0).getPublishername();
+        var actualPublisherName = ((UnconfirmedPublisher) actualPublisher).getName();
+        assertThat(actualPublisherName, is(expectedPublishername));
+    }
+
+    @Test
+    void shouldReturnPublicationContextBookWithConfirmedPublisherWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeB()
+            throws IOException {
+        scopusData.getDocument().getMeta().setSrctype("b");
+        var expectedPublisherName = randomString();
+        scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0)
+                .setPublishername(expectedPublisherName);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        var queryUri = createExpectedQueryUriForPublisherWithName(expectedPublisherName);
+        var expectedPublisherUri = mockedPublicationChannelsReturnsUri(queryUri);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
+                .getPublicationContext();
+        assertThat(actualPublicationContext, instanceOf(Book.class));
+        var actualPublisher = ((Book) actualPublicationContext).getPublisher();
+        assertThat(actualPublisher, instanceOf(Publisher.class));
+        var actualPublisherId = ((Publisher) actualPublisher).getId();
+        assertThat(actualPublisherId, is(expectedPublisherUri));
+    }
+
+    @Test
     void shouldReturnCreatePublicationRequestWithJournalWhenEventWithS3UriThatPointsToScopusXmlWhereSourceTitleIsInNsd()
         throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
 
         var queryUri = createExpectedQueryUriForJournalWithEIssn(E_ISSN_0000469852, "2010");
-        var expectedJournalUri = mockedPublicationChannelsReturnsJournalUri(queryUri);
+        var expectedJournalUri = mockedPublicationChannelsReturnsUri(queryUri);
 
         scopusFile = scopusFile.replace("<xocs:pub-year>1993</xocs:pub-year>",
                                         "<xocs:pub-year>2010</xocs:pub-year>");
@@ -333,6 +382,9 @@ class ScopusHandlerTest {
     @Test
     void shouldExtractAuthorKeyWordsAsPlainText() throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0018132378));
+        scopusFile = scopusFile.replace("<author-keyword xml:lang=\"eng\">sheep</author-keyword>",
+                "<author-keyword xml:lang=\"eng\">sheep</author-keyword>\n"
+                        + "<author-keyword xml:lang=\"eng\"><inf>inf</inf>GG</author-keyword>\n");
         var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -340,7 +392,8 @@ class ScopusHandlerTest {
         assertThat(actualPlaintextKeyWords, allOf(
             hasItem(HARDCODED_EXPECTED_KEYWORD_1_IN_0000469852),
             hasItem(HARDCODED_EXPECTED_KEYWORD_2_IN_0000469852),
-            hasItem(HARDCODED_EXPECTED_KEYWORD_3_IN_0000469852)));
+            hasItem(HARDCODED_EXPECTED_KEYWORD_3_IN_0000469852),
+                hasItem(HARDCODED_EXPECTED_KEYWORD_4_IN_0000469852)));
     }
 
     @Test
@@ -497,35 +550,51 @@ class ScopusHandlerTest {
             .collect(SingletonCollector.collect());
     }
 
+    private String getRandomCharBesidesUnwantedChar(String... unwantedChar) {
+        String randomChar;
+        do {
+            randomChar = randomString().toLowerCase().substring(0,1);
+        } while (Arrays.stream(unwantedChar).anyMatch(randomChar::equals));
+        return randomChar;
+    }
+
     private URI createExpectedQueryUriForJournalWithEIssn(String electronicIssn, String year) {
-        return new UriWrapper(serverUri)
+        return new UriWrapper(serverUriJournal)
             .addQueryParameter("query", electronicIssn)
             .addQueryParameter("year", year)
             .getUri();
     }
 
-    private URI mockedPublicationChannelsReturnsJournalUri(URI queryUri) {
-        var journalUri = randomUri();
-        ArrayNode publicationChannelsResponseBody = createPublicationChannelsResponseWithJournalUri(journalUri);
+    private URI createExpectedQueryUriForPublisherWithName(String name) {
+        return new UriWrapper(serverUriPublisher)
+                .addQueryParameter("query", name)
+                .getUri();
+    }
+
+    private URI mockedPublicationChannelsReturnsUri(URI queryUri) {
+        var uri = randomUri();
+        ArrayNode publicationChannelsResponseBody = createPublicationChannelsResponseWithUri(uri);
         stubFor(get(START_OF_QUERY + queryUri
             .getQuery())
                     .willReturn(aResponse().withBody(publicationChannelsResponseBody
                                                          .toPrettyString()).withStatus(HttpURLConnection.HTTP_OK)));
-        return journalUri;
+        return uri;
     }
 
     private void startWiremockServer() {
         httpServer = new WireMockServer(options().dynamicHttpsPort());
         httpServer.start();
-        serverUri = URI.create(httpServer.baseUrl());
+        serverUriJournal = URI.create(httpServer.baseUrl());
+        serverUriPublisher = URI.create(httpServer.baseUrl());
     }
 
-    private ArrayNode createPublicationChannelsResponseWithJournalUri(URI journalUri) {
+    private ArrayNode createPublicationChannelsResponseWithUri(URI uri) {
         var publicationChannelsResponseBodyElement = dtoObjectMapper.createObjectNode();
-        publicationChannelsResponseBodyElement.put("id", journalUri.toString());
+        publicationChannelsResponseBodyElement.put("id", uri.toString());
 
         var publicationChannelsResponseBody = dtoObjectMapper.createArrayNode();
         publicationChannelsResponseBody.add(publicationChannelsResponseBodyElement);
+
         return publicationChannelsResponseBody;
     }
 

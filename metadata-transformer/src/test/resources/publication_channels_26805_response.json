@@ -1,0 +1,11 @@
+[
+  {
+    "@context": "https://bibsysdev.github.io/src/publication-channel/channel-context.json",
+    "id": "https://api.dev.nva.aws.unit.no/publication-channels/publisher/26805",
+    "type": "Publisher",
+    "identifier": "26805",
+    "name": "Springer Nature",
+    "website": "http://www.springernature.com/gp/",
+    "active": true
+  }
+]

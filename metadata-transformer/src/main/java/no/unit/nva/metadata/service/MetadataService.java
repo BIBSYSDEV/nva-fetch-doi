@@ -28,6 +28,7 @@ import no.unit.nva.metadata.type.OntologyProperty;
 import no.unit.nva.metadata.type.RawMetaTag;
 import nva.commons.apigateway.MediaTypes;
 import nva.commons.core.Environment;
+import nva.commons.core.SingletonCollector;
 import nva.commons.core.paths.UriWrapper;
 import org.apache.any23.extractor.ExtractionException;
 import org.eclipse.rdf4j.model.IRI;
@@ -61,13 +62,16 @@ public class MetadataService {
     private static final String DOI_FIRST_PART = "10";
     private static final String HTTPS = "https";
     private static final String HTTP = "http";
+    public static final String QUERY_PARAM_QUERY = "query";
+    public static final String QUERY_PARAM_YEAR = "year";
     private final HttpClient httpClient;
     private final TranslatorService translatorService;
     private final Repository db = new SailRepository(new MemoryStore());
     private final URI publicationChannelsHostUri;
+    private final URI publicationChannelsHostUriPublisher;
 
     public MetadataService() {
-        this(getDefaultHttpClient(), defaultPublicationChannelsHostUri());
+        this(getDefaultHttpClient(), defaultPublicationChannelsHostUri(), defaultPublicationChannelsHostUriPublisher());
     }
 
     /**
@@ -76,13 +80,15 @@ public class MetadataService {
      */
     @Deprecated
     public MetadataService(HttpClient httpClient) {
-        this(httpClient, defaultPublicationChannelsHostUri());
+        this(httpClient, defaultPublicationChannelsHostUri(), defaultPublicationChannelsHostUriPublisher());
     }
 
-    public MetadataService(HttpClient httpClient, URI publicationChannelsHostUri) {
+    public MetadataService(HttpClient httpClient, URI publicationChannelsHostUri,
+                           URI publicationChannelsHostUriPublisher) {
         this.translatorService = new TranslatorService();
         this.httpClient = httpClient;
         this.publicationChannelsHostUri = publicationChannelsHostUri;
+        this.publicationChannelsHostUriPublisher = publicationChannelsHostUriPublisher;
     }
 
     /**
@@ -115,6 +121,10 @@ public class MetadataService {
 
     public static URI defaultPublicationChannelsHostUri() {
         return UriWrapper.fromHost(API_HOST).addChild("publication-channels").addChild("journal").getUri();
+    }
+
+    public static URI defaultPublicationChannelsHostUriPublisher() {
+        return UriWrapper.fromHost(API_HOST).addChild("publication-channels").addChild("publisher").getUri();
     }
 
     private static HttpClient getDefaultHttpClient() {
@@ -230,6 +240,13 @@ public class MetadataService {
             .flatMap(Function.identity());
     }
 
+    private Optional<String> queryPublicationChannelForPublisher(String term) {
+        return attempt(() -> sendQueryToPublicationChannelsProxy(term))
+            .map(this::parseResponseFromPublicationChannelsProxy)
+            .toOptional()
+            .flatMap(Function.identity());
+    }
+
     private Optional<String> parseResponseFromPublicationChannelsProxy(HttpResponse<String> response) {
         if (HttpURLConnection.HTTP_OK == response.statusCode()) {
             return getIdOfFirstElement(response);
@@ -247,8 +264,8 @@ public class MetadataService {
         throws IOException, InterruptedException {
         var searchTerm = URLEncoder.encode(term, StandardCharsets.UTF_8.toString());
         var uri = new UriWrapper(publicationChannelsHostUri)
-            .addQueryParameter("query", searchTerm)
-            .addQueryParameter("year", Integer.toString(year))
+            .addQueryParameter(QUERY_PARAM_QUERY, searchTerm)
+            .addQueryParameter(QUERY_PARAM_YEAR, Integer.toString(year))
             .getUri();
 
         var request = HttpRequest.newBuilder()
@@ -258,5 +275,34 @@ public class MetadataService {
             .build();
 
         return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    private HttpResponse<String> sendQueryToPublicationChannelsProxy(String term)
+        throws IOException, InterruptedException {
+        var searchTerm = URLEncoder.encode(term, StandardCharsets.UTF_8.toString());
+        var uri = new UriWrapper(publicationChannelsHostUriPublisher)
+            .addQueryParameter(QUERY_PARAM_QUERY, searchTerm)
+            .getUri();
+
+        var request = HttpRequest.newBuilder()
+            .uri(uri)
+            .headers(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, MediaTypes.APPLICATION_JSON_LD.toString())
+            .GET()
+            .build();
+
+        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    /**
+     * Fetches publisherId as URI from publication-channels by publisherName only with exact single match
+     * or returns null.
+     * @param publisherName the name of the publisher
+     * @return jsonString representing the publisher
+     */
+    public String fetchPublisherIdFromPublicationChannel(String publisherName) {
+        return Optional.ofNullable(publisherName)
+                .flatMap(queryTerm -> queryPublicationChannelForPublisher(queryTerm))
+                .stream()
+                .collect(SingletonCollector.collectOrElse(null));
     }
 }

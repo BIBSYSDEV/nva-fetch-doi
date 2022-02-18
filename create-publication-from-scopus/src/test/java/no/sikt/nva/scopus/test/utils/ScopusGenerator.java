@@ -30,6 +30,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
+
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AbstractsTp;
 import no.scopus.generated.AuthorGroupTp;
@@ -54,6 +55,7 @@ import no.scopus.generated.MetaTp;
 import no.scopus.generated.OrigItemTp;
 import no.scopus.generated.PersonalnameType;
 import no.scopus.generated.ProcessInfo;
+import no.scopus.generated.PublisherTp;
 import no.scopus.generated.PublishercopyrightTp;
 import no.scopus.generated.RichstringWithMMLType;
 import no.scopus.generated.ShortTitle;
@@ -171,8 +173,8 @@ public final class ScopusGenerator {
 
     private String randomScopusDoi() {
         return nonNull(doi)
-                   ? new UriWrapper(doi).getPath().removeRoot().toString()
-                   : null;
+                ? new UriWrapper(doi).getPath().removeRoot().toString()
+                : null;
     }
 
     private ItemTp randomItemTp() {
@@ -255,6 +257,7 @@ public final class ScopusGenerator {
         sourceTp.setSourcetitle(randomSourceTitle());
         sourceTp.setArticleNumber(randomString());
         sourceTp.getIssn().addAll(randomIssnTypes());
+        sourceTp.getPublisher().add(randomPublisher());
         return sourceTp;
     }
 
@@ -281,26 +284,32 @@ public final class ScopusGenerator {
         return issnTp;
     }
 
+    private static PublisherTp randomPublisher() {
+        var publisher = new PublisherTp();
+        publisher.setPublishername(randomString());
+        return publisher;
+    }
+
     private static Collection<? extends AuthorGroupTp> randomAuthorGroups(List<?> authorsAndCollaborations) {
         int maxNumberOfAuthorGroups = 200;
         return IntStream.range(0, randomInteger(maxNumberOfAuthorGroups) + 1)
-            .boxed()
-            .map(ignored -> randomAuthorGroup(authorsAndCollaborations))
-            .collect(Collectors.toList());
+                .boxed()
+                .map(ignored -> randomAuthorGroup(authorsAndCollaborations))
+                .collect(Collectors.toList());
     }
 
     private List<?> randomAuthorOrCollaborations() {
         int maxNumbersOfAuthors = 200;
         return IntStream.range(0, randomInteger(maxNumbersOfAuthors) + 1)
-            .boxed()
-            .map(index -> randomAuthorOrCollaboration())
-            .collect(Collectors.toList());
+                .boxed()
+                .map(index -> randomAuthorOrCollaboration())
+                .collect(Collectors.toList());
     }
 
     private static AuthorGroupTp randomAuthorGroup(List<?> authorsAndCollaborations) {
         var authorGroup = new AuthorGroupTp();
         authorGroup.getAuthorOrCollaboration()
-            .addAll(randomSubsetRandomAuthorsOrCollaborations(authorsAndCollaborations));
+                .addAll(randomSubsetRandomAuthorsOrCollaborations(authorsAndCollaborations));
         return authorGroup;
     }
 

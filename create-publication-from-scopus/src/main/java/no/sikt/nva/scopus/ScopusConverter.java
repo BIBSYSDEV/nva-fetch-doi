@@ -3,39 +3,27 @@ package no.sikt.nva.scopus;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
-import static no.sikt.nva.scopus.ScopusSourceType.JOURNAL;
 import jakarta.xml.bind.JAXB;
 import jakarta.xml.bind.JAXBElement;
-import java.io.StringWriter;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordTp;
 import no.scopus.generated.AuthorKeywordsTp;
 import no.scopus.generated.AuthorTp;
+import no.scopus.generated.CitationInfoTp;
 import no.scopus.generated.CitationTypeTp;
 import no.scopus.generated.CitationtypeAtt;
-import no.scopus.generated.CitationInfoTp;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
 import no.scopus.generated.InfTp;
 import no.scopus.generated.ItemidTp;
-import no.scopus.generated.MetaTp;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
+import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
-import no.sikt.nva.scopus.conversion.JournalCreator;
-import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
-import no.sikt.nva.scopus.exception.UnsupportedXmlElementException;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -44,19 +32,25 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
-import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.Pages;
 import nva.commons.core.paths.UriWrapper;
 
+import java.io.StringWriter;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+
 @SuppressWarnings("PMD.GodClass")
 class ScopusConverter {
 
-    private static final String MALFORMED_CONTENT_MESSAGE = "Malformed content, cannot parse: %s";
-    public static final String UNSUPPORTED_SOURCE_TYPE = "Unsupported source type, in %s";
-    public static final String UNSUPPORTED_CITATION_TYPE_MESSAGE = "Unsupported citation type, cannot convert "
-                                                                   + "eid %s";
+    public static final String UNSUPPORTED_CITATION_TYPE_MESSAGE = "Unsupported citation type, cannot convert eid %s";
     private final DocTp docTp;
     private final MetadataService metadataService;
     public static final String NAME_DELIMITER = ", ";
@@ -177,12 +171,10 @@ class ScopusConverter {
             return extractContentString(((SupTp) content).getContent());
         } else if (content instanceof InfTp) {
             return extractContentString(((InfTp) content).getContent());
-        } else if (content instanceof ArrayList) {
+        } else {
             return ((ArrayList<?>) content).stream()
                 .map(this::extractContentString)
                 .collect(Collectors.joining());
-        } else {
-            throw new UnsupportedXmlElementException(String.format(MALFORMED_CONTENT_MESSAGE, content.getClass()));
         }
     }
 
@@ -204,7 +196,7 @@ class ScopusConverter {
         Reference reference = new Reference();
         reference.setPublicationInstance(generatePublicationInstance());
         reference.setDoi(extractDOI());
-        reference.setPublicationContext(getPublicationContext());
+        reference.setPublicationContext(new PublicationContextCreator(metadataService, docTp).getPublicationContext());
         return reference;
     }
 
@@ -339,19 +331,4 @@ class ScopusConverter {
                                         itemIdTp.getValue());
     }
 
-    private PublicationContext getPublicationContext() {
-        if (isJournal()) {
-            return new JournalCreator(metadataService, docTp).createJournal();
-        } else {
-            throw new UnsupportedSrcTypeException(String.format(UNSUPPORTED_SOURCE_TYPE, docTp.getMeta().getEid()));
-        }
-    }
-
-    private boolean isJournal() {
-        return Optional.ofNullable(docTp)
-            .map(DocTp::getMeta)
-            .map(MetaTp::getSrctype)
-            .map(srcTyp -> JOURNAL.equals(ScopusSourceType.valueOfCode(srcTyp)))
-            .orElse(false);
-    }
 }
