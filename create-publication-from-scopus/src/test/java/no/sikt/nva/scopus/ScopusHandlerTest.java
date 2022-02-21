@@ -341,18 +341,18 @@ class ScopusHandlerTest {
 
     @Test
     void shouldReturnPublicationContextReportWithConfirmedPublisherWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeR()
-            throws IOException {
+        throws IOException {
         scopusData.getDocument().getMeta().setSrctype("r");
         var expectedPublisherName = randomString();
         scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0)
-                .setPublishername(expectedPublisherName);
+            .setPublishername(expectedPublisherName);
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var queryUri = createExpectedQueryUriForPublisherWithName(expectedPublisherName);
         var expectedPublisherUri = mockedPublicationChannelsReturnsUri(queryUri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
-                .getPublicationContext();
+            .getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Book.class));
         var actualPublisher = ((Report) actualPublicationContext).getPublisher();
         assertThat(actualPublisher, instanceOf(Publisher.class));
@@ -652,7 +652,6 @@ class ScopusHandlerTest {
 
     private String getOrcidAsUriString(AuthorTp authorTp) {
         return isNotBlank(authorTp.getOrcid()) ? craftOrcidUriString(authorTp.getOrcid()) : null;
-
     }
 
     private String craftOrcidUriString(String potentiallyMalformedOrcidString) {

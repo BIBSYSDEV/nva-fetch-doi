@@ -174,8 +174,8 @@ public final class ScopusGenerator {
 
     private String randomScopusDoi() {
         return nonNull(doi)
-                ? new UriWrapper(doi).getPath().removeRoot().toString()
-                : null;
+                   ? new UriWrapper(doi).getPath().removeRoot().toString()
+                   : null;
     }
 
     private ItemTp randomItemTp() {
@@ -294,23 +294,23 @@ public final class ScopusGenerator {
     private static Collection<? extends AuthorGroupTp> randomAuthorGroups(List<?> authorsAndCollaborations) {
         int maxNumberOfAuthorGroups = 200;
         return IntStream.range(0, randomInteger(maxNumberOfAuthorGroups) + 1)
-                .boxed()
-                .map(ignored -> randomAuthorGroup(authorsAndCollaborations))
-                .collect(Collectors.toList());
+            .boxed()
+            .map(ignored -> randomAuthorGroup(authorsAndCollaborations))
+            .collect(Collectors.toList());
     }
 
     private List<?> randomAuthorOrCollaborations() {
         int maxNumbersOfAuthors = 200;
         return IntStream.range(0, randomInteger(maxNumbersOfAuthors) + 1)
-                .boxed()
-                .map(index -> randomAuthorOrCollaboration())
-                .collect(Collectors.toList());
+            .boxed()
+            .map(index -> randomAuthorOrCollaboration())
+            .collect(Collectors.toList());
     }
 
     private static AuthorGroupTp randomAuthorGroup(List<?> authorsAndCollaborations) {
         var authorGroup = new AuthorGroupTp();
         authorGroup.getAuthorOrCollaboration()
-                .addAll(randomSubsetRandomAuthorsOrCollaborations(authorsAndCollaborations));
+            .addAll(randomSubsetRandomAuthorsOrCollaborations(authorsAndCollaborations));
         return authorGroup;
     }
 

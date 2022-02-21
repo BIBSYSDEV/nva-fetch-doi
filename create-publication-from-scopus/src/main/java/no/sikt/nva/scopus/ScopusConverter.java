@@ -47,7 +47,6 @@ import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.Pages;
 import nva.commons.core.paths.UriWrapper;
 
-
 @SuppressWarnings("PMD.GodClass")
 class ScopusConverter {
 
@@ -276,7 +275,6 @@ class ScopusConverter {
 
     private String getOrcidAsUriString(AuthorTp authorTp) {
         return isNotBlank(authorTp.getOrcid()) ? craftOrcidUriString(authorTp.getOrcid()) : null;
-
     }
 
     private String craftOrcidUriString(String potentiallyMalformedOrcidString) {
@@ -342,5 +340,4 @@ class ScopusConverter {
         return new AdditionalIdentifier(ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME,
                                         itemIdTp.getValue());
     }
-
 }
