@@ -1,6 +1,7 @@
 package no.sikt.nva.scopus.test.utils;
 
 import static java.util.Objects.nonNull;
+import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFieldsAndClasses;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
@@ -334,7 +335,11 @@ public final class ScopusGenerator {
 
     private static String randomOrcid() {
         var shouldCreateOrcid = randomBoolean();
-        return shouldCreateOrcid ? randomString() : null;
+        return shouldCreateOrcid ? randomPotentialOrcidUriString() : null;
+    }
+
+    private static String randomPotentialOrcidUriString() {
+        return randomBoolean() ? ORCID_DOMAIN_URL + randomString() : randomString();
     }
 
     private CollaborationTp randomCollaborationTp() {

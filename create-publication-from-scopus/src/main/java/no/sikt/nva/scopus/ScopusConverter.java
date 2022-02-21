@@ -4,8 +4,17 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
+import static nva.commons.core.StringUtils.isNotBlank;
 import jakarta.xml.bind.JAXB;
 import jakarta.xml.bind.JAXBElement;
+import java.io.StringWriter;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordTp;
@@ -37,15 +46,6 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.Pages;
 import nva.commons.core.paths.UriWrapper;
-
-import java.io.StringWriter;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 
 @SuppressWarnings("PMD.GodClass")
@@ -270,12 +270,19 @@ class ScopusConverter {
     private Contributor generateContributorFromAuthorTp(AuthorTp author) {
         var identity = new Identity();
         identity.setName(determineContributorName(author));
-        identity.setOrcId(getOrcidAsStringUri(author));
+        identity.setOrcId(getOrcidAsUriString(author));
         return new Contributor(identity, null, null, getSequenceNumber(author), false);
     }
 
-    private String getOrcidAsStringUri(AuthorTp authorTp){
-        return ORCID_DOMAIN_URL + authorTp.getOrcid();
+    private String getOrcidAsUriString(AuthorTp authorTp) {
+        return isNotBlank(authorTp.getOrcid()) ? craftOrcidUriString(authorTp.getOrcid()) : null;
+
+    }
+
+    private String craftOrcidUriString(String potentiallyMalformedOrcidString) {
+        return potentiallyMalformedOrcidString.contains(ORCID_DOMAIN_URL)
+                   ? potentiallyMalformedOrcidString
+                   : ORCID_DOMAIN_URL + potentiallyMalformedOrcidString;
     }
 
     private Contributor generateContributorFromCollaborationTp(CollaborationTp collaboration) {
