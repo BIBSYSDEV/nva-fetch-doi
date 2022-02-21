@@ -2,6 +2,7 @@ package no.sikt.nva.scopus.conversion;
 
 import static no.sikt.nva.scopus.ScopusSourceType.BOOK;
 import static no.sikt.nva.scopus.ScopusSourceType.JOURNAL;
+import static no.sikt.nva.scopus.ScopusSourceType.REPORT;
 import static nva.commons.core.attempt.Try.attempt;
 
 import java.util.Collections;
@@ -23,6 +24,7 @@ import no.unit.nva.model.contexttypes.Periodical;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.PublishingHouse;
+import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import nva.commons.core.SingletonCollector;
@@ -50,6 +52,9 @@ public class PublicationContextCreator {
         if (isBook()) {
             return createBook();
         }
+        if (isReport()) {
+            return createReport();
+        }
         throw new UnsupportedSrcTypeException(String.format(UNSUPPORTED_SOURCE_TYPE, docTp.getMeta().getEid()));
     }
 
@@ -69,6 +74,14 @@ public class PublicationContextCreator {
                 .orElse(false);
     }
 
+    private boolean isReport() {
+        return Optional.ofNullable(docTp)
+                .map(DocTp::getMeta)
+                .map(MetaTp::getSrctype)
+                .map(srcType -> REPORT.equals(ScopusSourceType.valueOfCode(srcType)))
+                .orElse(false);
+    }
+
     public Periodical createJournal() {
         return createConfirmedJournal().orElseGet(this::createUnconfirmedJournal);
     }
@@ -79,6 +92,15 @@ public class PublicationContextCreator {
         PublishingHouse publishingHouse = createPublisher();
         List<String> isbnList = Collections.emptyList();
         return attempt(() -> new Book(bookSeries, seriesNumber, publishingHouse, isbnList)).orElseThrow();
+    }
+
+    public Book createReport() {
+        BookSeries bookSeries = null;
+        String seriesTitle = null;
+        String seriesNumber = null;
+        PublishingHouse publishingHouse = createPublisher();
+        List<String> isbnList = Collections.emptyList();
+        return attempt(() -> new Report(bookSeries, seriesTitle, seriesNumber, publishingHouse, isbnList)).orElseThrow();
     }
 
     private PublishingHouse createPublisher() {

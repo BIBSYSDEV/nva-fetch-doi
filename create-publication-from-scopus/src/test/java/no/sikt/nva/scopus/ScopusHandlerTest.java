@@ -82,6 +82,7 @@ import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Publisher;
+import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
@@ -333,6 +334,27 @@ class ScopusHandlerTest {
                 .getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Book.class));
         var actualPublisher = ((Book) actualPublicationContext).getPublisher();
+        assertThat(actualPublisher, instanceOf(Publisher.class));
+        var actualPublisherId = ((Publisher) actualPublisher).getId();
+        assertThat(actualPublisherId, is(expectedPublisherUri));
+    }
+
+    @Test
+    void shouldReturnPublicationContextReportWithConfirmedPublisherWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeR()
+            throws IOException {
+        scopusData.getDocument().getMeta().setSrctype("r");
+        var expectedPublisherName = randomString();
+        scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0)
+                .setPublishername(expectedPublisherName);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        var queryUri = createExpectedQueryUriForPublisherWithName(expectedPublisherName);
+        var expectedPublisherUri = mockedPublicationChannelsReturnsUri(queryUri);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
+                .getPublicationContext();
+        assertThat(actualPublicationContext, instanceOf(Book.class));
+        var actualPublisher = ((Report) actualPublicationContext).getPublisher();
         assertThat(actualPublisher, instanceOf(Publisher.class));
         var actualPublisherId = ((Publisher) actualPublisher).getId();
         assertThat(actualPublisherId, is(expectedPublisherUri));

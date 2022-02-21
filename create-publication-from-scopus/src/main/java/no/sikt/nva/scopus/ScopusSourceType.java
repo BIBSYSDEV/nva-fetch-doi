@@ -4,8 +4,9 @@ import java.util.Arrays;
 
 public enum ScopusSourceType {
 
+    BOOK("b"),
     JOURNAL("j"),
-    BOOK("b");
+    REPORT("r");
 
     public final String code;
 
