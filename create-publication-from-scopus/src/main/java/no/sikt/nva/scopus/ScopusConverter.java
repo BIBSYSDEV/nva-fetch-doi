@@ -3,6 +3,7 @@ package no.sikt.nva.scopus;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
+import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import jakarta.xml.bind.JAXB;
 import jakarta.xml.bind.JAXBElement;
 import no.scopus.generated.AbstractTp;
@@ -269,8 +270,12 @@ class ScopusConverter {
     private Contributor generateContributorFromAuthorTp(AuthorTp author) {
         var identity = new Identity();
         identity.setName(determineContributorName(author));
-        identity.setOrcId(author.getOrcid());
+        identity.setOrcId(getOrcidAsStringUri(author));
         return new Contributor(identity, null, null, getSequenceNumber(author), false);
+    }
+
+    private String getOrcidAsStringUri(AuthorTp authorTp){
+        return ORCID_DOMAIN_URL + authorTp.getOrcid();
     }
 
     private Contributor generateContributorFromCollaborationTp(CollaborationTp collaboration) {
