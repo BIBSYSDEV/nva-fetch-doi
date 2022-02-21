@@ -9,6 +9,7 @@ public class ScopusConstants {
 
     //URI constants:
     public static final String DOI_OPEN_URL_FORMAT = "https://doi.org";
+    public static final String ORCID_DOMAIN_URL = "https://orcid.org/";
 
     //Journal constants:
     public static final String ISSN_TYPE_ELECTRONIC = "electronic";
