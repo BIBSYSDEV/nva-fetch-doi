@@ -13,6 +13,7 @@ import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.core.StringUtils.isNotBlank;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -55,13 +56,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.BibrecordTp;
 import no.scopus.generated.CitationTitleTp;
-import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.CitationtypeAtt;
+import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
 import no.scopus.generated.ItemTp;
@@ -69,8 +69,8 @@ import no.scopus.generated.ItemidTp;
 import no.scopus.generated.OrigItemTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
-import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
+import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.sikt.nva.scopus.test.utils.ScopusGenerator;
 import no.sikt.nva.testing.http.WiremockHttpClient;
 import no.unit.nva.doi.models.Doi;
@@ -78,8 +78,8 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.AdditionalIdentifier;
-import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Report;
@@ -341,18 +341,18 @@ class ScopusHandlerTest {
 
     @Test
     void shouldReturnPublicationContextReportWithConfirmedPublisherWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeR()
-            throws IOException {
+        throws IOException {
         scopusData.getDocument().getMeta().setSrctype("r");
         var expectedPublisherName = randomString();
         scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0)
-                .setPublishername(expectedPublisherName);
+            .setPublishername(expectedPublisherName);
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var queryUri = createExpectedQueryUriForPublisherWithName(expectedPublisherName);
         var expectedPublisherUri = mockedPublicationChannelsReturnsUri(queryUri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
-                .getPublicationContext();
+            .getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Book.class));
         var actualPublisher = ((Report) actualPublicationContext).getPublisher();
         assertThat(actualPublisher, instanceOf(Publisher.class));
@@ -651,7 +651,13 @@ class ScopusHandlerTest {
     }
 
     private String getOrcidAsUriString(AuthorTp authorTp) {
-        return ORCID_DOMAIN_URL + authorTp.getOrcid();
+        return isNotBlank(authorTp.getOrcid()) ? craftOrcidUriString(authorTp.getOrcid()) : null;
+    }
+
+    private String craftOrcidUriString(String potentiallyMalformedOrcidString) {
+        return potentiallyMalformedOrcidString.contains(ORCID_DOMAIN_URL)
+                   ? potentiallyMalformedOrcidString
+                   : ORCID_DOMAIN_URL + potentiallyMalformedOrcidString;
     }
 
     private List<AuthorTp> keepOnlyTheAuthors() {
