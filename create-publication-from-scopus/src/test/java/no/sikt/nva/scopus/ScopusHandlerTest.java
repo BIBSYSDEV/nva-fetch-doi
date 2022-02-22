@@ -8,9 +8,13 @@ import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.sikt.nva.scopus.ScopusConverter.NAME_DELIMITER;
+import static no.sikt.nva.scopus.conversion.PublicationContextCreator.DASH;
+import static no.sikt.nva.scopus.conversion.PublicationContextCreator.EMPTY_STRING;
 import static no.sikt.nva.scopus.conversion.PublicationContextCreator.UNSUPPORTED_SOURCE_TYPE;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
+import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
+import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.StringUtils.isNotBlank;
@@ -64,11 +68,14 @@ import no.scopus.generated.CitationtypeAtt;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
+import no.scopus.generated.IsbnTp;
 import no.scopus.generated.ItemTp;
 import no.scopus.generated.ItemidTp;
 import no.scopus.generated.OrigItemTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
+import no.sikt.nva.scopus.conversion.PublicationContextCreator;
+import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
 import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.sikt.nva.scopus.test.utils.ScopusGenerator;
@@ -325,6 +332,11 @@ class ScopusHandlerTest {
         var expectedPublisherName = randomString();
         scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0)
             .setPublishername(expectedPublisherName);
+        var expectedIsbn13 = randomIsbn13();
+        var isbnTp13 = new IsbnTp();
+        isbnTp13.setContent(expectedIsbn13);
+        isbnTp13.setLength("13");
+        scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getIsbn().add(isbnTp13);
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var queryUri = createExpectedQueryUriForPublisherWithName(expectedPublisherName);
@@ -337,6 +349,9 @@ class ScopusHandlerTest {
         assertThat(actualPublisher, instanceOf(Publisher.class));
         var actualPublisherId = ((Publisher) actualPublisher).getId();
         assertThat(actualPublisherId, is(expectedPublisherUri));
+        var actualIsbnList = ((Book) actualPublicationContext).getIsbnList();
+        assertThat(actualIsbnList.size(), is(1));
+        assertThat(actualIsbnList, containsInAnyOrder(expectedIsbn13));
     }
 
     @Test

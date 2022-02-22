@@ -8,7 +8,10 @@ import static nva.commons.core.attempt.Try.attempt;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
 import no.scopus.generated.DocTp;
+import no.scopus.generated.IsbnTp;
 import no.scopus.generated.IssnTp;
 import no.scopus.generated.MetaTp;
 import no.scopus.generated.PublisherTp;
@@ -90,7 +93,7 @@ public class PublicationContextCreator {
         BookSeries bookSeries = null;
         String seriesNumber = null;
         PublishingHouse publishingHouse = createPublisher();
-        List<String> isbnList = Collections.emptyList();
+        List<String> isbnList = findIsbn();
         return attempt(() -> new Book(bookSeries, seriesNumber, publishingHouse, isbnList)).orElseThrow();
     }
 
@@ -100,7 +103,8 @@ public class PublicationContextCreator {
         String seriesNumber = null;
         PublishingHouse publishingHouse = createPublisher();
         List<String> isbnList = Collections.emptyList();
-        return attempt(() -> new Report(bookSeries, seriesTitle, seriesNumber, publishingHouse, isbnList)).orElseThrow();
+        return attempt(()
+                -> new Report(bookSeries, seriesTitle, seriesNumber, publishingHouse, isbnList)).orElseThrow();
     }
 
     private PublishingHouse createPublisher() {
@@ -190,4 +194,16 @@ public class PublicationContextCreator {
     private String addDashToIssn(String issn) {
         return issn.contains(DASH) ? issn : issn.substring(0, 4) + DASH + issn.substring(4);
     }
+
+    private List<String> findIsbn() {
+        return findIsbn(getSource().getIsbn());
+    }
+
+    private List<String> findIsbn(List<IsbnTp> isbnTpList) {
+        return isbnTpList
+                .stream()
+                .map(IsbnTp::getContent)
+                .collect(Collectors.toList());
+    }
+
 }
