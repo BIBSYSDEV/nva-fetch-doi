@@ -43,6 +43,7 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.Pages;
 import nva.commons.core.paths.UriWrapper;
@@ -219,9 +220,11 @@ class ScopusConverter {
 
     private Optional<PublicationInstance<? extends Pages>> convertCitationTypeToPublicationInstance(
         CitationtypeAtt citationtypeAtt) {
-        return CitationtypeAtt.AR.equals(citationtypeAtt)
-                   ? Optional.of(new JournalArticle())
-                   : Optional.empty();
+        return switch (citationtypeAtt) {
+            case AR -> Optional.of(new JournalArticle());
+            case BK, CH -> Optional.of(new BookMonograph());
+            default -> Optional.empty();
+        };
     }
 
     private Optional<CitationtypeAtt> getCitationType() {
