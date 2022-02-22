@@ -1,6 +1,7 @@
 package no.sikt.nva.scopus.test.utils;
 
 import static java.util.Objects.nonNull;
+import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFieldsAndClasses;
 import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
@@ -173,8 +174,8 @@ public final class ScopusGenerator {
 
     private String randomScopusDoi() {
         return nonNull(doi)
-                ? new UriWrapper(doi).getPath().removeRoot().toString()
-                : null;
+                   ? new UriWrapper(doi).getPath().removeRoot().toString()
+                   : null;
     }
 
     private ItemTp randomItemTp() {
@@ -293,23 +294,23 @@ public final class ScopusGenerator {
     private static Collection<? extends AuthorGroupTp> randomAuthorGroups(List<?> authorsAndCollaborations) {
         int maxNumberOfAuthorGroups = 200;
         return IntStream.range(0, randomInteger(maxNumberOfAuthorGroups) + 1)
-                .boxed()
-                .map(ignored -> randomAuthorGroup(authorsAndCollaborations))
-                .collect(Collectors.toList());
+            .boxed()
+            .map(ignored -> randomAuthorGroup(authorsAndCollaborations))
+            .collect(Collectors.toList());
     }
 
     private List<?> randomAuthorOrCollaborations() {
         int maxNumbersOfAuthors = 200;
         return IntStream.range(0, randomInteger(maxNumbersOfAuthors) + 1)
-                .boxed()
-                .map(index -> randomAuthorOrCollaboration())
-                .collect(Collectors.toList());
+            .boxed()
+            .map(index -> randomAuthorOrCollaboration())
+            .collect(Collectors.toList());
     }
 
     private static AuthorGroupTp randomAuthorGroup(List<?> authorsAndCollaborations) {
         var authorGroup = new AuthorGroupTp();
         authorGroup.getAuthorOrCollaboration()
-                .addAll(randomSubsetRandomAuthorsOrCollaborations(authorsAndCollaborations));
+            .addAll(randomSubsetRandomAuthorsOrCollaborations(authorsAndCollaborations));
         return authorGroup;
     }
 
@@ -334,7 +335,11 @@ public final class ScopusGenerator {
 
     private static String randomOrcid() {
         var shouldCreateOrcid = randomBoolean();
-        return shouldCreateOrcid ? randomString() : null;
+        return shouldCreateOrcid ? randomPotentialOrcidUriString() : null;
+    }
+
+    private static String randomPotentialOrcidUriString() {
+        return randomBoolean() ? ORCID_DOMAIN_URL + randomString() : randomString();
     }
 
     private CollaborationTp randomCollaborationTp() {

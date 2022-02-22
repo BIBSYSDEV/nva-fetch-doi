@@ -6,6 +6,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
+import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.sikt.nva.scopus.ScopusConverter.NAME_DELIMITER;
 import static no.sikt.nva.scopus.conversion.PublicationContextCreator.DASH;
 import static no.sikt.nva.scopus.conversion.PublicationContextCreator.EMPTY_STRING;
@@ -16,6 +17,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.core.StringUtils.isNotBlank;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -58,14 +60,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import com.google.common.io.CharStreams;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.BibrecordTp;
 import no.scopus.generated.CitationTitleTp;
-import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.CitationtypeAtt;
+import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
 import no.scopus.generated.IsbnTp;
@@ -77,6 +77,7 @@ import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
+import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.sikt.nva.scopus.test.utils.ScopusGenerator;
 import no.sikt.nva.testing.http.WiremockHttpClient;
 import no.unit.nva.doi.models.Doi;
@@ -84,8 +85,8 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.AdditionalIdentifier;
-import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Report;
@@ -308,29 +309,29 @@ class ScopusHandlerTest {
 
     @Test
     void shouldReturnPublicationContextBookWithUnconfirmedPublisherWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeB()
-            throws IOException {
+        throws IOException {
         scopusData.getDocument().getMeta().setSrctype("b");
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
-                .getPublicationContext();
+            .getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Book.class));
         var actualPublisher = ((Book) actualPublicationContext).getPublisher();
         assertThat(actualPublisher, instanceOf(UnconfirmedPublisher.class));
         var expectedPublishername = scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource()
-                .getPublisher().get(0).getPublishername();
+            .getPublisher().get(0).getPublishername();
         var actualPublisherName = ((UnconfirmedPublisher) actualPublisher).getName();
         assertThat(actualPublisherName, is(expectedPublishername));
     }
 
     @Test
     void shouldReturnPublicationContextBookWithConfirmedPublisherWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeB()
-            throws IOException {
+        throws IOException {
         scopusData.getDocument().getMeta().setSrctype("b");
         var expectedPublisherName = randomString();
         scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0)
-                .setPublishername(expectedPublisherName);
+            .setPublishername(expectedPublisherName);
         var expectedIsbn13 = randomIsbn13();
         var isbnTp13 = new IsbnTp();
         isbnTp13.setContent(expectedIsbn13);
@@ -342,7 +343,7 @@ class ScopusHandlerTest {
         var expectedPublisherUri = mockedPublicationChannelsReturnsUri(queryUri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
-                .getPublicationContext();
+            .getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Book.class));
         var actualPublisher = ((Book) actualPublicationContext).getPublisher();
         assertThat(actualPublisher, instanceOf(Publisher.class));
@@ -355,18 +356,18 @@ class ScopusHandlerTest {
 
     @Test
     void shouldReturnPublicationContextReportWithConfirmedPublisherWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeR()
-            throws IOException {
+        throws IOException {
         scopusData.getDocument().getMeta().setSrctype("r");
         var expectedPublisherName = randomString();
         scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0)
-                .setPublishername(expectedPublisherName);
+            .setPublishername(expectedPublisherName);
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var queryUri = createExpectedQueryUriForPublisherWithName(expectedPublisherName);
         var expectedPublisherUri = mockedPublicationChannelsReturnsUri(queryUri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
-                .getPublicationContext();
+            .getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Book.class));
         var actualPublisher = ((Report) actualPublicationContext).getPublisher();
         assertThat(actualPublisher, instanceOf(Publisher.class));
@@ -419,8 +420,8 @@ class ScopusHandlerTest {
     void shouldExtractAuthorKeyWordsAsPlainText() throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0018132378));
         scopusFile = scopusFile.replace("<author-keyword xml:lang=\"eng\">sheep</author-keyword>",
-                "<author-keyword xml:lang=\"eng\">sheep</author-keyword>\n"
-                        + "<author-keyword xml:lang=\"eng\"><inf>inf</inf>GG</author-keyword>\n");
+                                        "<author-keyword xml:lang=\"eng\">sheep</author-keyword>\n"
+                                        + "<author-keyword xml:lang=\"eng\"><inf>inf</inf>GG</author-keyword>\n");
         var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -429,7 +430,7 @@ class ScopusHandlerTest {
             hasItem(HARDCODED_EXPECTED_KEYWORD_1_IN_0000469852),
             hasItem(HARDCODED_EXPECTED_KEYWORD_2_IN_0000469852),
             hasItem(HARDCODED_EXPECTED_KEYWORD_3_IN_0000469852),
-                hasItem(HARDCODED_EXPECTED_KEYWORD_4_IN_0000469852)));
+            hasItem(HARDCODED_EXPECTED_KEYWORD_4_IN_0000469852)));
     }
 
     @Test
@@ -525,7 +526,8 @@ class ScopusHandlerTest {
 
     private void checkAuthorOrcidAndSequenceNumber(AuthorTp authorTp, List<Contributor> contributors) {
         if (nonNull(authorTp.getOrcid())) {
-            var optionalContributor = findContributorByAuid(authorTp.getOrcid(), contributors);
+            var orcidAsUriString = getOrcidAsUriString(authorTp);
+            var optionalContributor = findContributorByOrcid(orcidAsUriString, contributors);
             assertTrue(optionalContributor.isPresent());
             var contributor = optionalContributor.get();
             assertEquals(authorTp.getSeq(), contributor.getSequence().toString());
@@ -589,7 +591,7 @@ class ScopusHandlerTest {
     private String getRandomCharBesidesUnwantedChar(String... unwantedChar) {
         String randomChar;
         do {
-            randomChar = randomString().toLowerCase().substring(0,1);
+            randomChar = randomString().toLowerCase().substring(0, 1);
         } while (Arrays.stream(unwantedChar).anyMatch(randomChar::equals));
         return randomChar;
     }
@@ -603,8 +605,8 @@ class ScopusHandlerTest {
 
     private URI createExpectedQueryUriForPublisherWithName(String name) {
         return new UriWrapper(serverUriPublisher)
-                .addQueryParameter("query", name)
-                .getUri();
+            .addQueryParameter("query", name)
+            .getUri();
     }
 
     private URI mockedPublicationChannelsReturnsUri(URI queryUri) {
@@ -657,10 +659,20 @@ class ScopusHandlerTest {
             .collect(Collectors.toList());
     }
 
-    private Optional<Contributor> findContributorByAuid(String orcid, List<Contributor> contributors) {
+    private Optional<Contributor> findContributorByOrcid(String orcid, List<Contributor> contributors) {
         return contributors.stream()
             .filter(contributor -> orcid.equals(contributor.getIdentity().getOrcId()))
             .findFirst();
+    }
+
+    private String getOrcidAsUriString(AuthorTp authorTp) {
+        return isNotBlank(authorTp.getOrcid()) ? craftOrcidUriString(authorTp.getOrcid()) : null;
+    }
+
+    private String craftOrcidUriString(String potentiallyMalformedOrcidString) {
+        return potentiallyMalformedOrcidString.contains(ORCID_DOMAIN_URL)
+                   ? potentiallyMalformedOrcidString
+                   : ORCID_DOMAIN_URL + potentiallyMalformedOrcidString;
     }
 
     private List<AuthorTp> keepOnlyTheAuthors() {
