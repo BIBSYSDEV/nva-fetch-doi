@@ -220,11 +220,15 @@ class ScopusConverter {
 
     private Optional<PublicationInstance<? extends Pages>> convertCitationTypeToPublicationInstance(
         CitationtypeAtt citationtypeAtt) {
-        return switch (citationtypeAtt) {
-            case AR -> Optional.of(new JournalArticle());
-            case BK, CH -> Optional.of(new BookMonograph());
-            default -> Optional.empty();
-        };
+        switch (citationtypeAtt) {
+            case AR:
+                return Optional.of(new JournalArticle());
+            case BK:
+            case CH:
+                return Optional.of(new BookMonograph());
+            default:
+                return Optional.empty();
+        }
     }
 
     private Optional<CitationtypeAtt> getCitationType() {
