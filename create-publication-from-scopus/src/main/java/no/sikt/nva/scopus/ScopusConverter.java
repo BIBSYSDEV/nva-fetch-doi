@@ -218,6 +218,10 @@ class ScopusConverter {
             String.format(UNSUPPORTED_CITATION_TYPE_MESSAGE, docTp.getMeta().getEid()));
     }
 
+    /*
+    See enum explanation in "SCOPUS CUSTOM DATA DOCUMENTATION", copy can be found at
+    https://isikt.sharepoint.com/:b:/s/Dovre/EQGVGp2Xn-RDvDi8zg3XFlQB6vo95nGLbINztJcXjStG5w?e=O9wQwB
+     */
     private Optional<PublicationInstance<? extends Pages>> convertCitationTypeToPublicationInstance(
         CitationtypeAtt citationtypeAtt) {
         switch (citationtypeAtt) {
