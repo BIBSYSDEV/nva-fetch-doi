@@ -8,12 +8,9 @@ import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.sikt.nva.scopus.ScopusConverter.NAME_DELIMITER;
-import static no.sikt.nva.scopus.conversion.PublicationContextCreator.DASH;
-import static no.sikt.nva.scopus.conversion.PublicationContextCreator.EMPTY_STRING;
 import static no.sikt.nva.scopus.conversion.PublicationContextCreator.UNSUPPORTED_SOURCE_TYPE;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
-import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -37,6 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
@@ -74,10 +72,8 @@ import no.scopus.generated.ItemidTp;
 import no.scopus.generated.OrigItemTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
-import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
-import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.sikt.nva.scopus.test.utils.ScopusGenerator;
 import no.sikt.nva.testing.http.WiremockHttpClient;
 import no.unit.nva.doi.models.Doi;
@@ -87,6 +83,7 @@ import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Report;
@@ -326,9 +323,9 @@ class ScopusHandlerTest {
     }
 
     @Test
-    void shouldReturnPublicationContextBookWithConfirmedPublisherWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeB()
+    void shouldReturnPublicationContextBookWithConfirmedPublisherWhenScopusXmlHasSrctypeBandIsNotAchapter()
         throws IOException {
-        scopusData.getDocument().getMeta().setSrctype("b");
+        scopusData.getDocument().getMeta().setSrctype(ScopusSourceType.BOOK.getCode());
         var expectedPublisherName = randomString();
         scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0)
             .setPublishername(expectedPublisherName);
@@ -352,6 +349,24 @@ class ScopusHandlerTest {
         var actualIsbnList = ((Book) actualPublicationContext).getIsbnList();
         assertThat(actualIsbnList.size(), is(1));
         assertThat(actualIsbnList, containsInAnyOrder(expectedIsbn13));
+    }
+
+    @Test
+    void shouldReturnPublicationContextChapterWhenScopusXmlHasCitationTypeChEvenIfSrctypeIsB()
+            throws IOException {
+        scopusData = ScopusGenerator.create(CitationtypeAtt.CH);
+        scopusData.getDocument().getMeta().setSrctype(ScopusSourceType.BOOK.name());
+        var expectedPublisherName = randomString();
+        scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0)
+                .setPublishername(expectedPublisherName);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
+                .getPublicationContext();
+        assertThat(actualPublicationContext, instanceOf(Chapter.class));
+        var actualPartOfUri = ((Chapter) actualPublicationContext).getPartOf();
+        assertThat(actualPartOfUri, is(nullValue()));
     }
 
     @Test
@@ -397,7 +412,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldThrowExceptionWhenSrcTypeIsNotSuppoerted() throws IOException {
-        List<String> supportedScrTypes = List.of(ScopusSourceType.JOURNAL.code);
+        List<String> supportedScrTypes = List.of(ScopusSourceType.JOURNAL.getCode());
         var randomUnsupportedSrcType = randomStringWithExclusion(supportedScrTypes);
         scopusData = scopusData.createWithSpecifiedSrcType(randomUnsupportedSrcType);
         var expectedMessage = String.format(UNSUPPORTED_SOURCE_TYPE, scopusData.getDocument().getMeta().getEid());

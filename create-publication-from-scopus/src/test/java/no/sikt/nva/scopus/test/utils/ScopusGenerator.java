@@ -88,13 +88,13 @@ public final class ScopusGenerator {
         this.doi = randomDoi();
         this.minimumSequenceNumber = 1;
         this.abstractsTp = randomAbstracts();
-        this.srcType = ScopusSourceType.JOURNAL.code;
+        this.srcType = ScopusSourceType.JOURNAL.getCode();
         this.document = randomDocument();
     }
 
     private ScopusGenerator(AbstractsTp abstractsTp) {
         this.doi = randomDoi();
-        this.srcType = ScopusSourceType.JOURNAL.code;
+        this.srcType = ScopusSourceType.JOURNAL.getCode();
         this.minimumSequenceNumber = 1;
         this.abstractsTp = abstractsTp;
         this.document = randomDocument();
@@ -103,7 +103,7 @@ public final class ScopusGenerator {
     private ScopusGenerator(URI doi) {
         this.doi = doi;
         this.minimumSequenceNumber = 1;
-        this.srcType = ScopusSourceType.JOURNAL.code;
+        this.srcType = ScopusSourceType.JOURNAL.getCode();
         this.abstractsTp = randomAbstracts();
         this.document = randomDocument();
     }
@@ -119,7 +119,7 @@ public final class ScopusGenerator {
     private ScopusGenerator(CitationtypeAtt citationtypeAtt) {
         this.doi = randomDoi();
         this.citationtypeAtt = citationtypeAtt;
-        this.srcType = ScopusSourceType.JOURNAL.code;
+        this.srcType = ScopusSourceType.JOURNAL.getCode();
         this.abstractsTp = randomAbstracts();
         this.document = randomDocument();
     }
