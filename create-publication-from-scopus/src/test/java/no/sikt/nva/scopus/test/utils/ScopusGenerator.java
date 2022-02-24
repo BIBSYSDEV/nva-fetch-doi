@@ -13,6 +13,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import jakarta.xml.bind.JAXB;
+import jakarta.xml.bind.JAXBElement;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.net.URI;
@@ -32,6 +33,7 @@ import java.util.stream.Stream;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import javax.xml.namespace.QName;
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AbstractsTp;
 import no.scopus.generated.AuthorGroupTp;
@@ -47,6 +49,7 @@ import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
+import no.scopus.generated.InfTp;
 import no.scopus.generated.IssnTp;
 import no.scopus.generated.ItemInfoTp;
 import no.scopus.generated.ItemTp;
@@ -62,6 +65,7 @@ import no.scopus.generated.RichstringWithMMLType;
 import no.scopus.generated.ShortTitle;
 import no.scopus.generated.SourceTp;
 import no.scopus.generated.SourcetitleTp;
+import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.ScopusConstants;
@@ -83,6 +87,7 @@ public final class ScopusGenerator {
     private final URI doi;
     private CitationtypeAtt citationtypeAtt;
     private final String srcType;
+    private StringBuilder expectedTitle;
 
     public ScopusGenerator() {
         this.doi = randomDoi();
@@ -404,7 +409,7 @@ public final class ScopusGenerator {
         authorKeyword.setLang(randomScopusLanguageCode());
         authorKeyword.setOriginal(randomYesOrNo());
         authorKeyword.setPerspective(randomString());
-        authorKeyword.getContent().addAll(randomSerializables());
+        authorKeyword.getContent().addAll(randomSerializablesWithSupAndInfTags());
         return authorKeyword;
     }
 
@@ -464,7 +469,7 @@ public final class ScopusGenerator {
         titleText.setLang(randomScopusLanguageCode());
         titleText.setPerspective(randomString());
         titleText.setLang(randomScopusLanguageCode());
-        titleText.getContent().addAll(randomSerializables());
+        titleText.getContent().addAll(randomSerializablesWithSupAndInfTags());
         return titleText;
     }
 
@@ -479,12 +484,44 @@ public final class ScopusGenerator {
         return shortTitle;
     }
 
+    private static List<Serializable> randomSerializablesWithSupAndInfTags() {
+        return randomStringsWithSupAndInf();
+    }
+
+    private static List<Serializable> randomStringsWithSupAndInf() {
+        return smallStream().map(ignored -> randomContent()).collect(Collectors.toList());
+    }
+
     private static List<Serializable> randomSerializables() {
         return randomStrings();
     }
 
     private static List<Serializable> randomStrings() {
         return smallStream().map(ignored -> randomString()).collect(Collectors.toList());
+    }
+
+    private static Serializable randomContent() {
+        var selectedCase = randomInteger(10);
+        switch (selectedCase) {
+            case 1:
+                return generateSup();
+            case 2:
+                return generateInf();
+            default:
+                return randomString();
+        }
+    }
+
+    private static JAXBElement<InfTp> generateInf() {
+        InfTp infTp = new InfTp();
+        infTp.getContent().add(randomString());
+        return new JAXBElement<>(new QName("inf"), InfTp.class, infTp);
+    }
+
+    private static JAXBElement<SupTp> generateSup() {
+        SupTp supTp = new SupTp();
+        supTp.getContent().add(randomString());
+        return new JAXBElement<>(new QName("sup"), SupTp.class, supTp);
     }
 
     private static String randomScopusLanguageCode() {

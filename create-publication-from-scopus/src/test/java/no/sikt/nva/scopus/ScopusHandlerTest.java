@@ -8,12 +8,9 @@ import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.sikt.nva.scopus.ScopusConverter.NAME_DELIMITER;
-import static no.sikt.nva.scopus.conversion.PublicationContextCreator.DASH;
-import static no.sikt.nva.scopus.conversion.PublicationContextCreator.EMPTY_STRING;
 import static no.sikt.nva.scopus.conversion.PublicationContextCreator.UNSUPPORTED_SOURCE_TYPE;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
-import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn10;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -55,7 +52,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -74,8 +70,6 @@ import no.scopus.generated.ItemidTp;
 import no.scopus.generated.OrigItemTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
-import no.sikt.nva.scopus.conversion.PublicationContextCreator;
-import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
 import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.sikt.nva.scopus.test.utils.ScopusGenerator;
@@ -149,8 +143,6 @@ class ScopusHandlerTest {
     private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
     private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
     private static final String EXPECTED_ABSTRACT_NAME_SPACE = "<abstractTp";
-    private static final String JOURNAL_SOURCETYPE_IDENTIFYING_CHAR = "j";
-    private static final String BOOK_SOURCETYPE_IDENTIFYING_CHAR = "b";
 
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
@@ -212,6 +204,7 @@ class ScopusHandlerTest {
         assertThat(createPublicationRequest.getEntityDescription().getReference().getDoi(), equalToObject(expectedURI));
     }
 
+
     @Test
     void shouldReturnCreatePublicationRequestWithMainTitle() throws IOException {
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
@@ -222,6 +215,8 @@ class ScopusHandlerTest {
         var actualMainTitle = createPublicationRequest.getEntityDescription().getMainTitle();
         assertThat(actualMainTitle, is(equalTo(titleObjectAsXmlString)));
     }
+
+
 
     @Test
     void shouldExtractContributorsNamesAndSequenceNumberCorrectly() throws IOException {
@@ -586,14 +581,6 @@ class ScopusHandlerTest {
             .flatMap(Collection::stream)
             .filter(t -> YesnoAtt.Y.equals(t.getOriginal()))
             .collect(SingletonCollector.collect());
-    }
-
-    private String getRandomCharBesidesUnwantedChar(String... unwantedChar) {
-        String randomChar;
-        do {
-            randomChar = randomString().toLowerCase().substring(0, 1);
-        } while (Arrays.stream(unwantedChar).anyMatch(randomChar::equals));
-        return randomChar;
     }
 
     private URI createExpectedQueryUriForJournalWithEIssn(String electronicIssn, String year) {

@@ -4,16 +4,21 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
+import static nva.commons.core.StringUtils.EMPTY_STRING;
+import static nva.commons.core.StringUtils.SPACE;
 import static nva.commons.core.StringUtils.isNotBlank;
+import com.google.common.base.Strings;
 import jakarta.xml.bind.JAXB;
 import jakarta.xml.bind.JAXBElement;
 import java.io.StringWriter;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AuthorGroupTp;
@@ -54,6 +59,12 @@ class ScopusConverter {
     private final DocTp docTp;
     private final MetadataService metadataService;
     public static final String NAME_DELIMITER = ", ";
+    private static final String MATH_ML_START_EXPRESSION = "$";
+    private static final String MATH_ML_END_EXPRESSION = "$";
+    private static final String MATH_ML_SUPERSCRIPT_START_MARKER = "^{\\mathrm{";
+    private static final String MATH_ML_SUPERSCRIPT_END_MARKER = "}}";
+    private static final String MATH_ML_SUBSCRIPT_START_MARKER = "_{";
+    private static final String MATH_ML_SUBsCRIPT_END_MARKER = "}";
 
     protected ScopusConverter(DocTp docTp, MetadataService metadataService) {
         this.docTp = docTp;
@@ -178,10 +189,68 @@ class ScopusConverter {
         }
     }
 
+    private List<String> extractContentWithMathML(Object content) {
+        if (content instanceof String) {
+            return List.of(((String) content).split(SPACE));
+        } else if (content instanceof JAXBElement) {
+            return extractContentWithMathML(((JAXBElement<?>) content).getValue());
+        } else if (content instanceof SupTp) {
+            return mathMLSuperScript(
+                String.join(EMPTY_STRING, extractContentWithMathML(((SupTp) content).getContent())));
+        } else if (content instanceof InfTp) {
+            return mathMlSubScript(String.join(EMPTY_STRING, extractContentWithMathML(
+                ((InfTp) content).getContent())));
+        } else {
+            return ((ArrayList<?>) content).stream()
+                .map(this::extractContentWithMathML).flatMap(Collection::stream).collect(Collectors.toList());
+        }
+    }
+
+    private List<String> mathMLSuperScript(String content) {
+        return List.of(MATH_ML_SUPERSCRIPT_START_MARKER + content + MATH_ML_SUPERSCRIPT_END_MARKER);
+    }
+
+    private List<String> mathMlSubScript(String content) {
+        return List.of(MATH_ML_SUBSCRIPT_START_MARKER + content + MATH_ML_SUBsCRIPT_END_MARKER);
+    }
+
     private String extractMainTitle() {
-        return getMainTitleTextTp()
-            .map(this::marshallMainTitleToXmlPreservingUnderlyingStructure)
-            .orElse(null);
+        return
+            getMainTitleTextTp()
+                .map(titletextTp -> extractContentWithMathML(titletextTp.getContent()))
+                .map(this::appendDollarSign)
+                .orElse(null);
+    }
+
+    private String appendDollarSign(List<String> title) {
+        List<String> withDollarSign = new ArrayList<>();
+        var nonEmptyElementsInTitle = filterOutEmptyStrings(title);
+        Collections.reverse(nonEmptyElementsInTitle);
+        boolean unevenDollarSign = false;
+        for (String titleStringPart : nonEmptyElementsInTitle) {
+            if ((titleStringPart.contains(MATH_ML_SUPERSCRIPT_START_MARKER) || titleStringPart.contains(
+                MATH_ML_SUBSCRIPT_START_MARKER)) && !unevenDollarSign) {
+                withDollarSign.add(titleStringPart + MATH_ML_END_EXPRESSION);
+                unevenDollarSign = true;
+            } else if (!titleStringPart.contains(MATH_ML_SUPERSCRIPT_START_MARKER) && !titleStringPart.contains(
+                MATH_ML_SUBSCRIPT_START_MARKER) && unevenDollarSign) {
+                unevenDollarSign = false;
+                withDollarSign.add(MATH_ML_START_EXPRESSION + titleStringPart.trim());
+            } else {
+                withDollarSign.add(titleStringPart);
+            }
+        }
+        if (unevenDollarSign) {
+            withDollarSign.add(MATH_ML_START_EXPRESSION);
+        }
+        Collections.reverse(withDollarSign);
+        return String.join(" ", withDollarSign);
+    }
+
+    private static List<String> filterOutEmptyStrings(List<String> listWithEmptyStrings) {
+        return listWithEmptyStrings.stream()
+            .filter(part -> !Strings.isNullOrEmpty(part.trim()))
+            .collect(Collectors.toList());
     }
 
     private List<Contributor> generateContributors() {
