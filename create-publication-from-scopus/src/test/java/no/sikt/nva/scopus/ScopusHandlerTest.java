@@ -92,6 +92,7 @@ import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeS3Client;
@@ -507,10 +508,21 @@ class ScopusHandlerTest {
         assertThat(actualPublicationInstance, isA(JournalArticle.class));
     }
 
+    @Test
+    void shouldExtractJournalArticleWhenScopusCitationTypeIsEditorial() throws IOException {
+        scopusData = ScopusGenerator.create(CitationtypeAtt.ED);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationInstance =
+            createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
+        assertThat(actualPublicationInstance, isA(JournalLeader.class));
+    }
+
     @ParameterizedTest(name = "should not generate CreatePublicationRequest when CitationType is:{0}")
     @EnumSource(
         value = CitationtypeAtt.class,
-        names = {"AR", "BK", "CH"},
+        names = {"AR", "BK", "CH", "ED"},
         mode = Mode.EXCLUDE)
     void shouldNotGenerateCreatePublicationFromUnsupportedPublicationTypes(CitationtypeAtt citationtypeAtt)
         throws IOException {
