@@ -47,6 +47,7 @@ public class PublicationContextCreator {
     public static final String DASH = "-";
     public static final int START_YEAR_FOR_LEVEL_INFO = 2004;
     public static final String EMPTY_STRING = "";
+    public static final URI DUMMY_URI = UriWrapper.fromUri("https://loremipsum.io/").getUri();
 
     private final MetadataService metadataService;
     private final DocTp docTp;
@@ -132,11 +133,8 @@ public class PublicationContextCreator {
     }
 
     public Chapter createChapter() {
-        //Todo: hvordan få tak i en URI min chapter er partOf?
-//        Chapter.Builder chapterBuilder = new Chapter.Builder();
-//        URI partOfUri = null;
-//        return attempt(() -> chapterBuilder.withPartOf(partOfUri).build()).orElseThrow();
-        return attempt(Chapter::new).orElseThrow();
+        //Todo: we do not have access to partOf URI for chapter yet -> se a dummy-uri
+        return attempt(() -> new Chapter.Builder().withPartOf(DUMMY_URI).build()).orElseThrow();
     }
 
     private PublishingHouse createPublisher() {

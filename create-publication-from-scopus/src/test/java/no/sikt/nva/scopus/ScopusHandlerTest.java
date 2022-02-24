@@ -72,6 +72,7 @@ import no.scopus.generated.ItemidTp;
 import no.scopus.generated.OrigItemTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
+import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
 import no.sikt.nva.scopus.test.utils.ScopusGenerator;
@@ -367,7 +368,7 @@ class ScopusHandlerTest {
                 .getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Chapter.class));
         var actualPartOfUri = ((Chapter) actualPublicationContext).getPartOf();
-        assertThat(actualPartOfUri, is(nullValue()));
+        assertThat(actualPartOfUri, is(PublicationContextCreator.DUMMY_URI));
     }
 
     @Test
