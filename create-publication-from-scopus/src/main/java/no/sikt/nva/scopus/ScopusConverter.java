@@ -1,20 +1,7 @@
 package no.sikt.nva.scopus;
 
-import static java.util.Collections.emptyList;
-import static java.util.Objects.nonNull;
-import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
-import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
-import static nva.commons.core.StringUtils.isNotBlank;
 import jakarta.xml.bind.JAXB;
 import jakarta.xml.bind.JAXBElement;
-import java.io.StringWriter;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordTp;
@@ -34,6 +21,7 @@ import no.scopus.generated.SourceTp;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.VolissTp;
+import no.scopus.generated.VolisspagTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
@@ -52,6 +40,22 @@ import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.paths.UriWrapper;
+
+import java.io.StringWriter;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.util.Collections.emptyList;
+import static java.util.Objects.nonNull;
+import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
+import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
+import static nva.commons.core.StringUtils.isNotBlank;
 
 @SuppressWarnings("PMD.GodClass")
 class ScopusConverter {
@@ -265,33 +269,31 @@ class ScopusConverter {
     }
 
     private Optional<Range> extractPages() {
-        return getSourceTp()
-                .getVolisspag()
-                .getContent()
-                .stream()
+        return getVolisspagTpStream()
                 .filter(this::isPageRange)
                 .map(this::extractPageRange)
-                .findAny().orElse(null);
+                .findAny().orElse(Optional.empty());
+    }
+
+    private Stream<JAXBElement<?>> getVolisspagTpStream() {
+        return Optional.ofNullable(getSourceTp().getVolisspag())
+                .map(VolisspagTp::getContent)
+                .orElse(emptyList())
+                .stream();
     }
 
     private Optional<String> extractVolume() {
-        return getSourceTp()
-                .getVolisspag()
-                .getContent()
-                .stream()
+        return getVolisspagTpStream()
                 .filter(this::isVolumeIssue)
-                .map(this::extractVolume)
-                .findAny().orElse(null);
+                .map(this::extractVolumeValue)
+                .findAny().orElse(Optional.empty());
     }
 
     private Optional<String> extractIssue() {
-        return getSourceTp()
-                .getVolisspag()
-                .getContent()
-                .stream()
+        return getVolisspagTpStream()
                 .filter(this::isVolumeIssue)
-                .map(this::extractIssue)
-                .findAny().orElse(null);
+                .map(this::extractIssueValue)
+                .findAny().orElse(Optional.empty());
     }
 
     private Optional<String> extractArticleNumber() {
@@ -302,12 +304,12 @@ class ScopusConverter {
         return content.getValue() instanceof VolissTp;
     }
 
-    private Optional<String> extractVolume(JAXBElement<?> content) {
-        return Optional.of(((VolissTp) content.getValue()).getVolume());
+    private Optional<String> extractVolumeValue(JAXBElement<?> content) {
+        return Optional.ofNullable(((VolissTp) content.getValue()).getVolume());
     }
 
-    private Optional<String> extractIssue(JAXBElement<?> content) {
-        return Optional.of(((VolissTp) content.getValue()).getIssue());
+    private Optional<String> extractIssueValue(JAXBElement<?> content) {
+        return Optional.ofNullable(((VolissTp) content.getValue()).getIssue());
     }
 
     private SourceTp getSourceTp() {

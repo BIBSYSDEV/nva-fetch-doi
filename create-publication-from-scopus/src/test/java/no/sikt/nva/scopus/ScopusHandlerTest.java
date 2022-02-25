@@ -11,6 +11,7 @@ import static no.sikt.nva.scopus.ScopusConverter.NAME_DELIMITER;
 import static no.sikt.nva.scopus.conversion.PublicationContextCreator.UNSUPPORTED_SOURCE_TYPE;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -511,12 +512,17 @@ class ScopusHandlerTest {
     @Test
     void shouldExtractJournalArticleWhenScopusCitationTypeIsEditorial() throws IOException {
         scopusData = ScopusGenerator.create(CitationtypeAtt.ED);
+        var expectedIssue = String.valueOf(randomInteger());
+        var expectedVolume = randomString();
+        var expectedPages = randomString();
+        scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationInstance =
             createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
         assertThat(actualPublicationInstance, isA(JournalLeader.class));
+        assertThat(expectedIssue, is(((JournalLeader) actualPublicationInstance).getIssue()));
     }
 
     @ParameterizedTest(name = "should not generate CreatePublicationRequest when CitationType is:{0}")
