@@ -236,7 +236,7 @@ class ScopusConverter {
         CitationtypeAtt citationtypeAtt) {
         switch (citationtypeAtt) {
             case AR:
-                return Optional.of(new JournalArticle());
+                return Optional.of(generateJournalArticle());
             case RE:
                 return Optional.of(generateJournalArticle(JournalArticleContentType.REVIEW_ARTICLE));
             case BK:
@@ -260,6 +260,21 @@ class ScopusConverter {
             .stream()
             .findFirst()
             .map(CitationTypeTp::getCode);
+    }
+
+    private JournalArticle generateJournalArticle(JournalArticleContentType contentType) {
+        JournalArticle journalArticle = generateJournalArticle();
+        journalArticle.setContentType(contentType);
+        return journalArticle;
+    }
+
+    private JournalArticle generateJournalArticle() {
+        JournalArticle journalArticle = new JournalArticle();
+        extractPages().ifPresent(journalArticle::setPages);
+        extractVolume().ifPresent(journalArticle::setVolume);
+        extractIssue().ifPresent(journalArticle::setIssue);
+        extractArticleNumber().ifPresent(journalArticle::setArticleNumber);
+        return journalArticle;
     }
 
     private JournalLeader generateJournalLeader() {
@@ -330,12 +345,6 @@ class ScopusConverter {
     private Optional<Range> extractPageRange(JAXBElement<?> content) {
         return Optional.of(new Range(((PagerangeTp) content.getValue()).getFirst(),
                 ((PagerangeTp) content.getValue()).getLast()));
-    }
-
-    private JournalArticle generateJournalArticle(JournalArticleContentType contentType) {
-        JournalArticle journalArticle = new JournalArticle();
-        journalArticle.setContentType(contentType);
-        return journalArticle;
     }
 
     private Optional<TitletextTp> getMainTitleTextTp() {
