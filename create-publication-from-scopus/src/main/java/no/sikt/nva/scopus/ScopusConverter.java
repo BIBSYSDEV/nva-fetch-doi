@@ -195,9 +195,7 @@ class ScopusConverter {
     private List<String> extractContentWithMathML(Object content) {
         if (content instanceof String) {
             //need to split content so that we can assign mathML start expression constant at the proper location.
-            return Arrays.stream(((String) content).split(SPACE))
-                .map(part -> wrappedInOverline(part.trim()))
-                .collect(Collectors.toList());
+            return splitContentAndWrapInOverline((String) content);
         } else if (content instanceof JAXBElement) {
             return extractContentWithMathML(((JAXBElement<?>) content).getValue());
         } else if (content instanceof SupTp) {
@@ -211,6 +209,12 @@ class ScopusConverter {
             return ((ArrayList<?>) content).stream()
                 .map(this::extractContentWithMathML).flatMap(Collection::stream).collect(Collectors.toList());
         }
+    }
+
+    private List<String> splitContentAndWrapInOverline(String content) {
+        return Arrays.stream(content.split(SPACE))
+            .map(part -> wrappedInOverline(part.trim()))
+            .collect(Collectors.toList());
     }
 
     private String wrappedInOverline(String content) {
@@ -242,14 +246,10 @@ class ScopusConverter {
         Collections.reverse(nonEmptyElementsInContents);
         boolean missingStartMathMLExpression = false;
         for (String content : nonEmptyElementsInContents) {
-            if ((isSuperScript(content) || isSubScript(content) || hasOverline(content))
-                && !missingStartMathMLExpression) {
-                withMathMlExpressionStartAndEnd.add(content + MATH_ML_END_EXPRESSION);
+            if (shouldPlaceEnMathMlMarker(content, missingStartMathMLExpression)) {
+                withMathMlExpressionStartAndEnd.add(content.trim() + MATH_ML_END_EXPRESSION);
                 missingStartMathMLExpression = true;
-            } else if (!isSuperScript(content) && !isSubScript(content) && missingStartMathMLExpression) {
-                withMathMlExpressionStartAndEnd.add(MATH_ML_START_EXPRESSION + content.trim());
-                missingStartMathMLExpression = false;
-            } else if (hasOverline(content) && missingStartMathMLExpression) {
+            } else if (shouldPlaceStartMathMlMarker(content, missingStartMathMLExpression)) {
                 withMathMlExpressionStartAndEnd.add(MATH_ML_START_EXPRESSION + content.trim());
                 missingStartMathMLExpression = false;
             } else {
@@ -262,6 +262,30 @@ class ScopusConverter {
         //Turn the list to correct order again:
         Collections.reverse(withMathMlExpressionStartAndEnd);
         return String.join(SPACE, withMathMlExpressionStartAndEnd);
+    }
+
+    /**
+     * Determines whether end MathML expression needs to be appended.
+     *
+     * @param content                      that may contain superscript, subscript or overline annotation,
+     * @param missingStartMathMlExpression whether there is already a partially started expression.
+     * @return true if there is some mathML in the provided string and there is no partially started expression already.
+     */
+    private static boolean shouldPlaceEnMathMlMarker(String content, boolean missingStartMathMlExpression) {
+        return (isSuperScript(content) || isSubScript(content) || hasOverline(content))
+               && !missingStartMathMlExpression;
+    }
+
+    /**
+     * Determines whether start MathML expression start needs to be appended.
+     *
+     * @param content                      that may contain superscript, subscript or overline annotation
+     * @param missingStartMathMLExpression whether there is already a partially started expression.
+     * @return true if a partially started expression exists that needs to be closed. Returns false if there is MatHML
+     *     syntax in current string part, unless it is an overline.
+     */
+    private static boolean shouldPlaceStartMathMlMarker(String content, boolean missingStartMathMLExpression) {
+        return !isSuperScript(content) && !isSubScript(content) && missingStartMathMLExpression;
     }
 
     private static boolean isSuperScript(String content) {
