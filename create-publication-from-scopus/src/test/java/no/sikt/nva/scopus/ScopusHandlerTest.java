@@ -149,7 +149,6 @@ class ScopusHandlerTest {
     private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
     private static final String EXPECTED_ABSTRACT_NAME_SPACE = "<abstractTp";
     private static final String EXPECTED_MATH_ML_STRING_CONTENT_14244261628_FILE_NAME = "expectedMathMlContent.txt";
-    private static final char MACRON = '̄';
 
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
