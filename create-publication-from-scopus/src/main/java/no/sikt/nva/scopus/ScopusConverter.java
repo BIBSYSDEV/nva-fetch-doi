@@ -37,6 +37,7 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
+import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.paths.UriWrapper;
@@ -236,6 +237,8 @@ class ScopusConverter {
         switch (citationtypeAtt) {
             case AR:
                 return Optional.of(new JournalArticle());
+            case RE:
+                return Optional.of(generateJournalArticle(JournalArticleContentType.REVIEW_ARTICLE));
             case BK:
             case CH:
                 return Optional.of(new BookMonograph());
@@ -327,6 +330,12 @@ class ScopusConverter {
     private Optional<Range> extractPageRange(JAXBElement<?> content) {
         return Optional.of(new Range(((PagerangeTp) content.getValue()).getFirst(),
                 ((PagerangeTp) content.getValue()).getLast()));
+    }
+
+    private JournalArticle generateJournalArticle(JournalArticleContentType contentType) {
+        JournalArticle journalArticle = new JournalArticle();
+        journalArticle.setContentType(contentType);
+        return journalArticle;
     }
 
     private Optional<TitletextTp> getMainTitleTextTp() {

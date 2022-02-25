@@ -510,6 +510,17 @@ class ScopusHandlerTest {
     }
 
     @Test
+    void shouldExtractJournalArticleWhenScopusCitationTypeIsReview() throws IOException {
+        scopusData = ScopusGenerator.create(CitationtypeAtt.RE);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationInstance =
+            createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
+        assertThat(actualPublicationInstance, isA(JournalArticle.class));
+    }
+
+    @Test
     void shouldExtractJournalArticleWhenScopusCitationTypeIsEditorial() throws IOException {
         scopusData = ScopusGenerator.create(CitationtypeAtt.ED);
         var expectedIssue = String.valueOf(randomInteger());
@@ -528,7 +539,7 @@ class ScopusHandlerTest {
     @ParameterizedTest(name = "should not generate CreatePublicationRequest when CitationType is:{0}")
     @EnumSource(
         value = CitationtypeAtt.class,
-        names = {"AR", "BK", "CH", "ED"},
+        names = {"AR", "BK", "CH", "RE", "ED"},
         mode = Mode.EXCLUDE)
     void shouldNotGenerateCreatePublicationFromUnsupportedPublicationTypes(CitationtypeAtt citationtypeAtt)
         throws IOException {
