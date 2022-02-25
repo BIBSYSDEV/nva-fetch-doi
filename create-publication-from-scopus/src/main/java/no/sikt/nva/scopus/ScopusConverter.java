@@ -36,6 +36,7 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import no.unit.nva.model.pages.Pages;
@@ -237,13 +238,15 @@ class ScopusConverter {
         switch (citationtypeAtt) {
             case AR:
                 return Optional.of(generateJournalArticle());
-            case RE:
-                return Optional.of(generateJournalArticle(JournalArticleContentType.REVIEW_ARTICLE));
             case BK:
             case CH:
                 return Optional.of(new BookMonograph());
             case ED:
                 return Optional.of(generateJournalLeader());
+            case ER:
+                return Optional.of(generateJournalCorrigendum());
+            case RE:
+                return Optional.of(generateJournalArticle(JournalArticleContentType.REVIEW_ARTICLE));
             default:
                 return Optional.empty();
         }
@@ -283,6 +286,16 @@ class ScopusConverter {
         extractVolume().ifPresent(builder::withVolume);
         extractIssue().ifPresent(builder::withIssue);
         extractArticleNumber().ifPresent(builder::withArticleNumber);
+        return builder.build();
+    }
+
+    private JournalCorrigendum generateJournalCorrigendum() {
+        JournalCorrigendum.Builder builder = new JournalCorrigendum.Builder();
+        extractPages().ifPresent(builder::withPages);
+        extractVolume().ifPresent(builder::withVolume);
+        extractIssue().ifPresent(builder::withIssue);
+        extractArticleNumber().ifPresent(builder::withArticleNumber);
+        builder.withCorrigendumFor(ScopusConstants.DUMMY_URI);
         return builder.build();
     }
 

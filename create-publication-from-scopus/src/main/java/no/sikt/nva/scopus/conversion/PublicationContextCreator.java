@@ -5,7 +5,6 @@ import static no.sikt.nva.scopus.ScopusSourceType.JOURNAL;
 import static no.sikt.nva.scopus.ScopusSourceType.REPORT;
 import static nva.commons.core.attempt.Try.attempt;
 
-import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -47,7 +46,6 @@ public class PublicationContextCreator {
     public static final String DASH = "-";
     public static final int START_YEAR_FOR_LEVEL_INFO = 2004;
     public static final String EMPTY_STRING = "";
-    public static final URI DUMMY_URI = UriWrapper.fromUri("https://loremipsum.io/").getUri();
 
     private final MetadataService metadataService;
     private final DocTp docTp;
@@ -134,7 +132,7 @@ public class PublicationContextCreator {
 
     public Chapter createChapter() {
         //Todo: we do not have access to partOf URI for chapter yet -> se a dummy-uri
-        return attempt(() -> new Chapter.Builder().withPartOf(DUMMY_URI).build()).orElseThrow();
+        return attempt(() -> new Chapter.Builder().withPartOf(ScopusConstants.DUMMY_URI).build()).orElseThrow();
     }
 
     private PublishingHouse createPublisher() {
