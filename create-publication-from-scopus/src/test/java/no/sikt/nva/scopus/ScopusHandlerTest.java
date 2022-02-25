@@ -75,6 +75,7 @@ import no.scopus.generated.OrigItemTp;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
+import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
 import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.sikt.nva.scopus.test.utils.ScopusGenerator;
@@ -86,11 +87,13 @@ import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
+import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeEventBridgeClient;
@@ -326,9 +329,9 @@ class ScopusHandlerTest {
     }
 
     @Test
-    void shouldReturnPublicationContextBookWithConfirmedPublisherWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeB()
+    void shouldReturnPublicationContextBookWithConfirmedPublisherWhenScopusXmlHasSrctypeBandIsNotAchapter()
         throws IOException {
-        scopusData.getDocument().getMeta().setSrctype("b");
+        scopusData.getDocument().getMeta().setSrctype(ScopusSourceType.BOOK.getCode());
         var expectedPublisherName = randomString();
         scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0)
             .setPublishername(expectedPublisherName);
@@ -352,6 +355,24 @@ class ScopusHandlerTest {
         var actualIsbnList = ((Book) actualPublicationContext).getIsbnList();
         assertThat(actualIsbnList.size(), is(1));
         assertThat(actualIsbnList, containsInAnyOrder(expectedIsbn13));
+    }
+
+    @Test
+    void shouldReturnPublicationContextChapterWhenScopusXmlHasCitationTypeChEvenIfSrctypeIsB()
+            throws IOException {
+        scopusData = ScopusGenerator.create(CitationtypeAtt.CH);
+        scopusData.getDocument().getMeta().setSrctype(ScopusSourceType.BOOK.name());
+        var expectedPublisherName = randomString();
+        scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0)
+                .setPublishername(expectedPublisherName);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
+                .getPublicationContext();
+        assertThat(actualPublicationContext, instanceOf(Chapter.class));
+        var actualPartOfUri = ((Chapter) actualPublicationContext).getPartOf();
+        assertThat(actualPartOfUri, is(PublicationContextCreator.DUMMY_URI));
     }
 
     @Test
@@ -397,7 +418,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldThrowExceptionWhenSrcTypeIsNotSuppoerted() throws IOException {
-        List<String> supportedScrTypes = List.of(ScopusSourceType.JOURNAL.code);
+        List<String> supportedScrTypes = List.of(ScopusSourceType.JOURNAL.getCode());
         var randomUnsupportedSrcType = randomStringWithExclusion(supportedScrTypes);
         scopusData = scopusData.createWithSpecifiedSrcType(randomUnsupportedSrcType);
         var expectedMessage = String.format(UNSUPPORTED_SOURCE_TYPE, scopusData.getDocument().getMeta().getEid());
@@ -514,10 +535,21 @@ class ScopusHandlerTest {
         assertThat(actualPublicationInstance, isA(JournalArticle.class));
     }
 
+    @Test
+    void shouldExtractJournalArticleWhenScopusCitationTypeIsReview() throws IOException {
+        scopusData = ScopusGenerator.create(CitationtypeAtt.RE);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationInstance =
+            createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
+        assertThat(actualPublicationInstance, isA(JournalArticle.class));
+    }
+
     @ParameterizedTest(name = "should not generate CreatePublicationRequest when CitationType is:{0}")
     @EnumSource(
         value = CitationtypeAtt.class,
-        names = {"AR"},
+        names = {"AR", "BK", "CH", "RE"},
         mode = Mode.EXCLUDE)
     void shouldNotGenerateCreatePublicationFromUnsupportedPublicationTypes(CitationtypeAtt citationtypeAtt)
         throws IOException {
@@ -539,6 +571,22 @@ class ScopusHandlerTest {
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualContributors = createPublicationRequest.getEntityDescription().getContributors();
         authors.forEach(author -> checkAuthorOrcidAndSequenceNumber(author, actualContributors));
+    }
+
+    @ParameterizedTest(name = "should have PublicationInstace BookMonograph when CitationType is:{0}")
+    @EnumSource(
+        value = CitationtypeAtt.class,
+        names = {"CH", "BK"},
+        mode = Mode.INCLUDE)
+    void shouldExtractCitationTypesToBookMonographPublicationInstance(CitationtypeAtt citationtypeAtt)
+        throws IOException {
+        scopusData = ScopusGenerator.create(citationtypeAtt);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationInstance =
+            createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
+        assertThat(actualPublicationInstance, isA(BookMonograph.class));
     }
 
     @Test

@@ -57,7 +57,9 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import no.unit.nva.model.pages.Pages;
 import nva.commons.core.paths.UriWrapper;
 
@@ -339,11 +341,23 @@ class ScopusConverter {
             String.format(UNSUPPORTED_CITATION_TYPE_MESSAGE, docTp.getMeta().getEid()));
     }
 
+    /*
+    See enum explanation in "SCOPUS CUSTOM DATA DOCUMENTATION", copy can be found at
+    https://isikt.sharepoint.com/:b:/s/Dovre/EQGVGp2Xn-RDvDi8zg3XFlQB6vo95nGLbINztJcXjStG5w?e=O9wQwB
+     */
     private Optional<PublicationInstance<? extends Pages>> convertCitationTypeToPublicationInstance(
         CitationtypeAtt citationtypeAtt) {
-        return CitationtypeAtt.AR.equals(citationtypeAtt)
-                   ? Optional.of(new JournalArticle())
-                   : Optional.empty();
+        switch (citationtypeAtt) {
+            case AR:
+                return Optional.of(new JournalArticle());
+            case RE:
+                return Optional.of(generateJournalArticle(JournalArticleContentType.REVIEW_ARTICLE));
+            case BK:
+            case CH:
+                return Optional.of(new BookMonograph());
+            default:
+                return Optional.empty();
+        }
     }
 
     private Optional<CitationtypeAtt> getCitationType() {
@@ -357,6 +371,12 @@ class ScopusConverter {
             .stream()
             .findFirst()
             .map(CitationTypeTp::getCode);
+    }
+
+    private JournalArticle generateJournalArticle(JournalArticleContentType contentType) {
+        JournalArticle journalArticle = new JournalArticle();
+        journalArticle.setContentType(contentType);
+        return journalArticle;
     }
 
     private Optional<TitletextTp> getMainTitleTextTp() {

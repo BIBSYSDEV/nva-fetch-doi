@@ -8,7 +8,7 @@ public enum ScopusSourceType {
     JOURNAL("j"),
     REPORT("r");
 
-    public final String code;
+    private final String code;
 
     ScopusSourceType(String code) {
         this.code = code;
@@ -21,4 +21,7 @@ public enum ScopusSourceType {
                 .orElse(null);
     }
 
+    public String getCode() {
+        return code;
+    }
 }
