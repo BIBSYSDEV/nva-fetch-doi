@@ -87,13 +87,14 @@ public final class ScopusGenerator {
     private final URI doi;
     private CitationtypeAtt citationtypeAtt;
     private final String srcType;
-    private StringBuilder expectedTitle;
+    private final TitletextTp originalTitle;
 
     public ScopusGenerator() {
         this.doi = randomDoi();
         this.minimumSequenceNumber = 1;
         this.abstractsTp = randomAbstracts();
         this.srcType = ScopusSourceType.JOURNAL.code;
+        this.originalTitle = randomOriginalTitle();
         this.document = randomDocument();
     }
 
@@ -102,6 +103,7 @@ public final class ScopusGenerator {
         this.srcType = ScopusSourceType.JOURNAL.code;
         this.minimumSequenceNumber = 1;
         this.abstractsTp = abstractsTp;
+        this.originalTitle = randomOriginalTitle();
         this.document = randomDocument();
     }
 
@@ -110,6 +112,7 @@ public final class ScopusGenerator {
         this.minimumSequenceNumber = 1;
         this.srcType = ScopusSourceType.JOURNAL.code;
         this.abstractsTp = randomAbstracts();
+        this.originalTitle = randomOriginalTitle();
         this.document = randomDocument();
     }
 
@@ -118,6 +121,7 @@ public final class ScopusGenerator {
         this.minimumSequenceNumber = 1;
         this.doi = randomDoi();
         this.abstractsTp = randomAbstracts();
+        this.originalTitle = randomOriginalTitle();
         this.document = randomDocument();
     }
 
@@ -126,6 +130,15 @@ public final class ScopusGenerator {
         this.citationtypeAtt = citationtypeAtt;
         this.srcType = ScopusSourceType.JOURNAL.code;
         this.abstractsTp = randomAbstracts();
+        this.originalTitle = randomOriginalTitle();
+        this.document = randomDocument();
+    }
+
+    private ScopusGenerator(TitletextTp titletextTp) {
+        this.doi = randomDoi();
+        this.srcType = ScopusSourceType.JOURNAL.code;
+        this.abstractsTp = randomAbstracts();
+        this.originalTitle = titletextTp;
         this.document = randomDocument();
     }
 
@@ -139,6 +152,11 @@ public final class ScopusGenerator {
 
     public ScopusGenerator createWithSpecifiedSrcType(String srcType) {
         return new ScopusGenerator(srcType);
+    }
+
+    public static ScopusGenerator createWithSpecifiedMainTitleContent(List<Serializable> mainTitleContent) {
+        TitletextTp titletextTp = originalTitleWithSpecifiedContent(mainTitleContent);
+        return new ScopusGenerator(titletextTp);
     }
 
     public static ScopusGenerator create(CitationtypeAtt citationtypeAtt) {
@@ -443,10 +461,10 @@ public final class ScopusGenerator {
         return randomElement(YesnoAtt.values());
     }
 
-    private static CitationTitleTp randomCitationTitle() {
+    private CitationTitleTp randomCitationTitle() {
         var citationTitle = new CitationTitleTp();
         citationTitle.getShortTitle().addAll(randomShortTitles());
-        citationTitle.getTitletext().add(randomOriginalTitle());
+        citationTitle.getTitletext().add(originalTitle);
         citationTitle.getTitletext().addAll(randomNonOriginalTitles());
         return citationTitle;
     }
@@ -455,12 +473,26 @@ public final class ScopusGenerator {
         return smallStream().map(ignored -> randomNonOriginalTitle()).collect(Collectors.toList());
     }
 
+    private static TitletextTp originalTitleWithSpecifiedContent(List<Serializable> content) {
+        return randomTitle(YesnoAtt.Y, content);
+    }
+
     private static TitletextTp randomOriginalTitle() {
         return randomTitle(YesnoAtt.Y);
     }
 
     private static TitletextTp randomNonOriginalTitle() {
         return randomTitle(YesnoAtt.N);
+    }
+
+    private static TitletextTp randomTitle(YesnoAtt n, List<Serializable> content) {
+        var titleText = new TitletextTp();
+        titleText.setOriginal(n);
+        titleText.setLang(randomScopusLanguageCode());
+        titleText.setPerspective(randomString());
+        titleText.setLang(randomScopusLanguageCode());
+        titleText.getContent().addAll(content);
+        return titleText;
     }
 
     private static TitletextTp randomTitle(YesnoAtt n) {

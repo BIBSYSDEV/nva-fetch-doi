@@ -3,6 +3,15 @@ package no.sikt.nva.scopus;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
+import static no.sikt.nva.scopus.ScopusConstants.MACRON;
+import static no.sikt.nva.scopus.ScopusConstants.MATH_ML_END_EXPRESSION;
+import static no.sikt.nva.scopus.ScopusConstants.MATH_ML_OVERLINE_END_MARKER;
+import static no.sikt.nva.scopus.ScopusConstants.MATH_ML_OVERlINE_START_MARKER;
+import static no.sikt.nva.scopus.ScopusConstants.MATH_ML_START_EXPRESSION;
+import static no.sikt.nva.scopus.ScopusConstants.MATH_ML_SUBSCRIPT_END_MARKER;
+import static no.sikt.nva.scopus.ScopusConstants.MATH_ML_SUBSCRIPT_START_MARKER;
+import static no.sikt.nva.scopus.ScopusConstants.MATH_ML_SUPERSCRIPT_END_MARKER;
+import static no.sikt.nva.scopus.ScopusConstants.MATH_ML_SUPERSCRIPT_START_MARKER;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static nva.commons.core.StringUtils.EMPTY_STRING;
 import static nva.commons.core.StringUtils.SPACE;
@@ -13,12 +22,12 @@ import jakarta.xml.bind.JAXBElement;
 import java.io.StringWriter;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AuthorGroupTp;
@@ -59,12 +68,6 @@ class ScopusConverter {
     private final DocTp docTp;
     private final MetadataService metadataService;
     public static final String NAME_DELIMITER = ", ";
-    private static final String MATH_ML_START_EXPRESSION = "$";
-    private static final String MATH_ML_END_EXPRESSION = "$";
-    private static final String MATH_ML_SUPERSCRIPT_START_MARKER = "^{\\mathrm{";
-    private static final String MATH_ML_SUPERSCRIPT_END_MARKER = "}}";
-    private static final String MATH_ML_SUBSCRIPT_START_MARKER = "_{";
-    private static final String MATH_ML_SUBsCRIPT_END_MARKER = "}";
 
     protected ScopusConverter(DocTp docTp, MetadataService metadataService) {
         this.docTp = docTp;
@@ -191,12 +194,16 @@ class ScopusConverter {
 
     private List<String> extractContentWithMathML(Object content) {
         if (content instanceof String) {
-            return List.of(((String) content).split(SPACE));
+            //need to split content so that we can assign mathML start expression constant at the proper location.
+            return Arrays.stream(((String) content).split(SPACE))
+                .map(part -> wrappedInOverline(part.trim()))
+                .collect(Collectors.toList());
         } else if (content instanceof JAXBElement) {
             return extractContentWithMathML(((JAXBElement<?>) content).getValue());
         } else if (content instanceof SupTp) {
             return mathMLSuperScript(
-                String.join(EMPTY_STRING, extractContentWithMathML(((SupTp) content).getContent())));
+                String.join(EMPTY_STRING, extractContentWithMathML(
+                    ((SupTp) content).getContent())));
         } else if (content instanceof InfTp) {
             return mathMlSubScript(String.join(EMPTY_STRING, extractContentWithMathML(
                 ((InfTp) content).getContent())));
@@ -206,45 +213,67 @@ class ScopusConverter {
         }
     }
 
+    private String wrappedInOverline(String content) {
+        return content.contains(MACRON)
+                   ? MATH_ML_OVERlINE_START_MARKER + content.replace(MACRON, EMPTY_STRING) + MATH_ML_OVERLINE_END_MARKER
+                   : content;
+    }
+
     private List<String> mathMLSuperScript(String content) {
         return List.of(MATH_ML_SUPERSCRIPT_START_MARKER + content + MATH_ML_SUPERSCRIPT_END_MARKER);
     }
 
     private List<String> mathMlSubScript(String content) {
-        return List.of(MATH_ML_SUBSCRIPT_START_MARKER + content + MATH_ML_SUBsCRIPT_END_MARKER);
+        return List.of(MATH_ML_SUBSCRIPT_START_MARKER + content + MATH_ML_SUBSCRIPT_END_MARKER);
     }
 
     private String extractMainTitle() {
         return
             getMainTitleTextTp()
-                .map(titletextTp -> extractContentWithMathML(titletextTp.getContent()))
+                .map(titleTextTp -> extractContentWithMathML(titleTextTp.getContent()))
                 .map(this::appendDollarSign)
                 .orElse(null);
     }
 
-    private String appendDollarSign(List<String> title) {
-        List<String> withDollarSign = new ArrayList<>();
-        var nonEmptyElementsInTitle = filterOutEmptyStrings(title);
-        Collections.reverse(nonEmptyElementsInTitle);
-        boolean unevenDollarSign = false;
-        for (String titleStringPart : nonEmptyElementsInTitle) {
-            if ((titleStringPart.contains(MATH_ML_SUPERSCRIPT_START_MARKER) || titleStringPart.contains(
-                MATH_ML_SUBSCRIPT_START_MARKER)) && !unevenDollarSign) {
-                withDollarSign.add(titleStringPart + MATH_ML_END_EXPRESSION);
-                unevenDollarSign = true;
-            } else if (!titleStringPart.contains(MATH_ML_SUPERSCRIPT_START_MARKER) && !titleStringPart.contains(
-                MATH_ML_SUBSCRIPT_START_MARKER) && unevenDollarSign) {
-                unevenDollarSign = false;
-                withDollarSign.add(MATH_ML_START_EXPRESSION + titleStringPart.trim());
+    private String appendDollarSign(List<String> contents) {
+        List<String> withMathMlExpressionStartAndEnd = new ArrayList<>();
+        var nonEmptyElementsInContents = filterOutEmptyStrings(contents);
+        //starting at the end of the list and work forwards. Reduces complexity.
+        Collections.reverse(nonEmptyElementsInContents);
+        boolean missingStartMathMLExpression = false;
+        for (String content : nonEmptyElementsInContents) {
+            if ((isSuperScript(content) || isSubScript(content) || hasOverline(content))
+                && !missingStartMathMLExpression) {
+                withMathMlExpressionStartAndEnd.add(content + MATH_ML_END_EXPRESSION);
+                missingStartMathMLExpression = true;
+            } else if (!isSuperScript(content) && !isSubScript(content) && missingStartMathMLExpression) {
+                withMathMlExpressionStartAndEnd.add(MATH_ML_START_EXPRESSION + content.trim());
+                missingStartMathMLExpression = false;
+            } else if (hasOverline(content) && missingStartMathMLExpression) {
+                withMathMlExpressionStartAndEnd.add(MATH_ML_START_EXPRESSION + content.trim());
+                missingStartMathMLExpression = false;
             } else {
-                withDollarSign.add(titleStringPart);
+                withMathMlExpressionStartAndEnd.add(content);
             }
         }
-        if (unevenDollarSign) {
-            withDollarSign.add(MATH_ML_START_EXPRESSION);
+        if (missingStartMathMLExpression) {
+            withMathMlExpressionStartAndEnd.add(MATH_ML_START_EXPRESSION);
         }
-        Collections.reverse(withDollarSign);
-        return String.join(" ", withDollarSign);
+        //Turn the list to correct order again:
+        Collections.reverse(withMathMlExpressionStartAndEnd);
+        return String.join(SPACE, withMathMlExpressionStartAndEnd);
+    }
+
+    private static boolean isSuperScript(String content) {
+        return content.contains(MATH_ML_SUPERSCRIPT_START_MARKER);
+    }
+
+    private static boolean isSubScript(String content) {
+        return content.contains(MATH_ML_SUBSCRIPT_START_MARKER);
+    }
+
+    private static boolean hasOverline(String content) {
+        return content.contains(MATH_ML_OVERlINE_START_MARKER);
     }
 
     private static List<String> filterOutEmptyStrings(List<String> listWithEmptyStrings) {
@@ -384,12 +413,6 @@ class ScopusConverter {
             .filter(this::isScopusIdentifier)
             .map(this::toAdditionalIdentifier)
             .collect(Collectors.toSet());
-    }
-
-    private String marshallMainTitleToXmlPreservingUnderlyingStructure(TitletextTp contents) {
-        StringWriter sw = new StringWriter();
-        JAXB.marshal(contents, sw);
-        return sw.toString();
     }
 
     private List<ItemidTp> extractItemIdentifiers() {

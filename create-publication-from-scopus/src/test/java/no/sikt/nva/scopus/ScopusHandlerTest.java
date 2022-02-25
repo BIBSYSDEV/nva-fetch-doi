@@ -46,7 +46,9 @@ import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotificatio
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.UserIdentityEntity;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.github.tomakehurst.wiremock.WireMockServer;
+import jakarta.xml.bind.JAXBElement;
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -56,6 +58,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.xml.namespace.QName;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.BibrecordTp;
@@ -64,10 +67,12 @@ import no.scopus.generated.CitationtypeAtt;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
+import no.scopus.generated.InfTp;
 import no.scopus.generated.IsbnTp;
 import no.scopus.generated.ItemTp;
 import no.scopus.generated.ItemidTp;
 import no.scopus.generated.OrigItemTp;
+import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
@@ -143,6 +148,8 @@ class ScopusHandlerTest {
     private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
     private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
     private static final String EXPECTED_ABSTRACT_NAME_SPACE = "<abstractTp";
+    private static final String EXPECTED_MATH_ML_STRING_CONTENT_14244261628_FILE_NAME = "expectedMathMlContent.txt";
+    private static final char MACRON = '̄';
 
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
@@ -204,19 +211,18 @@ class ScopusHandlerTest {
         assertThat(createPublicationRequest.getEntityDescription().getReference().getDoi(), equalToObject(expectedURI));
     }
 
-
     @Test
     void shouldReturnCreatePublicationRequestWithMainTitle() throws IOException {
+        scopusData = ScopusGenerator.createWithSpecifiedMainTitleContent(contentWithSupInftagsScopus14244261628());
+        var expectedMathMlTitle =
+            IoUtils.stringFromResources(
+                Path.of(EXPECTED_RESULTS_PATH, EXPECTED_MATH_ML_STRING_CONTENT_14244261628_FILE_NAME));
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
-        var titleObject = extractTitle(scopusData);
-        var titleObjectAsXmlString = ScopusGenerator.toXml(titleObject);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualMainTitle = createPublicationRequest.getEntityDescription().getMainTitle();
-        assertThat(actualMainTitle, is(equalTo(titleObjectAsXmlString)));
+        assertThat(actualMainTitle, is(equalTo(expectedMathMlTitle)));
     }
-
-
 
     @Test
     void shouldExtractContributorsNamesAndSequenceNumberCorrectly() throws IOException {
@@ -401,6 +407,30 @@ class ScopusHandlerTest {
         var appender = LogUtils.getTestingAppenderForRootLogger();
         assertThrows(UnsupportedSrcTypeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
+    }
+
+    private static List<Serializable> contentWithSupInftagsScopus14244261628() {
+        //this is an actual title from doi: 10.1016/j.nuclphysbps.2005.01.029
+        return List.of("Non-factorizable contributions to ̄B",
+                       generateInf("d"),
+                       generateSup("0"),
+                       " → D",
+                       generateInf("s"),
+                       "(*) ̄D",
+                       generateInf("s"),
+                       "(*)");
+    }
+
+    private static JAXBElement<InfTp> generateInf(Serializable content) {
+        InfTp infTp = new InfTp();
+        infTp.getContent().add(content);
+        return new JAXBElement<>(new QName("inf"), InfTp.class, infTp);
+    }
+
+    private static JAXBElement<SupTp> generateSup(Serializable content) {
+        SupTp supTp = new SupTp();
+        supTp.getContent().add(content);
+        return new JAXBElement<>(new QName("sup"), SupTp.class, supTp);
     }
 
     private String randomStringWithExclusion(List<String> exclusions) {
