@@ -32,7 +32,40 @@ import java.util.stream.Stream;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import no.scopus.generated.*;
+import no.scopus.generated.AbstractTp;
+import no.scopus.generated.AbstractsTp;
+import no.scopus.generated.AffiliationTp;
+import no.scopus.generated.AuthorGroupTp;
+import no.scopus.generated.AuthorKeywordTp;
+import no.scopus.generated.AuthorKeywordsTp;
+import no.scopus.generated.AuthorTp;
+import no.scopus.generated.BibrecordTp;
+import no.scopus.generated.CitationInfoTp;
+import no.scopus.generated.CitationTitleTp;
+import no.scopus.generated.CitationTypeTp;
+import no.scopus.generated.CitationtypeAtt;
+import no.scopus.generated.CollaborationTp;
+import no.scopus.generated.DateSortTp;
+import no.scopus.generated.DocTp;
+import no.scopus.generated.HeadTp;
+import no.scopus.generated.IssnTp;
+import no.scopus.generated.ItemInfoTp;
+import no.scopus.generated.ItemTp;
+import no.scopus.generated.ItemidTp;
+import no.scopus.generated.ItemidlistTp;
+import no.scopus.generated.MetaTp;
+import no.scopus.generated.OrganizationTp;
+import no.scopus.generated.OrigItemTp;
+import no.scopus.generated.PersonalnameType;
+import no.scopus.generated.ProcessInfo;
+import no.scopus.generated.PublisherTp;
+import no.scopus.generated.PublishercopyrightTp;
+import no.scopus.generated.RichstringWithMMLType;
+import no.scopus.generated.ShortTitle;
+import no.scopus.generated.SourceTp;
+import no.scopus.generated.SourcetitleTp;
+import no.scopus.generated.TitletextTp;
+import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.ScopusConstants;
 import no.sikt.nva.scopus.ScopusSourceType;
 import no.unit.nva.language.LanguageConstants;
@@ -310,9 +343,9 @@ public final class ScopusGenerator {
         //according to scopus documentation there can be 1 to 3 organizations in an affiliation.
         int maxNumberOfOrganizations = 3;
         return IntStream.range(0, randomInteger(maxNumberOfOrganizations) + 1)
-                .boxed()
-                .map(ignored -> randomOrganization())
-                .collect(Collectors.toList());
+            .boxed()
+            .map(ignored -> randomOrganization())
+            .collect(Collectors.toList());
     }
 
     private static OrganizationTp randomOrganization() {
@@ -320,7 +353,6 @@ public final class ScopusGenerator {
         organizationTp.getContent().add(randomString());
         return organizationTp;
     }
-
 
     private static List<?> randomSubsetRandomAuthorsOrCollaborations(List<?> authorsAndCollaborations) {
         int min = 0;
