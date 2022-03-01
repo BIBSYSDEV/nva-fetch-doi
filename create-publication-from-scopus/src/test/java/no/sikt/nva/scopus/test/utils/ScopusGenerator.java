@@ -31,7 +31,9 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
+import javax.xml.namespace.QName;
 
+import jakarta.xml.bind.JAXBElement;
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AbstractsTp;
 import no.scopus.generated.AuthorGroupTp;
@@ -53,7 +55,9 @@ import no.scopus.generated.ItemTp;
 import no.scopus.generated.ItemidTp;
 import no.scopus.generated.ItemidlistTp;
 import no.scopus.generated.MetaTp;
+import no.scopus.generated.ObjectFactory;
 import no.scopus.generated.OrigItemTp;
+import no.scopus.generated.PagerangeTp;
 import no.scopus.generated.PersonalnameType;
 import no.scopus.generated.ProcessInfo;
 import no.scopus.generated.PublisherTp;
@@ -63,6 +67,8 @@ import no.scopus.generated.ShortTitle;
 import no.scopus.generated.SourceTp;
 import no.scopus.generated.SourcetitleTp;
 import no.scopus.generated.TitletextTp;
+import no.scopus.generated.VolissTp;
+import no.scopus.generated.VolisspagTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.ScopusConstants;
 import no.sikt.nva.scopus.ScopusSourceType;
@@ -541,5 +547,21 @@ public final class ScopusGenerator {
 
     private void setMinimumSequenceNumber(int minimumSequenceNumber) {
         this.minimumSequenceNumber = minimumSequenceNumber;
+    }
+
+    public void setJournalInfo(String volume, String issue, String pages) {
+        ObjectFactory factory = new ObjectFactory();
+        VolissTp volissTp = factory.createVolissTp();
+        volissTp.setVolume(volume);
+        volissTp.setIssue(issue);
+        JAXBElement<VolissTp> volisspagTpVoliss = factory.createVolisspagTpVoliss(volissTp);
+        VolisspagTp volisspagTp = factory.createVolisspagTp();
+        volisspagTp.getContent().add(volisspagTpVoliss);
+        PagerangeTp pagerangeTp = factory.createPagerangeTp();
+        JAXBElement<PagerangeTp> volisspagTpPagerange = factory.createVolisspagTpPagerange(pagerangeTp);
+        pagerangeTp.setFirst("0");
+        pagerangeTp.setLast(pages);
+        volisspagTp.getContent().add(volisspagTpPagerange);
+        document.getItem().getItem().getBibrecord().getHead().getSource().setVolisspag(volisspagTp);
     }
 }

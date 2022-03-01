@@ -1,20 +1,7 @@
 package no.sikt.nva.scopus;
 
-import static java.util.Collections.emptyList;
-import static java.util.Objects.nonNull;
-import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
-import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
-import static nva.commons.core.StringUtils.isNotBlank;
 import jakarta.xml.bind.JAXB;
 import jakarta.xml.bind.JAXBElement;
-import java.io.StringWriter;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordTp;
@@ -29,8 +16,12 @@ import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
 import no.scopus.generated.InfTp;
 import no.scopus.generated.ItemidTp;
+import no.scopus.generated.PagerangeTp;
+import no.scopus.generated.SourceTp;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
+import no.scopus.generated.VolissTp;
+import no.scopus.generated.VolisspagTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
@@ -45,9 +36,27 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import no.unit.nva.model.pages.Pages;
+import no.unit.nva.model.pages.Range;
 import nva.commons.core.paths.UriWrapper;
+
+import java.io.StringWriter;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.util.Collections.emptyList;
+import static java.util.Objects.nonNull;
+import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
+import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
+import static nva.commons.core.StringUtils.isNotBlank;
 
 @SuppressWarnings("PMD.GodClass")
 class ScopusConverter {
@@ -227,12 +236,14 @@ class ScopusConverter {
         CitationtypeAtt citationtypeAtt) {
         switch (citationtypeAtt) {
             case AR:
-                return Optional.of(new JournalArticle());
+                return Optional.of(generateJournalArticle());
             case RE:
                 return Optional.of(generateJournalArticle(JournalArticleContentType.REVIEW_ARTICLE));
             case BK:
             case CH:
                 return Optional.of(new BookMonograph());
+            case ED:
+                return Optional.of(generateJournalLeader());
             default:
                 return Optional.empty();
         }
@@ -252,9 +263,88 @@ class ScopusConverter {
     }
 
     private JournalArticle generateJournalArticle(JournalArticleContentType contentType) {
-        JournalArticle journalArticle = new JournalArticle();
+        JournalArticle journalArticle = generateJournalArticle();
         journalArticle.setContentType(contentType);
         return journalArticle;
+    }
+
+    private JournalArticle generateJournalArticle() {
+        JournalArticle journalArticle = new JournalArticle();
+        extractPages().ifPresent(journalArticle::setPages);
+        extractVolume().ifPresent(journalArticle::setVolume);
+        extractIssue().ifPresent(journalArticle::setIssue);
+        extractArticleNumber().ifPresent(journalArticle::setArticleNumber);
+        return journalArticle;
+    }
+
+    private JournalLeader generateJournalLeader() {
+        JournalLeader.Builder builder = new JournalLeader.Builder();
+        extractPages().ifPresent(builder::withPages);
+        extractVolume().ifPresent(builder::withVolume);
+        extractIssue().ifPresent(builder::withIssue);
+        extractArticleNumber().ifPresent(builder::withArticleNumber);
+        return builder.build();
+    }
+
+    private Optional<Range> extractPages() {
+        return getVolisspagTpStream()
+                .filter(this::isPageRange)
+                .map(this::extractPageRange)
+                .findAny().orElse(Optional.empty());
+    }
+
+    private Stream<JAXBElement<?>> getVolisspagTpStream() {
+        return Optional.ofNullable(getSourceTp().getVolisspag())
+                .map(VolisspagTp::getContent)
+                .orElse(emptyList())
+                .stream();
+    }
+
+    private Optional<String> extractVolume() {
+        return getVolisspagTpStream()
+                .filter(this::isVolumeIssue)
+                .map(this::extractVolumeValue)
+                .findAny().orElse(Optional.empty());
+    }
+
+    private Optional<String> extractIssue() {
+        return getVolisspagTpStream()
+                .filter(this::isVolumeIssue)
+                .map(this::extractIssueValue)
+                .findAny().orElse(Optional.empty());
+    }
+
+    private Optional<String> extractArticleNumber() {
+        return Optional.ofNullable(getSourceTp().getArticleNumber());
+    }
+
+    private boolean isVolumeIssue(JAXBElement<?> content) {
+        return content.getValue() instanceof VolissTp;
+    }
+
+    private Optional<String> extractVolumeValue(JAXBElement<?> content) {
+        return Optional.ofNullable(((VolissTp) content.getValue()).getVolume());
+    }
+
+    private Optional<String> extractIssueValue(JAXBElement<?> content) {
+        return Optional.ofNullable(((VolissTp) content.getValue()).getIssue());
+    }
+
+    private SourceTp getSourceTp() {
+        return docTp.getItem()
+                .getItem()
+                .getBibrecord()
+                .getHead()
+                .getSource();
+    }
+
+    private boolean isPageRange(JAXBElement<?> content) {
+        return content.getValue() instanceof PagerangeTp;
+    }
+
+    private Optional<Range> extractPageRange(JAXBElement<?> content) {
+        return Optional.of(new Range(((PagerangeTp) content.getValue()).getFirst(),
+                ((PagerangeTp) content.getValue()).getLast()));
     }
 
     private Optional<TitletextTp> getMainTitleTextTp() {
