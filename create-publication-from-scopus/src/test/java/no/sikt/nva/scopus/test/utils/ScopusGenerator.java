@@ -341,7 +341,8 @@ public final class ScopusGenerator {
 
     private static Collection<? extends OrganizationTp> randomOrganizations() {
         //according to scopus documentation there can be 1 to 3 organizations in an affiliation.
-        int maxNumberOfOrganizations = 3;
+        //which is a lie, found scopus xmls with 4 organizations.
+        int maxNumberOfOrganizations = 10;
         return IntStream.range(0, randomInteger(maxNumberOfOrganizations) + 1)
             .boxed()
             .map(ignored -> randomOrganization())
