@@ -1,80 +1,14 @@
 package no.sikt.nva.scopus;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
-import static java.util.Objects.nonNull;
-import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
-import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
-import static no.sikt.nva.scopus.ScopusConverter.NAME_DELIMITER;
-import static no.sikt.nva.scopus.conversion.PublicationContextCreator.UNSUPPORTED_SOURCE_TYPE;
-import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
-import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
-import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static nva.commons.core.StringUtils.isNotBlank;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.equalToObject;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasProperty;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.isA;
-import static org.hamcrest.Matchers.startsWith;
-import static org.hamcrest.Matchers.stringContainsInOrder;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.nullValue;
-import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.RequestParametersEntity;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.ResponseElementsEntity;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3BucketEntity;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3Entity;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3EventNotificationRecord;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3ObjectEntity;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.UserIdentityEntity;
+import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.*;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.github.tomakehurst.wiremock.WireMockServer;
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.nio.file.Path;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import no.scopus.generated.AuthorGroupTp;
-import no.scopus.generated.AuthorTp;
-import no.scopus.generated.BibrecordTp;
-import no.scopus.generated.CitationTitleTp;
-import no.scopus.generated.CitationtypeAtt;
-import no.scopus.generated.CollaborationTp;
-import no.scopus.generated.DocTp;
-import no.scopus.generated.HeadTp;
-import no.scopus.generated.IsbnTp;
-import no.scopus.generated.ItemTp;
-import no.scopus.generated.ItemidTp;
-import no.scopus.generated.OrigItemTp;
-import no.scopus.generated.TitletextTp;
-import no.scopus.generated.YesnoAtt;
+import no.scopus.generated.*;
 import no.sikt.nva.scopus.conversion.PublicationContextCreator;
-import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
+import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.sikt.nva.scopus.test.utils.ScopusGenerator;
 import no.sikt.nva.testing.http.WiremockHttpClient;
 import no.unit.nva.doi.models.Doi;
@@ -83,13 +17,8 @@ import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
-import no.unit.nva.model.contexttypes.Book;
-import no.unit.nva.model.contexttypes.Chapter;
-import no.unit.nva.model.contexttypes.Journal;
-import no.unit.nva.model.contexttypes.Publisher;
-import no.unit.nva.model.contexttypes.Report;
-import no.unit.nva.model.contexttypes.UnconfirmedJournal;
-import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
+import no.unit.nva.model.Organization;
+import no.unit.nva.model.contexttypes.*;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.s3.S3Driver;
@@ -111,6 +40,37 @@ import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.nio.file.Path;
+import java.time.Instant;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static java.util.Objects.nonNull;
+import static no.sikt.nva.scopus.ScopusConstants.*;
+import static no.sikt.nva.scopus.ScopusConverter.NAME_DELIMITER;
+import static no.sikt.nva.scopus.conversion.PublicationContextCreator.UNSUPPORTED_SOURCE_TYPE;
+import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
+import static no.unit.nva.testutils.RandomDataGenerator.*;
+import static nva.commons.core.StringUtils.isNotBlank;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 
 class ScopusHandlerTest {
 
@@ -148,8 +108,6 @@ class ScopusHandlerTest {
     private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
     private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
     private static final String EXPECTED_ABSTRACT_NAME_SPACE = "<abstractTp";
-    private static final String JOURNAL_SOURCETYPE_IDENTIFYING_CHAR = "j";
-    private static final String BOOK_SOURCETYPE_IDENTIFYING_CHAR = "b";
 
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
@@ -232,6 +190,60 @@ class ScopusHandlerTest {
         authors.forEach(author -> checkAuthorName(author, actualContributors));
         collaborations.forEach(collaboration -> checkCollaborationName(collaboration, actualContributors));
     }
+
+    @Test
+    void shouldExtractContributorAffiliation() throws IOException {
+        var authorsGroups = scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getAuthorGroup();
+        var authors = keepOnlyTheAuthors();
+        var s3Event = createNewScopusPublicationEvent();
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualContributors = createPublicationRequest.getEntityDescription().getContributors();
+        authors.forEach(author -> checkAffiliationForAuthor(author, actualContributors, authorsGroups));
+    }
+
+    private void checkAffiliationForAuthor(AuthorTp author, List<Contributor> actualContributors, List<AuthorGroupTp> authorGroupTps) {
+        //when we remove duplicates this will have better CPU performance.
+        var expectedAffiliationsNames = getAffiliationNameforSequenceNumber(authorGroupTps, author.getSeq());
+        var actualAffiliationNames = findContributorsBySequence(author.getSeq(), actualContributors)
+                .stream()
+                .map(Contributor::getAffiliations)
+                .flatMap(Collection::stream)
+                .map(Organization::getLabels)
+                .map(Map::values)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+        assertThat(actualAffiliationNames, containsInAnyOrder(expectedAffiliationsNames));
+    }
+
+
+    private List<String> getAffiliationNameforSequenceNumber(List<AuthorGroupTp> authorGroupTps, String sequenceNumber){
+        return authorGroupTps
+                .stream()
+                .filter(authorGroupTp -> authorGroupContainAuthorWithSequenceNumber(authorGroupTp, sequenceNumber))
+                .collect(Collectors.toList())
+                .stream()
+                .map(this::expectedAffiliationName)
+                .collect(Collectors.toList());
+    }
+
+    private String expectedAffiliationName(AuthorGroupTp authorGroupsWithAuthorsWithSequenceNumber) {
+      return  authorGroupsWithAuthorsWithSequenceNumber
+                .getAffiliation()
+                .getOrganization()
+                .stream()
+                .map(organizationTp -> organizationTp.getContent().stream().map(Object::toString).collect(Collectors.joining()))
+                .collect(Collectors.joining(AFFILIATION_DELIMITER));
+    }
+
+    private boolean authorGroupContainAuthorWithSequenceNumber(AuthorGroupTp authorGroupTp, String sequenceNumber) {
+        return keepOnlyTheAuthors(authorGroupTp).stream().anyMatch(authorTp -> sequenceNumber.equals(authorTp.getSeq()));
+    }
+
+
+
+
+
+
 
     @Test
     void shouldExtractAuthorKeywordsAsXML() throws IOException {
@@ -598,6 +610,12 @@ class ScopusHandlerTest {
             .findFirst();
     }
 
+    private List<Contributor> findContributorsBySequence(String sequence, List<Contributor> contributors) {
+        return contributors.stream()
+                .filter(contributor -> sequence.equals(Integer.toString(contributor.getSequence())))
+                .collect(Collectors.toList());
+    }
+
     private EventReference fetchEmittedEvent() {
         return eventBridgeClient.getRequestEntries().stream()
             .map(PutEventsRequestEntry::detail)
@@ -630,14 +648,6 @@ class ScopusHandlerTest {
             .flatMap(Collection::stream)
             .filter(t -> YesnoAtt.Y.equals(t.getOriginal()))
             .collect(SingletonCollector.collect());
-    }
-
-    private String getRandomCharBesidesUnwantedChar(String... unwantedChar) {
-        String randomChar;
-        do {
-            randomChar = randomString().toLowerCase().substring(0, 1);
-        } while (Arrays.stream(unwantedChar).anyMatch(randomChar::equals));
-        return randomChar;
     }
 
     private URI createExpectedQueryUriForJournalWithEIssn(String electronicIssn, String year) {
@@ -722,6 +732,15 @@ class ScopusHandlerTest {
     private List<AuthorTp> keepOnlyTheAuthors() {
         return keepOnlyTheCollaborationsAndAuthors().stream().filter(
             this::isAuthorTp).map(author -> (AuthorTp) author).collect(Collectors.toList());
+    }
+
+    private List<AuthorTp> keepOnlyTheAuthors(AuthorGroupTp authorGroupTp){
+        return authorGroupTp
+                .getAuthorOrCollaboration()
+                .stream()
+                .filter(this::isAuthorTp)
+                .map(author -> (AuthorTp) author)
+                .collect(Collectors.toList());
     }
 
     private List<CollaborationTp> keepOnlyTheCollaborations() {

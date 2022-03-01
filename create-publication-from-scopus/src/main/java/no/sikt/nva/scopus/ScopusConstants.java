@@ -15,6 +15,9 @@ public class ScopusConstants {
     public static final String ISSN_TYPE_ELECTRONIC = "electronic";
     public static final String ISSN_TYPE_PRINT = "print";
 
+    //affiliation constants:
+    public static final String AFFILIATION_DELIMITER = ", ";
+
     @JacocoGenerated
     public ScopusConstants() {
     }
