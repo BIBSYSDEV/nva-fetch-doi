@@ -578,7 +578,7 @@ class ScopusHandlerTest {
     @ParameterizedTest(name = "should not generate CreatePublicationRequest when CitationType is:{0}")
     @EnumSource(
         value = CitationtypeAtt.class,
-        names = {"AR", "BK", "CH", "ED", "ER", "LE", "NO", "RE"},
+        names = {"AR", "BK", "CH", "ED", "ER", "LE", "NO", "RE", "SH"},
         mode = Mode.EXCLUDE)
     void shouldNotGenerateCreatePublicationFromUnsupportedPublicationTypes(CitationtypeAtt citationtypeAtt)
         throws IOException {

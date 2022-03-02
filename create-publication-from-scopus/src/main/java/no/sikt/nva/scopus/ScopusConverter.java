@@ -250,6 +250,7 @@ class ScopusConverter {
             case NO:
                 return Optional.of(generateJournalLetter());
             case RE:
+            case SH:
                 return Optional.of(generateJournalArticle(JournalArticleContentType.REVIEW_ARTICLE));
             default:
                 return Optional.empty();
