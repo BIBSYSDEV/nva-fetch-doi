@@ -245,7 +245,7 @@ class ScopusHandlerTest {
     private void checkAffiliationForAuthor(AuthorTp author, List<Contributor> actualContributors,
                                            List<AuthorGroupTp> authorGroupTps) {
         //when we remove duplicates this will have better CPU performance.
-        var expectedAffiliationsNames = getAffiliationNameforSequenceNumber(authorGroupTps, author.getSeq());
+        var expectedAffiliationsNames = getAffiliationNameForSequenceNumber(authorGroupTps, author.getSeq());
         var actualAffiliationNames = findContributorsBySequence(author.getSeq(), actualContributors)
             .stream()
             .map(Contributor::getAffiliations)
@@ -254,10 +254,10 @@ class ScopusHandlerTest {
             .map(Map::values)
             .flatMap(Collection::stream)
             .collect(Collectors.toList());
-        assertThat(actualAffiliationNames, containsInAnyOrder(expectedAffiliationsNames));
+        assertThat(actualAffiliationNames, containsInAnyOrder(expectedAffiliationsNames.toArray()));
     }
 
-    private List<String> getAffiliationNameforSequenceNumber(List<AuthorGroupTp> authorGroupTps,
+    private List<String> getAffiliationNameForSequenceNumber(List<AuthorGroupTp> authorGroupTps,
                                                              String sequenceNumber) {
         return authorGroupTps
             .stream()

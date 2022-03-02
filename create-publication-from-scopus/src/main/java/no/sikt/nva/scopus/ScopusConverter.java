@@ -2,6 +2,7 @@ package no.sikt.nva.scopus;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
+import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static nva.commons.core.StringUtils.isNotBlank;
@@ -12,6 +13,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -40,8 +42,10 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.Role;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
@@ -275,22 +279,63 @@ class ScopusConverter {
     private List<Contributor> generateContributorsFromAuthorGroup(AuthorGroupTp authorGroupTp) {
         return authorGroupTp.getAuthorOrCollaboration()
             .stream()
-            .map(this::generateContributorFromAuthorOrCollaboration)
+            .map(authorOrCollaboration -> generateContributorFromAuthorOrCollaboration(authorOrCollaboration,
+                                                                                       authorGroupTp))
             .collect(Collectors.toList());
     }
 
-    private Contributor generateContributorFromAuthorOrCollaboration(Object authorOrCollaboration) {
+    private Contributor generateContributorFromAuthorOrCollaboration(Object authorOrCollaboration,
+                                                                     AuthorGroupTp authorGroupTp) {
         return authorOrCollaboration instanceof AuthorTp
-                   ? generateContributorFromAuthorTp((AuthorTp) authorOrCollaboration)
+                   ? generateContributorFromAuthorTp((AuthorTp) authorOrCollaboration, authorGroupTp)
                    : generateContributorFromCollaborationTp(
                        (CollaborationTp) authorOrCollaboration);
     }
 
-    private Contributor generateContributorFromAuthorTp(AuthorTp author) {
+    private Contributor generateContributorFromAuthorTp(AuthorTp author, AuthorGroupTp authorGroup) {
+        var identity = generateContributorIdentityFromAuthorTp(author);
+        var affiliations = generateAffiliation(authorGroup);
+        return new Contributor(identity, affiliations.orElse(null), Role.CREATOR, getSequenceNumber(author), false);
+    }
+
+    private Optional<List<Organization>> generateAffiliation(AuthorGroupTp authorGroup) {
+        var labels = getOrganizationLabels(authorGroup);
+        return labels.map(this::generateOrganizationWithLabel);
+    }
+
+    private List<Organization> generateOrganizationWithLabel(Map<String, String> label) {
+        Organization organization = new Organization();
+        organization.setLabels(label);
+        return List.of(organization);
+    }
+
+    private Optional<Map<String, String>> getOrganizationLabels(AuthorGroupTp authorGroup) {
+        var organizationNameOptional = getOrganizationNameFromAuthorGroup(authorGroup);
+        return organizationNameOptional.map(organizationName -> Map.of(getLanguageIso6391Code(),
+                                                                       organizationName));
+    }
+
+    private String getLanguageIso6391Code() {
+        return "en";
+    }
+
+    private Optional<String> getOrganizationNameFromAuthorGroup(AuthorGroupTp authorGroup) {
+        var affiliation = authorGroup.getAffiliation();
+        return nonNull(affiliation)
+                   ? Optional.of(affiliation
+                                     .getOrganization()
+                                     .stream()
+                                     .map(organizationTp -> extractContentString(
+                                         organizationTp.getContent()))
+                                     .collect(Collectors.joining(AFFILIATION_DELIMITER)))
+                   : Optional.empty();
+    }
+
+    private Identity generateContributorIdentityFromAuthorTp(AuthorTp authorTp) {
         var identity = new Identity();
-        identity.setName(determineContributorName(author));
-        identity.setOrcId(getOrcidAsUriString(author));
-        return new Contributor(identity, null, null, getSequenceNumber(author), false);
+        identity.setName(determineContributorName(authorTp));
+        identity.setOrcId(getOrcidAsUriString(authorTp));
+        return identity;
     }
 
     private String getOrcidAsUriString(AuthorTp authorTp) {
