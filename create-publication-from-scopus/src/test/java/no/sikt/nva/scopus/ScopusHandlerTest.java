@@ -94,6 +94,8 @@ import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
+import no.unit.nva.model.instancetypes.journal.JournalLetter;
+import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeS3Client;
@@ -557,10 +559,26 @@ class ScopusHandlerTest {
         assertThat(ScopusConstants.DUMMY_URI, is(((JournalCorrigendum) actualPublicationInstance).getCorrigendumFor()));
     }
 
+    @Test
+    void shouldExtractJournalLetterWhenScopusCitationTypeIsLetter() throws IOException {
+        scopusData = ScopusGenerator.create(CitationtypeAtt.LE);
+        var expectedIssue = String.valueOf(randomInteger());
+        var expectedVolume = randomString();
+        var expectedPages = randomString();
+        scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationInstance =
+                createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
+        assertThat(actualPublicationInstance, isA(JournalLetter.class));
+        assertThat(expectedIssue, is(((JournalLetter) actualPublicationInstance).getIssue()));
+    }
+
     @ParameterizedTest(name = "should not generate CreatePublicationRequest when CitationType is:{0}")
     @EnumSource(
         value = CitationtypeAtt.class,
-        names = {"AR", "BK", "CH", "ED", "ER", "RE"},
+        names = {"AR", "BK", "CH", "ED", "ER", "LE" "RE"},
         mode = Mode.EXCLUDE)
     void shouldNotGenerateCreatePublicationFromUnsupportedPublicationTypes(CitationtypeAtt citationtypeAtt)
         throws IOException {

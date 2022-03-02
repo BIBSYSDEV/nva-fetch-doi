@@ -39,6 +39,7 @@ import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
+import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.paths.UriWrapper;
@@ -247,6 +248,8 @@ class ScopusConverter {
                 return Optional.of(generateJournalCorrigendum());
             case RE:
                 return Optional.of(generateJournalArticle(JournalArticleContentType.REVIEW_ARTICLE));
+            case LE:
+                return Optional.of(generateJournalLetter());
             default:
                 return Optional.empty();
         }
@@ -296,6 +299,15 @@ class ScopusConverter {
         extractIssue().ifPresent(builder::withIssue);
         extractArticleNumber().ifPresent(builder::withArticleNumber);
         builder.withCorrigendumFor(ScopusConstants.DUMMY_URI);
+        return builder.build();
+    }
+
+    private JournalLetter generateJournalLetter() {
+        JournalLetter.Builder builder = new JournalLetter.Builder();
+        extractPages().ifPresent(builder::withPages);
+        extractVolume().ifPresent(builder::withVolume);
+        extractIssue().ifPresent(builder::withIssue);
+        extractArticleNumber().ifPresent(builder::withArticleNumber);
         return builder.build();
     }
 
