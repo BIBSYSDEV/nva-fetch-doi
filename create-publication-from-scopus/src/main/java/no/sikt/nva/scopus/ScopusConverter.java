@@ -38,6 +38,7 @@ import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
+import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.paths.UriWrapper;
@@ -244,6 +245,8 @@ class ScopusConverter {
                 return Optional.of(new BookMonograph());
             case ED:
                 return Optional.of(generateJournalLeader());
+            case LE:
+                return Optional.of(generateJournalLetter());
             default:
                 return Optional.empty();
         }
@@ -279,6 +282,15 @@ class ScopusConverter {
 
     private JournalLeader generateJournalLeader() {
         JournalLeader.Builder builder = new JournalLeader.Builder();
+        extractPages().ifPresent(builder::withPages);
+        extractVolume().ifPresent(builder::withVolume);
+        extractIssue().ifPresent(builder::withIssue);
+        extractArticleNumber().ifPresent(builder::withArticleNumber);
+        return builder.build();
+    }
+
+    private JournalLetter generateJournalLetter() {
+        JournalLetter.Builder builder = new JournalLetter.Builder();
         extractPages().ifPresent(builder::withPages);
         extractVolume().ifPresent(builder::withVolume);
         extractIssue().ifPresent(builder::withIssue);
