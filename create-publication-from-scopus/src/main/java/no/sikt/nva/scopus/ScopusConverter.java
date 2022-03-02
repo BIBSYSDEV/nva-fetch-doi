@@ -61,6 +61,9 @@ import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.paths.UriWrapper;
+import org.apache.tika.langdetect.OptimaizeLangDetector;
+import org.apache.tika.language.detect.LanguageDetector;
+import org.apache.tika.language.detect.LanguageResult;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 class ScopusConverter {
@@ -424,12 +427,14 @@ class ScopusConverter {
 
     private Optional<Map<String, String>> getOrganizationLabels(AuthorGroupTp authorGroup) {
         var organizationNameOptional = getOrganizationNameFromAuthorGroup(authorGroup);
-        return organizationNameOptional.map(organizationName -> Map.of(getLanguageIso6391Code(),
+        return organizationNameOptional.map(organizationName -> Map.of(getLanguageIso6391Code(organizationName),
                                                                        organizationName));
     }
 
-    private String getLanguageIso6391Code() {
-        return "en";
+    private String getLanguageIso6391Code(String textToBeGuessedLanguageCodeFrom) {
+        LanguageDetector detector = new OptimaizeLangDetector().loadModels();
+        LanguageResult result = detector.detect(textToBeGuessedLanguageCodeFrom);
+        return result.isReasonablyCertain() ? result.getLanguage() : "en";
     }
 
     private Optional<String> getOrganizationNameFromAuthorGroup(AuthorGroupTp authorGroup) {

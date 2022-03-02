@@ -4,6 +4,8 @@ dependencies {
     api(libs.nva.datamodel) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
+    implementation group: 'org.apache.tika', name: 'tika-langdetect', version: '1.28.1'
+
     implementation project(":scopus-generate")
     implementation project(":metadata-transformer")
     implementation libs.xsd2java.jakarta

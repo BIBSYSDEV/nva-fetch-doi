@@ -162,9 +162,6 @@ class ScopusHandlerTest {
     private static final String EXPECTED_VOLUME_IN_0000469852 = "50";
     private static final String EXPECTED_FIRST_PAGE_IN_0000469852 = "105";
     private static final String EXPECTED_LAST_PAGE_IN_0000469852 = "119";
-    private static final String JOURNAL_SOURCETYPE_IDENTIFYING_CHAR = "j";
-    private static final String BOOK_SOURCETYPE_IDENTIFYING_CHAR = "b";
-
 
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
@@ -730,6 +727,7 @@ class ScopusHandlerTest {
                     Collectors.toSet());
         var actualOrganizationsLabels =
             organizations.stream().map(Organization::getLabels).collect(Collectors.toList());
+        assertEquals(expectedLabels, actualOrganizationsLabels);
         assertThat(actualOrganizationsLabels, containsInAnyOrder(expectedLabels.toArray()));
     }
 
