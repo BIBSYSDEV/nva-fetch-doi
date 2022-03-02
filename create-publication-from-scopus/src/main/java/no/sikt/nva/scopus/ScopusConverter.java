@@ -60,7 +60,7 @@ import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static nva.commons.core.StringUtils.isNotBlank;
 
-@SuppressWarnings("PMD.GodClass")
+@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 class ScopusConverter {
 
     public static final String UNSUPPORTED_CITATION_TYPE_MESSAGE = "Unsupported citation type, cannot convert eid %s";
@@ -246,10 +246,10 @@ class ScopusConverter {
                 return Optional.of(generateJournalLeader());
             case ER:
                 return Optional.of(generateJournalCorrigendum());
-            case RE:
-                return Optional.of(generateJournalArticle(JournalArticleContentType.REVIEW_ARTICLE));
             case LE:
                 return Optional.of(generateJournalLetter());
+            case RE:
+                return Optional.of(generateJournalArticle(JournalArticleContentType.REVIEW_ARTICLE));
             default:
                 return Optional.empty();
         }
