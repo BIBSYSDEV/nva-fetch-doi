@@ -35,7 +35,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
@@ -605,12 +604,25 @@ class ScopusHandlerTest {
     }
 
     @Test
-    void shouldExtractCorrespondenceAndSetContributorToCorrespondingAuthor() throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0018132378));
-        var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
+    void shouldExtractCorrespondenceAndSetMatchingContributorToCorrespondingAuthor() throws IOException {
+        var authors = keepOnlyTheAuthors();
+        var correspondingAuthorTp = authors.get(0);
+        scopusData.setCorrespondence(correspondingAuthorTp);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
-        var actualPublicationContributors = createPublicationRequest.getEntityDescription().getContributors();
+        var actualPublicationContributors = createPublicationRequest.getEntityDescription()
+                .getContributors();
+        var actualCorrespondingContributor = getCorrespondingContributor(actualPublicationContributors);
+        assertThat(actualCorrespondingContributor.getIdentity().getName(),
+                startsWith(correspondingAuthorTp.getSurname()));
+    }
+
+    private Contributor getCorrespondingContributor(List<Contributor> actualPublicationContributors) {
+        return actualPublicationContributors
+                .stream()
+                .filter(Contributor::isCorrespondingAuthor)
+                .findAny().orElse(null);
     }
 
     private void checkAuthorOrcidAndSequenceNumber(AuthorTp authorTp, List<Contributor> contributors) {

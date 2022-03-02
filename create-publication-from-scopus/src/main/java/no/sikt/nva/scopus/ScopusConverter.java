@@ -198,7 +198,6 @@ class ScopusConverter {
     }
 
     private List<Contributor> generateContributors() {
-        // TODO: finn correspondence og sett flagg
         Optional<PersonalnameType> correspondencePerson = extractCorrespondence()
                 .stream()
                 .map(this::extractPersonalnameType)
@@ -218,6 +217,7 @@ class ScopusConverter {
     private List<CorrespondenceTp> extractCorrespondence() {
         return extractHead().getCorrespondence();
     }
+
     private Optional<PersonalnameType> extractPersonalnameType(CorrespondenceTp correspondenceTp) {
         return Optional.ofNullable(correspondenceTp.getPerson());
     }
@@ -406,8 +406,13 @@ class ScopusConverter {
     }
 
     private boolean isCorrespondingAuthor(AuthorTp author, PersonalnameType correspondencePerson) {
-        return nonNull(correspondencePerson) &&
-                author.getIndexedName().equals(correspondencePerson.getIndexedName());
+        return nonNull(correspondencePerson)
+                && author.getIndexedName().equals(correspondencePerson.getIndexedName());
+    }
+
+    private boolean isCorrespondingAuthor(CollaborationTp collaboration, PersonalnameType correspondencePerson) {
+        return nonNull(correspondencePerson)
+                && collaboration.getIndexedName().equals(correspondencePerson.getIndexedName());
     }
 
     private String getOrcidAsUriString(AuthorTp authorTp) {
@@ -428,9 +433,12 @@ class ScopusConverter {
                 isCorrespondingAuthor(collaboration, correspondencePerson));
     }
 
-    private boolean isCorrespondingAuthor(CollaborationTp collaboration, PersonalnameType correspondencePerson) {
-        return nonNull(correspondencePerson) &&
-                collaboration.getIndexedName().equals(correspondencePerson.getIndexedName());
+    private String determineContributorName(AuthorTp author) {
+        return author.getPreferredName().getSurname() + NAME_DELIMITER + author.getPreferredName().getGivenName();
+    }
+
+    private String determineContributorName(CollaborationTp collaborationTp) {
+        return collaborationTp.getIndexedName();
     }
 
     private int getSequenceNumber(AuthorTp authorTp) {
@@ -439,14 +447,6 @@ class ScopusConverter {
 
     private int getSequenceNumber(CollaborationTp collaborationTp) {
         return Integer.parseInt(collaborationTp.getSeq());
-    }
-
-    private String determineContributorName(AuthorTp author) {
-        return author.getPreferredName().getSurname() + NAME_DELIMITER + author.getPreferredName().getGivenName();
-    }
-
-    private String determineContributorName(CollaborationTp collaborationTp) {
-        return collaborationTp.getIndexedName();
     }
 
     private List<AuthorGroupTp> extractAuthorGroup() {
