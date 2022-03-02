@@ -401,6 +401,27 @@ class ScopusHandlerTest {
     }
 
     @Test
+    void shouldReturnPublicationContextBookSeriesWithConfirmedPublisherWhenEventWithS3UriThatPointsToScopusXmlWithSrctypek()
+        throws IOException {
+        scopusData.getDocument().getMeta().setSrctype("k");
+        var expectedPublisherName = randomString();
+        scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0)
+            .setPublishername(expectedPublisherName);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        var queryUri = createExpectedQueryUriForPublisherWithName(expectedPublisherName);
+        var expectedPublisherUri = mockedPublicationChannelsReturnsUri(queryUri);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
+            .getPublicationContext();
+        assertThat(actualPublicationContext, instanceOf(Book.class));
+        var actualPublisher = ((Report) actualPublicationContext).getPublisher();
+        assertThat(actualPublisher, instanceOf(Publisher.class));
+        var actualPublisherId = ((Publisher) actualPublisher).getId();
+        assertThat(actualPublisherId, is(expectedPublisherUri));
+    }
+
+    @Test
     void shouldReturnCreatePublicationRequestWithJournalWhenEventWithS3UriThatPointsToScopusXmlWhereSourceTitleIsInNsd()
         throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));

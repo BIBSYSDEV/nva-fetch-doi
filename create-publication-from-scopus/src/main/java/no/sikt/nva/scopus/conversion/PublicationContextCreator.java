@@ -1,10 +1,12 @@
 package no.sikt.nva.scopus.conversion;
 
 import static no.sikt.nva.scopus.ScopusSourceType.BOOK;
+import static no.sikt.nva.scopus.ScopusSourceType.BOOKSERIES;
 import static no.sikt.nva.scopus.ScopusSourceType.JOURNAL;
 import static no.sikt.nva.scopus.ScopusSourceType.REPORT;
 import static nva.commons.core.attempt.Try.attempt;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -37,6 +39,7 @@ import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
+import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.paths.UriWrapper;
 
@@ -63,6 +66,9 @@ public class PublicationContextCreator {
             return createChapter();
         }
         if (isBook()) {
+            return createBook();
+        }
+        if (isBookSeries()) {
             return createBook();
         }
         if (isReport()) {
@@ -100,6 +106,14 @@ public class PublicationContextCreator {
                 .orElse(false);
     }
 
+    private boolean isBookSeries() {
+        return Optional.ofNullable(docTp)
+                .map(DocTp::getMeta)
+                .map(MetaTp::getSrctype)
+                .map(srcType -> BOOKSERIES.equals(ScopusSourceType.valueOfCode(srcType)))
+                .orElse(false);
+    }
+
     private boolean isReport() {
         return Optional.ofNullable(docTp)
                 .map(DocTp::getMeta)
@@ -113,7 +127,7 @@ public class PublicationContextCreator {
     }
 
     public Book createBook() {
-        BookSeries bookSeries = null;
+        BookSeries bookSeries = createBookSeries();
         String seriesNumber = null;
         PublishingHouse publishingHouse = createPublisher();
         List<String> isbnList = findIsbn();
@@ -139,6 +153,9 @@ public class PublicationContextCreator {
         return fetchConfirmedPublisherFromPublicationChannels().orElseGet(this::createUnconfirmedPublisher);
     }
 
+    private BookSeries createBookSeries() {
+        return fetchConfirmedSeriesFromPublicationChannels().orElseGet(this::createUnconfirmedSeries);
+    }
 
     private Optional<PublishingHouse> fetchConfirmedPublisherFromPublicationChannels() {
         var publisherName = findPublisherName();
@@ -152,10 +169,23 @@ public class PublicationContextCreator {
         return new UnconfirmedPublisher(publisherName);
     }
 
+    private UnconfirmedSeries createUnconfirmedSeries() {
+        var title = findSourceTitle();
+        var issn = findIssn();
+        var onlineIssn = findPublisherName();
+        return attempt(() -> new UnconfirmedSeries(title, issn, onlineIssn)).orElseThrow();
+    }
+
     private String findPublisherName() {
         Optional<PublisherTp> publisherTp = docTp.getItem().getItem().getBibrecord().getHead().getSource()
                 .getPublisher().stream().findFirst();
         return publisherTp.map(PublisherTp::getPublishername).orElse(EMPTY_STRING);
+    }
+
+    private String findSourceTitle() {
+        Optional<Serializable> sourceTitle = docTp.getItem().getItem().getBibrecord().getHead().getSource()
+                .getSourcetitle().getContent().stream().findFirst();
+        return sourceTitle.map(String::valueOf).orElse(EMPTY_STRING);
     }
 
     private Optional<Periodical> createConfirmedJournal() {
