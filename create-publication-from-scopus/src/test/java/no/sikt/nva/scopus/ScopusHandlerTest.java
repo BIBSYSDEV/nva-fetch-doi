@@ -604,6 +604,15 @@ class ScopusHandlerTest {
         assertThat(actualPublicationInstance.getPages().getEnd(), is(EXPECTED_LAST_PAGE_IN_0000469852));
     }
 
+    @Test
+    void shouldExtractCorrespondenceAndSetContributorToCorrespondingAuthor() throws IOException {
+        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0018132378));
+        var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
+        var s3Event = createS3Event(uri);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationContributors = createPublicationRequest.getEntityDescription().getContributors();
+    }
+
     private void checkAuthorOrcidAndSequenceNumber(AuthorTp authorTp, List<Contributor> contributors) {
         if (nonNull(authorTp.getOrcid())) {
             var orcidAsUriString = getOrcidAsUriString(authorTp);
