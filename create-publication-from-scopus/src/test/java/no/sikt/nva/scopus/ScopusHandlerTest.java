@@ -12,6 +12,7 @@ import static no.sikt.nva.scopus.ScopusConverter.NAME_DELIMITER;
 import static no.sikt.nva.scopus.conversion.PublicationContextCreator.UNSUPPORTED_SOURCE_TYPE;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -72,7 +73,6 @@ import no.scopus.generated.ItemidTp;
 import no.scopus.generated.OrigItemTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
-import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
 import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.sikt.nva.scopus.test.utils.ScopusGenerator;
@@ -93,6 +93,9 @@ import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
+import no.unit.nva.model.instancetypes.journal.JournalLeader;
+import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeS3Client;
@@ -149,6 +152,13 @@ class ScopusHandlerTest {
     private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
     private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
     private static final String EXPECTED_ABSTRACT_NAME_SPACE = "<abstractTp";
+    private static final String EXPECTED_ISSUE_IN_0000469852 = "1";
+    private static final String EXPECTED_VOLUME_IN_0000469852 = "50";
+    private static final String EXPECTED_FIRST_PAGE_IN_0000469852 = "105";
+    private static final String EXPECTED_LAST_PAGE_IN_0000469852 = "119";
+    private static final String JOURNAL_SOURCETYPE_IDENTIFYING_CHAR = "j";
+    private static final String BOOK_SOURCETYPE_IDENTIFYING_CHAR = "b";
+
 
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
@@ -420,7 +430,7 @@ class ScopusHandlerTest {
             .getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Chapter.class));
         var actualPartOfUri = ((Chapter) actualPublicationContext).getPartOf();
-        assertThat(actualPartOfUri, is(PublicationContextCreator.DUMMY_URI));
+        assertThat(actualPartOfUri, is(ScopusConstants.DUMMY_URI));
     }
 
     @Test
@@ -570,10 +580,59 @@ class ScopusHandlerTest {
         assertThat(actualPublicationInstance, isA(JournalArticle.class));
     }
 
+    @Test
+    void shouldExtractJournalArticleWhenScopusCitationTypeIsEditorial() throws IOException {
+        scopusData = ScopusGenerator.create(CitationtypeAtt.ED);
+        var expectedIssue = String.valueOf(randomInteger());
+        var expectedVolume = randomString();
+        var expectedPages = randomString();
+        scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationInstance =
+            createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
+        assertThat(actualPublicationInstance, isA(JournalLeader.class));
+        assertThat(expectedVolume, is(((JournalLeader) actualPublicationInstance).getVolume()));
+        assertThat(expectedIssue, is(((JournalLeader) actualPublicationInstance).getIssue()));
+    }
+
+    @Test
+    void shouldExtractJournalArticleWhenScopusCitationTypeIsErratum() throws IOException {
+        scopusData = ScopusGenerator.create(CitationtypeAtt.ER);
+        var expectedIssue = String.valueOf(randomInteger());
+        var expectedVolume = randomString();
+        var expectedPages = randomString();
+        scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationInstance =
+            createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
+        assertThat(actualPublicationInstance, isA(JournalCorrigendum.class));
+        assertThat(ScopusConstants.DUMMY_URI, is(((JournalCorrigendum) actualPublicationInstance).getCorrigendumFor()));
+    }
+
+    @Test
+    void shouldExtractJournalLetterWhenScopusCitationTypeIsLetter() throws IOException {
+        scopusData = ScopusGenerator.create(CitationtypeAtt.LE);
+        var expectedIssue = String.valueOf(randomInteger());
+        var expectedVolume = randomString();
+        var expectedPages = randomString();
+        scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationInstance =
+                createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
+        assertThat(actualPublicationInstance, isA(JournalLetter.class));
+        assertThat(expectedIssue, is(((JournalLetter) actualPublicationInstance).getIssue()));
+    }
+
     @ParameterizedTest(name = "should not generate CreatePublicationRequest when CitationType is:{0}")
     @EnumSource(
         value = CitationtypeAtt.class,
-        names = {"AR", "BK", "CH", "RE"},
+        names = {"AR", "BK", "CH", "ED", "ER", "LE", "RE"},
         mode = Mode.EXCLUDE)
     void shouldNotGenerateCreatePublicationFromUnsupportedPublicationTypes(CitationtypeAtt citationtypeAtt)
         throws IOException {
@@ -618,6 +677,20 @@ class ScopusHandlerTest {
         scopusData = ScopusGenerator.createScopusGeneratorWithSpecificDoi(null);
         var s3Event = createNewScopusPublicationEvent();
         assertDoesNotThrow(() -> scopusHandler.handleRequest(s3Event, CONTEXT));
+    }
+
+    @Test
+    void shouldExtractVolumeIssueAndPageRange() throws IOException {
+        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000469852));
+        var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
+        var s3Event = createS3Event(uri);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationInstance = (JournalArticle) createPublicationRequest.getEntityDescription().getReference()
+                .getPublicationInstance();
+        assertThat(actualPublicationInstance.getVolume(), is(EXPECTED_VOLUME_IN_0000469852));
+        assertThat(actualPublicationInstance.getIssue(), is(EXPECTED_ISSUE_IN_0000469852));
+        assertThat(actualPublicationInstance.getPages().getBegin(), is(EXPECTED_FIRST_PAGE_IN_0000469852));
+        assertThat(actualPublicationInstance.getPages().getEnd(), is(EXPECTED_LAST_PAGE_IN_0000469852));
     }
 
     private void checkAuthorOrcidAndSequenceNumber(AuthorTp authorTp, List<Contributor> contributors) {

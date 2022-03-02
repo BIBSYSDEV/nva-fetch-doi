@@ -8,11 +8,12 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import jakarta.xml.bind.JAXB;
+import jakarta.xml.bind.JAXBElement;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.net.URI;
@@ -31,7 +32,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
-
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AbstractsTp;
 import no.scopus.generated.AffiliationTp;
@@ -54,8 +54,10 @@ import no.scopus.generated.ItemTp;
 import no.scopus.generated.ItemidTp;
 import no.scopus.generated.ItemidlistTp;
 import no.scopus.generated.MetaTp;
+import no.scopus.generated.ObjectFactory;
 import no.scopus.generated.OrganizationTp;
 import no.scopus.generated.OrigItemTp;
+import no.scopus.generated.PagerangeTp;
 import no.scopus.generated.PersonalnameType;
 import no.scopus.generated.ProcessInfo;
 import no.scopus.generated.PublisherTp;
@@ -65,6 +67,8 @@ import no.scopus.generated.ShortTitle;
 import no.scopus.generated.SourceTp;
 import no.scopus.generated.SourcetitleTp;
 import no.scopus.generated.TitletextTp;
+import no.scopus.generated.VolissTp;
+import no.scopus.generated.VolisspagTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.ScopusConstants;
 import no.sikt.nva.scopus.ScopusSourceType;
@@ -607,5 +611,21 @@ public final class ScopusGenerator {
 
     private void setMinimumSequenceNumber(int minimumSequenceNumber) {
         this.minimumSequenceNumber = minimumSequenceNumber;
+    }
+
+    public void setJournalInfo(String volume, String issue, String pages) {
+        ObjectFactory factory = new ObjectFactory();
+        VolissTp volissTp = factory.createVolissTp();
+        volissTp.setVolume(volume);
+        volissTp.setIssue(issue);
+        JAXBElement<VolissTp> volisspagTpVoliss = factory.createVolisspagTpVoliss(volissTp);
+        VolisspagTp volisspagTp = factory.createVolisspagTp();
+        volisspagTp.getContent().add(volisspagTpVoliss);
+        PagerangeTp pagerangeTp = factory.createPagerangeTp();
+        JAXBElement<PagerangeTp> volisspagTpPagerange = factory.createVolisspagTpPagerange(pagerangeTp);
+        pagerangeTp.setFirst("0");
+        pagerangeTp.setLast(pages);
+        volisspagTp.getContent().add(volisspagTpPagerange);
+        document.getItem().getItem().getBibrecord().getHead().getSource().setVolisspag(volisspagTp);
     }
 }
