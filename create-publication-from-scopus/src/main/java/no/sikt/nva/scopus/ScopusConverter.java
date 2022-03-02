@@ -36,6 +36,7 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
@@ -59,7 +60,7 @@ import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static nva.commons.core.StringUtils.isNotBlank;
 
-@SuppressWarnings("PMD.GodClass")
+@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 class ScopusConverter {
 
     public static final String UNSUPPORTED_CITATION_TYPE_MESSAGE = "Unsupported citation type, cannot convert eid %s";
@@ -238,15 +239,17 @@ class ScopusConverter {
         switch (citationtypeAtt) {
             case AR:
                 return Optional.of(generateJournalArticle());
-            case RE:
-                return Optional.of(generateJournalArticle(JournalArticleContentType.REVIEW_ARTICLE));
             case BK:
             case CH:
                 return Optional.of(new BookMonograph());
             case ED:
                 return Optional.of(generateJournalLeader());
+            case ER:
+                return Optional.of(generateJournalCorrigendum());
             case LE:
                 return Optional.of(generateJournalLetter());
+            case RE:
+                return Optional.of(generateJournalArticle(JournalArticleContentType.REVIEW_ARTICLE));
             default:
                 return Optional.empty();
         }
@@ -286,6 +289,16 @@ class ScopusConverter {
         extractVolume().ifPresent(builder::withVolume);
         extractIssue().ifPresent(builder::withIssue);
         extractArticleNumber().ifPresent(builder::withArticleNumber);
+        return builder.build();
+    }
+
+    private JournalCorrigendum generateJournalCorrigendum() {
+        JournalCorrigendum.Builder builder = new JournalCorrigendum.Builder();
+        extractPages().ifPresent(builder::withPages);
+        extractVolume().ifPresent(builder::withVolume);
+        extractIssue().ifPresent(builder::withIssue);
+        extractArticleNumber().ifPresent(builder::withArticleNumber);
+        builder.withCorrigendumFor(ScopusConstants.DUMMY_URI);
         return builder.build();
     }
 

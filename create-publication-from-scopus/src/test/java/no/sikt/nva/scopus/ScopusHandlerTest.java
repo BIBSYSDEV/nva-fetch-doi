@@ -73,7 +73,6 @@ import no.scopus.generated.ItemidTp;
 import no.scopus.generated.OrigItemTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
-import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
 import no.sikt.nva.scopus.test.utils.ScopusGenerator;
@@ -93,6 +92,7 @@ import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
@@ -376,7 +376,7 @@ class ScopusHandlerTest {
                 .getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Chapter.class));
         var actualPartOfUri = ((Chapter) actualPublicationContext).getPartOf();
-        assertThat(actualPartOfUri, is(PublicationContextCreator.DUMMY_URI));
+        assertThat(actualPartOfUri, is(ScopusConstants.DUMMY_URI));
     }
 
     @Test
@@ -539,7 +539,24 @@ class ScopusHandlerTest {
         var actualPublicationInstance =
             createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
         assertThat(actualPublicationInstance, isA(JournalLeader.class));
+        assertThat(expectedVolume, is(((JournalLeader) actualPublicationInstance).getVolume()));
         assertThat(expectedIssue, is(((JournalLeader) actualPublicationInstance).getIssue()));
+    }
+
+    @Test
+    void shouldExtractJournalArticleWhenScopusCitationTypeIsErratum() throws IOException {
+        scopusData = ScopusGenerator.create(CitationtypeAtt.ER);
+        var expectedIssue = String.valueOf(randomInteger());
+        var expectedVolume = randomString();
+        var expectedPages = randomString();
+        scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationInstance =
+            createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
+        assertThat(actualPublicationInstance, isA(JournalCorrigendum.class));
+        assertThat(ScopusConstants.DUMMY_URI, is(((JournalCorrigendum) actualPublicationInstance).getCorrigendumFor()));
     }
 
     @Test
@@ -561,7 +578,7 @@ class ScopusHandlerTest {
     @ParameterizedTest(name = "should not generate CreatePublicationRequest when CitationType is:{0}")
     @EnumSource(
         value = CitationtypeAtt.class,
-        names = {"AR", "BK", "CH", "RE", "ED", "LE"},
+        names = {"AR", "BK", "CH", "ED", "ER", "LE", "RE"},
         mode = Mode.EXCLUDE)
     void shouldNotGenerateCreatePublicationFromUnsupportedPublicationTypes(CitationtypeAtt citationtypeAtt)
         throws IOException {
