@@ -13,6 +13,7 @@ import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
+import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.StringUtils.isNotBlank;
@@ -53,26 +54,19 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.nio.file.Path;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import no.scopus.generated.AuthorGroupTp;
-import no.scopus.generated.AuthorTp;
-import no.scopus.generated.BibrecordTp;
-import no.scopus.generated.CitationTitleTp;
-import no.scopus.generated.CitationtypeAtt;
-import no.scopus.generated.CollaborationTp;
-import no.scopus.generated.DocTp;
-import no.scopus.generated.HeadTp;
-import no.scopus.generated.IsbnTp;
-import no.scopus.generated.ItemTp;
-import no.scopus.generated.ItemidTp;
-import no.scopus.generated.OrigItemTp;
-import no.scopus.generated.TitletextTp;
-import no.scopus.generated.YesnoAtt;
+
+import no.scopus.generated.*;
 import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
 import no.sikt.nva.scopus.test.utils.ScopusGenerator;
@@ -90,6 +84,7 @@ import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
+import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
@@ -334,16 +329,16 @@ class ScopusHandlerTest {
 
     @Test
     void shouldReturnPublicationContextBookWithConfirmedPublisherWhenScopusXmlHasSrctypeBandIsNotAchapter()
-        throws IOException {
+            throws IOException, ParseException {
         scopusData.getDocument().getMeta().setSrctype(ScopusSourceType.BOOK.getCode());
         var expectedPublisherName = randomString();
-        scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0)
-            .setPublishername(expectedPublisherName);
         var expectedIsbn13 = randomIsbn13();
         var isbnTp13 = new IsbnTp();
         isbnTp13.setContent(expectedIsbn13);
         isbnTp13.setLength("13");
         scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getIsbn().add(isbnTp13);
+        String expectedYear = randomYear();
+        scopusData.getDocument().getMeta().setPubYear(expectedYear);
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var queryUri = createExpectedQueryUriForPublisherWithName(expectedPublisherName);
@@ -359,6 +354,13 @@ class ScopusHandlerTest {
         var actualIsbnList = ((Book) actualPublicationContext).getIsbnList();
         assertThat(actualIsbnList.size(), is(1));
         assertThat(actualIsbnList, containsInAnyOrder(expectedIsbn13));
+    }
+
+    private String randomYear() throws ParseException {
+        Calendar calendar = Calendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSS'Z'", Locale.getDefault());
+        calendar.setTime(sdf.parse(randomDate()));
+        return String.valueOf(calendar.get(Calendar.YEAR));
     }
 
     @Test
@@ -402,8 +404,15 @@ class ScopusHandlerTest {
 
     @Test
     void shouldReturnPublicationContextBookSeriesWithConfirmedPublisherWhenEventWithS3UriThatPointsToScopusXmlWithSrctypek()
-        throws IOException {
-        scopusData.getDocument().getMeta().setSrctype("k");
+            throws IOException, ParseException {
+        scopusData.getDocument().getMeta().setSrctype(SourcetypeAtt.K.value());
+        var expectedIssn = randomIssn();
+        var issnTp = new IssnTp();
+        issnTp.setContent(expectedIssn);
+        issnTp.setType(ScopusConstants.ISSN_TYPE_ELECTRONIC);
+        scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getIssn().add(issnTp);
+        String expectedYear = randomYear();
+        scopusData.getDocument().getMeta().setPubYear(expectedYear);
         var expectedPublisherName = randomString();
         scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0)
             .setPublishername(expectedPublisherName);
@@ -415,10 +424,10 @@ class ScopusHandlerTest {
         var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
             .getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(Book.class));
-        var actualPublisher = ((Report) actualPublicationContext).getPublisher();
-        assertThat(actualPublisher, instanceOf(Publisher.class));
-        var actualPublisherId = ((Publisher) actualPublisher).getId();
-        assertThat(actualPublisherId, is(expectedPublisherUri));
+        var actualSeries = ((Book) actualPublicationContext).getSeries();
+        assertThat(actualSeries, instanceOf(UnconfirmedSeries.class));
+        var actualIssn = ((UnconfirmedSeries) actualSeries).getIssn();
+        assertThat(actualIssn, is(expectedIssn));
     }
 
     @Test
