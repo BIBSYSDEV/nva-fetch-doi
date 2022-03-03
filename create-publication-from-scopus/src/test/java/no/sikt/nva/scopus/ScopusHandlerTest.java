@@ -627,7 +627,7 @@ class ScopusHandlerTest {
         var s3Event = createS3Event(uri);
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationInstance =
-                createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
+            createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
         assertThat(actualPublicationInstance, isA(JournalLetter.class));
         assertThat(expectedIssue, is(((JournalLetter) actualPublicationInstance).getIssue()));
     }
@@ -689,7 +689,7 @@ class ScopusHandlerTest {
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationInstance = (JournalArticle) createPublicationRequest.getEntityDescription().getReference()
-                .getPublicationInstance();
+            .getPublicationInstance();
         assertThat(actualPublicationInstance.getVolume(), is(EXPECTED_VOLUME_IN_0000469852));
         assertThat(actualPublicationInstance.getIssue(), is(EXPECTED_ISSUE_IN_0000469852));
         assertThat(actualPublicationInstance.getPages().getBegin(), is(EXPECTED_FIRST_PAGE_IN_0000469852));
@@ -704,17 +704,22 @@ class ScopusHandlerTest {
         var norwegianName = "Institutt for fysikk, Universitetet i Bergen";
         var englishName = "Department of Physics, Iowa State University";
         var nonDeterminableName = "NTNU";
+        var thaiNotSupportedByNvaName = "มหาวิทยาลัยมหิดล";
         var expectedLabels = List.of(
             Map.of(ENGLISH.getIso6391Code(), englishName),
             Map.of(FRENCH.getIso6391Code(), frenchName),
             Map.of(BOKMAAL.getIso6391Code(), norwegianName),
             Map.of(ITALIAN.getIso6391Code(), italianName),
-            Map.of(ENGLISH.getIso6391Code(), nonDeterminableName));
-        scopusData = ScopusGenerator.createWithSpecifiedAffiliations(languageAffiliations(List.of(frenchName,
-                                                                                                  italianName,
-                                                                                                  norwegianName,
-                                                                                                  englishName,
-                                                                                                  nonDeterminableName)));
+            Map.of(ENGLISH.getIso6391Code(), nonDeterminableName),
+            Map.of(ENGLISH.getIso6391Code(), thaiNotSupportedByNvaName));
+        scopusData = ScopusGenerator.createWithSpecifiedAffiliations(
+            languageAffiliations(List.of(thaiNotSupportedByNvaName,
+                                         frenchName,
+                                         italianName,
+                                         norwegianName,
+                                         englishName,
+                                         nonDeterminableName
+            )));
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var organizations =
@@ -727,10 +732,8 @@ class ScopusHandlerTest {
                     Collectors.toSet());
         var actualOrganizationsLabels =
             organizations.stream().map(Organization::getLabels).collect(Collectors.toList());
-        assertEquals(expectedLabels, actualOrganizationsLabels);
         assertThat(actualOrganizationsLabels, containsInAnyOrder(expectedLabels.toArray()));
     }
-
 
     private List<AffiliationTp> languageAffiliations(List<String> organizationNames) {
         return organizationNames
