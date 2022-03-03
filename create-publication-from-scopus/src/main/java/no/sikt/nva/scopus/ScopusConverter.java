@@ -405,7 +405,7 @@ class ScopusConverter {
         return authorOrCollaboration instanceof AuthorTp
                    ? generateContributorFromAuthorTp((AuthorTp) authorOrCollaboration, authorGroupTp)
                    : generateContributorFromCollaborationTp(
-                       (CollaborationTp) authorOrCollaboration);
+                       (CollaborationTp) authorOrCollaboration, authorGroupTp);
     }
 
     private Contributor generateContributorFromAuthorTp(AuthorTp author, AuthorGroupTp authorGroup) {
@@ -475,10 +475,12 @@ class ScopusConverter {
                    : ORCID_DOMAIN_URL + potentiallyMalformedOrcidString;
     }
 
-    private Contributor generateContributorFromCollaborationTp(CollaborationTp collaboration) {
+    private Contributor generateContributorFromCollaborationTp(CollaborationTp collaboration,
+                                                               AuthorGroupTp authorGroupTp) {
         var identity = new Identity();
         identity.setName(determineContributorName(collaboration));
-        return new Contributor(identity, null, null, getSequenceNumber(collaboration), false);
+        var affiliations = generateAffiliation(authorGroupTp);
+        return new Contributor(identity, affiliations.orElse(null), null, getSequenceNumber(collaboration), false);
     }
 
     private int getSequenceNumber(AuthorTp authorTp) {
