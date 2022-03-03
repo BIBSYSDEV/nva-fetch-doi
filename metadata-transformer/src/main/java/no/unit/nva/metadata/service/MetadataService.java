@@ -108,10 +108,10 @@ public class MetadataService {
         }
     }
 
-    public Optional<String> lookUpJournalIdAtPublicationChannel(String name,
-                                                                String electronicIssn,
-                                                                String printedIssn,
-                                                                int year) {
+    public Optional<String> fetchJournalIdFromPublicationChannel(String name,
+                                                                 String electronicIssn,
+                                                                 String printedIssn,
+                                                                 int year) {
         return Stream
             .of(electronicIssn, printedIssn, name)
             .map(queryTerm -> fetchPublicationIdentifierFromPublicationChannels(queryTerm, year))

@@ -150,7 +150,7 @@ public class MetadataServiceTest {
         var queryUri = createExpectedQueryUriForJournalName(expectedJournalName, String.valueOf(expectedYear));
         var expectedJournalUri = mockedPublicationChannelsReturnsUri(queryUri);
         var metadataService = new MetadataService(httpClient, serverUriJournal, serverUriPublisher);
-        var actualId = metadataService.lookUpJournalIdAtPublicationChannel(
+        var actualId = metadataService.fetchJournalIdFromPublicationChannel(
                 expectedJournalName, null, null, Integer.valueOf(expectedYear))
                 .orElseThrow();
         assertThat(actualId, is(expectedJournalUri.toString()));

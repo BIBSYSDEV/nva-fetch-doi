@@ -6,7 +6,6 @@ import static no.sikt.nva.scopus.ScopusSourceType.JOURNAL;
 import static no.sikt.nva.scopus.ScopusSourceType.REPORT;
 import static nva.commons.core.attempt.Try.attempt;
 
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -37,6 +36,7 @@ import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.Report;
+import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.UnconfirmedSeries;
@@ -157,6 +157,16 @@ public class PublicationContextCreator {
         return fetchConfirmedSeriesFromPublicationChannels().orElseGet(this::createUnconfirmedSeries);
     }
 
+    private Optional<BookSeries> fetchConfirmedSeriesFromPublicationChannels() {
+        var sourceTitle = findSourceTitle();
+        var printIssn = findPrintIssn().orElse(null);
+        var electronicIssn = findElectronicIssn().orElse(null);
+        var publicationYear = findPublicationYear().orElseThrow();
+        return metadataService
+                .fetchJournalIdFromPublicationChannel(sourceTitle, electronicIssn, printIssn, publicationYear)
+                .map(id -> new Series(UriWrapper.fromUri(id).getUri()));
+    }
+
     private Optional<PublishingHouse> fetchConfirmedPublisherFromPublicationChannels() {
         var publisherName = findPublisherName();
         Optional<String> publisherID = Optional.ofNullable(metadataService
@@ -171,8 +181,8 @@ public class PublicationContextCreator {
 
     private UnconfirmedSeries createUnconfirmedSeries() {
         var title = findSourceTitle();
-        var issn = findIssn();
-        var onlineIssn = findPublisherName();
+        var issn = findPrintIssn().orElse(null);
+        var onlineIssn = findElectronicIssn().orElse(null);
         return attempt(() -> new UnconfirmedSeries(title, issn, onlineIssn)).orElseThrow();
     }
 
@@ -180,12 +190,6 @@ public class PublicationContextCreator {
         Optional<PublisherTp> publisherTp = docTp.getItem().getItem().getBibrecord().getHead().getSource()
                 .getPublisher().stream().findFirst();
         return publisherTp.map(PublisherTp::getPublishername).orElse(EMPTY_STRING);
-    }
-
-    private String findSourceTitle() {
-        Optional<Serializable> sourceTitle = docTp.getItem().getItem().getBibrecord().getHead().getSource()
-                .getSourcetitle().getContent().stream().findFirst();
-        return sourceTitle.map(String::valueOf).orElse(EMPTY_STRING);
     }
 
     private Optional<Periodical> createConfirmedJournal() {
@@ -201,7 +205,7 @@ public class PublicationContextCreator {
         var publicationYear = findPublicationYear().orElseThrow();
 
         return metadataService
-            .lookUpJournalIdAtPublicationChannel(sourceTitle, electronicIssn, printIssn, publicationYear)
+            .fetchJournalIdFromPublicationChannel(sourceTitle, electronicIssn, printIssn, publicationYear)
             .map(Journal::new);
     }
 
