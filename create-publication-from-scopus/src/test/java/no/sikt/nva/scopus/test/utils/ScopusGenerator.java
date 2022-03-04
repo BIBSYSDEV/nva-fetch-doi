@@ -66,12 +66,12 @@ import no.scopus.generated.RichstringWithMMLType;
 import no.scopus.generated.ShortTitle;
 import no.scopus.generated.SourceTp;
 import no.scopus.generated.SourcetitleTp;
+import no.scopus.generated.SourcetypeAtt;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.VolissTp;
 import no.scopus.generated.VolisspagTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.ScopusConstants;
-import no.sikt.nva.scopus.ScopusSourceType;
 import no.unit.nva.language.LanguageConstants;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
@@ -97,14 +97,14 @@ public final class ScopusGenerator {
         this.doi = randomDoi();
         this.minimumSequenceNumber = 1;
         this.abstractsTp = randomAbstracts();
-        this.srcType = ScopusSourceType.JOURNAL.getCode();
+        this.srcType = SourcetypeAtt.J.value();
         this.affiliations = randomAffiliations();
         this.document = randomDocument();
     }
 
     private ScopusGenerator(AbstractsTp abstractsTp) {
         this.doi = randomDoi();
-        this.srcType = ScopusSourceType.JOURNAL.getCode();
+        this.srcType = SourcetypeAtt.J.value();
         this.minimumSequenceNumber = 1;
         this.abstractsTp = abstractsTp;
         this.affiliations = randomAffiliations();
@@ -114,7 +114,7 @@ public final class ScopusGenerator {
     private ScopusGenerator(URI doi) {
         this.doi = doi;
         this.minimumSequenceNumber = 1;
-        this.srcType = ScopusSourceType.JOURNAL.getCode();
+        this.srcType = SourcetypeAtt.J.value();
         this.abstractsTp = randomAbstracts();
         this.affiliations = randomAffiliations();
         this.document = randomDocument();
@@ -132,7 +132,7 @@ public final class ScopusGenerator {
     private ScopusGenerator(CitationtypeAtt citationtypeAtt) {
         this.doi = randomDoi();
         this.citationtypeAtt = citationtypeAtt;
-        this.srcType = ScopusSourceType.JOURNAL.getCode();
+        this.srcType = SourcetypeAtt.J.value();
         this.abstractsTp = randomAbstracts();
         this.affiliations = randomAffiliations();
         this.document = randomDocument();
@@ -140,7 +140,7 @@ public final class ScopusGenerator {
 
     private ScopusGenerator(List<AffiliationTp> affiliations) {
         this.doi = randomDoi();
-        this.srcType = ScopusSourceType.JOURNAL.getCode();
+        this.srcType = SourcetypeAtt.J.value();
         this.abstractsTp = randomAbstracts();
         this.affiliations = affiliations;
         this.document = randomDocument();

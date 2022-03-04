@@ -77,6 +77,7 @@ import no.scopus.generated.ItemTp;
 import no.scopus.generated.ItemidTp;
 import no.scopus.generated.OrganizationTp;
 import no.scopus.generated.OrigItemTp;
+import no.scopus.generated.SourcetypeAtt;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
@@ -374,7 +375,7 @@ class ScopusHandlerTest {
     @Test
     void shouldReturnPublicationContextBookWithUnconfirmedPublisherWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeB()
         throws IOException {
-        scopusData.getDocument().getMeta().setSrctype("b");
+        scopusData.getDocument().getMeta().setSrctype(SourcetypeAtt.B.value());
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -392,7 +393,7 @@ class ScopusHandlerTest {
     @Test
     void shouldReturnPublicationContextBookWithConfirmedPublisherWhenScopusXmlHasSrctypeBandIsNotAchapter()
         throws IOException {
-        scopusData.getDocument().getMeta().setSrctype(ScopusSourceType.BOOK.getCode());
+        scopusData.getDocument().getMeta().setSrctype(SourcetypeAtt.B.value());
         var expectedPublisherName = randomString();
         scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0)
             .setPublishername(expectedPublisherName);
@@ -422,7 +423,7 @@ class ScopusHandlerTest {
     void shouldReturnPublicationContextChapterWhenScopusXmlHasCitationTypeChEvenIfSrctypeIsB()
         throws IOException {
         scopusData = ScopusGenerator.create(CitationtypeAtt.CH);
-        scopusData.getDocument().getMeta().setSrctype(ScopusSourceType.BOOK.name());
+        scopusData.getDocument().getMeta().setSrctype(SourcetypeAtt.B.value());
         var expectedPublisherName = randomString();
         scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0)
             .setPublishername(expectedPublisherName);
@@ -439,7 +440,7 @@ class ScopusHandlerTest {
     @Test
     void shouldReturnPublicationContextReportWithConfirmedPublisherWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeR()
         throws IOException {
-        scopusData.getDocument().getMeta().setSrctype("r");
+        scopusData.getDocument().getMeta().setSrctype(SourcetypeAtt.R.value());
         var expectedPublisherName = randomString();
         scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0)
             .setPublishername(expectedPublisherName);
@@ -479,7 +480,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldThrowExceptionWhenSrcTypeIsNotSuppoerted() throws IOException {
-        List<String> supportedScrTypes = List.of(ScopusSourceType.JOURNAL.getCode());
+        List<String> supportedScrTypes = List.of(SourcetypeAtt.J.value());
         var randomUnsupportedSrcType = randomStringWithExclusion(supportedScrTypes);
         scopusData = scopusData.createWithSpecifiedSrcType(randomUnsupportedSrcType);
         var expectedMessage = String.format(UNSUPPORTED_SOURCE_TYPE, scopusData.getDocument().getMeta().getEid());
