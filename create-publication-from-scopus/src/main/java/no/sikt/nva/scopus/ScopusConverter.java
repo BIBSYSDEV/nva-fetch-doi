@@ -35,7 +35,6 @@ import no.scopus.generated.InfTp;
 import no.scopus.generated.ItemidTp;
 import no.scopus.generated.PagerangeTp;
 import no.scopus.generated.PersonalnameType;
-import no.scopus.generated.PersonalnameType;
 import no.scopus.generated.SourceTp;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
@@ -424,15 +423,18 @@ class ScopusConverter {
                                                                      AuthorGroupTp authorGroupTp,
                                                                      PersonalnameType correspondencePerson) {
         return authorOrCollaboration instanceof AuthorTp
-                   ? generateContributorFromAuthorTp((AuthorTp) authorOrCollaboration, authorGroupTp, correspondencePerson)
+                   ? generateContributorFromAuthorTp((AuthorTp) authorOrCollaboration, authorGroupTp,
+                correspondencePerson)
                    : generateContributorFromCollaborationTp(
                        (CollaborationTp) authorOrCollaboration, correspondencePerson);
     }
 
-    private Contributor generateContributorFromAuthorTp(AuthorTp author, AuthorGroupTp authorGroup, PersonalnameType correspondencePerson) {
+    private Contributor generateContributorFromAuthorTp(AuthorTp author, AuthorGroupTp authorGroup,
+                                                        PersonalnameType correspondencePerson) {
         var identity = generateContributorIdentityFromAuthorTp(author);
         var affiliations = generateAffiliation(authorGroup);
-        return new Contributor(identity, affiliations.orElse(null), Role.CREATOR, getSequenceNumber(author), isCorrespondingAuthor(author, correspondencePerson));
+        return new Contributor(identity, affiliations.orElse(null), Role.CREATOR, getSequenceNumber(author),
+                isCorrespondingAuthor(author, correspondencePerson));
     }
 
     private Optional<List<Organization>> generateAffiliation(AuthorGroupTp authorGroup) {
@@ -489,7 +491,8 @@ class ScopusConverter {
                                                                PersonalnameType correspondencePerson) {
         var identity = new Identity();
         identity.setName(determineContributorName(collaboration));
-        return new Contributor(identity, null, null, getSequenceNumber(collaboration), isCorrespondingAuthor(collaboration, correspondencePerson));
+        return new Contributor(identity, null, null, getSequenceNumber(collaboration),
+                isCorrespondingAuthor(collaboration, correspondencePerson));
     }
 
     private boolean isCorrespondingAuthor(AuthorTp author, PersonalnameType correspondencePerson) {
