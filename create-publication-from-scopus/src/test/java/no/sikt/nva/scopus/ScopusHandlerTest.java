@@ -26,7 +26,6 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.startsWith;
-import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
@@ -138,21 +137,9 @@ class ScopusHandlerTest {
     private static final String EXPECTED_PUBLICATION_YEAR_IN_0018132378 = "1978";
     private static final String EXPECTED_PUBLICATION_DAY_IN_0018132378 = "01";
     private static final String EXPECTED_PUBLICATION_MONTH_IN_0018132378 = "01";
-    private static final String AUTHOR_KEYWORD_NAME_SPACE = "<authorKeywordsTp";
-    private static final String HARDCODED_KEYWORDS_0000469852 = "    <author-keyword xml:lang=\"eng\">\n"
-                                                                + "        <sup>64</sup>Cu\n"
-                                                                + "              </author-keyword>\n"
-                                                                + "    <author-keyword "
-                                                                + "xml:lang=\"eng\">excretion</author-keyword>\n"
-                                                                + "    <author-keyword "
-                                                                + "xml:lang=\"eng\">sheep</author-keyword>\n"
-                                                                + "</authorKeywordsTp>";
-    private static final String HARDCODED_EXPECTED_KEYWORD_1_IN_0000469852 = "64Cu";
+    private static final String HARDCODED_EXPECTED_KEYWORD_1_IN_0000469852 = "<sup>64</sup>Cu";
     private static final String HARDCODED_EXPECTED_KEYWORD_2_IN_0000469852 = "excretion";
     private static final String HARDCODED_EXPECTED_KEYWORD_3_IN_0000469852 = "sheep";
-    private static final String HARDCODED_EXPECTED_KEYWORD_4_IN_0000469852 = "infGG";
-    private static final String XML_ENCODING_DECLARATION = "<?xml version=\"1.0\" encoding=\"UTF-8\" "
-                                                           + "standalone=\"yes\"?>";
     private static final String PUBLICATION_DAY_FIELD_NAME = "day";
     private static final String PUBLICATION_MONTH_FIELD_NAME = "month";
     private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
@@ -338,19 +325,6 @@ class ScopusHandlerTest {
     private boolean authorGroupContainAuthorWithSequenceNumber(AuthorGroupTp authorGroupTp, String sequenceNumber) {
         return keepOnlyTheAuthors(authorGroupTp).stream()
             .anyMatch(authorTp -> sequenceNumber.equals(authorTp.getSeq()));
-    }
-
-    @Test
-    void shouldExtractAuthorKeywordsAsXML() throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0018132378));
-        var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
-        var s3Event = createS3Event(uri);
-        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
-        var actualKeywords = createPublicationRequest.getAuthorKeywordsXmlFormat();
-        assertThat(actualKeywords, stringContainsInOrder(
-            XML_ENCODING_DECLARATION,
-            AUTHOR_KEYWORD_NAME_SPACE,
-            HARDCODED_KEYWORDS_0000469852));
     }
 
     @Test
@@ -543,18 +517,15 @@ class ScopusHandlerTest {
     @Test
     void shouldExtractAuthorKeyWordsAsPlainText() throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0018132378));
-        scopusFile = scopusFile.replace("<author-keyword xml:lang=\"eng\">sheep</author-keyword>",
-                                        "<author-keyword xml:lang=\"eng\">sheep</author-keyword>\n"
-                                        + "<author-keyword xml:lang=\"eng\"><inf>inf</inf>GG</author-keyword>\n");
         var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var expectedkeywords = List.of(
+            HARDCODED_EXPECTED_KEYWORD_1_IN_0000469852,
+            HARDCODED_EXPECTED_KEYWORD_2_IN_0000469852,
+            HARDCODED_EXPECTED_KEYWORD_3_IN_0000469852);
         var actualPlaintextKeyWords = createPublicationRequest.getEntityDescription().getTags();
-        assertThat(actualPlaintextKeyWords, allOf(
-            hasItem(HARDCODED_EXPECTED_KEYWORD_1_IN_0000469852),
-            hasItem(HARDCODED_EXPECTED_KEYWORD_2_IN_0000469852),
-            hasItem(HARDCODED_EXPECTED_KEYWORD_3_IN_0000469852),
-            hasItem(HARDCODED_EXPECTED_KEYWORD_4_IN_0000469852)));
+        assertThat(actualPlaintextKeyWords, containsInAnyOrder(expectedkeywords.toArray()));
     }
 
     @Test
@@ -729,7 +700,7 @@ class ScopusHandlerTest {
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationInstance = (JournalArticle) createPublicationRequest.getEntityDescription().getReference()
-                .getPublicationInstance();
+            .getPublicationInstance();
         assertThat(actualPublicationInstance.getVolume(), is(EXPECTED_VOLUME_IN_0000469852));
         assertThat(actualPublicationInstance.getIssue(), is(EXPECTED_ISSUE_IN_0000469852));
         assertThat(actualPublicationInstance.getPages().getBegin(), is(EXPECTED_FIRST_PAGE_IN_0000469852));

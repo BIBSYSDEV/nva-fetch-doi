@@ -80,7 +80,6 @@ class ScopusConverter {
         CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
         createPublicationRequest.setAdditionalIdentifiers(generateAdditionalIdentifiers());
         createPublicationRequest.setEntityDescription(generateEntityDescription());
-        createPublicationRequest.setAuthorKeywordsXmlFormat(generateAuthorKeyWordsXml());
         return createPublicationRequest;
     }
 
@@ -112,7 +111,7 @@ class ScopusConverter {
         entityDescription.setMainTitle(extractMainTitle());
         entityDescription.setAbstract(extractMainAbstract());
         entityDescription.setContributors(generateContributors());
-        entityDescription.setTags(generatePlainTextTags());
+        entityDescription.setTags(generateTags());
         entityDescription.setDate(extractPublicationDate());
         return entityDescription;
     }
@@ -171,7 +170,7 @@ class ScopusConverter {
         return YesnoAtt.Y.equals(abstractTp.getOriginal());
     }
 
-    private List<String> generatePlainTextTags() {
+    private List<String> generateTags() {
         return extractAuthorKeyWords()
             .map(this::extractKeywordsAsStrings)
             .orElse(emptyList());
@@ -186,7 +185,11 @@ class ScopusConverter {
     }
 
     private String extractConcatenatedKeywordString(AuthorKeywordTp keyword) {
-        return keyword.getContent().stream().map(this::extractContentString).collect(Collectors.joining());
+        return keyword
+            .getContent()
+            .stream()
+            .map(ScopusConverter::extractContentAndPreserveXmlSupAndInfTags)
+            .collect(Collectors.joining());
     }
 
     private String extractContentString(Object content) {
