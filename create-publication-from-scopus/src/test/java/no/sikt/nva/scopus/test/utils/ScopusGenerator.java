@@ -8,11 +8,12 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import jakarta.xml.bind.JAXB;
+import jakarta.xml.bind.JAXBElement;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.net.URI;
@@ -35,6 +36,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import jakarta.xml.bind.JAXBElement;
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AbstractsTp;
+import no.scopus.generated.AffiliationTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordTp;
 import no.scopus.generated.AuthorKeywordsTp;
@@ -56,6 +58,7 @@ import no.scopus.generated.ItemidTp;
 import no.scopus.generated.ItemidlistTp;
 import no.scopus.generated.MetaTp;
 import no.scopus.generated.ObjectFactory;
+import no.scopus.generated.OrganizationTp;
 import no.scopus.generated.OrigItemTp;
 import no.scopus.generated.PagerangeTp;
 import no.scopus.generated.PersonalnameType;
@@ -89,12 +92,16 @@ public final class ScopusGenerator {
     private final URI doi;
     private CitationtypeAtt citationtypeAtt;
     private final String srcType;
+    private static final String NORWAY_COUNTRY_CODE = "nor";
+    private static final String NORWAY = "norway";
+    private final List<AffiliationTp> affiliations;
 
     public ScopusGenerator() {
         this.doi = randomDoi();
         this.minimumSequenceNumber = 1;
         this.abstractsTp = randomAbstracts();
         this.srcType = ScopusSourceType.JOURNAL.getCode();
+        this.affiliations = randomAffiliations();
         this.document = randomDocument();
     }
 
@@ -103,6 +110,7 @@ public final class ScopusGenerator {
         this.srcType = ScopusSourceType.JOURNAL.getCode();
         this.minimumSequenceNumber = 1;
         this.abstractsTp = abstractsTp;
+        this.affiliations = randomAffiliations();
         this.document = randomDocument();
     }
 
@@ -111,6 +119,7 @@ public final class ScopusGenerator {
         this.minimumSequenceNumber = 1;
         this.srcType = ScopusSourceType.JOURNAL.getCode();
         this.abstractsTp = randomAbstracts();
+        this.affiliations = randomAffiliations();
         this.document = randomDocument();
     }
 
@@ -119,6 +128,7 @@ public final class ScopusGenerator {
         this.minimumSequenceNumber = 1;
         this.doi = randomDoi();
         this.abstractsTp = randomAbstracts();
+        this.affiliations = randomAffiliations();
         this.document = randomDocument();
     }
 
@@ -127,6 +137,15 @@ public final class ScopusGenerator {
         this.citationtypeAtt = citationtypeAtt;
         this.srcType = ScopusSourceType.JOURNAL.getCode();
         this.abstractsTp = randomAbstracts();
+        this.affiliations = randomAffiliations();
+        this.document = randomDocument();
+    }
+
+    private ScopusGenerator(List<AffiliationTp> affiliations) {
+        this.doi = randomDoi();
+        this.srcType = ScopusSourceType.JOURNAL.getCode();
+        this.abstractsTp = randomAbstracts();
+        this.affiliations = affiliations;
         this.document = randomDocument();
     }
 
@@ -140,6 +159,10 @@ public final class ScopusGenerator {
 
     public ScopusGenerator createWithSpecifiedSrcType(String srcType) {
         return new ScopusGenerator(srcType);
+    }
+
+    public static ScopusGenerator createWithSpecifiedAffiliations(List<AffiliationTp> affiliations) {
+        return new ScopusGenerator(affiliations);
     }
 
     public static ScopusGenerator create(CitationtypeAtt citationtypeAtt) {
@@ -297,11 +320,10 @@ public final class ScopusGenerator {
         return publisher;
     }
 
-    private static Collection<? extends AuthorGroupTp> randomAuthorGroups(List<?> authorsAndCollaborations) {
-        int maxNumberOfAuthorGroups = 200;
-        return IntStream.range(0, randomInteger(maxNumberOfAuthorGroups) + 1)
-            .boxed()
-            .map(ignored -> randomAuthorGroup(authorsAndCollaborations))
+    private Collection<? extends AuthorGroupTp> randomAuthorGroups(List<?> authorsAndCollaborations) {
+        return affiliations
+            .stream()
+            .map(affiliationTp -> randomAuthorGroup(authorsAndCollaborations, affiliationTp))
             .collect(Collectors.toList());
     }
 
@@ -313,11 +335,56 @@ public final class ScopusGenerator {
             .collect(Collectors.toList());
     }
 
-    private static AuthorGroupTp randomAuthorGroup(List<?> authorsAndCollaborations) {
+    private static AuthorGroupTp randomAuthorGroup(List<?> authorsAndCollaborations, AffiliationTp affiliationTp) {
         var authorGroup = new AuthorGroupTp();
         authorGroup.getAuthorOrCollaboration()
             .addAll(randomSubsetRandomAuthorsOrCollaborations(authorsAndCollaborations));
+        authorGroup.setAffiliation(affiliationTp);
         return authorGroup;
+    }
+
+    private static AffiliationTp randomAffiliation() {
+        AffiliationTp affiliationTp = new AffiliationTp();
+        affiliationTp.setAfid(randomString());
+        affiliationTp.setAffiliationInstanceId(randomString());
+        affiliationTp.setCountryAttribute(randomCountryAttribute());
+        affiliationTp.setCountry(randomCountry());
+        affiliationTp.setDptid(randomString());
+        affiliationTp.getOrganization().addAll(randomOrganizations());
+        affiliationTp.setCityGroup(randomString());
+        return affiliationTp;
+    }
+
+    private List<AffiliationTp> randomAffiliations() {
+        int maxNumberOfAuthorGroups = 100;
+        return IntStream.range(0, randomInteger(maxNumberOfAuthorGroups) + 1)
+            .boxed()
+            .map(ignored -> randomAffiliation())
+            .collect(Collectors.toList());
+    }
+
+    private static String randomCountry() {
+        return randomBoolean() ? NORWAY : randomString();
+    }
+
+    private static String randomCountryAttribute() {
+        return randomBoolean() ? NORWAY_COUNTRY_CODE : randomString();
+    }
+
+    private static Collection<? extends OrganizationTp> randomOrganizations() {
+        //according to scopus documentation there can be 1 to 3 organizations in an affiliation.
+        //which is a lie, found scopus xmls with 4 organizations.
+        int maxNumberOfOrganizations = 5;
+        return IntStream.range(0, randomInteger(maxNumberOfOrganizations) + 1)
+            .boxed()
+            .map(ignored -> randomOrganization())
+            .collect(Collectors.toList());
+    }
+
+    private static OrganizationTp randomOrganization() {
+        OrganizationTp organizationTp = new OrganizationTp();
+        organizationTp.getContent().add(randomString());
+        return organizationTp;
     }
 
     private static List<?> randomSubsetRandomAuthorsOrCollaborations(List<?> authorsAndCollaborations) {
