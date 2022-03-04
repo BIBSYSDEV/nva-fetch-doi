@@ -4,7 +4,11 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
+import static no.sikt.nva.scopus.ScopusConstants.INF_END;
+import static no.sikt.nva.scopus.ScopusConstants.INF_START;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
+import static no.sikt.nva.scopus.ScopusConstants.SUP_END;
+import static no.sikt.nva.scopus.ScopusConstants.SUP_START;
 import static no.unit.nva.language.LanguageConstants.ENGLISH;
 import static nva.commons.core.StringUtils.isEmpty;
 import static nva.commons.core.StringUtils.isNotBlank;
@@ -203,9 +207,9 @@ class ScopusConverter {
         } else if (content instanceof JAXBElement) {
             return extractContentAndPreserveXmlSupAndInfTags(((JAXBElement<?>) content).getValue());
         } else if (content instanceof SupTp) {
-            return "<sup>" + extractContentAndPreserveXmlSupAndInfTags(((SupTp) content).getContent()) + "</sup>";
+            return SUP_START + extractContentAndPreserveXmlSupAndInfTags(((SupTp) content).getContent()) + SUP_END;
         } else if (content instanceof InfTp) {
-            return "<inf>" + extractContentAndPreserveXmlSupAndInfTags(((InfTp) content).getContent()) + "</inf>";
+            return INF_START + extractContentAndPreserveXmlSupAndInfTags(((InfTp) content).getContent()) + INF_END;
         } else {
             return ((ArrayList<?>) content).stream()
                 .map(ScopusConverter::extractContentAndPreserveXmlSupAndInfTags)
