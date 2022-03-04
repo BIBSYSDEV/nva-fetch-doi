@@ -653,22 +653,17 @@ class ScopusHandlerTest {
     }
 
     @Test
-    void shouldExtractJournalChapterWhenScopusCitationTypeIsChapterAndHasIsbn() throws IOException {
+    void shouldExtractBookMonographWhenScopusCitationTypeIsChapterAndHasIsbn() throws IOException {
         scopusData = ScopusGenerator.create(CitationtypeAtt.CP);
         clearIssn();
         var expectedIsbn13 = randomIsbn13();
         scopusData.addIsbn(expectedIsbn13);
-        var expectedIssue = String.valueOf(randomInteger());
-        var expectedVolume = randomString();
-        var expectedPagesEnd = randomString();
-        scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPagesEnd);
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationInstance =
                 createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
-        assertThat(actualPublicationInstance, isA(ChapterArticle.class));
-        assertThat(expectedPagesEnd, is(((ChapterArticle) actualPublicationInstance).getPages().getEnd()));
+        assertThat(actualPublicationInstance, isA(BookMonograph.class));
     }
 
     @ParameterizedTest(name = "should not generate CreatePublicationRequest when CitationType is:{0}")

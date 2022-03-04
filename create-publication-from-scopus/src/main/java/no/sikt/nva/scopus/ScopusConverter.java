@@ -249,7 +249,7 @@ class ScopusConverter {
                 if (hasIssn()) {
                     return Optional.of(generateJournalArticle());
                 } else if (hasIsbn()) {
-                    return Optional.of(generateChapterArticle());
+                    return Optional.of(new BookMonograph());
                 }
                 return Optional.empty();
             case ED:
@@ -273,12 +273,6 @@ class ScopusConverter {
 
     private boolean hasIsbn() {
         return !getSourceTp().getIsbn().isEmpty();
-    }
-
-    private ChapterArticle generateChapterArticle() {
-        ChapterArticle chapterArticle = new ChapterArticle();
-        extractPages().ifPresent(chapterArticle::setPages);
-        return chapterArticle;
     }
 
     private Optional<CitationtypeAtt> getCitationType() {
