@@ -386,7 +386,7 @@ public final class ScopusGenerator {
 
     private static List<?> randomSubsetRandomAuthorsOrCollaborations(List<?> authorsAndCollaborations) {
         int min = 0;
-        var numbersOfAuthorOrCollaborations = randomInteger(authorsAndCollaborations.size());
+        var numbersOfAuthorOrCollaborations = randomInteger(authorsAndCollaborations.size()) + 1;
         Collections.shuffle(authorsAndCollaborations);
         return authorsAndCollaborations.subList(min, numbersOfAuthorOrCollaborations);
     }
