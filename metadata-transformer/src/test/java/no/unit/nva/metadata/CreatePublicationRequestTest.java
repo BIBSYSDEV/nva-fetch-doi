@@ -2,7 +2,6 @@ package no.unit.nva.metadata;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -30,7 +29,6 @@ class CreatePublicationRequestTest {
         request.setEntityDescription(sample.getEntityDescription());
         request.setProjects(sample.getProjects());
         request.setFileSet(sample.getFileSet());
-        request.setAuthorKeywordsXmlFormat(randomString());
         request.setSubjects(sample.getSubjects());
         assertThat(request, doesNotHaveEmptyValues());
         return request;
