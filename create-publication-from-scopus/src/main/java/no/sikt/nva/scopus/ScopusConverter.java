@@ -5,6 +5,7 @@ import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
+import static nva.commons.core.StringUtils.isEmpty;
 import static nva.commons.core.StringUtils.isNotBlank;
 import jakarta.xml.bind.JAXB;
 import jakarta.xml.bind.JAXBElement;
@@ -134,7 +135,24 @@ class ScopusConverter {
     }
 
     private String extractMainAbstract() {
-        return getMainAbstract().map(this::marshallAbstract).orElse(null);
+        return getMainAbstract().flatMap(this::extractAbstractStringOrReturnNull).orElse(null);
+    }
+
+    private Optional<String> returnNullInsteadOfEmptyString(String input) {
+        return isEmpty(input.trim()) ? Optional.empty() : Optional.of(input);
+    }
+
+    private Optional<String> extractAbstractStringOrReturnNull(AbstractTp abstractTp) {
+        return returnNullInsteadOfEmptyString(extractAbstractString(abstractTp));
+    }
+
+    private String extractAbstractString(AbstractTp abstractTp) {
+        return
+            abstractTp
+                .getPara()
+                .stream()
+                .map(para -> extractContentAndPreserveXmlSupAndInfTags(para.getContent()))
+                .collect(Collectors.joining());
     }
 
     private Optional<AbstractTp> getMainAbstract() {
@@ -151,12 +169,6 @@ class ScopusConverter {
 
     private boolean isOriginalAbstract(AbstractTp abstractTp) {
         return YesnoAtt.Y.equals(abstractTp.getOriginal());
-    }
-
-    private String marshallAbstract(AbstractTp abstractTp) {
-        StringWriter sw = new StringWriter();
-        JAXB.marshal(abstractTp, sw);
-        return sw.toString();
     }
 
     private List<String> generatePlainTextTags() {
@@ -193,10 +205,30 @@ class ScopusConverter {
         }
     }
 
+    public static String extractContentAndPreserveXmlSupAndInfTags(Object content) {
+        if (content instanceof String) {
+            return ((String) content).trim();
+        } else if (content instanceof JAXBElement) {
+            return extractContentAndPreserveXmlSupAndInfTags(((JAXBElement<?>) content).getValue());
+        } else if (content instanceof SupTp) {
+            return "<sup>" + extractContentAndPreserveXmlSupAndInfTags(((SupTp) content).getContent()) + "</sup>";
+        } else if (content instanceof InfTp) {
+            return "<inf>" + extractContentAndPreserveXmlSupAndInfTags(((InfTp) content).getContent()) + "</inf>";
+        } else {
+            return ((ArrayList<?>) content).stream()
+                .map(ScopusConverter::extractContentAndPreserveXmlSupAndInfTags)
+                .collect(Collectors.joining());
+        }
+    }
+
     private String extractMainTitle() {
         return getMainTitleTextTp()
-            .map(this::marshallMainTitleToXmlPreservingUnderlyingStructure)
+            .map(this::extractMainTitleContent)
             .orElse(null);
+    }
+
+    private String extractMainTitleContent(TitletextTp titletextTp) {
+        return extractContentAndPreserveXmlSupAndInfTags(titletextTp.getContent());
     }
 
     private List<Contributor> generateContributors() {
@@ -495,12 +527,6 @@ class ScopusConverter {
             .filter(this::isScopusIdentifier)
             .map(this::toAdditionalIdentifier)
             .collect(Collectors.toSet());
-    }
-
-    private String marshallMainTitleToXmlPreservingUnderlyingStructure(TitletextTp contents) {
-        StringWriter sw = new StringWriter();
-        JAXB.marshal(contents, sw);
-        return sw.toString();
     }
 
     private List<ItemidTp> extractItemIdentifiers() {

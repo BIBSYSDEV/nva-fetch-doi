@@ -22,6 +22,12 @@ public class ScopusConstants {
     //affiliation constants:
     public static final String AFFILIATION_DELIMITER = ", ";
 
+    //xml field names:
+    public static final String SUP_START = "<sup>";
+    public static final String SUP_END = "</sup>";
+    public static final String INF_START = "<inf>%s</inf>";
+    public static final String INF_END = "</inf>";
+
     @JacocoGenerated
     public ScopusConstants() {
     }

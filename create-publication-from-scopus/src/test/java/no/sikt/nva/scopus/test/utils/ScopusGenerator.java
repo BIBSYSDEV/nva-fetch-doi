@@ -32,6 +32,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
+import javax.xml.namespace.QName;
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AbstractsTp;
 import no.scopus.generated.AffiliationTp;
@@ -48,6 +49,7 @@ import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
+import no.scopus.generated.InfTp;
 import no.scopus.generated.IssnTp;
 import no.scopus.generated.ItemInfoTp;
 import no.scopus.generated.ItemTp;
@@ -66,6 +68,7 @@ import no.scopus.generated.RichstringWithMMLType;
 import no.scopus.generated.ShortTitle;
 import no.scopus.generated.SourceTp;
 import no.scopus.generated.SourcetitleTp;
+import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.VolissTp;
 import no.scopus.generated.VolisspagTp;
@@ -92,6 +95,7 @@ public final class ScopusGenerator {
     private static final String NORWAY_COUNTRY_CODE = "nor";
     private static final String NORWAY = "norway";
     private final List<AffiliationTp> affiliations;
+    private final ContentWrapper contentWithSupAndInf;
 
     public ScopusGenerator() {
         this.doi = randomDoi();
@@ -99,6 +103,7 @@ public final class ScopusGenerator {
         this.abstractsTp = randomAbstracts();
         this.srcType = ScopusSourceType.JOURNAL.getCode();
         this.affiliations = randomAffiliations();
+        this.contentWithSupAndInf = packRandomSerializablesWithSupAndInf();
         this.document = randomDocument();
     }
 
@@ -107,6 +112,7 @@ public final class ScopusGenerator {
         this.srcType = ScopusSourceType.JOURNAL.getCode();
         this.minimumSequenceNumber = 1;
         this.abstractsTp = abstractsTp;
+        this.contentWithSupAndInf = packRandomSerializablesWithSupAndInf();
         this.affiliations = randomAffiliations();
         this.document = randomDocument();
     }
@@ -116,6 +122,7 @@ public final class ScopusGenerator {
         this.minimumSequenceNumber = 1;
         this.srcType = ScopusSourceType.JOURNAL.getCode();
         this.abstractsTp = randomAbstracts();
+        this.contentWithSupAndInf = packRandomSerializablesWithSupAndInf();
         this.affiliations = randomAffiliations();
         this.document = randomDocument();
     }
@@ -125,6 +132,7 @@ public final class ScopusGenerator {
         this.minimumSequenceNumber = 1;
         this.doi = randomDoi();
         this.abstractsTp = randomAbstracts();
+        this.contentWithSupAndInf = packRandomSerializablesWithSupAndInf();
         this.affiliations = randomAffiliations();
         this.document = randomDocument();
     }
@@ -135,6 +143,7 @@ public final class ScopusGenerator {
         this.srcType = ScopusSourceType.JOURNAL.getCode();
         this.abstractsTp = randomAbstracts();
         this.affiliations = randomAffiliations();
+        this.contentWithSupAndInf = packRandomSerializablesWithSupAndInf();
         this.document = randomDocument();
     }
 
@@ -143,8 +152,20 @@ public final class ScopusGenerator {
         this.srcType = ScopusSourceType.JOURNAL.getCode();
         this.abstractsTp = randomAbstracts();
         this.affiliations = affiliations;
+        this.contentWithSupAndInf = packRandomSerializablesWithSupAndInf();
         this.document = randomDocument();
     }
+
+    private ScopusGenerator(ContentWrapper contentWithSupAndInf) {
+        this.contentWithSupAndInf = contentWithSupAndInf;
+        this.doi = randomDoi();
+        this.srcType = ScopusSourceType.JOURNAL.getCode();
+        this.abstractsTp = randomAbstracts();
+        this.affiliations = randomAffiliations();
+        this.document = randomDocument();
+    }
+
+
 
     public static ScopusGenerator createWithSpecifiedAbstract(AbstractsTp abstractsTp) {
         return new ScopusGenerator(abstractsTp);
@@ -164,6 +185,10 @@ public final class ScopusGenerator {
 
     public static ScopusGenerator create(CitationtypeAtt citationtypeAtt) {
         return new ScopusGenerator(citationtypeAtt);
+    }
+
+    public static ScopusGenerator createWithSpecifiedSupAndInfContent(ContentWrapper supAndInfContent) {
+        return new ScopusGenerator(supAndInfContent);
     }
 
     public DocTp randomDocument() {
@@ -508,7 +533,7 @@ public final class ScopusGenerator {
         return randomElement(YesnoAtt.values());
     }
 
-    private static CitationTitleTp randomCitationTitle() {
+    private CitationTitleTp randomCitationTitle() {
         var citationTitle = new CitationTitleTp();
         citationTitle.getShortTitle().addAll(randomShortTitles());
         citationTitle.getTitletext().add(randomOriginalTitle());
@@ -516,25 +541,25 @@ public final class ScopusGenerator {
         return citationTitle;
     }
 
-    private static Collection<? extends TitletextTp> randomNonOriginalTitles() {
+    private Collection<? extends TitletextTp> randomNonOriginalTitles() {
         return smallStream().map(ignored -> randomNonOriginalTitle()).collect(Collectors.toList());
     }
 
-    private static TitletextTp randomOriginalTitle() {
+    private TitletextTp randomOriginalTitle() {
         return randomTitle(YesnoAtt.Y);
     }
 
-    private static TitletextTp randomNonOriginalTitle() {
+    private TitletextTp randomNonOriginalTitle() {
         return randomTitle(YesnoAtt.N);
     }
 
-    private static TitletextTp randomTitle(YesnoAtt n) {
+    private TitletextTp randomTitle(YesnoAtt n) {
         var titleText = new TitletextTp();
         titleText.setOriginal(n);
         titleText.setLang(randomScopusLanguageCode());
         titleText.setPerspective(randomString());
         titleText.setLang(randomScopusLanguageCode());
-        titleText.getContent().addAll(randomSerializables());
+        titleText.getContent().addAll(contentWithSupAndInf.getContentList());
         return titleText;
     }
 
@@ -555,6 +580,36 @@ public final class ScopusGenerator {
 
     private static List<Serializable> randomStrings() {
         return smallStream().map(ignored -> randomString()).collect(Collectors.toList());
+    }
+
+    private static List<Serializable> randomSerializablesWithSupAndInf(){
+        return smallStream().map(ScopusGenerator::randomStringOrSupOrInfTag).collect(Collectors.toList());
+    }
+
+    private static ContentWrapper packRandomSerializablesWithSupAndInf() {
+        return new ContentWrapper(randomSerializablesWithSupAndInf());
+    }
+
+    //make sure string does not come after one another as it will be interpreted as a single string later in the
+    // marshaller
+    private static Serializable randomStringOrSupOrInfTag(int index) {
+        switch (index % 3) {
+            case 0: return randomInf();
+            case 1: return randomSup();
+            default: return randomString();
+        }
+    }
+
+    private static JAXBElement<InfTp> randomInf() {
+        InfTp infTp = new InfTp();
+        infTp.getContent().add(randomString());
+        return new JAXBElement<>(new QName("inf"), InfTp.class, infTp);
+    }
+
+    private static JAXBElement<SupTp> randomSup() {
+        SupTp supTp = new SupTp();
+        supTp.getContent().add(randomString());
+        return new JAXBElement<>(new QName("sup"), SupTp.class, supTp);
     }
 
     private static String randomScopusLanguageCode() {
