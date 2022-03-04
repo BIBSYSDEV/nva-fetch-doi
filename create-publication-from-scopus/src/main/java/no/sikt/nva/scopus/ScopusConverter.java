@@ -410,7 +410,8 @@ class ScopusConverter {
                                                                   PersonalnameType correspondencePerson) {
         return authorGroupTp.getAuthorOrCollaboration()
             .stream()
-            .map(o -> generateContributorFromAuthorOrCollaboration(o, correspondencePerson))
+            .map(authorOrCollaboration -> generateContributorFromAuthorOrCollaboration(authorOrCollaboration,
+                    correspondencePerson))
             .collect(Collectors.toList());
     }
 

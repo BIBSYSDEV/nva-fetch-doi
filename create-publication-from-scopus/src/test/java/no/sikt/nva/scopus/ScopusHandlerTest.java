@@ -638,7 +638,7 @@ class ScopusHandlerTest {
     }
 
     @Test
-    void shouldExtractCorrespondenceAndSetMatchingContributorToCorrespondingAuthor() throws IOException {
+    void shouldExtractCorrespondingAuthor() throws IOException {
         var authors = keepOnlyTheAuthors();
         var correspondingAuthorTp = authors.get(0);
         scopusData.setCorrespondence(correspondingAuthorTp);
