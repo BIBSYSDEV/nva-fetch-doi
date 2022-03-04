@@ -49,6 +49,7 @@ import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
+import no.scopus.generated.IsbnTp;
 import no.scopus.generated.IssnTp;
 import no.scopus.generated.ItemInfoTp;
 import no.scopus.generated.ItemTp;
@@ -563,5 +564,18 @@ public final class ScopusGenerator {
         pagerangeTp.setLast(pages);
         volisspagTp.getContent().add(volisspagTpPagerange);
         document.getItem().getItem().getBibrecord().getHead().getSource().setVolisspag(volisspagTp);
+    }
+
+    public void addIssn(String issn, String type) {
+        IssnTp issnTp = new IssnTp();
+        issnTp.setContent(issn);
+        issnTp.setType(type);
+        document.getItem().getItem().getBibrecord().getHead().getSource().getIssn().add(issnTp);
+    }
+
+    public void addIsbn(String isbn) {
+        IsbnTp isbnTp = new IsbnTp();
+        isbnTp.setContent(isbn);
+        document.getItem().getItem().getBibrecord().getHead().getSource().getIsbn().add(isbnTp);
     }
 }

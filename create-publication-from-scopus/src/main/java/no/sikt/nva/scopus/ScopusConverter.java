@@ -35,6 +35,7 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
@@ -242,6 +243,13 @@ class ScopusConverter {
             case BK:
             case CH:
                 return Optional.of(new BookMonograph());
+            case CP:
+                if (hasIssn()) {
+                    return Optional.of(generateJournalArticle());
+                } else if (hasIsbn()) {
+                    return Optional.of(generateChapterArticle());
+                }
+                return Optional.empty();
             case ED:
                 return Optional.of(generateJournalLeader());
             case ER:
@@ -255,6 +263,20 @@ class ScopusConverter {
             default:
                 return Optional.empty();
         }
+    }
+
+    private boolean hasIssn() {
+        return !getSourceTp().getIssn().isEmpty();
+    }
+
+    private boolean hasIsbn() {
+        return !getSourceTp().getIsbn().isEmpty();
+    }
+
+    private ChapterArticle generateChapterArticle() {
+        ChapterArticle chapterArticle = new ChapterArticle();
+        extractPages().ifPresent(chapterArticle::setPages);
+        return chapterArticle;
     }
 
     private Optional<CitationtypeAtt> getCitationType() {

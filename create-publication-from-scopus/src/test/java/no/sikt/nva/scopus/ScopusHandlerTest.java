@@ -6,6 +6,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
+import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_PRINT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.sikt.nva.scopus.ScopusConverter.NAME_DELIMITER;
 import static no.sikt.nva.scopus.conversion.PublicationContextCreator.UNSUPPORTED_SOURCE_TYPE;
@@ -13,6 +14,7 @@ import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
+import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.StringUtils.isNotBlank;
@@ -68,6 +70,7 @@ import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
 import no.scopus.generated.IsbnTp;
+import no.scopus.generated.IssnTp;
 import no.scopus.generated.ItemTp;
 import no.scopus.generated.ItemidTp;
 import no.scopus.generated.OrigItemTp;
@@ -91,6 +94,7 @@ import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
@@ -575,10 +579,48 @@ class ScopusHandlerTest {
         assertThat(expectedIssue, is(((JournalLetter) actualPublicationInstance).getIssue()));
     }
 
+    @Test
+    void shouldExtractJournalArticleWhenScopusCitationTypeIsChapterAndHasIssn() throws IOException {
+        scopusData = ScopusGenerator.create(CitationtypeAtt.CP);
+        clearIssn();
+        var expectedIssn = randomIssn();
+        scopusData.addIssn(expectedIssn, ISSN_TYPE_PRINT);
+        var expectedIssue = String.valueOf(randomInteger());
+        var expectedVolume = randomString();
+        var expectedPages = randomString();
+        scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationInstance =
+                createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
+        assertThat(actualPublicationInstance, isA(JournalArticle.class));
+        assertThat(expectedIssue, is(((JournalArticle) actualPublicationInstance).getIssue()));
+    }
+
+    @Test
+    void shouldExtractJournalChapterWhenScopusCitationTypeIsChapterAndHasIsbn() throws IOException {
+        scopusData = ScopusGenerator.create(CitationtypeAtt.CP);
+        clearIssn();
+        var expectedIsbn13 = randomIsbn13();
+        scopusData.addIsbn(expectedIsbn13);
+        var expectedIssue = String.valueOf(randomInteger());
+        var expectedVolume = randomString();
+        var expectedPagesEnd = randomString();
+        scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPagesEnd);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationInstance =
+                createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
+        assertThat(actualPublicationInstance, isA(ChapterArticle.class));
+        assertThat(expectedPagesEnd, is(((ChapterArticle) actualPublicationInstance).getPages().getEnd()));
+    }
+
     @ParameterizedTest(name = "should not generate CreatePublicationRequest when CitationType is:{0}")
     @EnumSource(
         value = CitationtypeAtt.class,
-        names = {"AR", "BK", "CH", "ED", "ER", "LE", "NO", "RE", "SH"},
+        names = {"AR", "BK", "CH", "CP", "ED", "ER", "LE", "NO", "RE", "SH"},
         mode = Mode.EXCLUDE)
     void shouldNotGenerateCreatePublicationFromUnsupportedPublicationTypes(CitationtypeAtt citationtypeAtt)
         throws IOException {
@@ -806,6 +848,10 @@ class ScopusHandlerTest {
 
     private boolean isCollaborationTp(Object object) {
         return object instanceof CollaborationTp;
+    }
+
+    private void clearIssn() {
+        scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getIssn().clear();
     }
 
     private List<Object> keepOnlyTheCollaborationsAndAuthors() {
