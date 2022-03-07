@@ -7,6 +7,7 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
 import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
+import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_PRINT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.sikt.nva.scopus.ScopusConverter.NAME_DELIMITER;
 import static no.sikt.nva.scopus.conversion.PublicationContextCreator.UNSUPPORTED_SOURCE_TYPE;
@@ -315,40 +316,36 @@ class ScopusHandlerTest {
     @Test
     void shouldReturnCreatePublicationRequestWithUnconfirmedPublicationContextWhenEventWithS3UriThatPointsToScopusXml()
         throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
-        var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
+        scopusData.createWithSpecifiedSrcType(SourcetypeAtt.J.value());
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
             .getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
-        var actualJournalName = ((UnconfirmedJournal) actualPublicationContext).getTitle();
-        assertThat(actualJournalName, is(HARD_CODED_JOURNAL_NAME_IN_RESOURCE_FILE));
     }
 
     @Test
     void shouldReturnCreatePublicationRequestWithUnconfirmedPublicationContextWhenEventS3UriScopusXmlWithValidIssn()
         throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
-        scopusFile = scopusFile.replace("<issn type=\"print\">09604286</issn>",
-                                        "<issn type=\"print\">0960-4286</issn>");
-        var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
+        scopusData.createWithSpecifiedSrcType(SourcetypeAtt.J.value());
+        scopusData.clearIssn();
+        scopusData.addIssn("0960-4286", ISSN_TYPE_PRINT);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
             .getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
-        var actualJournalName = ((UnconfirmedJournal) actualPublicationContext).getTitle();
-        assertThat(actualJournalName, is(HARD_CODED_JOURNAL_NAME_IN_RESOURCE_FILE));
     }
 
     @Test
     void shouldReturnCreatePublicationRequestWithUnconfirmedPublicationContextWhenEventS3UriScopusXmlWithInValidIssn()
         throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
-        scopusFile = scopusFile.replace("<issn type=\"print\">09604286</issn>",
-                                        "<issn type=\"print\">096042</issn>");
-        var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
+        scopusData.createWithSpecifiedSrcType(SourcetypeAtt.J.value());
+        scopusData.clearIssn();
+        scopusData.addIssn("096042", ISSN_TYPE_PRINT);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         Executable action = () -> scopusHandler.handleRequest(s3Event, CONTEXT);
         var exception = assertThrows(RuntimeException.class, action);
@@ -360,16 +357,13 @@ class ScopusHandlerTest {
     @Test
     void shouldReturnDefaultPublicationContextWhenEventWithS3UriThatPointsToScopusXmlWithoutPrintIssn()
         throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
-        scopusFile = scopusFile.replace("<issn type=\"print\">09604286</issn>", "");
-        var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
+        scopusData.createWithSpecifiedSrcType(SourcetypeAtt.J.value());
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
             .getPublicationContext();
         assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
-        var actualJournalName = ((UnconfirmedJournal) actualPublicationContext).getTitle();
-        assertThat(actualJournalName, is(HARD_CODED_JOURNAL_NAME_IN_RESOURCE_FILE));
     }
 
     @Test
@@ -685,16 +679,19 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractVolumeIssueAndPageRange() throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000469852));
-        var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
+        scopusData = ScopusGenerator.create(CitationtypeAtt.AR);
+        var expectedIssue = String.valueOf(randomInteger());
+        var expectedVolume = randomString();
+        var expectedPages = randomString();
+        scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationInstance = (JournalArticle) createPublicationRequest.getEntityDescription().getReference()
-            .getPublicationInstance();
-        assertThat(actualPublicationInstance.getVolume(), is(EXPECTED_VOLUME_IN_0000469852));
-        assertThat(actualPublicationInstance.getIssue(), is(EXPECTED_ISSUE_IN_0000469852));
-        assertThat(actualPublicationInstance.getPages().getBegin(), is(EXPECTED_FIRST_PAGE_IN_0000469852));
-        assertThat(actualPublicationInstance.getPages().getEnd(), is(EXPECTED_LAST_PAGE_IN_0000469852));
+                .getPublicationInstance();
+        assertThat(actualPublicationInstance.getVolume(), is(expectedVolume));
+        assertThat(actualPublicationInstance.getIssue(), is(expectedIssue));
+        assertThat(actualPublicationInstance.getPages().getEnd(), is(expectedPages));
     }
 
     @Test

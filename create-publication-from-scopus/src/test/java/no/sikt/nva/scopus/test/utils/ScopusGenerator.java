@@ -613,6 +613,17 @@ public final class ScopusGenerator {
         this.minimumSequenceNumber = minimumSequenceNumber;
     }
 
+    public void addIssn(String issn, String type) {
+        IssnTp issnTp = new IssnTp();
+        issnTp.setContent(issn);
+        issnTp.setType(type);
+        document.getItem().getItem().getBibrecord().getHead().getSource().getIssn().add(issnTp);
+    }
+
+    public void clearIssn() {
+        document.getItem().getItem().getBibrecord().getHead().getSource().getIssn().clear();
+    }
+
     public void setJournalInfo(String volume, String issue, String pages) {
         ObjectFactory factory = new ObjectFactory();
         VolissTp volissTp = factory.createVolissTp();
