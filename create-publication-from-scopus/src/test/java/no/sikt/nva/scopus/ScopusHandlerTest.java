@@ -8,7 +8,7 @@ import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
 import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
-import static no.sikt.nva.scopus.ScopusConverter.NAME_DELIMITER;
+import static no.sikt.nva.scopus.conversion.ContributorCreator.NAME_DELIMITER;
 import static no.sikt.nva.scopus.conversion.PublicationContextCreator.UNSUPPORTED_SOURCE_TYPE;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.language.LanguageConstants.BOKMAAL;
