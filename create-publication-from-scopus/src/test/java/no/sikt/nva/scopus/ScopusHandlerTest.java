@@ -11,6 +11,10 @@ import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.sikt.nva.scopus.ScopusConverter.NAME_DELIMITER;
 import static no.sikt.nva.scopus.conversion.PublicationContextCreator.UNSUPPORTED_SOURCE_TYPE;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
+import static no.unit.nva.language.LanguageConstants.BOKMAAL;
+import static no.unit.nva.language.LanguageConstants.ENGLISH;
+import static no.unit.nva.language.LanguageConstants.FRENCH;
+import static no.unit.nva.language.LanguageConstants.ITALIAN;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
@@ -59,6 +63,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import no.scopus.generated.AffiliationTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.BibrecordTp;
@@ -70,6 +75,7 @@ import no.scopus.generated.HeadTp;
 import no.scopus.generated.IsbnTp;
 import no.scopus.generated.ItemTp;
 import no.scopus.generated.ItemidTp;
+import no.scopus.generated.OrganizationTp;
 import no.scopus.generated.OrigItemTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
@@ -152,8 +158,6 @@ class ScopusHandlerTest {
     private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
     private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
     private static final String EXPECTED_ABSTRACT_NAME_SPACE = "<abstractTp";
-    private static final String JOURNAL_SOURCETYPE_IDENTIFYING_CHAR = "j";
-    private static final String BOOK_SOURCETYPE_IDENTIFYING_CHAR = "b";
 
 
     private FakeS3Client s3Client;
@@ -620,7 +624,7 @@ class ScopusHandlerTest {
         var s3Event = createS3Event(uri);
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationInstance =
-                createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
+            createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
         assertThat(actualPublicationInstance, isA(JournalLetter.class));
         assertThat(expectedIssue, is(((JournalLetter) actualPublicationInstance).getIssue()));
     }
@@ -686,7 +690,7 @@ class ScopusHandlerTest {
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationInstance = (JournalArticle) createPublicationRequest.getEntityDescription().getReference()
-                .getPublicationInstance();
+            .getPublicationInstance();
         assertThat(actualPublicationInstance.getVolume(), is(expectedVolume));
         assertThat(actualPublicationInstance.getIssue(), is(expectedIssue));
         assertThat(actualPublicationInstance.getPages().getEnd(), is(expectedPages));
@@ -712,6 +716,71 @@ class ScopusHandlerTest {
                 .stream()
                 .filter(Contributor::isCorrespondingAuthor)
                 .findAny().orElse(null);
+    }
+
+    @Test
+    void shouldAssignCorrectLanguageForAffiliationNames() throws IOException {
+
+        var frenchName = "Collège de France, Lab. de Physique Corpusculaire";
+        var italianName = "Dipartimento di Fisica, Università di Bologna";
+        var norwegianName = "Institutt for fysikk, Universitetet i Bergen";
+        var englishName = "Department of Physics, Iowa State University";
+        var nonDeterminableName = "NTNU";
+        var thaiNotSupportedByNvaName = "มหาวิทยาลัยมหิดล";
+        var expectedLabels = List.of(
+            Map.of(ENGLISH.getIso6391Code(), englishName),
+            Map.of(FRENCH.getIso6391Code(), frenchName),
+            Map.of(BOKMAAL.getIso6391Code(), norwegianName),
+            Map.of(ITALIAN.getIso6391Code(), italianName),
+            Map.of(ENGLISH.getIso6391Code(), nonDeterminableName),
+            Map.of(ENGLISH.getIso6391Code(), thaiNotSupportedByNvaName));
+        scopusData = ScopusGenerator.createWithSpecifiedAffiliations(
+            languageAffiliations(List.of(thaiNotSupportedByNvaName,
+                                         frenchName,
+                                         italianName,
+                                         norwegianName,
+                                         englishName,
+                                         nonDeterminableName
+            )));
+        var s3Event = createNewScopusPublicationEvent();
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var organizations =
+            createPublicationRequest.getEntityDescription()
+                .getContributors()
+                .stream()
+                .map(Contributor::getAffiliations)
+                .flatMap(Collection::stream)
+                .collect(
+                    Collectors.toSet());
+        var actualOrganizationsLabels =
+            organizations.stream().map(Organization::getLabels).collect(Collectors.toList());
+        assertThat(actualOrganizationsLabels, containsInAnyOrder(expectedLabels.toArray()));
+    }
+
+    private List<AffiliationTp> languageAffiliations(List<String> organizationNames) {
+        return organizationNames
+            .stream()
+            .map(this::createAffiliation)
+            .collect(Collectors.toList());
+    }
+
+    private AffiliationTp createAffiliation(String organizationName) {
+        var affiliation = new AffiliationTp();
+        affiliation.setCountryAttribute(randomString());
+        affiliation.setAffiliationInstanceId(randomString());
+        affiliation.setAfid(randomString());
+        affiliation.setCityGroup(randomString());
+        affiliation.setDptid(randomString());
+        affiliation.setCity(randomString());
+        affiliation.setCountryAttribute(randomString());
+        affiliation.getOrganization().add(createOrganization(organizationName));
+        return affiliation;
+    }
+
+    private OrganizationTp createOrganization(String organizationName) {
+        var organization = new OrganizationTp();
+        organization.getContent().add(organizationName);
+        return organization;
     }
 
     private void checkAuthorOrcidAndSequenceNumber(AuthorTp authorTp, List<Contributor> contributors) {

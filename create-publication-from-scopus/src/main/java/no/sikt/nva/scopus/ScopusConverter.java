@@ -5,6 +5,7 @@ import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
+import static no.unit.nva.language.LanguageConstants.ENGLISH;
 import static nva.commons.core.StringUtils.isNotBlank;
 import jakarta.xml.bind.JAXB;
 import jakarta.xml.bind.JAXBElement;
@@ -43,6 +44,7 @@ import no.scopus.generated.VolisspagTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
+import no.unit.nva.language.LanguageMapper;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -63,6 +65,7 @@ import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.paths.UriWrapper;
+import org.apache.tika.langdetect.OptimaizeLangDetector;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 class ScopusConverter {
@@ -336,30 +339,30 @@ class ScopusConverter {
 
     private Optional<Range> extractPages() {
         return getVolisspagTpStream()
-                .filter(this::isPageRange)
-                .map(this::extractPageRange)
-                .findAny().orElse(Optional.empty());
+            .filter(this::isPageRange)
+            .map(this::extractPageRange)
+            .findAny().orElse(Optional.empty());
     }
 
     private Stream<JAXBElement<?>> getVolisspagTpStream() {
         return Optional.ofNullable(getSourceTp().getVolisspag())
-                .map(VolisspagTp::getContent)
-                .orElse(emptyList())
-                .stream();
+            .map(VolisspagTp::getContent)
+            .orElse(emptyList())
+            .stream();
     }
 
     private Optional<String> extractVolume() {
         return getVolisspagTpStream()
-                .filter(this::isVolumeIssue)
-                .map(this::extractVolumeValue)
-                .findAny().orElse(Optional.empty());
+            .filter(this::isVolumeIssue)
+            .map(this::extractVolumeValue)
+            .findAny().orElse(Optional.empty());
     }
 
     private Optional<String> extractIssue() {
         return getVolisspagTpStream()
-                .filter(this::isVolumeIssue)
-                .map(this::extractIssueValue)
-                .findAny().orElse(Optional.empty());
+            .filter(this::isVolumeIssue)
+            .map(this::extractIssueValue)
+            .findAny().orElse(Optional.empty());
     }
 
     private Optional<String> extractArticleNumber() {
@@ -380,10 +383,10 @@ class ScopusConverter {
 
     private SourceTp getSourceTp() {
         return docTp.getItem()
-                .getItem()
-                .getBibrecord()
-                .getHead()
-                .getSource();
+            .getItem()
+            .getBibrecord()
+            .getHead()
+            .getSource();
     }
 
     private boolean isPageRange(JAXBElement<?> content) {
@@ -392,7 +395,7 @@ class ScopusConverter {
 
     private Optional<Range> extractPageRange(JAXBElement<?> content) {
         return Optional.of(new Range(((PagerangeTp) content.getValue()).getFirst(),
-                ((PagerangeTp) content.getValue()).getLast()));
+                                     ((PagerangeTp) content.getValue()).getLast()));
     }
 
     private Optional<TitletextTp> getMainTitleTextTp() {
@@ -426,7 +429,7 @@ class ScopusConverter {
                    ? generateContributorFromAuthorTp((AuthorTp) authorOrCollaboration, authorGroupTp,
                 correspondencePerson)
                    : generateContributorFromCollaborationTp(
-                       (CollaborationTp) authorOrCollaboration, correspondencePerson);
+                       (CollaborationTp) authorOrCollaboration, authorGroupTp, correspondencePerson);
     }
 
     private Contributor generateContributorFromAuthorTp(AuthorTp author, AuthorGroupTp authorGroup,
@@ -450,12 +453,23 @@ class ScopusConverter {
 
     private Optional<Map<String, String>> getOrganizationLabels(AuthorGroupTp authorGroup) {
         var organizationNameOptional = getOrganizationNameFromAuthorGroup(authorGroup);
-        return organizationNameOptional.map(organizationName -> Map.of(getLanguageIso6391Code(),
+        return organizationNameOptional.map(organizationName -> Map.of(getLanguageIso6391Code(organizationName),
                                                                        organizationName));
     }
 
-    private String getLanguageIso6391Code() {
-        return "en";
+    private String getLanguageIso6391Code(String textToBeGuessedLanguageCodeFrom) {
+        var detector = new OptimaizeLangDetector().loadModels();
+        var result = detector.detect(textToBeGuessedLanguageCodeFrom);
+        return result.isReasonablyCertain()
+                   ? getIso6391LanguageCodeForSupportedNvaLanguage(result.getLanguage())
+                   : ENGLISH.getIso6391Code();
+    }
+
+    private String getIso6391LanguageCodeForSupportedNvaLanguage(String possiblyUnsupportedLanguageIso6391code) {
+        var language = LanguageMapper.getLanguageByIso6391Code(possiblyUnsupportedLanguageIso6391code);
+        return nonNull(language.getIso6391Code())
+                   ? language.getIso6391Code()
+                   : ENGLISH.getIso6391Code();
     }
 
     private Optional<String> getOrganizationNameFromAuthorGroup(AuthorGroupTp authorGroup) {
@@ -489,9 +503,13 @@ class ScopusConverter {
 
     private Contributor generateContributorFromCollaborationTp(CollaborationTp collaboration,
                                                                PersonalnameType correspondencePerson) {
+    private Contributor generateContributorFromCollaborationTp(CollaborationTp collaboration,
+                                                               AuthorGroupTp authorGroupTp,
+                PersonalnameType correspondencePerson) {
         var identity = new Identity();
         identity.setName(determineContributorName(collaboration));
-        return new Contributor(identity, null, null, getSequenceNumber(collaboration),
+        var affiliations = generateAffiliation(authorGroupTp);
+        return new Contributor(identity, affiliations.orElse(null), null, getSequenceNumber(collaboration),
                 isCorrespondingAuthor(collaboration, correspondencePerson));
     }
 
