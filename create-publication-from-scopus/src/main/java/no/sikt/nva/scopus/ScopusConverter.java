@@ -7,8 +7,10 @@ import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.unit.nva.language.LanguageConstants.ENGLISH;
 import static nva.commons.core.StringUtils.isNotBlank;
+
 import jakarta.xml.bind.JAXB;
 import jakarta.xml.bind.JAXBElement;
+
 import java.io.StringWriter;
 import java.net.URI;
 import java.util.ArrayList;
@@ -19,6 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordTp;
@@ -502,10 +505,8 @@ class ScopusConverter {
     }
 
     private Contributor generateContributorFromCollaborationTp(CollaborationTp collaboration,
-                                                               PersonalnameType correspondencePerson) {
-    private Contributor generateContributorFromCollaborationTp(CollaborationTp collaboration,
                                                                AuthorGroupTp authorGroupTp,
-                PersonalnameType correspondencePerson) {
+                                                               PersonalnameType correspondencePerson) {
         var identity = new Identity();
         identity.setName(determineContributorName(collaboration));
         var affiliations = generateAffiliation(authorGroupTp);
