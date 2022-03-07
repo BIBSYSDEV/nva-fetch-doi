@@ -7,6 +7,7 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
 import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
+import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_ELECTRONIC;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_PRINT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.sikt.nva.scopus.ScopusConverter.NAME_DELIMITER;
@@ -19,6 +20,7 @@ import static no.unit.nva.language.LanguageConstants.ITALIAN;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
+import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.StringUtils.isNotBlank;
@@ -131,15 +133,10 @@ class ScopusHandlerTest {
     public static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;
     public static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     public static final long SOME_FILE_SIZE = 100L;
-    public static final String HARD_CODED_JOURNAL_NAME_IN_RESOURCE_FILE = "Edinburgh Journal of Botany";
     public static final String E_ISSN_0000469852 = "1474-0036";
     public static final String START_OF_QUERY = "/?";
     private static final String EXPECTED_RESULTS_PATH = "expectedResults";
-    private static final String SCOPUS_XML_0000469852 = "2-s2.0-0000469852.xml";
     private static final String SCOPUS_XML_0018132378 = "2-s2.0-0018132378.xml";
-    private static final String EXPECTED_PUBLICATION_YEAR_IN_0018132378 = "1978";
-    private static final String EXPECTED_PUBLICATION_DAY_IN_0018132378 = "01";
-    private static final String EXPECTED_PUBLICATION_MONTH_IN_0018132378 = "01";
     private static final String AUTHOR_KEYWORD_NAME_SPACE = "<authorKeywordsTp";
     private static final String HARDCODED_KEYWORDS_0000469852 = "    <author-keyword xml:lang=\"eng\">\n"
                                                                 + "        <sup>64</sup>Cu\n"
@@ -149,10 +146,6 @@ class ScopusHandlerTest {
                                                                 + "    <author-keyword "
                                                                 + "xml:lang=\"eng\">sheep</author-keyword>\n"
                                                                 + "</authorKeywordsTp>";
-    private static final String HARDCODED_EXPECTED_KEYWORD_1_IN_0000469852 = "64Cu";
-    private static final String HARDCODED_EXPECTED_KEYWORD_2_IN_0000469852 = "excretion";
-    private static final String HARDCODED_EXPECTED_KEYWORD_3_IN_0000469852 = "sheep";
-    private static final String HARDCODED_EXPECTED_KEYWORD_4_IN_0000469852 = "infGG";
     private static final String XML_ENCODING_DECLARATION = "<?xml version=\"1.0\" encoding=\"UTF-8\" "
                                                            + "standalone=\"yes\"?>";
     private static final String PUBLICATION_DAY_FIELD_NAME = "day";
@@ -160,10 +153,6 @@ class ScopusHandlerTest {
     private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
     private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
     private static final String EXPECTED_ABSTRACT_NAME_SPACE = "<abstractTp";
-    private static final String EXPECTED_ISSUE_IN_0000469852 = "1";
-    private static final String EXPECTED_VOLUME_IN_0000469852 = "50";
-    private static final String EXPECTED_FIRST_PAGE_IN_0000469852 = "105";
-    private static final String EXPECTED_LAST_PAGE_IN_0000469852 = "119";
 
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
@@ -455,14 +444,15 @@ class ScopusHandlerTest {
     @Test
     void shouldReturnCreatePublicationRequestWithJournalWhenEventWithS3UriThatPointsToScopusXmlWhereSourceTitleIsInNsd()
         throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of("2-s2.0-0000469852.xml"));
-
-        var queryUri = createExpectedQueryUriForJournalWithEIssn(E_ISSN_0000469852, "2010");
+        var expectedYear = String.valueOf(randomInteger(2022));
+        var expectedIssn = randomIssn();
+        var queryUri = createExpectedQueryUriForJournalWithEIssn(expectedIssn, expectedYear);
         var expectedJournalUri = mockedPublicationChannelsReturnsUri(queryUri);
-
-        scopusFile = scopusFile.replace("<xocs:pub-year>1993</xocs:pub-year>",
-                                        "<xocs:pub-year>2010</xocs:pub-year>");
-        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusFile);
+        scopusData.createWithSpecifiedSrcType(SourcetypeAtt.J.value());
+        scopusData.setPublicationYear(expectedYear);
+        scopusData.clearIssn();
+        scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
@@ -476,7 +466,7 @@ class ScopusHandlerTest {
     void shouldThrowExceptionWhenSrcTypeIsNotSuppoerted() throws IOException {
         List<String> supportedScrTypes = List.of(SourcetypeAtt.J.value());
         var randomUnsupportedSrcType = randomStringWithExclusion(supportedScrTypes);
-        scopusData = scopusData.createWithSpecifiedSrcType(randomUnsupportedSrcType);
+        scopusData.createWithSpecifiedSrcType(randomUnsupportedSrcType);
         var expectedMessage = String.format(UNSUPPORTED_SOURCE_TYPE, scopusData.getDocument().getMeta().getEid());
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
@@ -495,43 +485,42 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractAuthorKeyWordsAsPlainText() throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0018132378));
-        scopusFile = scopusFile.replace("<author-keyword xml:lang=\"eng\">sheep</author-keyword>",
-                                        "<author-keyword xml:lang=\"eng\">sheep</author-keyword>\n"
-                                        + "<author-keyword xml:lang=\"eng\"><inf>inf</inf>GG</author-keyword>\n");
-        var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
+        scopusData.createWithSpecifiedSrcType(SourcetypeAtt.J.value());
+        scopusData.clearAuthorKeywords();
+        scopusData.addAuthorKeyword("sheep", "eng");
+        scopusData.addAuthorKeyword("<inf>inf</inf>GG", "eng");
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPlaintextKeyWords = createPublicationRequest.getEntityDescription().getTags();
-        assertThat(actualPlaintextKeyWords, allOf(
-            hasItem(HARDCODED_EXPECTED_KEYWORD_1_IN_0000469852),
-            hasItem(HARDCODED_EXPECTED_KEYWORD_2_IN_0000469852),
-            hasItem(HARDCODED_EXPECTED_KEYWORD_3_IN_0000469852),
-            hasItem(HARDCODED_EXPECTED_KEYWORD_4_IN_0000469852)));
+        assertThat(actualPlaintextKeyWords, allOf(hasItem("sheep"), hasItem("<inf>inf</inf>GG")));
     }
 
     @Test
     void shouldExtractPublicationDate() throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0018132378));
-        var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
+        scopusData.createWithSpecifiedSrcType(SourcetypeAtt.J.value());
+        scopusData.setPublicationDate("1978", "01", "01");
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationDate = createPublicationRequest.getEntityDescription().getDate();
         assertThat(actualPublicationDate, allOf(
-            hasProperty(PUBLICATION_DAY_FIELD_NAME, is(EXPECTED_PUBLICATION_DAY_IN_0018132378)),
-            hasProperty(PUBLICATION_MONTH_FIELD_NAME, is(EXPECTED_PUBLICATION_MONTH_IN_0018132378)),
-            hasProperty(PUBLICATION_YEAR_FIELD_NAME, is(EXPECTED_PUBLICATION_YEAR_IN_0018132378))));
+            hasProperty(PUBLICATION_DAY_FIELD_NAME, is("01")),
+            hasProperty(PUBLICATION_MONTH_FIELD_NAME, is("01")),
+            hasProperty(PUBLICATION_YEAR_FIELD_NAME, is("1978"))));
     }
 
     @Test
     void shouldExtractMainAbstractAsXML() throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000469852));
-        var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
+        scopusData.createWithSpecifiedSrcType(SourcetypeAtt.J.value());
+        scopusData.clearAbstracts();
+        var expectedAbstract =
+                IoUtils.stringFromResources(Path.of(EXPECTED_RESULTS_PATH, FILENAME_EXPECTED_ABSTRACT_IN_0000469852));
+        scopusData.addAbstract(expectedAbstract);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualMainAbstract = createPublicationRequest.getEntityDescription().getAbstract();
-        var expectedAbstract =
-            IoUtils.stringFromResources(Path.of(EXPECTED_RESULTS_PATH, FILENAME_EXPECTED_ABSTRACT_IN_0000469852));
         assertThat(actualMainAbstract, stringContainsInOrder(XML_ENCODING_DECLARATION,
                                                              EXPECTED_ABSTRACT_NAME_SPACE,
                                                              expectedAbstract));

@@ -624,6 +624,38 @@ public final class ScopusGenerator {
         document.getItem().getItem().getBibrecord().getHead().getSource().getIssn().clear();
     }
 
+    public void addAuthorKeyword(String keyword, String language) {
+        AuthorKeywordTp authorKeywordTp = new AuthorKeywordTp();
+        authorKeywordTp.setLang(language);
+        authorKeywordTp.getContent().add(keyword);
+        document.getItem().getItem().getBibrecord().getHead().getCitationInfo().getAuthorKeywords().getAuthorKeyword()
+                .add(authorKeywordTp);
+    }
+
+    public void clearAuthorKeywords() {
+        document.getItem().getItem().getBibrecord().getHead().getCitationInfo().getAuthorKeywords().getAuthorKeyword().clear();
+    }
+
+    public void setPublicationYear(String year) {
+        document.getMeta().setPubYear(year);
+    }
+
+    public void setPublicationDate(String year, String month, String day) {
+        document.getItem().getItem().getProcessInfo().getDateSort().setDay(day);
+        document.getItem().getItem().getProcessInfo().getDateSort().setMonth(month);
+        document.getItem().getItem().getProcessInfo().getDateSort().setYear(year);
+    }
+
+    public void clearAbstracts() {
+        document.getItem().getItem().getBibrecord().getHead().getAbstracts().getAbstract().clear();
+    }
+
+    public void addAbstract(String value) {
+        AbstractTp abstractTp = new AbstractTp();
+        abstractTp.setSource(value);
+        document.getItem().getItem().getBibrecord().getHead().getAbstracts().getAbstract().add(abstractTp);
+    }
+
     public void setJournalInfo(String volume, String issue, String pages) {
         ObjectFactory factory = new ObjectFactory();
         VolissTp volissTp = factory.createVolissTp();
