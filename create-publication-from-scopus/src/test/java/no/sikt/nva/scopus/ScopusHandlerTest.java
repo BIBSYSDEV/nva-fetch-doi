@@ -159,10 +159,7 @@ class ScopusHandlerTest {
     private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
     private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
     private static final String EXPECTED_ABSTRACT_NAME_SPACE = "<abstractTp";
-    private static final String EXPECTED_ISSUE_IN_0000469852 = "1";
-    private static final String EXPECTED_VOLUME_IN_0000469852 = "50";
-    private static final String EXPECTED_FIRST_PAGE_IN_0000469852 = "105";
-    private static final String EXPECTED_LAST_PAGE_IN_0000469852 = "119";
+
 
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
@@ -709,16 +706,41 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractVolumeIssueAndPageRange() throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000469852));
-        var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
+        scopusData = ScopusGenerator.create(CitationtypeAtt.AR);
+        var expectedIssue = String.valueOf(randomInteger());
+        var expectedVolume = randomString();
+        var expectedPages = randomString();
+        scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationInstance = (JournalArticle) createPublicationRequest.getEntityDescription().getReference()
             .getPublicationInstance();
-        assertThat(actualPublicationInstance.getVolume(), is(EXPECTED_VOLUME_IN_0000469852));
-        assertThat(actualPublicationInstance.getIssue(), is(EXPECTED_ISSUE_IN_0000469852));
-        assertThat(actualPublicationInstance.getPages().getBegin(), is(EXPECTED_FIRST_PAGE_IN_0000469852));
-        assertThat(actualPublicationInstance.getPages().getEnd(), is(EXPECTED_LAST_PAGE_IN_0000469852));
+        assertThat(actualPublicationInstance.getVolume(), is(expectedVolume));
+        assertThat(actualPublicationInstance.getIssue(), is(expectedIssue));
+        assertThat(actualPublicationInstance.getPages().getEnd(), is(expectedPages));
+    }
+
+    @Test
+    void shouldExtractCorrespondingAuthor() throws IOException {
+        var authors = keepOnlyTheAuthors();
+        var correspondingAuthorTp = authors.get(0);
+        scopusData.setCorrespondence(correspondingAuthorTp);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationContributors = createPublicationRequest.getEntityDescription()
+                .getContributors();
+        var actualCorrespondingContributor = getCorrespondingContributor(actualPublicationContributors);
+        assertThat(actualCorrespondingContributor.getIdentity().getName(),
+                startsWith(correspondingAuthorTp.getSurname()));
+    }
+
+    private Contributor getCorrespondingContributor(List<Contributor> actualPublicationContributors) {
+        return actualPublicationContributors
+                .stream()
+                .filter(Contributor::isCorrespondingAuthor)
+                .findAny().orElse(null);
     }
 
     @Test
