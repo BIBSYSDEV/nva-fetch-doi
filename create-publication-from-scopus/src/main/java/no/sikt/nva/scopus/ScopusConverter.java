@@ -7,8 +7,10 @@ import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.unit.nva.language.LanguageConstants.ENGLISH;
 import static nva.commons.core.StringUtils.isNotBlank;
+
 import jakarta.xml.bind.JAXB;
 import jakarta.xml.bind.JAXBElement;
+
 import java.io.StringWriter;
 import java.net.URI;
 import java.util.ArrayList;
@@ -19,6 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordTp;
@@ -28,12 +31,14 @@ import no.scopus.generated.CitationInfoTp;
 import no.scopus.generated.CitationTypeTp;
 import no.scopus.generated.CitationtypeAtt;
 import no.scopus.generated.CollaborationTp;
+import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
 import no.scopus.generated.InfTp;
 import no.scopus.generated.ItemidTp;
 import no.scopus.generated.PagerangeTp;
+import no.scopus.generated.PersonalnameType;
 import no.scopus.generated.SourceTp;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
@@ -203,11 +208,28 @@ class ScopusConverter {
     }
 
     private List<Contributor> generateContributors() {
+        Optional<PersonalnameType> correspondencePerson = extractCorrespondence()
+                .stream()
+                .map(this::extractPersonalnameType)
+                .findFirst().orElse(Optional.empty());
+
+        return extractContributors(correspondencePerson.orElse(null));
+    }
+
+    private List<Contributor> extractContributors(PersonalnameType correspondencePerson) {
         return extractAuthorGroup()
-            .stream()
-            .map(this::generateContributorsFromAuthorGroup)
-            .flatMap(Collection::stream)
-            .collect(Collectors.toList());
+                .stream()
+                .map(authorGroupTp -> generateContributorsFromAuthorGroup(authorGroupTp, correspondencePerson))
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+    }
+
+    private List<CorrespondenceTp> extractCorrespondence() {
+        return extractHead().getCorrespondence();
+    }
+
+    private Optional<PersonalnameType> extractPersonalnameType(CorrespondenceTp correspondenceTp) {
+        return Optional.ofNullable(correspondenceTp.getPerson());
     }
 
     private Reference generateReference() {
@@ -394,26 +416,31 @@ class ScopusConverter {
         return extractHead().getCitationTitle().getTitletext();
     }
 
-    private List<Contributor> generateContributorsFromAuthorGroup(AuthorGroupTp authorGroupTp) {
+    private List<Contributor> generateContributorsFromAuthorGroup(AuthorGroupTp authorGroupTp,
+                                                                  PersonalnameType correspondencePerson) {
         return authorGroupTp.getAuthorOrCollaboration()
             .stream()
             .map(authorOrCollaboration -> generateContributorFromAuthorOrCollaboration(authorOrCollaboration,
-                                                                                       authorGroupTp))
+                   authorGroupTp, correspondencePerson))
             .collect(Collectors.toList());
     }
 
     private Contributor generateContributorFromAuthorOrCollaboration(Object authorOrCollaboration,
-                                                                     AuthorGroupTp authorGroupTp) {
+                                                                     AuthorGroupTp authorGroupTp,
+                                                                     PersonalnameType correspondencePerson) {
         return authorOrCollaboration instanceof AuthorTp
-                   ? generateContributorFromAuthorTp((AuthorTp) authorOrCollaboration, authorGroupTp)
+                   ? generateContributorFromAuthorTp((AuthorTp) authorOrCollaboration, authorGroupTp,
+                correspondencePerson)
                    : generateContributorFromCollaborationTp(
-                       (CollaborationTp) authorOrCollaboration, authorGroupTp);
+                       (CollaborationTp) authorOrCollaboration, authorGroupTp, correspondencePerson);
     }
 
-    private Contributor generateContributorFromAuthorTp(AuthorTp author, AuthorGroupTp authorGroup) {
+    private Contributor generateContributorFromAuthorTp(AuthorTp author, AuthorGroupTp authorGroup,
+                                                        PersonalnameType correspondencePerson) {
         var identity = generateContributorIdentityFromAuthorTp(author);
         var affiliations = generateAffiliation(authorGroup);
-        return new Contributor(identity, affiliations.orElse(null), Role.CREATOR, getSequenceNumber(author), false);
+        return new Contributor(identity, affiliations.orElse(null), Role.CREATOR, getSequenceNumber(author),
+                isCorrespondingAuthor(author, correspondencePerson));
     }
 
     private Optional<List<Organization>> generateAffiliation(AuthorGroupTp authorGroup) {
@@ -478,11 +505,23 @@ class ScopusConverter {
     }
 
     private Contributor generateContributorFromCollaborationTp(CollaborationTp collaboration,
-                                                               AuthorGroupTp authorGroupTp) {
+                                                               AuthorGroupTp authorGroupTp,
+                                                               PersonalnameType correspondencePerson) {
         var identity = new Identity();
         identity.setName(determineContributorName(collaboration));
         var affiliations = generateAffiliation(authorGroupTp);
-        return new Contributor(identity, affiliations.orElse(null), null, getSequenceNumber(collaboration), false);
+        return new Contributor(identity, affiliations.orElse(null), null, getSequenceNumber(collaboration),
+                isCorrespondingAuthor(collaboration, correspondencePerson));
+    }
+
+    private boolean isCorrespondingAuthor(AuthorTp author, PersonalnameType correspondencePerson) {
+        return nonNull(correspondencePerson)
+                && author.getIndexedName().equals(correspondencePerson.getIndexedName());
+    }
+
+    private boolean isCorrespondingAuthor(CollaborationTp collaboration, PersonalnameType correspondencePerson) {
+        return nonNull(correspondencePerson)
+                && collaboration.getIndexedName().equals(correspondencePerson.getIndexedName());
     }
 
     private int getSequenceNumber(AuthorTp authorTp) {
