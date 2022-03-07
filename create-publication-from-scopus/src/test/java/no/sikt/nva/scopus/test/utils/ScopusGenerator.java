@@ -46,6 +46,7 @@ import no.scopus.generated.CitationTitleTp;
 import no.scopus.generated.CitationTypeTp;
 import no.scopus.generated.CitationtypeAtt;
 import no.scopus.generated.CollaborationTp;
+import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
@@ -447,13 +448,31 @@ public final class ScopusGenerator {
     private AuthorTp randomAuthorTp() {
         var authorTp = new AuthorTp();
         authorTp.setOrcid(randomOrcid());
-        authorTp.setPreferredName(randomPreferredName());
         authorTp.setAuid(randomString());
         authorTp.setSeq(generateSequenceNumber());
+        PersonalnameType personalnameType = randomPersonalnameType();
+        authorTp.setPreferredName(personalnameType);
+        authorTp.setIndexedName(personalnameType.getIndexedName());
+        authorTp.setGivenName(personalnameType.getGivenName());
+        authorTp.setSurname(personalnameType.getSurname());
         return authorTp;
     }
 
-    private static PersonalnameType randomPreferredName() {
+    private CorrespondenceTp createCorrespondenceTp(AuthorTp authorTp) {
+        var correspondenceTp = new CorrespondenceTp();
+        correspondenceTp.setPerson(createPersonalnameType(authorTp));
+        return correspondenceTp;
+    }
+
+    private PersonalnameType createPersonalnameType(AuthorTp authorTp) {
+        var personalnameType = new PersonalnameType();
+        personalnameType.setIndexedName(authorTp.getIndexedName());
+        personalnameType.setGivenName(authorTp.getGivenName());
+        personalnameType.setSurname(authorTp.getSurname());
+        return personalnameType;
+    }
+
+    private static PersonalnameType randomPersonalnameType() {
         var personalNameType = new PersonalnameType();
         personalNameType.setIndexedName(randomString());
         personalNameType.setGivenName(randomString());
@@ -666,6 +685,11 @@ public final class ScopusGenerator {
 
     private void setMinimumSequenceNumber(int minimumSequenceNumber) {
         this.minimumSequenceNumber = minimumSequenceNumber;
+    }
+
+    public void setCorrespondence(AuthorTp authorTp) {
+        var correspondenceTp = createCorrespondenceTp(authorTp);
+        document.getItem().getItem().getBibrecord().getHead().getCorrespondence().add(correspondenceTp);
     }
 
     public void setJournalInfo(String volume, String issue, String pages) {
