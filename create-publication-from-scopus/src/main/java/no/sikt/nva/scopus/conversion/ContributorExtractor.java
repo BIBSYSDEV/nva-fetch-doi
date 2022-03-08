@@ -37,12 +37,7 @@ public class ContributorExtractor {
     }
 
     public List<Contributor> generateContributors() {
-        Optional<PersonalnameType> correspondencePerson = correspondenceTps
-            .stream()
-            .map(this::extractPersonalNameType)
-            .findFirst().orElse(Optional.empty());
-
-        extractContributors(correspondencePerson.orElse(null));
+        authorGroupTps.forEach(this::generateContributorsFromAuthorGroup);
         return contributors;
     }
 
@@ -50,53 +45,59 @@ public class ContributorExtractor {
         return Optional.ofNullable(correspondenceTp.getPerson());
     }
 
-    private void extractContributors(PersonalnameType correspondencePerson) {
-        authorGroupTps.forEach(authorGroupTp ->
-                                   generateContributorsFromAuthorGroup(authorGroupTp, correspondencePerson));
-    }
-
-    private void generateContributorsFromAuthorGroup(AuthorGroupTp authorGroupTp,
-                                                     PersonalnameType correspondencePerson) {
+    private void generateContributorsFromAuthorGroup(AuthorGroupTp authorGroupTp) {
         authorGroupTp.getAuthorOrCollaboration()
-            .forEach(authorOrCollaboration -> generateContributorFromAuthorOrCollaboration2(authorOrCollaboration,
-                                                                                            authorGroupTp,
-                                                                                            correspondencePerson));
+            .forEach(authorOrCollaboration -> extractContributorFromAuthorOrCollaboration(authorOrCollaboration,
+                                                                                          authorGroupTp));
     }
 
-    private void generateContributorFromAuthorOrCollaboration2(Object authorOrCollaboration,
-                                                               AuthorGroupTp authorGroupTp,
-                                                               PersonalnameType correspondencePerson) {
+    private void extractContributorFromAuthorOrCollaboration(Object authorOrCollaboration,
+                                                             AuthorGroupTp authorGroupTp) {
         Optional<Contributor> matchingContributor = contributors.stream()
             .filter(contributor -> compareContributorToAuthorOrCollaboration(contributor,
                                                                              authorOrCollaboration))
             .findAny();
         if (matchingContributor.isPresent()) {
-            enrichExistingContributor(matchingContributor.get(), authorGroupTp);
+            replaceExistingContributor(matchingContributor.get(), authorGroupTp);
         } else {
-            generateContributorFromAuthorOrCollaboration(authorOrCollaboration, authorGroupTp, correspondencePerson);
+            Optional<PersonalnameType> correspondencePerson = correspondenceTps
+                .stream()
+                .map(this::extractPersonalNameType)
+                .findFirst().orElse(Optional.empty());
+            generateContributorFromAuthorOrCollaboration(authorOrCollaboration, authorGroupTp,
+                                                         correspondencePerson.orElse(null));
         }
     }
 
-    private void enrichExistingContributor(Contributor matchingContributor, AuthorGroupTp authorGroupTp) {
+    private void replaceExistingContributor(Contributor existingContributor, AuthorGroupTp authorGroupTp) {
         var optionalNewAffiliations = generateAffiliation(authorGroupTp);
         optionalNewAffiliations.ifPresent(
             organizations ->
                 createNewContributorWithAdditionalAffiliationsAndSwapItInContributorList(organizations,
-                                                                                         matchingContributor));
+                                                                                         existingContributor));
     }
 
     private void createNewContributorWithAdditionalAffiliationsAndSwapItInContributorList(
-        List<Organization> newAffiliations, Contributor matchingContributor) {
-        List<Organization> affiliations = new ArrayList<>();
-        affiliations.addAll(matchingContributor.getAffiliations());
-        affiliations.addAll(newAffiliations);
-        var newContributor = new Contributor(matchingContributor.getIdentity(),
-                                             affiliations,
-                                             matchingContributor.getRole(),
-                                             matchingContributor.getSequence(),
-                                             matchingContributor.isCorrespondingAuthor());
-        contributors.remove(matchingContributor);
+        Organization newAffiliation, Contributor matchingContributor) {
+        var newContributor =
+            newContributorFromExistingContributorWithAdditionalAffiliation(matchingContributor, newAffiliation);
+        replaceContributor(matchingContributor, newContributor);
+    }
+
+    private void replaceContributor(Contributor oldContributor, Contributor newContributor) {
+        contributors.remove(oldContributor);
         contributors.add(newContributor);
+    }
+
+    private Contributor newContributorFromExistingContributorWithAdditionalAffiliation(Contributor existingContributor,
+                                                                                       Organization newAffiliation) {
+        List<Organization> affiliations = new ArrayList<>(existingContributor.getAffiliations());
+        affiliations.add(newAffiliation);
+        return new Contributor(existingContributor.getIdentity(),
+                               affiliations,
+                               existingContributor.getRole(),
+                               existingContributor.getSequence(),
+                               existingContributor.isCorrespondingAuthor());
     }
 
     private boolean compareContributorToAuthorOrCollaboration(Contributor contributor, Object authorOrCollaboration) {
@@ -134,8 +135,10 @@ public class ContributorExtractor {
     private void generateContributorFromAuthorTp(AuthorTp author, AuthorGroupTp authorGroup,
                                                  PersonalnameType correspondencePerson) {
         var identity = generateContributorIdentityFromAuthorTp(author);
-        var affiliations = generateAffiliation(authorGroup);
-        var newContributor = new Contributor(identity, affiliations.orElse(null), Role.CREATOR,
+        var affiliation = generateAffiliation(authorGroup);
+        var newContributor = new Contributor(identity,
+                                             affiliation.map(List::of).orElse(List.of()),
+                                             Role.CREATOR,
                                              getSequenceNumber(author),
                                              isCorrespondingAuthor(author, correspondencePerson));
         contributors.add(newContributor);
@@ -146,8 +149,8 @@ public class ContributorExtractor {
                                                         PersonalnameType correspondencePerson) {
         var identity = new Identity();
         identity.setName(determineContributorName(collaboration));
-        var affiliations = generateAffiliation(authorGroupTp);
-        var newContributor = new Contributor(identity, affiliations.orElse(null), null,
+        var affiliation = generateAffiliation(authorGroupTp);
+        var newContributor = new Contributor(identity, affiliation.map(List::of).orElse(List.of()), null,
                                              getSequenceNumber(collaboration),
                                              isCorrespondingAuthor(collaboration, correspondencePerson));
         contributors.add(newContributor);
@@ -160,7 +163,7 @@ public class ContributorExtractor {
         return identity;
     }
 
-    private Optional<List<Organization>> generateAffiliation(AuthorGroupTp authorGroup) {
+    private Optional<Organization> generateAffiliation(AuthorGroupTp authorGroup) {
         var labels = getOrganizationLabels(authorGroup);
         return labels.map(this::generateOrganizationWithLabel);
     }
@@ -195,10 +198,10 @@ public class ContributorExtractor {
         return isNotBlank(authorTp.getOrcid()) ? craftOrcidUriString(authorTp.getOrcid()) : null;
     }
 
-    private List<Organization> generateOrganizationWithLabel(Map<String, String> label) {
+    private Organization generateOrganizationWithLabel(Map<String, String> label) {
         Organization organization = new Organization();
         organization.setLabels(label);
-        return List.of(organization);
+        return organization;
     }
 
     private Optional<Map<String, String>> getOrganizationLabels(AuthorGroupTp authorGroup) {
