@@ -125,6 +125,7 @@ import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -497,9 +498,7 @@ class ScopusHandlerTest {
     void shouldReturnPublicationContextUnconfirmedBookSeriesWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeK()
             throws IOException, ParseException {
         scopusData.getDocument().getMeta().setSrctype(SourcetypeAtt.K.value());
-        var expectedIssn = scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource()
-                .getIssn().stream().filter(issnTp1 -> issnTp1.getType().equals(ISSN_TYPE_ELECTRONIC))
-                .map(IssnTp::getContent).findFirst().get();
+        String expectedIssn = setUpExpectedIssn()();
         String expectedYear = randomYear();
         scopusData.getDocument().getMeta().setPubYear(expectedYear);
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
@@ -513,6 +512,24 @@ class ScopusHandlerTest {
         var actualIssn = ((UnconfirmedSeries) actualSeries).getOnlineIssn();
         actualIssn = actualIssn.replace(DASH, EMPTY_STRING);
         assertThat(actualIssn, is(expectedIssn));
+    }
+
+    @NotNull
+    private String setUpExpectedIssn()() {
+        IssnTp issnTp = new IssnTp();
+        issnTp.setType(ISSN_TYPE_ELECTRONIC);
+        var expectedIssn = randomIssn().replace(DASH, EMPTY_STRING);
+        ;
+        issnTp.setContent(expectedIssn);
+        var issnCandidate = scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource()
+                .getIssn().stream().filter(issnTp1 -> issnTp1.getType().equals(ISSN_TYPE_ELECTRONIC))
+                .map(IssnTp::getContent).findFirst();
+        if (issnCandidate.isPresent()) {
+            expectedIssn = issnCandidate.get().replace(DASH, EMPTY_STRING);;
+        } else {
+            scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getIssn().add(issnTp);
+        }
+        return expectedIssn;
     }
 
     @Test
