@@ -19,6 +19,9 @@ public class ScopusConstants {
     public static final String ISSN_TYPE_PRINT = "print";
     public static final URI DUMMY_URI = UriWrapper.fromUri("https://loremipsum.io/").getUri();
 
+    //affiliation constants:
+    public static final String AFFILIATION_DELIMITER = ", ";
+
     @JacocoGenerated
     public ScopusConstants() {
     }

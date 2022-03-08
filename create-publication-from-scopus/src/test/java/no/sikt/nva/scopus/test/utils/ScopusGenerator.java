@@ -8,11 +8,12 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import jakarta.xml.bind.JAXB;
+import jakarta.xml.bind.JAXBElement;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.net.URI;
@@ -31,11 +32,11 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
-import javax.xml.namespace.QName;
 
 import jakarta.xml.bind.JAXBElement;
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AbstractsTp;
+import no.scopus.generated.AffiliationTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordTp;
 import no.scopus.generated.AuthorKeywordsTp;
@@ -46,6 +47,7 @@ import no.scopus.generated.CitationTitleTp;
 import no.scopus.generated.CitationTypeTp;
 import no.scopus.generated.CitationtypeAtt;
 import no.scopus.generated.CollaborationTp;
+import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
@@ -56,6 +58,7 @@ import no.scopus.generated.ItemidTp;
 import no.scopus.generated.ItemidlistTp;
 import no.scopus.generated.MetaTp;
 import no.scopus.generated.ObjectFactory;
+import no.scopus.generated.OrganizationTp;
 import no.scopus.generated.OrigItemTp;
 import no.scopus.generated.PagerangeTp;
 import no.scopus.generated.PersonalnameType;
@@ -89,12 +92,16 @@ public final class ScopusGenerator {
     private final URI doi;
     private CitationtypeAtt citationtypeAtt;
     private final String srcType;
+    private static final String NORWAY_COUNTRY_CODE = "nor";
+    private static final String NORWAY = "norway";
+    private final List<AffiliationTp> affiliations;
 
     public ScopusGenerator() {
         this.doi = randomDoi();
         this.minimumSequenceNumber = 1;
         this.abstractsTp = randomAbstracts();
         this.srcType = ScopusSourceType.JOURNAL.getCode();
+        this.affiliations = randomAffiliations();
         this.document = randomDocument();
     }
 
@@ -103,6 +110,7 @@ public final class ScopusGenerator {
         this.srcType = ScopusSourceType.JOURNAL.getCode();
         this.minimumSequenceNumber = 1;
         this.abstractsTp = abstractsTp;
+        this.affiliations = randomAffiliations();
         this.document = randomDocument();
     }
 
@@ -111,6 +119,7 @@ public final class ScopusGenerator {
         this.minimumSequenceNumber = 1;
         this.srcType = ScopusSourceType.JOURNAL.getCode();
         this.abstractsTp = randomAbstracts();
+        this.affiliations = randomAffiliations();
         this.document = randomDocument();
     }
 
@@ -119,6 +128,7 @@ public final class ScopusGenerator {
         this.minimumSequenceNumber = 1;
         this.doi = randomDoi();
         this.abstractsTp = randomAbstracts();
+        this.affiliations = randomAffiliations();
         this.document = randomDocument();
     }
 
@@ -127,6 +137,15 @@ public final class ScopusGenerator {
         this.citationtypeAtt = citationtypeAtt;
         this.srcType = ScopusSourceType.JOURNAL.getCode();
         this.abstractsTp = randomAbstracts();
+        this.affiliations = randomAffiliations();
+        this.document = randomDocument();
+    }
+
+    private ScopusGenerator(List<AffiliationTp> affiliations) {
+        this.doi = randomDoi();
+        this.srcType = ScopusSourceType.JOURNAL.getCode();
+        this.abstractsTp = randomAbstracts();
+        this.affiliations = affiliations;
         this.document = randomDocument();
     }
 
@@ -140,6 +159,10 @@ public final class ScopusGenerator {
 
     public ScopusGenerator createWithSpecifiedSrcType(String srcType) {
         return new ScopusGenerator(srcType);
+    }
+
+    public static ScopusGenerator createWithSpecifiedAffiliations(List<AffiliationTp> affiliations) {
+        return new ScopusGenerator(affiliations);
     }
 
     public static ScopusGenerator create(CitationtypeAtt citationtypeAtt) {
@@ -297,11 +320,10 @@ public final class ScopusGenerator {
         return publisher;
     }
 
-    private static Collection<? extends AuthorGroupTp> randomAuthorGroups(List<?> authorsAndCollaborations) {
-        int maxNumberOfAuthorGroups = 200;
-        return IntStream.range(0, randomInteger(maxNumberOfAuthorGroups) + 1)
-            .boxed()
-            .map(ignored -> randomAuthorGroup(authorsAndCollaborations))
+    private Collection<? extends AuthorGroupTp> randomAuthorGroups(List<?> authorsAndCollaborations) {
+        return affiliations
+            .stream()
+            .map(affiliationTp -> randomAuthorGroup(authorsAndCollaborations, affiliationTp))
             .collect(Collectors.toList());
     }
 
@@ -313,16 +335,61 @@ public final class ScopusGenerator {
             .collect(Collectors.toList());
     }
 
-    private static AuthorGroupTp randomAuthorGroup(List<?> authorsAndCollaborations) {
+    private static AuthorGroupTp randomAuthorGroup(List<?> authorsAndCollaborations, AffiliationTp affiliationTp) {
         var authorGroup = new AuthorGroupTp();
         authorGroup.getAuthorOrCollaboration()
             .addAll(randomSubsetRandomAuthorsOrCollaborations(authorsAndCollaborations));
+        authorGroup.setAffiliation(affiliationTp);
         return authorGroup;
+    }
+
+    private static AffiliationTp randomAffiliation() {
+        AffiliationTp affiliationTp = new AffiliationTp();
+        affiliationTp.setAfid(randomString());
+        affiliationTp.setAffiliationInstanceId(randomString());
+        affiliationTp.setCountryAttribute(randomCountryAttribute());
+        affiliationTp.setCountry(randomCountry());
+        affiliationTp.setDptid(randomString());
+        affiliationTp.getOrganization().addAll(randomOrganizations());
+        affiliationTp.setCityGroup(randomString());
+        return affiliationTp;
+    }
+
+    private List<AffiliationTp> randomAffiliations() {
+        int maxNumberOfAuthorGroups = 100;
+        return IntStream.range(0, randomInteger(maxNumberOfAuthorGroups) + 1)
+            .boxed()
+            .map(ignored -> randomAffiliation())
+            .collect(Collectors.toList());
+    }
+
+    private static String randomCountry() {
+        return randomBoolean() ? NORWAY : randomString();
+    }
+
+    private static String randomCountryAttribute() {
+        return randomBoolean() ? NORWAY_COUNTRY_CODE : randomString();
+    }
+
+    private static Collection<? extends OrganizationTp> randomOrganizations() {
+        //according to scopus documentation there can be 1 to 3 organizations in an affiliation.
+        //which is a lie, found scopus xmls with 4 organizations.
+        int maxNumberOfOrganizations = 5;
+        return IntStream.range(0, randomInteger(maxNumberOfOrganizations) + 1)
+            .boxed()
+            .map(ignored -> randomOrganization())
+            .collect(Collectors.toList());
+    }
+
+    private static OrganizationTp randomOrganization() {
+        OrganizationTp organizationTp = new OrganizationTp();
+        organizationTp.getContent().add(randomString());
+        return organizationTp;
     }
 
     private static List<?> randomSubsetRandomAuthorsOrCollaborations(List<?> authorsAndCollaborations) {
         int min = 0;
-        var numbersOfAuthorOrCollaborations = randomInteger(authorsAndCollaborations.size());
+        var numbersOfAuthorOrCollaborations = randomInteger(authorsAndCollaborations.size()) + 1;
         Collections.shuffle(authorsAndCollaborations);
         return authorsAndCollaborations.subList(min, numbersOfAuthorOrCollaborations);
     }
@@ -358,13 +425,31 @@ public final class ScopusGenerator {
     private AuthorTp randomAuthorTp() {
         var authorTp = new AuthorTp();
         authorTp.setOrcid(randomOrcid());
-        authorTp.setPreferredName(randomPreferredName());
         authorTp.setAuid(randomString());
         authorTp.setSeq(generateSequenceNumber());
+        PersonalnameType personalnameType = randomPersonalnameType();
+        authorTp.setPreferredName(personalnameType);
+        authorTp.setIndexedName(personalnameType.getIndexedName());
+        authorTp.setGivenName(personalnameType.getGivenName());
+        authorTp.setSurname(personalnameType.getSurname());
         return authorTp;
     }
 
-    private static PersonalnameType randomPreferredName() {
+    private CorrespondenceTp createCorrespondenceTp(AuthorTp authorTp) {
+        var correspondenceTp = new CorrespondenceTp();
+        correspondenceTp.setPerson(createPersonalnameType(authorTp));
+        return correspondenceTp;
+    }
+
+    private PersonalnameType createPersonalnameType(AuthorTp authorTp) {
+        var personalnameType = new PersonalnameType();
+        personalnameType.setIndexedName(authorTp.getIndexedName());
+        personalnameType.setGivenName(authorTp.getGivenName());
+        personalnameType.setSurname(authorTp.getSurname());
+        return personalnameType;
+    }
+
+    private static PersonalnameType randomPersonalnameType() {
         var personalNameType = new PersonalnameType();
         personalNameType.setIndexedName(randomString());
         personalNameType.setGivenName(randomString());
@@ -547,6 +632,11 @@ public final class ScopusGenerator {
 
     private void setMinimumSequenceNumber(int minimumSequenceNumber) {
         this.minimumSequenceNumber = minimumSequenceNumber;
+    }
+
+    public void setCorrespondence(AuthorTp authorTp) {
+        var correspondenceTp = createCorrespondenceTp(authorTp);
+        document.getItem().getItem().getBibrecord().getHead().getCorrespondence().add(correspondenceTp);
     }
 
     public void setJournalInfo(String volume, String issue, String pages) {
