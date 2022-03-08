@@ -10,7 +10,7 @@ import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_ELECTRONIC;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_PRINT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
-import static no.sikt.nva.scopus.ScopusConverter.NAME_DELIMITER;
+import static no.sikt.nva.scopus.conversion.ContributorExtractor.NAME_DELIMITER;
 import static no.sikt.nva.scopus.conversion.PublicationContextCreator.UNSUPPORTED_SOURCE_TYPE;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.language.LanguageConstants.BOKMAAL;
@@ -28,12 +28,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalToObject;
-import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.startsWith;
-import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
@@ -55,7 +53,9 @@ import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotificatio
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.UserIdentityEntity;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.github.tomakehurst.wiremock.WireMockServer;
+import jakarta.xml.bind.JAXBElement;
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -66,6 +66,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.xml.namespace.QName;
 import no.scopus.generated.AffiliationTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
@@ -75,16 +76,19 @@ import no.scopus.generated.CitationtypeAtt;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
+import no.scopus.generated.InfTp;
 import no.scopus.generated.IsbnTp;
 import no.scopus.generated.ItemTp;
 import no.scopus.generated.ItemidTp;
 import no.scopus.generated.OrganizationTp;
 import no.scopus.generated.OrigItemTp;
 import no.scopus.generated.SourcetypeAtt;
+import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
 import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
+import no.sikt.nva.scopus.test.utils.ContentWrapper;
 import no.sikt.nva.scopus.test.utils.ScopusGenerator;
 import no.sikt.nva.testing.http.WiremockHttpClient;
 import no.unit.nva.doi.models.Doi;
@@ -136,6 +140,12 @@ class ScopusHandlerTest {
     public static final String START_OF_QUERY = "/?";
     private static final String EXPECTED_RESULTS_PATH = "expectedResults";
     private static final String SCOPUS_XML_0018132378 = "2-s2.0-0018132378.xml";
+    private static final String EXPECTED_PUBLICATION_YEAR_IN_0018132378 = "1978";
+    private static final String EXPECTED_PUBLICATION_DAY_IN_0018132378 = "01";
+    private static final String EXPECTED_PUBLICATION_MONTH_IN_0018132378 = "01";
+    private static final String HARDCODED_EXPECTED_KEYWORD_1_IN_0000469852 = "<sup>64</sup>Cu";
+    private static final String HARDCODED_EXPECTED_KEYWORD_2_IN_0000469852 = "excretion";
+    private static final String HARDCODED_EXPECTED_KEYWORD_3_IN_0000469852 = "sheep";
     private static final String SCOPUS_XML_0000469852 = "2-s2.0-0000469852.xml";
     private static final String AUTHOR_KEYWORD_NAME_SPACE = "<authorKeywordsTp";
     private static final String HARDCODED_KEYWORDS_0018132378 = "    <author-keyword xml:lang=\"eng\">\n"
@@ -152,6 +162,9 @@ class ScopusHandlerTest {
     private static final String PUBLICATION_MONTH_FIELD_NAME = "month";
     private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
     private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
+    public static final String EXPECTED_CONTENT_STRING_TXT = "expectedContentString.txt";
+    public static final String INF_CLASS_NAME = "inf";
+    public static final String SUP_CLASS_NAME = "sup";
     private static final String EXPECTED_ABSTRACT_NAME_SPACE = "<abstractTp";
     public static final String INVALID_ISSN = "096042";
     public static final String VALID_ISSN = "0960-4286";
@@ -221,10 +234,50 @@ class ScopusHandlerTest {
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var titleObject = extractTitle(scopusData);
-        var titleObjectAsXmlString = ScopusGenerator.toXml(titleObject);
+        var expectedTitleString = expectedTitle(titleObject);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualMainTitle = createPublicationRequest.getEntityDescription().getMainTitle();
-        assertThat(actualMainTitle, is(equalTo(titleObjectAsXmlString)));
+        assertThat(actualMainTitle, is(equalTo(expectedTitleString)));
+    }
+
+    @Test
+    void shouldConvertSpecifiedSupAndInfContentToString() throws IOException {
+        scopusData = ScopusGenerator.createWithSpecifiedSupAndInfContent(createContentWithSupAndInfTags());
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        var expectedTitleString =
+            IoUtils.stringFromResources(Path.of(EXPECTED_RESULTS_PATH, EXPECTED_CONTENT_STRING_TXT));
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualMainTitle = createPublicationRequest.getEntityDescription().getMainTitle();
+        assertThat(actualMainTitle, is(equalTo(expectedTitleString)));
+    }
+
+    private ContentWrapper createContentWithSupAndInfTags() {
+        return new ContentWrapper(contentWithSupInftagsScopus14244261628());
+    }
+
+    private static List<Serializable> contentWithSupInftagsScopus14244261628() {
+        //this is an actual title from doi: 10.1016/j.nuclphysbps.2005.01.029
+        return List.of("Non-factorizable contributions to ̄B",
+                       generateInf("d"),
+                       generateSup("0"),
+                       " → D",
+                       generateInf("s"),
+                       "(*) ̄D",
+                       generateInf("s"),
+                       "(*)");
+    }
+
+    private static JAXBElement<InfTp> generateInf(Serializable content) {
+        InfTp infTp = new InfTp();
+        infTp.getContent().add(content);
+        return new JAXBElement<>(new QName(INF_CLASS_NAME), InfTp.class, infTp);
+    }
+
+    private static JAXBElement<SupTp> generateSup(Serializable content) {
+        SupTp supTp = new SupTp();
+        supTp.getContent().add(content);
+        return new JAXBElement<>(new QName(SUP_CLASS_NAME), SupTp.class, supTp);
     }
 
     @Test
@@ -474,6 +527,8 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractAuthorKeyWordsAsPlainText() throws IOException {
+        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0018132378));
+        var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
         scopusData.clearAuthorKeywords();
         scopusData.addAuthorKeyword("sheep", "eng");
@@ -481,8 +536,12 @@ class ScopusHandlerTest {
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var expectedkeywords = List.of(
+            HARDCODED_EXPECTED_KEYWORD_1_IN_0000469852,
+            HARDCODED_EXPECTED_KEYWORD_2_IN_0000469852,
+            HARDCODED_EXPECTED_KEYWORD_3_IN_0000469852);
         var actualPlaintextKeyWords = createPublicationRequest.getEntityDescription().getTags();
-        assertThat(actualPlaintextKeyWords, allOf(hasItem("sheep"), hasItem("<inf>inf</inf>GG")));
+        assertThat(actualPlaintextKeyWords, containsInAnyOrder(expectedkeywords.toArray()));
     }
 
     @Test
@@ -500,7 +559,7 @@ class ScopusHandlerTest {
     }
 
     @Test
-    void shouldExtractMainAbstractAsXML() throws IOException {
+    void shouldExtractMainAbstract() throws IOException {
         var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000469852));
         var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
         var s3Event = createS3Event(uri);
@@ -508,9 +567,7 @@ class ScopusHandlerTest {
         var actualMainAbstract = createPublicationRequest.getEntityDescription().getAbstract();
         var expectedAbstract =
                 IoUtils.stringFromResources(Path.of(EXPECTED_RESULTS_PATH, FILENAME_EXPECTED_ABSTRACT_IN_0000469852));
-        assertThat(actualMainAbstract, stringContainsInOrder(XML_ENCODING_DECLARATION,
-                                                             EXPECTED_ABSTRACT_NAME_SPACE,
-                                                             expectedAbstract));
+        assertThat(actualMainAbstract, is(equalTo(expectedAbstract)));
     }
 
     @Test
@@ -671,6 +728,28 @@ class ScopusHandlerTest {
     }
 
     @Test
+    void shouldExtractCorrespondingAuthor() throws IOException {
+        var authors = keepOnlyTheAuthors();
+        var correspondingAuthorTp = authors.get(0);
+        scopusData.setCorrespondence(correspondingAuthorTp);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationContributors = createPublicationRequest.getEntityDescription()
+                .getContributors();
+        var actualCorrespondingContributor = getCorrespondingContributor(actualPublicationContributors);
+        assertThat(actualCorrespondingContributor.getIdentity().getName(),
+                startsWith(correspondingAuthorTp.getSurname()));
+    }
+
+    private Contributor getCorrespondingContributor(List<Contributor> actualPublicationContributors) {
+        return actualPublicationContributors
+                .stream()
+                .filter(Contributor::isCorrespondingAuthor)
+                .findAny().orElse(null);
+    }
+
+    @Test
     void shouldAssignCorrectLanguageForAffiliationNames() throws IOException {
 
         var frenchName = "Collège de France, Lab. de Physique Corpusculaire";
@@ -681,7 +760,7 @@ class ScopusHandlerTest {
         var thaiNotSupportedByNvaName = "มหาวิทยาลัยมหิดล";
         var expectedLabels = List.of(
                 Map.of(ENGLISH.getIso6391Code(), englishName),
-                Map.of(ENGLISH.getIso6391Code(), frenchName),
+                Map.of(FRENCH.getIso6391Code(), frenchName),
                 Map.of(BOKMAAL.getIso6391Code(), norwegianName),
                 Map.of(ITALIAN.getIso6391Code(), italianName),
                 Map.of(ENGLISH.getIso6391Code(), nonDeterminableName),
@@ -810,6 +889,10 @@ class ScopusHandlerTest {
             .addQueryParameter("query", electronicIssn)
             .addQueryParameter("year", year)
             .getUri();
+    }
+
+    private String expectedTitle(TitletextTp titleObject) {
+        return ScopusConverter.extractContentAndPreserveXmlSupAndInfTags(titleObject.getContent());
     }
 
     private URI createExpectedQueryUriForPublisherWithName(String name) {

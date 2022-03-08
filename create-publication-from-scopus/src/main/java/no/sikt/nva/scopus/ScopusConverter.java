@@ -2,19 +2,16 @@ package no.sikt.nva.scopus;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
-import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
-import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
-import static no.unit.nva.language.LanguageConstants.ENGLISH;
-import static nva.commons.core.StringUtils.isNotBlank;
-import jakarta.xml.bind.JAXB;
+import static no.sikt.nva.scopus.ScopusConstants.INF_END;
+import static no.sikt.nva.scopus.ScopusConstants.INF_START;
+import static no.sikt.nva.scopus.ScopusConstants.SUP_END;
+import static no.sikt.nva.scopus.ScopusConstants.SUP_START;
+import static nva.commons.core.StringUtils.isEmpty;
 import jakarta.xml.bind.JAXBElement;
-import java.io.StringWriter;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -23,11 +20,10 @@ import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordTp;
 import no.scopus.generated.AuthorKeywordsTp;
-import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CitationInfoTp;
 import no.scopus.generated.CitationTypeTp;
 import no.scopus.generated.CitationtypeAtt;
-import no.scopus.generated.CollaborationTp;
+import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
@@ -40,19 +36,15 @@ import no.scopus.generated.TitletextTp;
 import no.scopus.generated.VolissTp;
 import no.scopus.generated.VolisspagTp;
 import no.scopus.generated.YesnoAtt;
+import no.sikt.nva.scopus.conversion.ContributorExtractor;
 import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
-import no.unit.nva.language.LanguageMapper;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.AdditionalIdentifier;
-import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Identity;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
-import no.unit.nva.model.Role;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
@@ -63,15 +55,13 @@ import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.paths.UriWrapper;
-import org.apache.tika.langdetect.OptimaizeLangDetector;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
-class ScopusConverter {
+public class ScopusConverter {
 
     public static final String UNSUPPORTED_CITATION_TYPE_MESSAGE = "Unsupported citation type, cannot convert eid %s";
     private final DocTp docTp;
     private final MetadataService metadataService;
-    public static final String NAME_DELIMITER = ", ";
 
     protected ScopusConverter(DocTp docTp, MetadataService metadataService) {
         this.docTp = docTp;
@@ -82,14 +72,7 @@ class ScopusConverter {
         CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
         createPublicationRequest.setAdditionalIdentifiers(generateAdditionalIdentifiers());
         createPublicationRequest.setEntityDescription(generateEntityDescription());
-        createPublicationRequest.setAuthorKeywordsXmlFormat(generateAuthorKeyWordsXml());
         return createPublicationRequest;
-    }
-
-    private String generateAuthorKeyWordsXml() {
-        return extractAuthorKeyWords()
-            .map(this::marshallAuthorKeywords)
-            .orElse(null);
     }
 
     private Optional<AuthorKeywordsTp> extractAuthorKeyWords() {
@@ -102,19 +85,14 @@ class ScopusConverter {
         return docTp.getItem().getItem().getBibrecord().getHead();
     }
 
-    private String marshallAuthorKeywords(AuthorKeywordsTp authorKeywordsTp) {
-        StringWriter sw = new StringWriter();
-        JAXB.marshal(authorKeywordsTp, sw);
-        return sw.toString();
-    }
-
     private EntityDescription generateEntityDescription() {
         EntityDescription entityDescription = new EntityDescription();
         entityDescription.setReference(generateReference());
         entityDescription.setMainTitle(extractMainTitle());
         entityDescription.setAbstract(extractMainAbstract());
-        entityDescription.setContributors(generateContributors());
-        entityDescription.setTags(generatePlainTextTags());
+        entityDescription.setContributors(new ContributorExtractor(
+            extractCorrespondence(), extractAuthorGroup()).generateContributors());
+        entityDescription.setTags(generateTags());
         entityDescription.setDate(extractPublicationDate());
         return entityDescription;
     }
@@ -137,7 +115,24 @@ class ScopusConverter {
     }
 
     private String extractMainAbstract() {
-        return getMainAbstract().map(this::marshallAbstract).orElse(null);
+        return getMainAbstract().flatMap(this::extractAbstractStringOrReturnNull).orElse(null);
+    }
+
+    private Optional<String> returnNullInsteadOfEmptyString(String input) {
+        return isEmpty(input.trim()) ? Optional.empty() : Optional.of(input);
+    }
+
+    private Optional<String> extractAbstractStringOrReturnNull(AbstractTp abstractTp) {
+        return returnNullInsteadOfEmptyString(extractAbstractString(abstractTp));
+    }
+
+    private String extractAbstractString(AbstractTp abstractTp) {
+        return
+            abstractTp
+                .getPara()
+                .stream()
+                .map(para -> extractContentAndPreserveXmlSupAndInfTags(para.getContent()))
+                .collect(Collectors.joining());
     }
 
     private Optional<AbstractTp> getMainAbstract() {
@@ -156,13 +151,7 @@ class ScopusConverter {
         return YesnoAtt.Y.equals(abstractTp.getOriginal());
     }
 
-    private String marshallAbstract(AbstractTp abstractTp) {
-        StringWriter sw = new StringWriter();
-        JAXB.marshal(abstractTp, sw);
-        return sw.toString();
-    }
-
-    private List<String> generatePlainTextTags() {
+    private List<String> generateTags() {
         return extractAuthorKeyWords()
             .map(this::extractKeywordsAsStrings)
             .orElse(emptyList());
@@ -177,10 +166,15 @@ class ScopusConverter {
     }
 
     private String extractConcatenatedKeywordString(AuthorKeywordTp keyword) {
-        return keyword.getContent().stream().map(this::extractContentString).collect(Collectors.joining());
+        return keyword
+            .getContent()
+            .stream()
+            .map(ScopusConverter::extractContentAndPreserveXmlSupAndInfTags)
+            .collect(Collectors.joining());
+
     }
 
-    private String extractContentString(Object content) {
+    public static String extractContentString(Object content) {
         if (content instanceof String) {
             return ((String) content).trim();
         } else if (content instanceof JAXBElement) {
@@ -191,23 +185,35 @@ class ScopusConverter {
             return extractContentString(((InfTp) content).getContent());
         } else {
             return ((ArrayList<?>) content).stream()
-                .map(this::extractContentString)
+                .map(ScopusConverter::extractContentString)
+                .collect(Collectors.joining());
+        }
+    }
+
+    public static String extractContentAndPreserveXmlSupAndInfTags(Object content) {
+        if (content instanceof String) {
+            return ((String) content).trim();
+        } else if (content instanceof JAXBElement) {
+            return extractContentAndPreserveXmlSupAndInfTags(((JAXBElement<?>) content).getValue());
+        } else if (content instanceof SupTp) {
+            return SUP_START + extractContentAndPreserveXmlSupAndInfTags(((SupTp) content).getContent()) + SUP_END;
+        } else if (content instanceof InfTp) {
+            return INF_START + extractContentAndPreserveXmlSupAndInfTags(((InfTp) content).getContent()) + INF_END;
+        } else {
+            return ((ArrayList<?>) content).stream()
+                .map(ScopusConverter::extractContentAndPreserveXmlSupAndInfTags)
                 .collect(Collectors.joining());
         }
     }
 
     private String extractMainTitle() {
         return getMainTitleTextTp()
-            .map(this::marshallMainTitleToXmlPreservingUnderlyingStructure)
+            .map(this::extractMainTitleContent)
             .orElse(null);
     }
 
-    private List<Contributor> generateContributors() {
-        return extractAuthorGroup()
-            .stream()
-            .map(this::generateContributorsFromAuthorGroup)
-            .flatMap(Collection::stream)
-            .collect(Collectors.toList());
+    private String extractMainTitleContent(TitletextTp titletextTp) {
+        return extractContentAndPreserveXmlSupAndInfTags(titletextTp.getContent());
     }
 
     private Reference generateReference() {
@@ -394,129 +400,12 @@ class ScopusConverter {
         return extractHead().getCitationTitle().getTitletext();
     }
 
-    private List<Contributor> generateContributorsFromAuthorGroup(AuthorGroupTp authorGroupTp) {
-        return authorGroupTp.getAuthorOrCollaboration()
-            .stream()
-            .map(authorOrCollaboration -> generateContributorFromAuthorOrCollaboration(authorOrCollaboration,
-                                                                                       authorGroupTp))
-            .collect(Collectors.toList());
-    }
-
-    private Contributor generateContributorFromAuthorOrCollaboration(Object authorOrCollaboration,
-                                                                     AuthorGroupTp authorGroupTp) {
-        return authorOrCollaboration instanceof AuthorTp
-                   ? generateContributorFromAuthorTp((AuthorTp) authorOrCollaboration, authorGroupTp)
-                   : generateContributorFromCollaborationTp(
-                       (CollaborationTp) authorOrCollaboration, authorGroupTp);
-    }
-
-    private Contributor generateContributorFromAuthorTp(AuthorTp author, AuthorGroupTp authorGroup) {
-        var identity = generateContributorIdentityFromAuthorTp(author);
-        var affiliations = generateAffiliation(authorGroup);
-        return new Contributor(identity, affiliations.orElse(null), Role.CREATOR, getSequenceNumber(author), false);
-    }
-
-    private Optional<List<Organization>> generateAffiliation(AuthorGroupTp authorGroup) {
-        var labels = getOrganizationLabels(authorGroup);
-        return labels.map(this::generateOrganizationWithLabel);
-    }
-
-    private List<Organization> generateOrganizationWithLabel(Map<String, String> label) {
-        Organization organization = new Organization();
-        organization.setLabels(label);
-        return List.of(organization);
-    }
-
-    private Optional<Map<String, String>> getOrganizationLabels(AuthorGroupTp authorGroup) {
-        var organizationNameOptional = getOrganizationNameFromAuthorGroup(authorGroup);
-        return organizationNameOptional.map(organizationName -> Map.of(getLanguageIso6391Code(organizationName),
-                                                                       organizationName));
-    }
-
-    private String getLanguageIso6391Code(String textToBeGuessedLanguageCodeFrom) {
-        var detector = new OptimaizeLangDetector().loadModels();
-        var result = detector.detect(textToBeGuessedLanguageCodeFrom);
-        return result.isReasonablyCertain()
-                   ? getIso6391LanguageCodeForSupportedNvaLanguage(result.getLanguage())
-                   : ENGLISH.getIso6391Code();
-    }
-
-    private String getIso6391LanguageCodeForSupportedNvaLanguage(String possiblyUnsupportedLanguageIso6391code) {
-        var language = LanguageMapper.getLanguageByIso6391Code(possiblyUnsupportedLanguageIso6391code);
-        return nonNull(language.getIso6391Code())
-                   ? language.getIso6391Code()
-                   : ENGLISH.getIso6391Code();
-    }
-
-    private Optional<String> getOrganizationNameFromAuthorGroup(AuthorGroupTp authorGroup) {
-        var affiliation = authorGroup.getAffiliation();
-        return nonNull(affiliation)
-                   ? Optional.of(affiliation
-                                     .getOrganization()
-                                     .stream()
-                                     .map(organizationTp -> extractContentString(
-                                         organizationTp.getContent()))
-                                     .collect(Collectors.joining(AFFILIATION_DELIMITER)))
-                   : Optional.empty();
-    }
-
-    private Identity generateContributorIdentityFromAuthorTp(AuthorTp authorTp) {
-        var identity = new Identity();
-        identity.setName(determineContributorName(authorTp));
-        identity.setOrcId(getOrcidAsUriString(authorTp));
-        return identity;
-    }
-
-    private String getOrcidAsUriString(AuthorTp authorTp) {
-        return isNotBlank(authorTp.getOrcid()) ? craftOrcidUriString(authorTp.getOrcid()) : null;
-    }
-
-    private String craftOrcidUriString(String potentiallyMalformedOrcidString) {
-        return potentiallyMalformedOrcidString.contains(ORCID_DOMAIN_URL)
-                   ? potentiallyMalformedOrcidString
-                   : ORCID_DOMAIN_URL + potentiallyMalformedOrcidString;
-    }
-
-    private Contributor generateContributorFromCollaborationTp(CollaborationTp collaboration,
-                                                               AuthorGroupTp authorGroupTp) {
-        var identity = new Identity();
-        identity.setName(determineContributorName(collaboration));
-        var affiliations = generateAffiliation(authorGroupTp);
-        return new Contributor(identity, affiliations.orElse(null), null, getSequenceNumber(collaboration), false);
-    }
-
-    private int getSequenceNumber(AuthorTp authorTp) {
-        return Integer.parseInt(authorTp.getSeq());
-    }
-
-    private int getSequenceNumber(CollaborationTp collaborationTp) {
-        return Integer.parseInt(collaborationTp.getSeq());
-    }
-
-    private String determineContributorName(AuthorTp author) {
-        return author.getPreferredName().getSurname() + NAME_DELIMITER + author.getPreferredName().getGivenName();
-    }
-
-    private String determineContributorName(CollaborationTp collaborationTp) {
-        return collaborationTp.getIndexedName();
-    }
-
-    private List<AuthorGroupTp> extractAuthorGroup() {
-        return extractHead().getAuthorGroup();
-    }
-
     private Set<AdditionalIdentifier> generateAdditionalIdentifiers() {
         return extractItemIdentifiers()
             .stream()
             .filter(this::isScopusIdentifier)
             .map(this::toAdditionalIdentifier)
             .collect(Collectors.toSet());
-    }
-
-    private String marshallMainTitleToXmlPreservingUnderlyingStructure(TitletextTp contents) {
-        StringWriter sw = new StringWriter();
-        JAXB.marshal(contents, sw);
-        return sw.toString();
     }
 
     private List<ItemidTp> extractItemIdentifiers() {
@@ -535,5 +424,13 @@ class ScopusConverter {
     private AdditionalIdentifier toAdditionalIdentifier(ItemidTp itemIdTp) {
         return new AdditionalIdentifier(ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME,
                                         itemIdTp.getValue());
+    }
+
+    private List<AuthorGroupTp> extractAuthorGroup() {
+        return extractHead().getAuthorGroup();
+    }
+
+    private List<CorrespondenceTp> extractCorrespondence() {
+        return extractHead().getCorrespondence();
     }
 }
