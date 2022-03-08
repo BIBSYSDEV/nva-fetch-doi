@@ -160,7 +160,7 @@ public final class ScopusGenerator {
     private ScopusGenerator(ContentWrapper contentWithSupAndInf) {
         this.contentWithSupAndInf = contentWithSupAndInf;
         this.doi = randomDoi();
-        this.srcType = ScopusSourceType.JOURNAL.getCode();
+        this.sourcetypeAtt = SourcetypeAtt.J;
         this.abstractsTp = randomAbstracts();
         this.affiliations = randomAffiliations();
         this.document = randomDocument();
@@ -601,7 +601,7 @@ public final class ScopusGenerator {
         return smallStream().map(ignored -> randomString()).collect(Collectors.toList());
     }
 
-    private static List<Serializable> randomSerializablesWithSupAndInf(){
+    private static List<Serializable> randomSerializablesWithSupAndInf() {
         return smallStream().map(ScopusGenerator::randomStringOrSupOrInfTag).collect(Collectors.toList());
     }
 
@@ -609,7 +609,7 @@ public final class ScopusGenerator {
         return new ContentWrapper(randomSerializablesWithSupAndInf());
     }
 
-    //make sure string does not come after one another as it will be interpreted as a single string later in the
+    // Make sure string does not come after one another as it will be interpreted as a single string later in the
     // marshaller
     private static Serializable randomStringOrSupOrInfTag(int index) {
         switch (index % 3) {

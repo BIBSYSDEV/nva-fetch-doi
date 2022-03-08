@@ -139,25 +139,10 @@ class ScopusHandlerTest {
     public static final long SOME_FILE_SIZE = 100L;
     public static final String START_OF_QUERY = "/?";
     private static final String EXPECTED_RESULTS_PATH = "expectedResults";
-    private static final String SCOPUS_XML_0018132378 = "2-s2.0-0018132378.xml";
-    private static final String EXPECTED_PUBLICATION_YEAR_IN_0018132378 = "1978";
-    private static final String EXPECTED_PUBLICATION_DAY_IN_0018132378 = "01";
-    private static final String EXPECTED_PUBLICATION_MONTH_IN_0018132378 = "01";
-    private static final String HARDCODED_EXPECTED_KEYWORD_1_IN_0000469852 = "<sup>64</sup>Cu";
-    private static final String HARDCODED_EXPECTED_KEYWORD_2_IN_0000469852 = "excretion";
-    private static final String HARDCODED_EXPECTED_KEYWORD_3_IN_0000469852 = "sheep";
+    private static final String HARDCODED_EXPECTED_KEYWORD_1 = "<sup>64</sup>Cu";
+    private static final String HARDCODED_EXPECTED_KEYWORD_2 = "excretion";
+    private static final String HARDCODED_EXPECTED_KEYWORD_3 = "sheep";
     private static final String SCOPUS_XML_0000469852 = "2-s2.0-0000469852.xml";
-    private static final String AUTHOR_KEYWORD_NAME_SPACE = "<authorKeywordsTp";
-    private static final String HARDCODED_KEYWORDS_0018132378 = "    <author-keyword xml:lang=\"eng\">\n"
-                                                                + "        <sup>64</sup>Cu\n"
-                                                                + "              </author-keyword>\n"
-                                                                + "    <author-keyword "
-                                                                + "xml:lang=\"eng\">excretion</author-keyword>\n"
-                                                                + "    <author-keyword "
-                                                                + "xml:lang=\"eng\">sheep</author-keyword>\n"
-                                                                + "</authorKeywordsTp>";
-    private static final String XML_ENCODING_DECLARATION = "<?xml version=\"1.0\" encoding=\"UTF-8\" "
-                                                           + "standalone=\"yes\"?>";
     private static final String PUBLICATION_DAY_FIELD_NAME = "day";
     private static final String PUBLICATION_MONTH_FIELD_NAME = "month";
     private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
@@ -165,7 +150,6 @@ class ScopusHandlerTest {
     public static final String EXPECTED_CONTENT_STRING_TXT = "expectedContentString.txt";
     public static final String INF_CLASS_NAME = "inf";
     public static final String SUP_CLASS_NAME = "sup";
-    private static final String EXPECTED_ABSTRACT_NAME_SPACE = "<abstractTp";
     public static final String INVALID_ISSN = "096042";
     public static final String VALID_ISSN = "0960-4286";
 
@@ -246,7 +230,7 @@ class ScopusHandlerTest {
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var expectedTitleString =
-            IoUtils.stringFromResources(Path.of(EXPECTED_RESULTS_PATH, EXPECTED_CONTENT_STRING_TXT));
+                IoUtils.stringFromResources(Path.of(EXPECTED_RESULTS_PATH, EXPECTED_CONTENT_STRING_TXT));
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualMainTitle = createPublicationRequest.getEntityDescription().getMainTitle();
         assertThat(actualMainTitle, is(equalTo(expectedTitleString)));
@@ -257,7 +241,7 @@ class ScopusHandlerTest {
     }
 
     private static List<Serializable> contentWithSupInftagsScopus14244261628() {
-        //this is an actual title from doi: 10.1016/j.nuclphysbps.2005.01.029
+        // This is an actual title from doi: 10.1016/j.nuclphysbps.2005.01.029
         return List.of("Non-factorizable contributions to ̄B",
                        generateInf("d"),
                        generateSup("0"),
@@ -342,19 +326,6 @@ class ScopusHandlerTest {
     private boolean authorGroupContainAuthorWithSequenceNumber(AuthorGroupTp authorGroupTp, String sequenceNumber) {
         return keepOnlyTheAuthors(authorGroupTp).stream()
             .anyMatch(authorTp -> sequenceNumber.equals(authorTp.getSeq()));
-    }
-
-    @Test
-    void shouldExtractAuthorKeywordsAsXML() throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0018132378));
-        var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
-        var s3Event = createS3Event(uri);
-        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
-        var actualKeywords = createPublicationRequest.getAuthorKeywordsXmlFormat();
-        assertThat(actualKeywords, stringContainsInOrder(
-            XML_ENCODING_DECLARATION,
-            AUTHOR_KEYWORD_NAME_SPACE,
-            HARDCODED_KEYWORDS_0018132378));
     }
 
     @Test
@@ -496,12 +467,12 @@ class ScopusHandlerTest {
     @Test
     void shouldReturnCreatePublicationRequestWithJournalWhenEventWithS3UriThatPointsToScopusXmlWhereSourceTitleIsInNsd()
         throws IOException {
-        var expectedYear = "2022";
-        var expectedIssn = randomIssn();
-        var queryUri = createExpectedQueryUriForJournalWithEIssn(expectedIssn, expectedYear);
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
+        var expectedYear = "2022";
         scopusData.setPublicationYear(expectedYear);
         scopusData.clearIssn();
+        var expectedIssn = randomIssn();
+        var queryUri = createExpectedQueryUriForJournalWithEIssn(expectedIssn, expectedYear);
         scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
@@ -527,19 +498,18 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractAuthorKeyWordsAsPlainText() throws IOException {
-        var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0018132378));
-        var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
         scopusData.clearAuthorKeywords();
-        scopusData.addAuthorKeyword("sheep", "eng");
-        scopusData.addAuthorKeyword("<inf>inf</inf>GG", "eng");
+        scopusData.addAuthorKeyword(HARDCODED_EXPECTED_KEYWORD_1, "eng");
+        scopusData.addAuthorKeyword(HARDCODED_EXPECTED_KEYWORD_2, "eng");
+        scopusData.addAuthorKeyword(HARDCODED_EXPECTED_KEYWORD_3, "eng");
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var expectedkeywords = List.of(
-            HARDCODED_EXPECTED_KEYWORD_1_IN_0000469852,
-            HARDCODED_EXPECTED_KEYWORD_2_IN_0000469852,
-            HARDCODED_EXPECTED_KEYWORD_3_IN_0000469852);
+            HARDCODED_EXPECTED_KEYWORD_1,
+            HARDCODED_EXPECTED_KEYWORD_2,
+            HARDCODED_EXPECTED_KEYWORD_3);
         var actualPlaintextKeyWords = createPublicationRequest.getEntityDescription().getTags();
         assertThat(actualPlaintextKeyWords, containsInAnyOrder(expectedkeywords.toArray()));
     }
