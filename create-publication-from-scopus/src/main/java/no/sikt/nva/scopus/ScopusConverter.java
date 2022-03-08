@@ -33,7 +33,7 @@ import no.scopus.generated.TitletextTp;
 import no.scopus.generated.VolissTp;
 import no.scopus.generated.VolisspagTp;
 import no.scopus.generated.YesnoAtt;
-import no.sikt.nva.scopus.conversion.ContributorCreator;
+import no.sikt.nva.scopus.conversion.ContributorExtractor;
 import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
 import no.unit.nva.metadata.CreatePublicationRequest;
@@ -100,7 +100,7 @@ public class ScopusConverter {
         entityDescription.setReference(generateReference());
         entityDescription.setMainTitle(extractMainTitle());
         entityDescription.setAbstract(extractMainAbstract());
-        entityDescription.setContributors(new ContributorCreator(
+        entityDescription.setContributors(new ContributorExtractor(
             extractCorrespondence(), extractAuthorGroup()).generateContributors());
         entityDescription.setTags(generatePlainTextTags());
         entityDescription.setDate(extractPublicationDate());
