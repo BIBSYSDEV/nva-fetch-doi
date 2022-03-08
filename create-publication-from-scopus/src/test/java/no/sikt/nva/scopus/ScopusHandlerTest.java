@@ -401,7 +401,8 @@ class ScopusHandlerTest {
     void shouldReturnPublicationContextBookWithConfirmedPublisherWhenScopusXmlHasSrctypeBandIsNotAchapter()
             throws IOException, ParseException {
         scopusData.getDocument().getMeta().setSrctype(ScopusSourceType.BOOK.getCode());
-        var expectedPublisherName = randomString();
+        var expectedPublishername = scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource()
+                .getPublisher().get(0).getPublishername();
         var expectedIsbn13 = randomIsbn13();
         var isbnTp13 = new IsbnTp();
         isbnTp13.setContent(expectedIsbn13);
@@ -411,7 +412,7 @@ class ScopusHandlerTest {
         scopusData.getDocument().getMeta().setPubYear(expectedYear);
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
-        var queryUri = createExpectedQueryUriForPublisherWithName(expectedPublisherName);
+        var queryUri = createExpectedQueryUriForPublisherWithName(expectedPublishername);
         var expectedPublisherUri = mockedPublicationChannelsReturnsUri(queryUri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
