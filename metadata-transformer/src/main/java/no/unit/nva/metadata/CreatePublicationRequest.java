@@ -27,7 +27,6 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
     private List<ResearchProject> projects;
     private List<URI> subjects;
     private Set<AdditionalIdentifier> additionalIdentifiers;
-    private String authorKeywordsXmlFormat;
 
     @JacocoGenerated
     public static CreatePublicationRequest fromJson(String json) {
@@ -105,20 +104,10 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
     }
 
     @JacocoGenerated
-    public String getAuthorKeywordsXmlFormat() {
-        return authorKeywordsXmlFormat;
-    }
-
-    @JacocoGenerated
-    public void setAuthorKeywordsXmlFormat(String authorKeywordsXmlFormat) {
-        this.authorKeywordsXmlFormat = authorKeywordsXmlFormat;
-    }
-
-    @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(getEntityDescription(), getFileSet(), getContext(), getProjects(),
-                            getSubjects(), getAdditionalIdentifiers(), getAuthorKeywordsXmlFormat());
+                            getSubjects(), getAdditionalIdentifiers());
     }
 
     @JacocoGenerated
@@ -136,7 +125,6 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
                && Objects.equals(getContext(), that.getContext())
                && Objects.equals(getProjects(), that.getProjects())
                && Objects.equals(getSubjects(), that.getSubjects())
-               && Objects.equals(getAdditionalIdentifiers(), that.getAdditionalIdentifiers())
-               && Objects.equals(getAuthorKeywordsXmlFormat(), that.getAuthorKeywordsXmlFormat());
+               && Objects.equals(getAdditionalIdentifiers(), that.getAdditionalIdentifiers());
     }
 }
