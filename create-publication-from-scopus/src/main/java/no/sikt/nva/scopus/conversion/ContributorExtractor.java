@@ -23,13 +23,13 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Role;
 import org.apache.tika.langdetect.OptimaizeLangDetector;
 
-public class ContributorCreator {
+public class ContributorExtractor {
 
     public static final String NAME_DELIMITER = ", ";
     private final List<CorrespondenceTp> correspondenceTps;
     private final List<AuthorGroupTp> authorGroupTps;
 
-    public ContributorCreator(List<CorrespondenceTp> correspondenceTps, List<AuthorGroupTp> authorGroupTps) {
+    public ContributorExtractor(List<CorrespondenceTp> correspondenceTps, List<AuthorGroupTp> authorGroupTps) {
         this.correspondenceTps = correspondenceTps;
         this.authorGroupTps = authorGroupTps;
     }
