@@ -69,7 +69,7 @@ public class PublicationContextCreator {
             return createBook();
         }
         if (isBookSeries()) {
-            return createBook();
+            return createBookInSeries();
         }
         if (isReport()) {
             return createReport();
@@ -127,6 +127,14 @@ public class PublicationContextCreator {
     }
 
     public Book createBook() {
+        BookSeries bookSeries = null;
+        String seriesNumber = null;
+        PublishingHouse publishingHouse = createPublisher();
+        List<String> isbnList = findIsbn();
+        return attempt(() -> new Book(bookSeries, seriesNumber, publishingHouse, isbnList)).orElseThrow();
+    }
+
+    public Book createBookInSeries() {
         BookSeries bookSeries = createBookSeries();
         String seriesNumber = null;
         PublishingHouse publishingHouse = createPublisher();
