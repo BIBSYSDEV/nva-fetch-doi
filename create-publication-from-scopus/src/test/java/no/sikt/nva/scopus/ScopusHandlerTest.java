@@ -241,7 +241,7 @@ class ScopusHandlerTest {
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var expectedTitleString =
-                IoUtils.stringFromResources(Path.of(EXPECTED_RESULTS_PATH, EXPECTED_CONTENT_STRING_TXT));
+            IoUtils.stringFromResources(Path.of(EXPECTED_RESULTS_PATH, EXPECTED_CONTENT_STRING_TXT));
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualMainTitle = createPublicationRequest.getEntityDescription().getMainTitle();
         assertThat(actualMainTitle, is(equalTo(expectedTitleString)));
@@ -412,7 +412,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldReturnPublicationContextBookWithConfirmedPublisherWhenScopusXmlHasSrctypeBandIsNotAchapter()
-            throws IOException, ParseException {
+        throws IOException, ParseException {
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.B);
         var expectedPublisherName = randomString();
         scopusData.setPublishername(expectedPublisherName);
@@ -486,7 +486,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldReturnPublicationContextUnconfirmedBookSeriesWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeK()
-            throws IOException, ParseException {
+        throws IOException, ParseException {
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.K);
         final var expectedYear = randomYear();
         scopusData.getDocument().getMeta().setPubYear(expectedYear);
@@ -783,50 +783,56 @@ class ScopusHandlerTest {
     @Test
     void shouldAssignCorrectLanguageForAffiliationNames() throws IOException {
 
-        var frenchName = new String("Collège de France, Lab. de Physique Corpusculaire".getBytes(), StandardCharsets.UTF_8);
+        var frenchName = new String(
+            "Collège de France, Lab. de Physique Corpusculaire".getBytes(),
+            StandardCharsets.UTF_8);
         var italianName = "Dipartimento di Fisica, Università di Bologna";
         var norwegianName = "Institutt for fysikk, Universitetet i Bergen";
         var englishName = "Department of Physics, Iowa State University";
         var nonDeterminableName = "NTNU";
+        var institutionNameWithTags = "GA2LENGlobal Allergy and Asthma European Network";
         var thaiNotSupportedByNvaName = "มหาวิทยาลัยมหิดล";
         var expectedLabels = List.of(
-                Map.of(ENGLISH.getIso6391Code(), englishName),
-                Map.of(FRENCH.getIso6391Code(), frenchName),
-                Map.of(BOKMAAL.getIso6391Code(), norwegianName),
-                Map.of(ITALIAN.getIso6391Code(), italianName),
-                Map.of(ENGLISH.getIso6391Code(), nonDeterminableName),
-                Map.of(ENGLISH.getIso6391Code(), thaiNotSupportedByNvaName));
+            Map.of(ENGLISH.getIso6391Code(), englishName),
+            Map.of(FRENCH.getIso6391Code(), frenchName),
+            Map.of(BOKMAAL.getIso6391Code(), norwegianName),
+            Map.of(ITALIAN.getIso6391Code(), italianName),
+            Map.of(ENGLISH.getIso6391Code(), nonDeterminableName),
+            Map.of(ENGLISH.getIso6391Code(), thaiNotSupportedByNvaName),
+            Map.of(ENGLISH.getIso6391Code(), institutionNameWithTags));
         scopusData = ScopusGenerator.createWithSpecifiedAffiliations(
-                languageAffiliations(List.of(thaiNotSupportedByNvaName,
-                        frenchName,
-                        italianName,
-                        norwegianName,
-                        englishName,
-                        nonDeterminableName
-                )));
+            languageAffiliations(List.of(List.of("GA", generateSup("2"), "LEN",
+                                                 generateInf("Global Allergy and Asthma European Network")) ,
+                                         List.of(thaiNotSupportedByNvaName),
+                                         List.of(frenchName),
+                                         List.of(italianName),
+                                         List.of(norwegianName),
+                                         List.of(englishName),
+                                         List.of(nonDeterminableName)
+                                         )));
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var organizations =
-                createPublicationRequest.getEntityDescription()
-                        .getContributors()
-                        .stream()
-                        .map(Contributor::getAffiliations)
-                        .flatMap(Collection::stream)
-                        .collect(
-                                Collectors.toSet());
+            createPublicationRequest.getEntityDescription()
+                .getContributors()
+                .stream()
+                .map(Contributor::getAffiliations)
+                .flatMap(Collection::stream)
+                .collect(
+                    Collectors.toSet());
         var actualOrganizationsLabels =
-                organizations.stream().map(Organization::getLabels).collect(Collectors.toList());
+            organizations.stream().map(Organization::getLabels).collect(Collectors.toList());
         assertThat(actualOrganizationsLabels, containsInAnyOrder(expectedLabels.toArray()));
     }
 
-    private List<AffiliationTp> languageAffiliations(List<String> organizationNames) {
+    private List<AffiliationTp> languageAffiliations(List<List<Serializable>> organizationNames) {
         return organizationNames
             .stream()
             .map(this::createAffiliation)
             .collect(Collectors.toList());
     }
 
-    private AffiliationTp createAffiliation(String organizationName) {
+    private AffiliationTp createAffiliation(List<Serializable> organizationName) {
         var affiliation = new AffiliationTp();
         affiliation.setCountryAttribute(randomString());
         affiliation.setAffiliationInstanceId(randomString());
@@ -839,9 +845,9 @@ class ScopusHandlerTest {
         return affiliation;
     }
 
-    private OrganizationTp createOrganization(String organizationName) {
+    private OrganizationTp createOrganization(List<Serializable> organizationName) {
         var organization = new OrganizationTp();
-        organization.getContent().add(organizationName);
+        organization.getContent().addAll(organizationName);
         return organization;
     }
 
