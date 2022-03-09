@@ -498,9 +498,9 @@ class ScopusHandlerTest {
     void shouldReturnPublicationContextUnconfirmedBookSeriesWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeK()
             throws IOException, ParseException {
         scopusData.getDocument().getMeta().setSrctype(SourcetypeAtt.K.value());
-        String expectedIssn = setUpExpectedIssn();
-        String expectedYear = randomYear();
+        var expectedYear = randomYear();
         scopusData.getDocument().getMeta().setPubYear(expectedYear);
+        var expectedIssn = setUpExpectedIssn();
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);

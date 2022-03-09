@@ -601,7 +601,7 @@ public final class ScopusGenerator {
         return smallStream().map(ignored -> randomString()).collect(Collectors.toList());
     }
 
-    private static List<Serializable> randomSerializablesWithSupAndInf(){
+    private static List<Serializable> randomSerializablesWithSupAndInf() {
         return smallStream().map(ScopusGenerator::randomStringOrSupOrInfTag).collect(Collectors.toList());
     }
 
