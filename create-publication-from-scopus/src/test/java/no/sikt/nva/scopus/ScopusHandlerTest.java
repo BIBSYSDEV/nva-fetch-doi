@@ -411,7 +411,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldReturnPublicationContextBookWithConfirmedPublisherWhenScopusXmlHasSrctypeBandIsNotAchapter()
-        throws IOException {
+            throws IOException, ParseException {
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.B);
         var expectedPublisherName = randomString();
         scopusData.setPublishername(expectedPublisherName);
@@ -424,7 +424,7 @@ class ScopusHandlerTest {
         scopusData.getDocument().getMeta().setPubYear(expectedYear);
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
-        var queryUri = createExpectedQueryUriForPublisherWithName(expectedPublishername);
+        var queryUri = createExpectedQueryUriForPublisherWithName(expectedPublisherName);
         var expectedPublisherUri = mockedPublicationChannelsReturnsUri(queryUri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
@@ -486,7 +486,7 @@ class ScopusHandlerTest {
     @Test
     void shouldReturnPublicationContextUnconfirmedBookSeriesWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeK()
             throws IOException, ParseException {
-        scopusData.getDocument().getMeta().setSrctype(SourcetypeAtt.K.value());
+        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.K);
         var expectedYear = randomYear();
         scopusData.getDocument().getMeta().setPubYear(expectedYear);
         var expectedIssn = setUpExpectedIssn();

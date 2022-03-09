@@ -1,9 +1,5 @@
 package no.sikt.nva.scopus.conversion;
 
-import static no.sikt.nva.scopus.ScopusSourceType.BOOK;
-import static no.sikt.nva.scopus.ScopusSourceType.BOOKSERIES;
-import static no.sikt.nva.scopus.ScopusSourceType.JOURNAL;
-import static no.sikt.nva.scopus.ScopusSourceType.REPORT;
 import static nva.commons.core.attempt.Try.attempt;
 
 import java.util.Collections;
@@ -110,7 +106,7 @@ public class PublicationContextCreator {
         return Optional.ofNullable(docTp)
                 .map(DocTp::getMeta)
                 .map(MetaTp::getSrctype)
-                .map(srcType -> BOOKSERIES.equals(ScopusSourceType.valueOfCode(srcType)))
+                .map(srcType -> srcType.equals(SourcetypeAtt.K.value()))
                 .orElse(false);
     }
 
