@@ -69,13 +69,13 @@ import no.scopus.generated.RichstringWithMMLType;
 import no.scopus.generated.ShortTitle;
 import no.scopus.generated.SourceTp;
 import no.scopus.generated.SourcetitleTp;
+import no.scopus.generated.SourcetypeAtt;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.VolissTp;
 import no.scopus.generated.VolisspagTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.ScopusConstants;
-import no.sikt.nva.scopus.ScopusSourceType;
 import no.unit.nva.language.LanguageConstants;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
@@ -92,7 +92,7 @@ public final class ScopusGenerator {
     private static final String ISSN_DELIMINETER = "-";
     private final URI doi;
     private CitationtypeAtt citationtypeAtt;
-    private final String srcType;
+    private final SourcetypeAtt sourcetypeAtt;
     private static final String NORWAY_COUNTRY_CODE = "nor";
     private static final String NORWAY = "norway";
     private final List<AffiliationTp> affiliations;
@@ -102,7 +102,7 @@ public final class ScopusGenerator {
         this.doi = randomDoi();
         this.minimumSequenceNumber = 1;
         this.abstractsTp = randomAbstracts();
-        this.srcType = ScopusSourceType.JOURNAL.getCode();
+        this.sourcetypeAtt = SourcetypeAtt.J;
         this.affiliations = randomAffiliations();
         this.contentWithSupAndInf = packRandomSerializablesWithSupAndInf();
         this.document = randomDocument();
@@ -110,7 +110,7 @@ public final class ScopusGenerator {
 
     private ScopusGenerator(AbstractsTp abstractsTp) {
         this.doi = randomDoi();
-        this.srcType = ScopusSourceType.JOURNAL.getCode();
+        this.sourcetypeAtt = SourcetypeAtt.J;
         this.minimumSequenceNumber = 1;
         this.abstractsTp = abstractsTp;
         this.contentWithSupAndInf = packRandomSerializablesWithSupAndInf();
@@ -121,15 +121,15 @@ public final class ScopusGenerator {
     private ScopusGenerator(URI doi) {
         this.doi = doi;
         this.minimumSequenceNumber = 1;
-        this.srcType = ScopusSourceType.JOURNAL.getCode();
+        this.sourcetypeAtt = SourcetypeAtt.J;
         this.abstractsTp = randomAbstracts();
         this.contentWithSupAndInf = packRandomSerializablesWithSupAndInf();
         this.affiliations = randomAffiliations();
         this.document = randomDocument();
     }
 
-    private ScopusGenerator(String srcType) {
-        this.srcType = srcType;
+    private ScopusGenerator(SourcetypeAtt sourcetypeAtt) {
+        this.sourcetypeAtt = sourcetypeAtt;
         this.minimumSequenceNumber = 1;
         this.doi = randomDoi();
         this.abstractsTp = randomAbstracts();
@@ -141,7 +141,7 @@ public final class ScopusGenerator {
     private ScopusGenerator(CitationtypeAtt citationtypeAtt) {
         this.doi = randomDoi();
         this.citationtypeAtt = citationtypeAtt;
-        this.srcType = ScopusSourceType.JOURNAL.getCode();
+        this.sourcetypeAtt = SourcetypeAtt.J;
         this.abstractsTp = randomAbstracts();
         this.affiliations = randomAffiliations();
         this.contentWithSupAndInf = packRandomSerializablesWithSupAndInf();
@@ -150,7 +150,7 @@ public final class ScopusGenerator {
 
     private ScopusGenerator(List<AffiliationTp> affiliations) {
         this.doi = randomDoi();
-        this.srcType = ScopusSourceType.JOURNAL.getCode();
+        this.sourcetypeAtt = SourcetypeAtt.J;
         this.abstractsTp = randomAbstracts();
         this.affiliations = affiliations;
         this.contentWithSupAndInf = packRandomSerializablesWithSupAndInf();
@@ -160,7 +160,7 @@ public final class ScopusGenerator {
     private ScopusGenerator(ContentWrapper contentWithSupAndInf) {
         this.contentWithSupAndInf = contentWithSupAndInf;
         this.doi = randomDoi();
-        this.srcType = ScopusSourceType.JOURNAL.getCode();
+        this.sourcetypeAtt = SourcetypeAtt.J;
         this.abstractsTp = randomAbstracts();
         this.affiliations = randomAffiliations();
         this.document = randomDocument();
@@ -176,8 +176,8 @@ public final class ScopusGenerator {
         return new ScopusGenerator(doi);
     }
 
-    public ScopusGenerator createWithSpecifiedSrcType(String srcType) {
-        return new ScopusGenerator(srcType);
+    public static ScopusGenerator createWithSpecifiedSrcType(SourcetypeAtt sourcetypeAtt) {
+        return new ScopusGenerator(sourcetypeAtt);
     }
 
     public static ScopusGenerator createWithSpecifiedAffiliations(List<AffiliationTp> affiliations) {
@@ -219,7 +219,7 @@ public final class ScopusGenerator {
     private MetaTp randomMetaTp() {
         var meta = new MetaTp();
         meta.setDoi(randomScopusDoi());
-        meta.setSrctype(srcType);
+        meta.setSrctype(sourcetypeAtt.value());
         meta.setEid(randomString());
         return meta;
     }
@@ -609,7 +609,7 @@ public final class ScopusGenerator {
         return new ContentWrapper(randomSerializablesWithSupAndInf());
     }
 
-    //make sure string does not come after one another as it will be interpreted as a single string later in the
+    // Make sure string does not come after one another as it will be interpreted as a single string later in the
     // marshaller
     private static Serializable randomStringOrSupOrInfTag(int index) {
         switch (index % 3) {
@@ -690,6 +690,49 @@ public final class ScopusGenerator {
     public void setCorrespondence(AuthorTp authorTp) {
         var correspondenceTp = createCorrespondenceTp(authorTp);
         document.getItem().getItem().getBibrecord().getHead().getCorrespondence().add(correspondenceTp);
+    }
+
+    public void addIssn(String issn, String type) {
+        IssnTp issnTp = new IssnTp();
+        issnTp.setContent(issn);
+        issnTp.setType(type);
+        document.getItem().getItem().getBibrecord().getHead().getSource().getIssn().add(issnTp);
+    }
+
+    public void clearIssn() {
+        document.getItem().getItem().getBibrecord().getHead().getSource().getIssn().clear();
+    }
+
+    public void addAuthorKeyword(String keyword, String language) {
+        AuthorKeywordTp authorKeywordTp = new AuthorKeywordTp();
+        authorKeywordTp.setLang(language);
+        authorKeywordTp.getContent().add(keyword);
+        document.getItem().getItem().getBibrecord().getHead().getCitationInfo().getAuthorKeywords().getAuthorKeyword()
+                .add(authorKeywordTp);
+    }
+
+    public void clearAuthorKeywords() {
+        document.getItem().getItem().getBibrecord().getHead().getCitationInfo().getAuthorKeywords().getAuthorKeyword()
+                .clear();
+    }
+
+    public void setPublicationYear(String year) {
+        document.getMeta().setPubYear(year);
+    }
+
+    public void setPublicationDate(String year, String month, String day) {
+        document.getItem().getItem().getProcessInfo().getDateSort().setDay(day);
+        document.getItem().getItem().getProcessInfo().getDateSort().setMonth(month);
+        document.getItem().getItem().getProcessInfo().getDateSort().setYear(year);
+    }
+
+    public void setPublishername(String publisherName) {
+        document.getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0)
+                .setPublishername(publisherName);
+    }
+
+    public void setSrcType(SourcetypeAtt sourcetypeAtt) {
+        document.getMeta().setSrctype(sourcetypeAtt.value());
     }
 
     public void setJournalInfo(String volume, String issue, String pages) {

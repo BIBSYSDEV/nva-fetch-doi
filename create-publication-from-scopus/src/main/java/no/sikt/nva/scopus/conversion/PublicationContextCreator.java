@@ -23,8 +23,8 @@ import no.scopus.generated.MetaTp;
 import no.scopus.generated.OrigItemTp;
 import no.scopus.generated.PublisherTp;
 import no.scopus.generated.SourceTp;
+import no.scopus.generated.SourcetypeAtt;
 import no.sikt.nva.scopus.ScopusConstants;
-import no.sikt.nva.scopus.ScopusSourceType;
 import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.contexttypes.Book;
@@ -81,7 +81,7 @@ public class PublicationContextCreator {
         return Optional.ofNullable(docTp)
                 .map(DocTp::getMeta)
                 .map(MetaTp::getSrctype)
-                .map(srcTyp -> JOURNAL.equals(ScopusSourceType.valueOfCode(srcTyp)))
+                .map(srcType -> srcType.equals(SourcetypeAtt.J.value()))
                 .orElse(false);
     }
 
@@ -102,7 +102,7 @@ public class PublicationContextCreator {
         return Optional.ofNullable(docTp)
                 .map(DocTp::getMeta)
                 .map(MetaTp::getSrctype)
-                .map(srcType -> BOOK.equals(ScopusSourceType.valueOfCode(srcType)))
+                .map(srcType -> srcType.equals(SourcetypeAtt.B.value()))
                 .orElse(false);
     }
 
@@ -118,7 +118,7 @@ public class PublicationContextCreator {
         return Optional.ofNullable(docTp)
                 .map(DocTp::getMeta)
                 .map(MetaTp::getSrctype)
-                .map(srcType -> REPORT.equals(ScopusSourceType.valueOfCode(srcType)))
+                .map(srcType -> srcType.equals(SourcetypeAtt.R.value()))
                 .orElse(false);
     }
 
