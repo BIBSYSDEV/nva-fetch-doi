@@ -75,6 +75,7 @@ public class MetadataService {
     }
 
     /**
+     * Deprecated constructor.
      * @deprecated  For testing, we should also inject the URI so that we can use WireMock.
      * @param httpClient the HttpClient.
      */

@@ -62,6 +62,7 @@ import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -252,12 +253,12 @@ class ScopusHandlerTest {
 
     private static List<Serializable> contentWithSupInftagsScopus14244261628() {
         // This is an actual title from doi: 10.1016/j.nuclphysbps.2005.01.029
-        return List.of("Non-factorizable contributions to ̄B",
+        return List.of("Non-factorizable contributions to B",
                        generateInf("d"),
                        generateSup("0"),
-                       " → D",
+                       " - D",
                        generateInf("s"),
-                       "(*) ̄D",
+                       "(*) D",
                        generateInf("s"),
                        "(*)");
     }
@@ -487,9 +488,9 @@ class ScopusHandlerTest {
     void shouldReturnPublicationContextUnconfirmedBookSeriesWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeK()
             throws IOException, ParseException {
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.K);
-        var expectedYear = randomYear();
+        final var expectedYear = randomYear();
         scopusData.getDocument().getMeta().setPubYear(expectedYear);
-        var expectedIssn = setUpExpectedIssn();
+        final var expectedIssn = setUpExpectedIssn();
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -782,7 +783,7 @@ class ScopusHandlerTest {
     @Test
     void shouldAssignCorrectLanguageForAffiliationNames() throws IOException {
 
-        var frenchName = "Collège de France, Lab. de Physique Corpusculaire";
+        var frenchName = new String("Collège de France, Lab. de Physique Corpusculaire".getBytes(), StandardCharsets.UTF_8);
         var italianName = "Dipartimento di Fisica, Università di Bologna";
         var norwegianName = "Institutt for fysikk, Universitetet i Bergen";
         var englishName = "Department of Physics, Iowa State University";
