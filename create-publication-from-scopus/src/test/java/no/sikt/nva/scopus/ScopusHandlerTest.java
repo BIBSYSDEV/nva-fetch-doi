@@ -517,15 +517,18 @@ class ScopusHandlerTest {
     @Test
     void shouldExtractPublicationDate() throws IOException {
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
-        scopusData.setPublicationDate("1978", "01", "01");
+        var year = "1978";
+        var month = "02";
+        var day = "01";
+        scopusData.setPublicationDate(year, month, day);
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationDate = createPublicationRequest.getEntityDescription().getDate();
         assertThat(actualPublicationDate, allOf(
-            hasProperty(PUBLICATION_DAY_FIELD_NAME, is("01")),
-            hasProperty(PUBLICATION_MONTH_FIELD_NAME, is("01")),
-            hasProperty(PUBLICATION_YEAR_FIELD_NAME, is("1978"))));
+            hasProperty(PUBLICATION_DAY_FIELD_NAME, is(day)),
+            hasProperty(PUBLICATION_MONTH_FIELD_NAME, is(month)),
+            hasProperty(PUBLICATION_YEAR_FIELD_NAME, is(year))));
     }
 
     @Test
@@ -638,7 +641,7 @@ class ScopusHandlerTest {
     void shouldNotGenerateCreatePublicationFromUnsupportedPublicationTypes(CitationtypeAtt citationtypeAtt)
         throws IOException {
         scopusData = ScopusGenerator.create(citationtypeAtt);
-        //eid is chosen because it seems to match the file name in the bucket.
+        // eid is chosen because it seems to match the file name in the bucket.
         var eid = scopusData.getDocument().getMeta().getEid();
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
