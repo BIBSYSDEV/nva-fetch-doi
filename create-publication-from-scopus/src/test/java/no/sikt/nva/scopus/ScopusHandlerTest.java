@@ -8,7 +8,6 @@ import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
 import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_ELECTRONIC;
-import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_ELECTRONIC;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_PRINT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.sikt.nva.scopus.conversion.ContributorExtractor.NAME_DELIMITER;
@@ -112,6 +111,7 @@ import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Report;
+import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.UnconfirmedSeries;
@@ -422,7 +422,7 @@ class ScopusHandlerTest {
         isbnTp13.setLength("13");
         scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getIsbn().add(isbnTp13);
         String expectedYear = randomYear();
-        scopusData.getDocument().getMeta().setPubYear(expectedYear);
+        scopusData.setPublicationYear(expectedYear);
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var queryUri = createExpectedQueryUriForPublisherWithName(expectedPublisherName);
@@ -489,7 +489,7 @@ class ScopusHandlerTest {
         throws IOException, ParseException {
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.K);
         final var expectedYear = randomYear();
-        scopusData.getDocument().getMeta().setPubYear(expectedYear);
+        scopusData.setPublicationYear(expectedYear);
         final var expectedIssn = setUpExpectedIssn();
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
@@ -504,18 +504,38 @@ class ScopusHandlerTest {
         assertThat(actualIssn, is(expectedIssn));
     }
 
+    @Test
+    void shouldReturnPublicationContextConfirmedBookSeriesWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeK()
+        throws IOException, ParseException {
+        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.K);
+        final var expectedYear = randomYear();
+        scopusData.setPublicationYear(expectedYear);
+        final var expectedIssn = setUpExpectedIssn();
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        var queryUri = createExpectedQueryUriForJournalWithEIssn(expectedIssn, expectedYear);
+        var expectedSeriesUri = mockedPublicationChannelsReturnsUri(queryUri);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
+            .getPublicationContext();
+        assertThat(actualPublicationContext, instanceOf(Book.class));
+        var actualSeries = ((Book) actualPublicationContext).getSeries();
+        assertThat(actualSeries, instanceOf(Series.class));
+        var actualUri = ((Series) actualSeries).getId();
+        assertThat(actualUri, is(expectedSeriesUri));
+    }
+
     @NotNull
     private String setUpExpectedIssn() {
         IssnTp issnTp = new IssnTp();
         issnTp.setType(ISSN_TYPE_ELECTRONIC);
-        var expectedIssn = randomIssn().replace(DASH, EMPTY_STRING);
-        ;
+        var expectedIssn = randomIssn();
         issnTp.setContent(expectedIssn);
         var issnCandidate = scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource()
                 .getIssn().stream().filter(issnTp1 -> issnTp1.getType().equals(ISSN_TYPE_ELECTRONIC))
                 .map(IssnTp::getContent).findFirst();
         if (issnCandidate.isPresent()) {
-            expectedIssn = issnCandidate.get().replace(DASH, EMPTY_STRING);;
+            expectedIssn = issnCandidate.get();
         } else {
             scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getIssn().add(issnTp);
         }
@@ -939,13 +959,17 @@ class ScopusHandlerTest {
     }
 
     private URI mockedPublicationChannelsReturnsUri(URI queryUri) {
-        var uri = randomUri();
+        var uri = randomPublicationChannelUri();
         ArrayNode publicationChannelsResponseBody = createPublicationChannelsResponseWithUri(uri);
         stubFor(get(START_OF_QUERY + queryUri
             .getQuery())
                     .willReturn(aResponse().withBody(publicationChannelsResponseBody
                                                          .toPrettyString()).withStatus(HttpURLConnection.HTTP_OK)));
         return uri;
+    }
+
+    public static URI randomPublicationChannelUri() {
+        return URI.create("https://example.nva.aws.unit.no/publication-channels/" + randomString());
     }
 
     private void startWiremockServer() {
