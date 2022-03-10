@@ -401,10 +401,10 @@ public class ScopusConverter {
     }
 
     private Set<AdditionalIdentifier> generateAdditionalIdentifiers() {
-        return Set.of(scopusIdentifier());
+        return Set.of(extractScopusIdentifier());
     }
 
-    private AdditionalIdentifier scopusIdentifier() {
+    private AdditionalIdentifier extractScopusIdentifier() {
         return new AdditionalIdentifier(ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME, docTp.getMeta().getEid());
 
     }
