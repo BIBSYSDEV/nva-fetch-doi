@@ -12,6 +12,7 @@ import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_PRINT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.sikt.nva.scopus.conversion.ContributorExtractor.NAME_DELIMITER;
 import static no.sikt.nva.scopus.conversion.PublicationContextCreator.UNSUPPORTED_SOURCE_TYPE;
+import static no.sikt.nva.scopus.test.utils.ScopusGenerator.randomYear;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static no.unit.nva.language.LanguageConstants.BOKMAAL;
 import static no.unit.nva.language.LanguageConstants.ENGLISH;
@@ -22,7 +23,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.StringUtils.isNotBlank;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
@@ -59,7 +59,9 @@ import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.text.ParseException;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -77,7 +79,6 @@ import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
 import no.scopus.generated.InfTp;
-import no.scopus.generated.IsbnTp;
 import no.scopus.generated.ItemTp;
 import no.scopus.generated.ItemidTp;
 import no.scopus.generated.OrganizationTp;
@@ -104,8 +105,10 @@ import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Report;
+import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
+import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
@@ -230,7 +233,7 @@ class ScopusHandlerTest {
         scopusData = ScopusGenerator.createWithSpecifiedSupAndInfContent(createContentWithSupAndInfTags());
         var s3Event = createNewScopusPublicationEvent();
         var expectedTitleString =
-                IoUtils.stringFromResources(Path.of(EXPECTED_RESULTS_PATH, EXPECTED_CONTENT_STRING_TXT));
+            IoUtils.stringFromResources(Path.of(EXPECTED_RESULTS_PATH, EXPECTED_CONTENT_STRING_TXT));
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualMainTitle = createPublicationRequest.getEntityDescription().getMainTitle();
         assertThat(actualMainTitle, is(equalTo(expectedTitleString)));
@@ -242,12 +245,12 @@ class ScopusHandlerTest {
 
     private static List<Serializable> contentWithSupInftagsScopus14244261628() {
         // This is an actual title from doi: 10.1016/j.nuclphysbps.2005.01.029
-        return List.of("Non-factorizable contributions to ̄B",
+        return List.of("Non-factorizable contributions to B",
                        generateInf("d"),
                        generateSup("0"),
-                       " → D",
+                       " - D",
                        generateInf("s"),
-                       "(*) ̄D",
+                       "(*) D",
                        generateInf("s"),
                        "(*)");
     }
@@ -401,10 +404,9 @@ class ScopusHandlerTest {
         var expectedPublisherName = randomString();
         scopusData.setPublishername(expectedPublisherName);
         var expectedIsbn13 = randomIsbn13();
-        var isbnTp13 = new IsbnTp();
-        isbnTp13.setContent(expectedIsbn13);
-        isbnTp13.setLength("13");
-        scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getIsbn().add(isbnTp13);
+        scopusData.addIsbn(expectedIsbn13, "13");
+        var expectedYear = String.valueOf(randomYear());
+        scopusData.setPublicationYear(expectedYear);
         var s3Event = createNewScopusPublicationEvent();
         var queryUri = createExpectedQueryUriForPublisherWithName(expectedPublisherName);
         var expectedPublisherUri = mockedPublicationChannelsReturnsUri(queryUri);
@@ -454,6 +456,50 @@ class ScopusHandlerTest {
         assertThat(actualPublisher, instanceOf(Publisher.class));
         var actualPublisherId = ((Publisher) actualPublisher).getId();
         assertThat(actualPublisherId, is(expectedPublisherUri));
+    }
+
+    @Test
+    void shouldReturnPublicationContextUnconfirmedBookSeriesWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeK()
+        throws IOException, ParseException {
+        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.K);
+        final var expectedYear = String.valueOf(randomYear());
+        scopusData.setPublicationYear(expectedYear);
+        scopusData.clearIssn();
+        final var expectedIssn = randomIssn();
+        scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
+            .getPublicationContext();
+        assertThat(actualPublicationContext, instanceOf(Book.class));
+        var actualSeries = ((Book) actualPublicationContext).getSeries();
+        assertThat(actualSeries, instanceOf(UnconfirmedSeries.class));
+        var actualIssn = ((UnconfirmedSeries) actualSeries).getOnlineIssn();
+        assertThat(actualIssn, is(expectedIssn));
+    }
+
+    @Test
+    void shouldReturnPublicationContextConfirmedBookSeriesWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeK()
+        throws IOException, ParseException {
+        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.K);
+        final var expectedYear = String.valueOf(randomYear());
+        scopusData.setPublicationYear(expectedYear);
+        scopusData.clearIssn();
+        final var expectedIssn = randomIssn();
+        scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        var queryUri = createExpectedQueryUriForJournalWithEIssn(expectedIssn, expectedYear);
+        var expectedSeriesUri = mockedPublicationChannelsReturnsUri(queryUri);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
+            .getPublicationContext();
+        assertThat(actualPublicationContext, instanceOf(Book.class));
+        var actualSeries = ((Book) actualPublicationContext).getSeries();
+        assertThat(actualSeries, instanceOf(Series.class));
+        var actualUri = ((Series) actualSeries).getId();
+        assertThat(actualUri, is(expectedSeriesUri));
     }
 
     @Test
@@ -706,50 +752,56 @@ class ScopusHandlerTest {
 
     @Test
     void shouldAssignCorrectLanguageForAffiliationNames() throws IOException {
-        var frenchName = "Collège de France, Lab. de Physique Corpusculaire";
+        var frenchName = new String(
+            "Collège de France, Lab. de Physique Corpusculaire".getBytes(),
+            StandardCharsets.UTF_8);
         var italianName = "Dipartimento di Fisica, Università di Bologna";
         var norwegianName = "Institutt for fysikk, Universitetet i Bergen";
         var englishName = "Department of Physics, Iowa State University";
         var nonDeterminableName = "NTNU";
+        var institutionNameWithTags = "GA2LENGlobal Allergy and Asthma European Network";
         var thaiNotSupportedByNvaName = "มหาวิทยาลัยมหิดล";
         var expectedLabels = List.of(
-                Map.of(ENGLISH.getIso6391Code(), englishName),
-                Map.of(FRENCH.getIso6391Code(), frenchName),
-                Map.of(BOKMAAL.getIso6391Code(), norwegianName),
-                Map.of(ITALIAN.getIso6391Code(), italianName),
-                Map.of(ENGLISH.getIso6391Code(), nonDeterminableName),
-                Map.of(ENGLISH.getIso6391Code(), thaiNotSupportedByNvaName));
+            Map.of(ENGLISH.getIso6391Code(), englishName),
+            Map.of(FRENCH.getIso6391Code(), frenchName),
+            Map.of(BOKMAAL.getIso6391Code(), norwegianName),
+            Map.of(ITALIAN.getIso6391Code(), italianName),
+            Map.of(ENGLISH.getIso6391Code(), nonDeterminableName),
+            Map.of(ENGLISH.getIso6391Code(), thaiNotSupportedByNvaName),
+            Map.of(ENGLISH.getIso6391Code(), institutionNameWithTags));
         scopusData = ScopusGenerator.createWithSpecifiedAffiliations(
-                languageAffiliations(List.of(thaiNotSupportedByNvaName,
-                        frenchName,
-                        italianName,
-                        norwegianName,
-                        englishName,
-                        nonDeterminableName
-                )));
+            languageAffiliations(List.of(List.of("GA", generateSup("2"), "LEN",
+                                                 generateInf("Global Allergy and Asthma European Network")),
+                                         List.of(thaiNotSupportedByNvaName),
+                                         List.of(frenchName),
+                                         List.of(italianName),
+                                         List.of(norwegianName),
+                                         List.of(englishName),
+                                         List.of(nonDeterminableName)
+                                         )));
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var organizations =
-                createPublicationRequest.getEntityDescription()
-                        .getContributors()
-                        .stream()
-                        .map(Contributor::getAffiliations)
-                        .flatMap(Collection::stream)
-                        .collect(
-                                Collectors.toSet());
+            createPublicationRequest.getEntityDescription()
+                .getContributors()
+                .stream()
+                .map(Contributor::getAffiliations)
+                .flatMap(Collection::stream)
+                .collect(
+                    Collectors.toSet());
         var actualOrganizationsLabels =
-                organizations.stream().map(Organization::getLabels).collect(Collectors.toList());
+            organizations.stream().map(Organization::getLabels).collect(Collectors.toList());
         assertThat(actualOrganizationsLabels, containsInAnyOrder(expectedLabels.toArray()));
     }
 
-    private List<AffiliationTp> languageAffiliations(List<String> organizationNames) {
+    private List<AffiliationTp> languageAffiliations(List<List<Serializable>> organizationNames) {
         return organizationNames
             .stream()
             .map(this::createAffiliation)
             .collect(Collectors.toList());
     }
 
-    private AffiliationTp createAffiliation(String organizationName) {
+    private AffiliationTp createAffiliation(List<Serializable> organizationName) {
         var affiliation = new AffiliationTp();
         affiliation.setCountryAttribute(randomString());
         affiliation.setAffiliationInstanceId(randomString());
@@ -762,9 +814,9 @@ class ScopusHandlerTest {
         return affiliation;
     }
 
-    private OrganizationTp createOrganization(String organizationName) {
+    private OrganizationTp createOrganization(List<Serializable> organizationName) {
         var organization = new OrganizationTp();
-        organization.getContent().add(organizationName);
+        organization.getContent().addAll(organizationName);
         return organization;
     }
 
@@ -856,13 +908,17 @@ class ScopusHandlerTest {
     }
 
     private URI mockedPublicationChannelsReturnsUri(URI queryUri) {
-        var uri = randomUri();
+        var uri = randomPublicationChannelUri();
         ArrayNode publicationChannelsResponseBody = createPublicationChannelsResponseWithUri(uri);
         stubFor(get(START_OF_QUERY + queryUri
             .getQuery())
                     .willReturn(aResponse().withBody(publicationChannelsResponseBody
                                                          .toPrettyString()).withStatus(HttpURLConnection.HTTP_OK)));
         return uri;
+    }
+
+    public static URI randomPublicationChannelUri() {
+        return URI.create("https://example.nva.aws.unit.no/publication-channels/" + randomString());
     }
 
     private void startWiremockServer() {

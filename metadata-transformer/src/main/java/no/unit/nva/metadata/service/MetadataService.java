@@ -75,6 +75,7 @@ public class MetadataService {
     }
 
     /**
+     * Deprecated constructor.
      * @deprecated  For testing, we should also inject the URI so that we can use WireMock.
      * @param httpClient the HttpClient.
      */
@@ -108,10 +109,10 @@ public class MetadataService {
         }
     }
 
-    public Optional<String> lookUpJournalIdAtPublicationChannel(String name,
-                                                                String electronicIssn,
-                                                                String printedIssn,
-                                                                int year) {
+    public Optional<String> fetchJournalIdFromPublicationChannel(String name,
+                                                                 String electronicIssn,
+                                                                 String printedIssn,
+                                                                 int year) {
         return Stream
             .of(electronicIssn, printedIssn, name)
             .map(queryTerm -> fetchPublicationIdentifierFromPublicationChannels(queryTerm, year))
