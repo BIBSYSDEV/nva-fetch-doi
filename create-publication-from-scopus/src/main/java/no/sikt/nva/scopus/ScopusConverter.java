@@ -47,6 +47,8 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticleContentType;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
@@ -251,8 +253,9 @@ public class ScopusConverter {
             case AR:
                 return Optional.of(generateJournalArticle());
             case BK:
-            case CH:
                 return Optional.of(new BookMonograph());
+            case CH:
+                return Optional.of(generateChapterArticle());
             case ED:
                 return Optional.of(generateJournalLeader());
             case ER:
@@ -294,6 +297,13 @@ public class ScopusConverter {
         extractIssue().ifPresent(journalArticle::setIssue);
         extractArticleNumber().ifPresent(journalArticle::setArticleNumber);
         return journalArticle;
+    }
+
+    private ChapterArticle generateChapterArticle() {
+        ChapterArticle chapterArticle = new ChapterArticle();
+        extractPages().ifPresent(chapterArticle::setPages);
+        chapterArticle.setContentType(ChapterArticleContentType.ACADEMIC_CHAPTER);
+        return chapterArticle;
     }
 
     private JournalLeader generateJournalLeader() {
