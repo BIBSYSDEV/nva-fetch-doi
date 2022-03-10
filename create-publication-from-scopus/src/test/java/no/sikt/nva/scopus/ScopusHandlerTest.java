@@ -28,6 +28,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalToObject;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isA;
@@ -63,6 +64,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.text.ParseException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -275,7 +277,7 @@ class ScopusHandlerTest {
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualContributors = createPublicationRequest.getEntityDescription().getContributors();
-        authors.forEach(author -> checkAuthorName(author, actualContributors));
+        authors.forEach(author -> checkContributor(author, actualContributors));
         collaborations.forEach(collaboration -> checkCollaborationName(collaboration, actualContributors));
     }
 
@@ -559,6 +561,30 @@ class ScopusHandlerTest {
             HARDCODED_EXPECTED_KEYWORD_3);
         var actualPlaintextKeyWords = createPublicationRequest.getEntityDescription().getTags();
         assertThat(actualPlaintextKeyWords, containsInAnyOrder(expectedkeywords.toArray()));
+    }
+
+    @Test
+    void shouldHaveNoDuplicateContributers() throws IOException {
+        var s3Event = createNewScopusPublicationEvent();
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var contributors = createPublicationRequest.getEntityDescription().getContributors();
+        checkForDuplicateContributors(contributors);
+    }
+
+    private void checkForDuplicateContributors(List<Contributor> contributors) {
+        List<Integer> sequenceNumbers = new ArrayList<>();
+        List<String> orcids = new ArrayList<>();
+        contributors.forEach(contributor -> isNotDuplicated(sequenceNumbers, orcids, contributor));
+    }
+
+    private void isNotDuplicated(List<Integer> sequenceNumbers, List<String> orcids, Contributor contributor) {
+        assertThat(sequenceNumbers, not(hasItem(contributor.getSequence())));
+        sequenceNumbers.add(contributor.getSequence());
+        if (nonNull(contributor.getIdentity().getOrcId())) {
+            assertThat(orcids, not(hasItem(contributor.getIdentity().getOrcId())));
+            orcids.add(contributor.getIdentity().getOrcId());
+        }
+
     }
 
     @Test
@@ -858,24 +884,24 @@ class ScopusHandlerTest {
         }
     }
 
-    private void checkAuthorName(AuthorTp authorTp, List<Contributor> contributors) {
+    private void checkContributor(AuthorTp authorTp, List<Contributor> contributors) {
         var optionalContributor = findContributorBySequence(authorTp.getSeq(), contributors);
-        assertTrue(optionalContributor.isPresent());
-        var contributor = optionalContributor.get();
+        assertEquals(1, optionalContributor.size());
+        var contributor = optionalContributor.get(0);
         assertEquals(getExpectedFullAuthorName(authorTp), contributor.getIdentity().getName());
     }
 
     private void checkCollaborationName(CollaborationTp collaboration, List<Contributor> contributors) {
         var optionalContributor = findContributorBySequence(collaboration.getSeq(), contributors);
-        assertTrue(optionalContributor.isPresent());
-        var contributor = optionalContributor.get();
+        assertEquals(1, optionalContributor.size());
+        var contributor = optionalContributor.get(0);
         assertEquals(collaboration.getIndexedName(), contributor.getIdentity().getName());
     }
 
-    private Optional<Contributor> findContributorBySequence(String sequence, List<Contributor> contributors) {
+    private List<Contributor> findContributorBySequence(String sequence, List<Contributor> contributors) {
         return contributors.stream()
             .filter(contributor -> sequence.equals(Integer.toString(contributor.getSequence())))
-            .findFirst();
+            .collect(Collectors.toList());
     }
 
     private List<Contributor> findContributorsBySequence(String sequence, List<Contributor> contributors) {
