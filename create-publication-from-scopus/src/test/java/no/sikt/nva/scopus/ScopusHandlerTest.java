@@ -9,14 +9,11 @@ import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_I
 import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_ELECTRONIC;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_PRINT;
-import static no.sikt.nva.scopus.ScopusConstants.LEXOVO_URL;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.sikt.nva.scopus.conversion.ContributorExtractor.NAME_DELIMITER;
 import static no.sikt.nva.scopus.conversion.PublicationContextCreator.UNSUPPORTED_SOURCE_TYPE;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
-import static no.unit.nva.language.LanguageConstants.AFRIKAANS;
 import static no.unit.nva.language.LanguageConstants.BOKMAAL;
-import static no.unit.nva.language.LanguageConstants.BULGARIAN;
 import static no.unit.nva.language.LanguageConstants.ENGLISH;
 import static no.unit.nva.language.LanguageConstants.FRENCH;
 import static no.unit.nva.language.LanguageConstants.ITALIAN;
@@ -785,15 +782,15 @@ class ScopusHandlerTest {
     }
 
     private static Stream<Arguments> addNullPart() {
-        return Stream.of(Arguments.of(null, URI.create(LEXOVO_URL + ENGLISH.getIso6393Code())));
+        return Stream.of(Arguments.of(null, ENGLISH.getLexvoUri()));
     }
 
     private static Arguments createArguments(Language language) {
-        var languageCode =
+        var languageUri =
             language == LanguageConstants.UNDEFINED_LANGUAGE || language == LanguageConstants.MISCELLANEOUS
-                ? ENGLISH.getIso6393Code()
-                : language.getIso6393Code();
-        return Arguments.of(language, URI.create(LEXOVO_URL + languageCode));
+                ? ENGLISH.getLexvoUri()
+                : language.getLexvoUri();
+        return Arguments.of(language, languageUri);
     }
 
     private List<AffiliationTp> languageAffiliations(List<String> organizationNames) {
