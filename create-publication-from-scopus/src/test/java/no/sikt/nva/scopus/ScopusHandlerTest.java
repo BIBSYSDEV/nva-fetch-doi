@@ -790,7 +790,7 @@ class ScopusHandlerTest {
             Map.of(ENGLISH.getIso6391Code(), institutionNameWithTags));
         scopusData = ScopusGenerator.createWithSpecifiedAffiliations(
             languageAffiliations(List.of(List.of("GA", generateSup("2"), "LEN",
-                                                 generateInf("Global Allergy and Asthma European Network")) ,
+                                                 generateInf("Global Allergy and Asthma European Network")),
                                          List.of(thaiNotSupportedByNvaName),
                                          List.of(frenchName),
                                          List.of(italianName),
