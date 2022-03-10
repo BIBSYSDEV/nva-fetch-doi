@@ -82,7 +82,6 @@ import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
 import no.scopus.generated.InfTp;
 import no.scopus.generated.ItemTp;
-import no.scopus.generated.ItemidTp;
 import no.scopus.generated.OrganizationTp;
 import no.scopus.generated.OrigItemTp;
 import no.scopus.generated.SourcetypeAtt;
@@ -201,13 +200,13 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractOnlyScopusIdentifierIgnoreAllOtherIdentifiersAndStoreItInPublication() throws IOException {
-        var scopusIdentifiers = keepOnlyTheScopusIdentifiers();
+        var scopusIdentifiers = scopusData.getDocument().getMeta().getEid();
+        var expectedAdditionalIdentifier = new AdditionalIdentifier(ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME,
+                                                             scopusIdentifiers);
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualAdditionalIdentifiers = createPublicationRequest.getAdditionalIdentifiers();
-        var expectedAdditionalIdentifier =
-            convertScopusIdentifiersToNvaAdditionalIdentifiers(scopusIdentifiers);
-        assertThat(actualAdditionalIdentifiers, containsInAnyOrder(expectedAdditionalIdentifier));
+        assertThat(actualAdditionalIdentifiers, hasItem(expectedAdditionalIdentifier));
     }
 
     @Test
@@ -990,29 +989,6 @@ class ScopusHandlerTest {
         publicationChannelsResponseBody.add(publicationChannelsResponseBodyElement);
 
         return publicationChannelsResponseBody;
-    }
-
-    private AdditionalIdentifier[] convertScopusIdentifiersToNvaAdditionalIdentifiers(
-        List<ItemidTp> scopusIdentifiers) {
-        return scopusIdentifiers
-            .stream()
-            .map(idtp -> new AdditionalIdentifier(ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME, idtp.getValue()))
-            .collect(Collectors.toList())
-            .toArray(AdditionalIdentifier[]::new);
-    }
-
-    private List<ItemidTp> keepOnlyTheScopusIdentifiers() {
-        return scopusData.getDocument()
-            .getItem()
-            .getItem()
-            .getBibrecord()
-            .getItemInfo()
-            .getItemidlist()
-            .getItemid()
-            .stream()
-            .filter(identifier -> identifier.getIdtype()
-                .equalsIgnoreCase(ScopusConstants.SCOPUS_ITEM_IDENTIFIER_SCP_FIELD_NAME))
-            .collect(Collectors.toList());
     }
 
     private Optional<Contributor> findContributorByOrcid(String orcid, List<Contributor> contributors) {

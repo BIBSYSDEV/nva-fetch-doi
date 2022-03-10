@@ -2,6 +2,7 @@ package no.sikt.nva.scopus;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
+import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.sikt.nva.scopus.ScopusConstants.INF_END;
 import static no.sikt.nva.scopus.ScopusConstants.INF_START;
@@ -28,7 +29,6 @@ import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
 import no.scopus.generated.InfTp;
-import no.scopus.generated.ItemidTp;
 import no.scopus.generated.PagerangeTp;
 import no.scopus.generated.SourceTp;
 import no.scopus.generated.SupTp;
@@ -411,29 +411,12 @@ public class ScopusConverter {
     }
 
     private Set<AdditionalIdentifier> generateAdditionalIdentifiers() {
-        return extractItemIdentifiers()
-            .stream()
-            .filter(this::isScopusIdentifier)
-            .map(this::toAdditionalIdentifier)
-            .collect(Collectors.toSet());
+        return Set.of(extractScopusIdentifier());
     }
 
-    private List<ItemidTp> extractItemIdentifiers() {
-        return docTp.getItem()
-            .getItem()
-            .getBibrecord()
-            .getItemInfo()
-            .getItemidlist()
-            .getItemid();
-    }
+    private AdditionalIdentifier extractScopusIdentifier() {
+        return new AdditionalIdentifier(ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME, docTp.getMeta().getEid());
 
-    private boolean isScopusIdentifier(ItemidTp itemIdTp) {
-        return itemIdTp.getIdtype().equalsIgnoreCase(ScopusConstants.SCOPUS_ITEM_IDENTIFIER_SCP_FIELD_NAME);
-    }
-
-    private AdditionalIdentifier toAdditionalIdentifier(ItemidTp itemIdTp) {
-        return new AdditionalIdentifier(ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME,
-                                        itemIdTp.getValue());
     }
 
     private List<AuthorGroupTp> extractAuthorGroup() {
