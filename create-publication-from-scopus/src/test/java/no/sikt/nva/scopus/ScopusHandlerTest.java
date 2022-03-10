@@ -106,6 +106,7 @@ import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
@@ -660,20 +661,28 @@ class ScopusHandlerTest {
         authors.forEach(author -> checkAuthorOrcidAndSequenceNumber(author, actualContributors));
     }
 
-    @ParameterizedTest(name = "should have PublicationInstace BookMonograph when CitationType is:{0}")
-    @EnumSource(
-        value = CitationtypeAtt.class,
-        names = {"CH", "BK"},
-        mode = Mode.INCLUDE)
-    void shouldExtractCitationTypesToBookMonographPublicationInstance(CitationtypeAtt citationtypeAtt)
+    @Test
+    void shouldExtractCitationTypesToBookMonographPublicationInstance()
         throws IOException {
-        scopusData = ScopusGenerator.create(citationtypeAtt);
+        scopusData = ScopusGenerator.create(CitationtypeAtt.BK);
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationInstance =
             createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
         assertThat(actualPublicationInstance, isA(BookMonograph.class));
+    }
+
+    @Test
+    void shouldExtractCitationTypesToChapterArticlePublicationInstance()
+        throws IOException {
+        scopusData = ScopusGenerator.create(CitationtypeAtt.CH);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationInstance =
+            createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
+        assertThat(actualPublicationInstance, isA(ChapterArticle.class));
     }
 
     @Test
