@@ -42,6 +42,7 @@ import no.scopus.generated.AuthorKeywordsTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.BibrecordTp;
 import no.scopus.generated.CitationInfoTp;
+import no.scopus.generated.CitationLanguageTp;
 import no.scopus.generated.CitationTitleTp;
 import no.scopus.generated.CitationTypeTp;
 import no.scopus.generated.CitationtypeAtt;
@@ -65,7 +66,6 @@ import no.scopus.generated.PersonalnameType;
 import no.scopus.generated.ProcessInfo;
 import no.scopus.generated.PublisherTp;
 import no.scopus.generated.PublishercopyrightTp;
-import no.scopus.generated.RichstringWithMMLType;
 import no.scopus.generated.ShortTitle;
 import no.scopus.generated.SourceTp;
 import no.scopus.generated.SourcetitleTp;
@@ -76,6 +76,7 @@ import no.scopus.generated.VolissTp;
 import no.scopus.generated.VolisspagTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.ScopusConstants;
+import no.unit.nva.language.Language;
 import no.unit.nva.language.LanguageConstants;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
@@ -97,9 +98,11 @@ public final class ScopusGenerator {
     private static final String NORWAY = "norway";
     private final List<AffiliationTp> affiliations;
     private final ContentWrapper contentWithSupAndInf;
+    private final Language languageCode;
 
     public ScopusGenerator() {
         this.doi = randomDoi();
+        this.languageCode = randomElement(LanguageConstants.ALL_LANGUAGES);
         this.minimumSequenceNumber = 1;
         this.abstractsTp = randomAbstracts();
         this.sourcetypeAtt = SourcetypeAtt.J;
@@ -109,6 +112,7 @@ public final class ScopusGenerator {
     }
 
     private ScopusGenerator(AbstractsTp abstractsTp) {
+        this.languageCode = randomElement(LanguageConstants.ALL_LANGUAGES);
         this.doi = randomDoi();
         this.sourcetypeAtt = SourcetypeAtt.J;
         this.minimumSequenceNumber = 1;
@@ -119,6 +123,7 @@ public final class ScopusGenerator {
     }
 
     private ScopusGenerator(URI doi) {
+        this.languageCode = randomElement(LanguageConstants.ALL_LANGUAGES);
         this.doi = doi;
         this.minimumSequenceNumber = 1;
         this.sourcetypeAtt = SourcetypeAtt.J;
@@ -129,6 +134,7 @@ public final class ScopusGenerator {
     }
 
     private ScopusGenerator(SourcetypeAtt sourcetypeAtt) {
+        this.languageCode = randomElement(LanguageConstants.ALL_LANGUAGES);
         this.sourcetypeAtt = sourcetypeAtt;
         this.minimumSequenceNumber = 1;
         this.doi = randomDoi();
@@ -139,6 +145,7 @@ public final class ScopusGenerator {
     }
 
     private ScopusGenerator(CitationtypeAtt citationtypeAtt) {
+        this.languageCode = randomElement(LanguageConstants.ALL_LANGUAGES);
         this.doi = randomDoi();
         this.citationtypeAtt = citationtypeAtt;
         this.sourcetypeAtt = SourcetypeAtt.J;
@@ -149,6 +156,7 @@ public final class ScopusGenerator {
     }
 
     private ScopusGenerator(List<AffiliationTp> affiliations) {
+        this.languageCode = randomElement(LanguageConstants.ALL_LANGUAGES);
         this.doi = randomDoi();
         this.sourcetypeAtt = SourcetypeAtt.J;
         this.abstractsTp = randomAbstracts();
@@ -158,6 +166,7 @@ public final class ScopusGenerator {
     }
 
     private ScopusGenerator(ContentWrapper contentWithSupAndInf) {
+        this.languageCode = randomElement(LanguageConstants.ALL_LANGUAGES);
         this.contentWithSupAndInf = contentWithSupAndInf;
         this.doi = randomDoi();
         this.sourcetypeAtt = SourcetypeAtt.J;
@@ -166,7 +175,15 @@ public final class ScopusGenerator {
         this.document = randomDocument();
     }
 
-
+    private ScopusGenerator(Language language) {
+        this.languageCode = language;
+        this.contentWithSupAndInf = packRandomSerializablesWithSupAndInf();
+        this.doi = randomDoi();
+        this.sourcetypeAtt = SourcetypeAtt.J;
+        this.abstractsTp = randomAbstracts();
+        this.affiliations = randomAffiliations();
+        this.document = randomDocument();
+    }
 
     public static ScopusGenerator createWithSpecifiedAbstract(AbstractsTp abstractsTp) {
         return new ScopusGenerator(abstractsTp);
@@ -192,6 +209,10 @@ public final class ScopusGenerator {
         return new ScopusGenerator(supAndInfContent);
     }
 
+    public static ScopusGenerator createScopusGeneratorWithSpecificLanguage(Language language) {
+        return new ScopusGenerator(language);
+    }
+
     public DocTp randomDocument() {
         DocTp docTp = new DocTp();
         docTp.setItem(randomItemTp());
@@ -207,12 +228,6 @@ public final class ScopusGenerator {
     public String toXml() {
         StringWriter xmlWriter = new StringWriter();
         JAXB.marshal(document, xmlWriter);
-        return xmlWriter.toString();
-    }
-
-    public static String toXml(RichstringWithMMLType serializable) {
-        StringWriter xmlWriter = new StringWriter();
-        JAXB.marshal(serializable, xmlWriter);
         return xmlWriter.toString();
     }
 
@@ -484,7 +499,16 @@ public final class ScopusGenerator {
         var citationInfo = new CitationInfoTp();
         citationInfo.setAuthorKeywords(randomAuthorKeywordsTp());
         citationInfo.getCitationType().add(createCitationType());
+        if (nonNull(languageCode)) {
+            citationInfo.getCitationLanguage().add(generateCitationLanguage());
+        }
         return citationInfo;
+    }
+
+    private CitationLanguageTp generateCitationLanguage() {
+        var citationLanguageTp = new CitationLanguageTp();
+        citationLanguageTp.setLanguage(languageCode.getIso6393Code());
+        return citationLanguageTp;
     }
 
     private CitationTypeTp createCitationType() {
@@ -515,7 +539,7 @@ public final class ScopusGenerator {
     private static AuthorKeywordTp randomAuthorKeyword() {
         var authorKeyword = new AuthorKeywordTp();
 
-        authorKeyword.setLang(randomScopusLanguageCode());
+        authorKeyword.setLang(randomScopusLanguageCode6391Code());
         authorKeyword.setOriginal(randomYesOrNo());
         authorKeyword.setPerspective(randomString());
         authorKeyword.getContent().addAll(randomSerializables());
@@ -535,7 +559,7 @@ public final class ScopusGenerator {
     private static AbstractTp randomAbstract() {
         var abstractTp = new AbstractTp();
 
-        abstractTp.setLang(randomScopusLanguageCode());
+        abstractTp.setLang(randomScopusLanguageCode6391Code());
         abstractTp.setOriginal(randomYesOrNo());
         abstractTp.setSource(randomString());
         abstractTp.setPublishercopyright(randomPublisherCopyrightTp());
@@ -575,9 +599,9 @@ public final class ScopusGenerator {
     private TitletextTp randomTitle(YesnoAtt n) {
         var titleText = new TitletextTp();
         titleText.setOriginal(n);
-        titleText.setLang(randomScopusLanguageCode());
+        titleText.setLang(randomScopusLanguageCode6391Code());
         titleText.setPerspective(randomString());
-        titleText.setLang(randomScopusLanguageCode());
+        titleText.setLang(randomScopusLanguageCode6391Code());
         titleText.getContent().addAll(contentWithSupAndInf.getContentList());
         return titleText;
     }
@@ -588,7 +612,7 @@ public final class ScopusGenerator {
 
     private static ShortTitle randomShortTitle() {
         ShortTitle shortTitle = new ShortTitle();
-        shortTitle.setLang(randomScopusLanguageCode());
+        shortTitle.setLang(randomScopusLanguageCode6391Code());
         shortTitle.getContent().addAll(randomSerializables());
         return shortTitle;
     }
@@ -613,9 +637,12 @@ public final class ScopusGenerator {
     // marshaller
     private static Serializable randomStringOrSupOrInfTag(int index) {
         switch (index % 3) {
-            case 0: return randomInf();
-            case 1: return randomSup();
-            default: return randomString();
+            case 0:
+                return randomInf();
+            case 1:
+                return randomSup();
+            default:
+                return randomString();
         }
     }
 
@@ -631,7 +658,7 @@ public final class ScopusGenerator {
         return new JAXBElement<>(new QName("sup"), SupTp.class, supTp);
     }
 
-    private static String randomScopusLanguageCode() {
+    private static String randomScopusLanguageCode6391Code() {
         return randomElement(LanguageConstants.ALL_LANGUAGES).getIso6391Code();
     }
 
@@ -708,12 +735,12 @@ public final class ScopusGenerator {
         authorKeywordTp.setLang(language);
         authorKeywordTp.getContent().add(keyword);
         document.getItem().getItem().getBibrecord().getHead().getCitationInfo().getAuthorKeywords().getAuthorKeyword()
-                .add(authorKeywordTp);
+            .add(authorKeywordTp);
     }
 
     public void clearAuthorKeywords() {
         document.getItem().getItem().getBibrecord().getHead().getCitationInfo().getAuthorKeywords().getAuthorKeyword()
-                .clear();
+            .clear();
     }
 
     public void setPublicationYear(String year) {
@@ -728,7 +755,7 @@ public final class ScopusGenerator {
 
     public void setPublishername(String publisherName) {
         document.getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0)
-                .setPublishername(publisherName);
+            .setPublishername(publisherName);
     }
 
     public void setSrcType(SourcetypeAtt sourcetypeAtt) {

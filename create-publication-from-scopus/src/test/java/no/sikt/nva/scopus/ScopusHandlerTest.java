@@ -9,11 +9,14 @@ import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_I
 import static no.sikt.nva.scopus.ScopusConstants.AFFILIATION_DELIMITER;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_ELECTRONIC;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_PRINT;
+import static no.sikt.nva.scopus.ScopusConstants.LEXOVO_URL;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.sikt.nva.scopus.conversion.ContributorExtractor.NAME_DELIMITER;
 import static no.sikt.nva.scopus.conversion.PublicationContextCreator.UNSUPPORTED_SOURCE_TYPE;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
+import static no.unit.nva.language.LanguageConstants.AFRIKAANS;
 import static no.unit.nva.language.LanguageConstants.BOKMAAL;
+import static no.unit.nva.language.LanguageConstants.BULGARIAN;
 import static no.unit.nva.language.LanguageConstants.ENGLISH;
 import static no.unit.nva.language.LanguageConstants.FRENCH;
 import static no.unit.nva.language.LanguageConstants.ITALIAN;
@@ -66,6 +69,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.xml.namespace.QName;
 import no.scopus.generated.AffiliationTp;
 import no.scopus.generated.AuthorGroupTp;
@@ -93,6 +97,8 @@ import no.sikt.nva.scopus.test.utils.ScopusGenerator;
 import no.sikt.nva.testing.http.WiremockHttpClient;
 import no.unit.nva.doi.models.Doi;
 import no.unit.nva.events.models.EventReference;
+import no.unit.nva.language.Language;
+import no.unit.nva.language.LanguageConstants;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -123,8 +129,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
+import org.junit.jupiter.params.provider.MethodSource;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
@@ -230,7 +238,7 @@ class ScopusHandlerTest {
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var expectedTitleString =
-                IoUtils.stringFromResources(Path.of(EXPECTED_RESULTS_PATH, EXPECTED_CONTENT_STRING_TXT));
+            IoUtils.stringFromResources(Path.of(EXPECTED_RESULTS_PATH, EXPECTED_CONTENT_STRING_TXT));
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualMainTitle = createPublicationRequest.getEntityDescription().getMainTitle();
         assertThat(actualMainTitle, is(equalTo(expectedTitleString)));
@@ -539,7 +547,7 @@ class ScopusHandlerTest {
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualMainAbstract = createPublicationRequest.getEntityDescription().getAbstract();
         var expectedAbstract =
-                IoUtils.stringFromResources(Path.of(EXPECTED_RESULTS_PATH, FILENAME_EXPECTED_ABSTRACT_IN_0000469852));
+            IoUtils.stringFromResources(Path.of(EXPECTED_RESULTS_PATH, FILENAME_EXPECTED_ABSTRACT_IN_0000469852));
         assertThat(actualMainAbstract, is(equalTo(expectedAbstract)));
     }
 
@@ -694,7 +702,7 @@ class ScopusHandlerTest {
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationInstance = (JournalArticle) createPublicationRequest.getEntityDescription().getReference()
-                .getPublicationInstance();
+            .getPublicationInstance();
         assertThat(actualPublicationInstance.getVolume(), is(expectedVolume));
         assertThat(actualPublicationInstance.getIssue(), is(expectedIssue));
         assertThat(actualPublicationInstance.getPages().getEnd(), is(expectedPages));
@@ -709,17 +717,17 @@ class ScopusHandlerTest {
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContributors = createPublicationRequest.getEntityDescription()
-                .getContributors();
+            .getContributors();
         var actualCorrespondingContributor = getCorrespondingContributor(actualPublicationContributors);
         assertThat(actualCorrespondingContributor.getIdentity().getName(),
-                startsWith(correspondingAuthorTp.getSurname()));
+                   startsWith(correspondingAuthorTp.getSurname()));
     }
 
     private Contributor getCorrespondingContributor(List<Contributor> actualPublicationContributors) {
         return actualPublicationContributors
-                .stream()
-                .filter(Contributor::isCorrespondingAuthor)
-                .findAny().orElse(null);
+            .stream()
+            .filter(Contributor::isCorrespondingAuthor)
+            .findAny().orElse(null);
     }
 
     @Test
@@ -732,33 +740,60 @@ class ScopusHandlerTest {
         var nonDeterminableName = "NTNU";
         var thaiNotSupportedByNvaName = "มหาวิทยาลัยมหิดล";
         var expectedLabels = List.of(
-                Map.of(ENGLISH.getIso6391Code(), englishName),
-                Map.of(FRENCH.getIso6391Code(), frenchName),
-                Map.of(BOKMAAL.getIso6391Code(), norwegianName),
-                Map.of(ITALIAN.getIso6391Code(), italianName),
-                Map.of(ENGLISH.getIso6391Code(), nonDeterminableName),
-                Map.of(ENGLISH.getIso6391Code(), thaiNotSupportedByNvaName));
+            Map.of(ENGLISH.getIso6391Code(), englishName),
+            Map.of(FRENCH.getIso6391Code(), frenchName),
+            Map.of(BOKMAAL.getIso6391Code(), norwegianName),
+            Map.of(ITALIAN.getIso6391Code(), italianName),
+            Map.of(ENGLISH.getIso6391Code(), nonDeterminableName),
+            Map.of(ENGLISH.getIso6391Code(), thaiNotSupportedByNvaName));
         scopusData = ScopusGenerator.createWithSpecifiedAffiliations(
-                languageAffiliations(List.of(thaiNotSupportedByNvaName,
-                        frenchName,
-                        italianName,
-                        norwegianName,
-                        englishName,
-                        nonDeterminableName
-                )));
+            languageAffiliations(List.of(thaiNotSupportedByNvaName,
+                                         frenchName,
+                                         italianName,
+                                         norwegianName,
+                                         englishName,
+                                         nonDeterminableName
+            )));
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var organizations =
-                createPublicationRequest.getEntityDescription()
-                        .getContributors()
-                        .stream()
-                        .map(Contributor::getAffiliations)
-                        .flatMap(Collection::stream)
-                        .collect(
-                                Collectors.toSet());
+            createPublicationRequest.getEntityDescription()
+                .getContributors()
+                .stream()
+                .map(Contributor::getAffiliations)
+                .flatMap(Collection::stream)
+                .collect(
+                    Collectors.toSet());
         var actualOrganizationsLabels =
-                organizations.stream().map(Organization::getLabels).collect(Collectors.toList());
+            organizations.stream().map(Organization::getLabels).collect(Collectors.toList());
         assertThat(actualOrganizationsLabels, containsInAnyOrder(expectedLabels.toArray()));
+    }
+
+    @ParameterizedTest(name = "Should have entityDescription with language:{1}")
+    @MethodSource("providedLanguageAndExpectedOutput")
+    void shouldExtractLanguage(Language languageCode, URI expectedLanguageUri) throws IOException {
+        scopusData = ScopusGenerator.createScopusGeneratorWithSpecificLanguage(languageCode);
+        var s3Event = createNewScopusPublicationEvent();
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualLanguageUri = createPublicationRequest.getEntityDescription().getLanguage();
+        assertEquals(expectedLanguageUri, actualLanguageUri);
+    }
+
+    public static Stream<Arguments> providedLanguageAndExpectedOutput() {
+        return Stream.concat(LanguageConstants.ALL_LANGUAGES.stream().map(ScopusHandlerTest::createArguments),
+                             addNullPart());
+    }
+
+    private static Stream<Arguments> addNullPart() {
+        return Stream.of(Arguments.of(null, URI.create(LEXOVO_URL + ENGLISH.getIso6393Code())));
+    }
+
+    private static Arguments createArguments(Language language) {
+        var languageCode =
+            language == LanguageConstants.UNDEFINED_LANGUAGE || language == LanguageConstants.MISCELLANEOUS
+                ? ENGLISH.getIso6393Code()
+                : language.getIso6393Code();
+        return Arguments.of(language, URI.create(LEXOVO_URL + languageCode));
     }
 
     private List<AffiliationTp> languageAffiliations(List<String> organizationNames) {
