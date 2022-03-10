@@ -532,7 +532,7 @@ class ScopusHandlerTest {
     }
 
     @Test
-    void itShouldNotOutPutDuplicateContributors() throws IOException {
+    void shouldHaveNoDuplicateContributers() throws IOException {
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var contributors = createPublicationRequest.getEntityDescription().getContributors();
@@ -542,10 +542,10 @@ class ScopusHandlerTest {
     private void checkForDuplicateContributors(List<Contributor> contributors) {
         List<Integer> sequenceNumbers = new ArrayList<>();
         List<String> orcids = new ArrayList<>();
-        contributors.forEach(contributor -> isNotDuplicate(sequenceNumbers, orcids, contributor));
+        contributors.forEach(contributor -> isNotDuplicated(sequenceNumbers, orcids, contributor));
     }
 
-    private void isNotDuplicate(List<Integer> sequenceNumbers, List<String> orcids, Contributor contributor) {
+    private void isNotDuplicated(List<Integer> sequenceNumbers, List<String> orcids, Contributor contributor) {
         assertThat(sequenceNumbers, not(hasItem(contributor.getSequence())));
         sequenceNumbers.add(contributor.getSequence());
         if (nonNull(contributor.getIdentity().getOrcId())) {

@@ -80,7 +80,7 @@ public class ContributorExtractor {
     private void createNewContributorWithAdditionalAffiliationsAndSwapItInContributorList(
         Organization newAffiliation, Contributor matchingContributor) {
         var newContributor =
-            newContributorFromExistingContributorWithAdditionalAffiliation(matchingContributor, newAffiliation);
+            cloneContributorAddingAffiliation(matchingContributor, newAffiliation);
         replaceContributor(matchingContributor, newContributor);
     }
 
@@ -89,8 +89,8 @@ public class ContributorExtractor {
         contributors.add(newContributor);
     }
 
-    private Contributor newContributorFromExistingContributorWithAdditionalAffiliation(Contributor existingContributor,
-                                                                                       Organization newAffiliation) {
+    private Contributor cloneContributorAddingAffiliation(Contributor existingContributor,
+                                                          Organization newAffiliation) {
         List<Organization> affiliations = new ArrayList<>(existingContributor.getAffiliations());
         affiliations.add(newAffiliation);
         return new Contributor(existingContributor.getIdentity(),
@@ -102,15 +102,15 @@ public class ContributorExtractor {
 
     private boolean compareContributorToAuthorOrCollaboration(Contributor contributor, Object authorOrCollaboration) {
         return authorOrCollaboration instanceof AuthorTp
-                   ? contributorEqualsAuthorTp((AuthorTp) authorOrCollaboration, contributor)
-                   : contributorEqualsCollaboration((CollaborationTp) authorOrCollaboration, contributor);
+                   ? isSamePerson((AuthorTp) authorOrCollaboration, contributor)
+                   : isSameSequenceElement((CollaborationTp) authorOrCollaboration, contributor);
     }
 
-    private boolean contributorEqualsCollaboration(CollaborationTp collaboration, Contributor contributor) {
+    private boolean isSameSequenceElement(CollaborationTp collaboration, Contributor contributor) {
         return collaboration.getSeq().equals(contributor.getSequence().toString());
     }
 
-    private boolean contributorEqualsAuthorTp(AuthorTp author, Contributor contributor) {
+    private boolean isSamePerson(AuthorTp author, Contributor contributor) {
         if (author.getSeq().equals(contributor.getSequence().toString())) {
             return true;
         } else if (nonNull(author.getOrcid()) && nonNull(contributor.getIdentity().getOrcId())) {
