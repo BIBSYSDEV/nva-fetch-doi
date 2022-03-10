@@ -490,7 +490,9 @@ class ScopusHandlerTest {
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.K);
         final var expectedYear = randomYear();
         scopusData.setPublicationYear(expectedYear);
-        final var expectedIssn = setUpExpectedIssn();
+        scopusData.clearIssn();
+        final var expectedIssn = randomIssn();
+        scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -500,7 +502,6 @@ class ScopusHandlerTest {
         var actualSeries = ((Book) actualPublicationContext).getSeries();
         assertThat(actualSeries, instanceOf(UnconfirmedSeries.class));
         var actualIssn = ((UnconfirmedSeries) actualSeries).getOnlineIssn();
-        actualIssn = actualIssn.replace(DASH, EMPTY_STRING);
         assertThat(actualIssn, is(expectedIssn));
     }
 
@@ -510,7 +511,9 @@ class ScopusHandlerTest {
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.K);
         final var expectedYear = randomYear();
         scopusData.setPublicationYear(expectedYear);
-        final var expectedIssn = setUpExpectedIssn();
+        scopusData.clearIssn();
+        final var expectedIssn = randomIssn();
+        scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
         var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
         var s3Event = createS3Event(uri);
         var queryUri = createExpectedQueryUriForJournalWithEIssn(expectedIssn, expectedYear);
@@ -523,23 +526,6 @@ class ScopusHandlerTest {
         assertThat(actualSeries, instanceOf(Series.class));
         var actualUri = ((Series) actualSeries).getId();
         assertThat(actualUri, is(expectedSeriesUri));
-    }
-
-    @NotNull
-    private String setUpExpectedIssn() {
-        IssnTp issnTp = new IssnTp();
-        issnTp.setType(ISSN_TYPE_ELECTRONIC);
-        var expectedIssn = randomIssn();
-        issnTp.setContent(expectedIssn);
-        var issnCandidate = scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource()
-                .getIssn().stream().filter(issnTp1 -> issnTp1.getType().equals(ISSN_TYPE_ELECTRONIC))
-                .map(IssnTp::getContent).findFirst();
-        if (issnCandidate.isPresent()) {
-            expectedIssn = issnCandidate.get();
-        } else {
-            scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getSource().getIssn().add(issnTp);
-        }
-        return expectedIssn;
     }
 
     @Test
