@@ -7,6 +7,10 @@ import static no.sikt.nva.scopus.ScopusConstants.INF_END;
 import static no.sikt.nva.scopus.ScopusConstants.INF_START;
 import static no.sikt.nva.scopus.ScopusConstants.SUP_END;
 import static no.sikt.nva.scopus.ScopusConstants.SUP_START;
+import static no.sikt.nva.scopus.ScopusConstants.UNKNOWN_LANGUAGE_DETECTED;
+import static no.unit.nva.language.LanguageConstants.MISCELLANEOUS;
+import static no.unit.nva.language.LanguageConstants.MULTIPLE;
+import static no.unit.nva.language.LanguageConstants.UNDEFINED_LANGUAGE;
 import static nva.commons.core.StringUtils.isEmpty;
 import jakarta.xml.bind.JAXBElement;
 import java.net.URI;
@@ -21,6 +25,7 @@ import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordTp;
 import no.scopus.generated.AuthorKeywordsTp;
 import no.scopus.generated.CitationInfoTp;
+import no.scopus.generated.CitationLanguageTp;
 import no.scopus.generated.CitationTypeTp;
 import no.scopus.generated.CitationtypeAtt;
 import no.scopus.generated.CorrespondenceTp;
@@ -39,6 +44,8 @@ import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.conversion.ContributorExtractor;
 import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
+import no.unit.nva.language.LanguageConstants;
+import no.unit.nva.language.LanguageMapper;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -55,12 +62,15 @@ import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.paths.UriWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class ScopusConverter {
 
     public static final String UNSUPPORTED_CITATION_TYPE_MESSAGE = "Unsupported citation type, cannot convert eid %s";
     private final DocTp docTp;
+    private static final Logger logger = LoggerFactory.getLogger(ScopusConverter.class);
     private final MetadataService metadataService;
 
     protected ScopusConverter(DocTp docTp, MetadataService metadataService) {
@@ -94,7 +104,48 @@ public class ScopusConverter {
             extractCorrespondence(), extractAuthorGroup()).generateContributors());
         entityDescription.setTags(generateTags());
         entityDescription.setDate(extractPublicationDate());
+        entityDescription.setLanguage(extractLanguage());
         return entityDescription;
+    }
+
+    private URI extractLanguage() {
+        var citationLanguages = extractCitationLanguages();
+        switch (citationLanguages.size()) {
+            case 0: return UNDEFINED_LANGUAGE.getLexvoUri();
+            case 1: return convertToSupportedLanguage(citationLanguages.get(0));
+            default: return LanguageConstants.MULTIPLE.getLexvoUri();
+        }
+    }
+
+    private URI convertToSupportedLanguage(CitationLanguageTp citationLanguageTp) {
+        var language = LanguageMapper.getLanguageByIso6393Code(citationLanguageTp.getLang());
+        if (UNDEFINED_LANGUAGE.equals(language)) {
+            language = LanguageMapper.getLanguageByIso6392Code(citationLanguageTp.getLang());
+        }
+        if (UNDEFINED_LANGUAGE.equals(language)) {
+            language = LanguageMapper.getLanguageByIso6391Code(citationLanguageTp.getLang());
+        }
+        if(UNDEFINED_LANGUAGE.equals(language)) {
+            logger.info(String.format(
+                UNKNOWN_LANGUAGE_DETECTED,
+                citationLanguageTp.getLang(),
+                citationLanguageTp.getLanguage()));
+            return language.getLexvoUri();
+        }else if (MISCELLANEOUS.equals(language)) {
+            return MULTIPLE.getLexvoUri();
+        }else {
+            return language.getLexvoUri();
+        }
+    }
+
+    private List<CitationLanguageTp> extractCitationLanguages() {
+        return docTp
+            .getItem()
+            .getItem()
+            .getBibrecord()
+            .getHead()
+            .getCitationInfo()
+            .getCitationLanguage();
     }
 
     private PublicationDate extractPublicationDate() {
@@ -171,7 +222,6 @@ public class ScopusConverter {
             .stream()
             .map(ScopusConverter::extractContentAndPreserveXmlSupAndInfTags)
             .collect(Collectors.joining());
-
     }
 
     public static String extractContentString(Object content) {

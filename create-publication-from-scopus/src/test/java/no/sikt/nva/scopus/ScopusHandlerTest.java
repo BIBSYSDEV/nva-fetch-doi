@@ -17,6 +17,10 @@ import static no.unit.nva.language.LanguageConstants.BOKMAAL;
 import static no.unit.nva.language.LanguageConstants.ENGLISH;
 import static no.unit.nva.language.LanguageConstants.FRENCH;
 import static no.unit.nva.language.LanguageConstants.ITALIAN;
+import static no.unit.nva.language.LanguageConstants.MISCELLANEOUS;
+import static no.unit.nva.language.LanguageConstants.MULTIPLE;
+import static no.unit.nva.language.LanguageConstants.NORWEGIAN;
+import static no.unit.nva.language.LanguageConstants.UNDEFINED_LANGUAGE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
@@ -90,12 +94,14 @@ import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
 import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.sikt.nva.scopus.test.utils.ContentWrapper;
+import no.sikt.nva.scopus.test.utils.LanguagesWrapper;
 import no.sikt.nva.scopus.test.utils.ScopusGenerator;
 import no.sikt.nva.testing.http.WiremockHttpClient;
 import no.unit.nva.doi.models.Doi;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.language.Language;
 import no.unit.nva.language.LanguageConstants;
+import no.unit.nva.language.LanguageMapper;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -767,30 +773,35 @@ class ScopusHandlerTest {
     }
 
     @ParameterizedTest(name = "Should have entityDescription with language:{1}")
-    @MethodSource("providedLanguageAndExpectedOutput")
-    void shouldExtractLanguage(Language languageCode, URI expectedLanguageUri) throws IOException {
-        scopusData = ScopusGenerator.createScopusGeneratorWithSpecificLanguage(languageCode);
+    @MethodSource("providedLanguagesAndExpectedOutput")
+    void shouldExtractLanguage(List<Language> languageCodes, URI expectedLanguageUri) throws IOException {
+        scopusData = ScopusGenerator.createScopusGeneratorWithSpecificLanguage(new LanguagesWrapper(languageCodes));
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualLanguageUri = createPublicationRequest.getEntityDescription().getLanguage();
         assertEquals(expectedLanguageUri, actualLanguageUri);
     }
 
-    public static Stream<Arguments> providedLanguageAndExpectedOutput() {
+    public static Stream<Arguments> providedLanguagesAndExpectedOutput() {
         return Stream.concat(LanguageConstants.ALL_LANGUAGES.stream().map(ScopusHandlerTest::createArguments),
-                             addNullPart());
+                             addLanguageEdgeCases());
     }
 
-    private static Stream<Arguments> addNullPart() {
-        return Stream.of(Arguments.of(null, ENGLISH.getLexvoUri()));
+    private static Stream<Arguments> addLanguageEdgeCases() {
+        return Stream.of(
+            Arguments.of(null, UNDEFINED_LANGUAGE.getLexvoUri()),
+            Arguments.of(List.of(ENGLISH, NORWEGIAN), MULTIPLE.getLexvoUri()));
     }
 
     private static Arguments createArguments(Language language) {
-        var languageUri =
-            language == LanguageConstants.UNDEFINED_LANGUAGE || language == LanguageConstants.MISCELLANEOUS
-                ? ENGLISH.getLexvoUri()
-                : language.getLexvoUri();
-        return Arguments.of(language, languageUri);
+        var languageUri = language.getLexvoUri();
+        if (MISCELLANEOUS.equals(language)) {
+            languageUri = MULTIPLE.getLexvoUri();
+        }
+        if(NORWEGIAN.equals(language)) {
+            languageUri = BOKMAAL.getLexvoUri();
+        }
+        return Arguments.of(List.of(language), languageUri);
     }
 
     private List<AffiliationTp> languageAffiliations(List<String> organizationNames) {

@@ -98,11 +98,11 @@ public final class ScopusGenerator {
     private static final String NORWAY = "norway";
     private final List<AffiliationTp> affiliations;
     private final ContentWrapper contentWithSupAndInf;
-    private final Language languageCode;
+    private final LanguagesWrapper languages;
 
     public ScopusGenerator() {
         this.doi = randomDoi();
-        this.languageCode = randomElement(LanguageConstants.ALL_LANGUAGES);
+        this.languages = createRandomLanguages();
         this.minimumSequenceNumber = 1;
         this.abstractsTp = randomAbstracts();
         this.sourcetypeAtt = SourcetypeAtt.J;
@@ -112,7 +112,7 @@ public final class ScopusGenerator {
     }
 
     private ScopusGenerator(AbstractsTp abstractsTp) {
-        this.languageCode = randomElement(LanguageConstants.ALL_LANGUAGES);
+        this.languages = createRandomLanguages();
         this.doi = randomDoi();
         this.sourcetypeAtt = SourcetypeAtt.J;
         this.minimumSequenceNumber = 1;
@@ -123,7 +123,7 @@ public final class ScopusGenerator {
     }
 
     private ScopusGenerator(URI doi) {
-        this.languageCode = randomElement(LanguageConstants.ALL_LANGUAGES);
+        this.languages = createRandomLanguages();
         this.doi = doi;
         this.minimumSequenceNumber = 1;
         this.sourcetypeAtt = SourcetypeAtt.J;
@@ -134,7 +134,7 @@ public final class ScopusGenerator {
     }
 
     private ScopusGenerator(SourcetypeAtt sourcetypeAtt) {
-        this.languageCode = randomElement(LanguageConstants.ALL_LANGUAGES);
+        this.languages = createRandomLanguages();
         this.sourcetypeAtt = sourcetypeAtt;
         this.minimumSequenceNumber = 1;
         this.doi = randomDoi();
@@ -145,7 +145,7 @@ public final class ScopusGenerator {
     }
 
     private ScopusGenerator(CitationtypeAtt citationtypeAtt) {
-        this.languageCode = randomElement(LanguageConstants.ALL_LANGUAGES);
+        this.languages = createRandomLanguages();
         this.doi = randomDoi();
         this.citationtypeAtt = citationtypeAtt;
         this.sourcetypeAtt = SourcetypeAtt.J;
@@ -156,7 +156,7 @@ public final class ScopusGenerator {
     }
 
     private ScopusGenerator(List<AffiliationTp> affiliations) {
-        this.languageCode = randomElement(LanguageConstants.ALL_LANGUAGES);
+        this.languages = createRandomLanguages();
         this.doi = randomDoi();
         this.sourcetypeAtt = SourcetypeAtt.J;
         this.abstractsTp = randomAbstracts();
@@ -166,7 +166,7 @@ public final class ScopusGenerator {
     }
 
     private ScopusGenerator(ContentWrapper contentWithSupAndInf) {
-        this.languageCode = randomElement(LanguageConstants.ALL_LANGUAGES);
+        this.languages = createRandomLanguages();
         this.contentWithSupAndInf = contentWithSupAndInf;
         this.doi = randomDoi();
         this.sourcetypeAtt = SourcetypeAtt.J;
@@ -175,8 +175,8 @@ public final class ScopusGenerator {
         this.document = randomDocument();
     }
 
-    private ScopusGenerator(Language language) {
-        this.languageCode = language;
+    private ScopusGenerator(LanguagesWrapper languages) {
+        this.languages = languages;
         this.contentWithSupAndInf = packRandomSerializablesWithSupAndInf();
         this.doi = randomDoi();
         this.sourcetypeAtt = SourcetypeAtt.J;
@@ -209,8 +209,8 @@ public final class ScopusGenerator {
         return new ScopusGenerator(supAndInfContent);
     }
 
-    public static ScopusGenerator createScopusGeneratorWithSpecificLanguage(Language language) {
-        return new ScopusGenerator(language);
+    public static ScopusGenerator createScopusGeneratorWithSpecificLanguage(LanguagesWrapper languages) {
+        return new ScopusGenerator(languages);
     }
 
     public DocTp randomDocument() {
@@ -499,15 +499,20 @@ public final class ScopusGenerator {
         var citationInfo = new CitationInfoTp();
         citationInfo.setAuthorKeywords(randomAuthorKeywordsTp());
         citationInfo.getCitationType().add(createCitationType());
-        if (nonNull(languageCode)) {
-            citationInfo.getCitationLanguage().add(generateCitationLanguage());
+        if (nonNull(languages.getLanguages())) {
+            citationInfo.getCitationLanguage().addAll(generateCitationLanguages());
         }
         return citationInfo;
     }
 
-    private CitationLanguageTp generateCitationLanguage() {
+    private Collection<? extends CitationLanguageTp> generateCitationLanguages() {
+        return languages.getLanguages().stream().map(this::generateCitationLanguage).collect(Collectors.toList());
+    }
+
+    private CitationLanguageTp generateCitationLanguage(Language language) {
         var citationLanguageTp = new CitationLanguageTp();
-        citationLanguageTp.setLanguage(languageCode.getIso6393Code());
+        citationLanguageTp.setLanguage(language.getEng());
+        citationLanguageTp.setLang(language.getIso6393Code());
         return citationLanguageTp;
     }
 
@@ -776,5 +781,9 @@ public final class ScopusGenerator {
         pagerangeTp.setLast(pages);
         volisspagTp.getContent().add(volisspagTpPagerange);
         document.getItem().getItem().getBibrecord().getHead().getSource().setVolisspag(volisspagTp);
+    }
+
+    private LanguagesWrapper createRandomLanguages(){
+        return new LanguagesWrapper(List.of(randomElement(LanguageConstants.ALL_LANGUAGES)));
     }
 }
