@@ -686,10 +686,46 @@ class ScopusHandlerTest {
         assertThat(expectedIssue, is(((JournalLetter) actualPublicationInstance).getIssue()));
     }
 
+    @Test
+    void shouldExtractJournalArticleWhenScopusCitationTypeIsConferencePaperAndHasIssn() throws IOException {
+        scopusData = ScopusGenerator.create(CitationtypeAtt.CP);
+        scopusData.clearIssn();
+        var expectedIssn = randomIssn();
+        scopusData.addIssn(expectedIssn, ISSN_TYPE_PRINT);
+        var expectedIssue = String.valueOf(randomInteger());
+        var expectedVolume = randomString();
+        var expectedPages = randomString();
+        scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
+        var s3Event = createNewScopusPublicationEvent();
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationInstance =
+                createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
+        assertThat(actualPublicationInstance, isA(JournalArticle.class));
+        assertThat(expectedIssue, is(((JournalArticle) actualPublicationInstance).getIssue()));
+    }
+
+    @Test
+    void shouldExtractChapterArticleWhenScopusCitationTypeIsConferencePaperAndHasIsbnAndNoIssn() throws IOException {
+        scopusData = ScopusGenerator.create(CitationtypeAtt.CP);
+        scopusData.clearIssn();
+        var expectedIsbn13 = randomIsbn13();
+        scopusData.addIsbn(expectedIsbn13, "13");
+        var expectedIssue = String.valueOf(randomInteger());
+        var expectedVolume = randomString();
+        var expectedPagesEnd = randomString();
+        scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPagesEnd);
+        var s3Event = createNewScopusPublicationEvent();
+        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationInstance =
+                createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
+        assertThat(actualPublicationInstance, isA(ChapterArticle.class));
+        assertThat(expectedPagesEnd, is(((ChapterArticle) actualPublicationInstance).getPages().getEnd()));
+    }
+
     @ParameterizedTest(name = "should not generate CreatePublicationRequest when CitationType is:{0}")
     @EnumSource(
         value = CitationtypeAtt.class,
-        names = {"AR", "BK", "CH", "ED", "ER", "LE", "NO", "RE", "SH"},
+        names = {"AR", "BK", "CH", "CP", "ED", "ER", "LE", "NO", "RE", "SH"},
         mode = Mode.EXCLUDE)
     void shouldNotGenerateCreatePublicationFromUnsupportedPublicationTypes(CitationtypeAtt citationtypeAtt)
         throws IOException {

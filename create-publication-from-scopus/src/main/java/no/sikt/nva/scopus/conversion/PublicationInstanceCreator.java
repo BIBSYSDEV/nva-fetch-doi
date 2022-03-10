@@ -1,9 +1,13 @@
 package no.sikt.nva.scopus.conversion;
 
 import jakarta.xml.bind.JAXBElement;
+import no.scopus.generated.BibrecordTp;
 import no.scopus.generated.CitationTypeTp;
 import no.scopus.generated.CitationtypeAtt;
 import no.scopus.generated.DocTp;
+import no.scopus.generated.HeadTp;
+import no.scopus.generated.ItemTp;
+import no.scopus.generated.OrigItemTp;
 import no.scopus.generated.PagerangeTp;
 import no.scopus.generated.SourceTp;
 import no.scopus.generated.VolissTp;
@@ -22,6 +26,7 @@ import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -61,6 +66,12 @@ public class PublicationInstanceCreator {
                 return Optional.of(new BookMonograph());
             case CH:
                 return Optional.of(generateChapterArticle());
+            case CP:
+                if (hasIsbn() && hasNoIssn()) {
+                    return Optional.of(generateChapterArticle());
+                } else {
+                    return Optional.of(generateJournalArticle());
+                }
             case ED:
                 return Optional.of(generateJournalLeader());
             case ER:
@@ -199,4 +210,27 @@ public class PublicationInstanceCreator {
                 .map(CitationTypeTp::getCode);
     }
 
+    private boolean hasIsbn() {
+        return Optional.ofNullable(docTp)
+                .map(DocTp::getItem)
+                .map(ItemTp::getItem)
+                .map(OrigItemTp::getBibrecord)
+                .map(BibrecordTp::getHead)
+                .map(HeadTp::getSource)
+                .map(SourceTp::getIsbn)
+                .stream()
+                .anyMatch(isbnList -> isbnList.size() > 0);
+    }
+
+    private boolean hasNoIssn() {
+        return Optional.ofNullable(docTp)
+                .map(DocTp::getItem)
+                .map(ItemTp::getItem)
+                .map(OrigItemTp::getBibrecord)
+                .map(BibrecordTp::getHead)
+                .map(HeadTp::getSource)
+                .map(SourceTp::getIssn)
+                .stream()
+                .anyMatch(List::isEmpty);
+    }
 }
