@@ -12,6 +12,8 @@ import no.sikt.nva.scopus.ScopusConstants;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticleContentType;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
@@ -56,8 +58,9 @@ public class PublicationInstanceCreator {
             case AR:
                 return Optional.of(generateJournalArticle());
             case BK:
-            case CH:
                 return Optional.of(new BookMonograph());
+            case CH:
+                return Optional.of(generateChapterArticle());
             case ED:
                 return Optional.of(generateJournalLeader());
             case ER:
@@ -114,6 +117,13 @@ public class PublicationInstanceCreator {
         extractIssue().ifPresent(builder::withIssue);
         extractArticleNumber().ifPresent(builder::withArticleNumber);
         return builder.build();
+    }
+
+    private ChapterArticle generateChapterArticle() {
+        ChapterArticle chapterArticle = new ChapterArticle();
+        extractPages().ifPresent(chapterArticle::setPages);
+        chapterArticle.setContentType(ChapterArticleContentType.ACADEMIC_CHAPTER);
+        return chapterArticle;
     }
 
     private Optional<Range> extractPages() {

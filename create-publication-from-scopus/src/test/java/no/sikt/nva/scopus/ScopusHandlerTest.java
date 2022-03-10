@@ -488,8 +488,7 @@ class ScopusHandlerTest {
         scopusData.clearIssn();
         final var expectedIssn = randomIssn();
         scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
-        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
-        var s3Event = createS3Event(uri);
+        var s3Event = createNewScopusPublicationEvent();
         var queryUri = createExpectedQueryUriForJournalWithEIssn(expectedIssn, expectedYear);
         var expectedSeriesUri = mockedPublicationChannelsReturnsUri(queryUri);
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -703,8 +702,7 @@ class ScopusHandlerTest {
     void shouldExtractCitationTypesToChapterArticlePublicationInstance()
         throws IOException {
         scopusData = ScopusGenerator.create(CitationtypeAtt.CH);
-        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
-        var s3Event = createS3Event(uri);
+        var s3Event = createNewScopusPublicationEvent();
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationInstance =
             createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();

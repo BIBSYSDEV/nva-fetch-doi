@@ -38,22 +38,10 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
-import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.book.BookMonograph;
-import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
-import no.unit.nva.model.instancetypes.chapter.ChapterArticleContentType;
-import no.unit.nva.model.instancetypes.journal.JournalArticle;
-import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
-import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
-import no.unit.nva.model.instancetypes.journal.JournalLeader;
-import no.unit.nva.model.instancetypes.journal.JournalLetter;
-import no.unit.nva.model.pages.Pages;
-import no.unit.nva.model.pages.Range;
 import nva.commons.core.paths.UriWrapper;
 
 public class ScopusConverter {
 
-    public static final String UNSUPPORTED_CITATION_TYPE_MESSAGE = "Unsupported citation type, cannot convert eid %s";
     private final DocTp docTp;
     private final MetadataService metadataService;
 
