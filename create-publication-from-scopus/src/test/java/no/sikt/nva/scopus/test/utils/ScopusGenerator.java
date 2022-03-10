@@ -33,48 +33,8 @@ import java.util.stream.Stream;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
-import no.scopus.generated.AbstractTp;
-import no.scopus.generated.AbstractsTp;
-import no.scopus.generated.AffiliationTp;
-import no.scopus.generated.AuthorGroupTp;
-import no.scopus.generated.AuthorKeywordTp;
-import no.scopus.generated.AuthorKeywordsTp;
-import no.scopus.generated.AuthorTp;
-import no.scopus.generated.BibrecordTp;
-import no.scopus.generated.CitationInfoTp;
-import no.scopus.generated.CitationTitleTp;
-import no.scopus.generated.CitationTypeTp;
-import no.scopus.generated.CitationtypeAtt;
-import no.scopus.generated.CollaborationTp;
-import no.scopus.generated.CorrespondenceTp;
-import no.scopus.generated.DateSortTp;
-import no.scopus.generated.DocTp;
-import no.scopus.generated.HeadTp;
-import no.scopus.generated.InfTp;
-import no.scopus.generated.IssnTp;
-import no.scopus.generated.ItemInfoTp;
-import no.scopus.generated.ItemTp;
-import no.scopus.generated.ItemidTp;
-import no.scopus.generated.ItemidlistTp;
-import no.scopus.generated.MetaTp;
-import no.scopus.generated.ObjectFactory;
-import no.scopus.generated.OrganizationTp;
-import no.scopus.generated.OrigItemTp;
-import no.scopus.generated.PagerangeTp;
-import no.scopus.generated.PersonalnameType;
-import no.scopus.generated.ProcessInfo;
-import no.scopus.generated.PublisherTp;
-import no.scopus.generated.PublishercopyrightTp;
-import no.scopus.generated.RichstringWithMMLType;
-import no.scopus.generated.ShortTitle;
-import no.scopus.generated.SourceTp;
-import no.scopus.generated.SourcetitleTp;
-import no.scopus.generated.SourcetypeAtt;
-import no.scopus.generated.SupTp;
-import no.scopus.generated.TitletextTp;
-import no.scopus.generated.VolissTp;
-import no.scopus.generated.VolisspagTp;
-import no.scopus.generated.YesnoAtt;
+
+import no.scopus.generated.*;
 import no.sikt.nva.scopus.ScopusConstants;
 import no.unit.nva.language.LanguageConstants;
 import nva.commons.core.ioutils.IoUtils;
@@ -258,7 +218,7 @@ public final class ScopusGenerator {
         return date;
     }
 
-    private static Integer randomYear() {
+    public static Integer randomYear() {
         return 1 + randomInteger(currentYear());
     }
 
@@ -697,6 +657,13 @@ public final class ScopusGenerator {
         issnTp.setContent(issn);
         issnTp.setType(type);
         document.getItem().getItem().getBibrecord().getHead().getSource().getIssn().add(issnTp);
+    }
+
+    public void addIsbn(String isbn, String length) {
+        IsbnTp isbnTp = new IsbnTp();
+        isbnTp.setContent(isbn);
+        isbnTp.setLength(length);
+        document.getItem().getItem().getBibrecord().getHead().getSource().getIsbn().add(isbnTp);
     }
 
     public void clearIssn() {
