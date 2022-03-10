@@ -6,7 +6,7 @@ import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.sikt.nva.scopus.ScopusConverter.extractContentString;
 import static no.unit.nva.language.LanguageConstants.ENGLISH;
 import static nva.commons.core.StringUtils.isNotBlank;
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,69 +28,132 @@ public class ContributorExtractor {
     public static final String NAME_DELIMITER = ", ";
     private final List<CorrespondenceTp> correspondenceTps;
     private final List<AuthorGroupTp> authorGroupTps;
+    private final List<Contributor> contributors;
 
     public ContributorExtractor(List<CorrespondenceTp> correspondenceTps, List<AuthorGroupTp> authorGroupTps) {
         this.correspondenceTps = correspondenceTps;
         this.authorGroupTps = authorGroupTps;
+        this.contributors = new ArrayList<>();
     }
 
     public List<Contributor> generateContributors() {
-        Optional<PersonalnameType> correspondencePerson = correspondenceTps
-            .stream()
-            .map(this::extractPersonalNameType)
-            .findFirst().orElse(Optional.empty());
-
-        return extractContributors(correspondencePerson.orElse(null));
+        authorGroupTps.forEach(this::generateContributorsFromAuthorGroup);
+        return contributors;
     }
 
     private Optional<PersonalnameType> extractPersonalNameType(CorrespondenceTp correspondenceTp) {
         return Optional.ofNullable(correspondenceTp.getPerson());
     }
 
-    private List<Contributor> extractContributors(PersonalnameType correspondencePerson) {
-        return authorGroupTps
-            .stream()
-            .map(authorGroupTp -> generateContributorsFromAuthorGroup(authorGroupTp, correspondencePerson))
-            .flatMap(Collection::stream)
-            .collect(Collectors.toList());
+    private void generateContributorsFromAuthorGroup(AuthorGroupTp authorGroupTp) {
+        authorGroupTp.getAuthorOrCollaboration()
+            .forEach(authorOrCollaboration -> extractContributorFromAuthorOrCollaboration(authorOrCollaboration,
+                                                                                          authorGroupTp));
     }
 
-    private List<Contributor> generateContributorsFromAuthorGroup(AuthorGroupTp authorGroupTp,
-                                                                  PersonalnameType correspondencePerson) {
-        return authorGroupTp.getAuthorOrCollaboration()
-            .stream()
-            .map(authorOrCollaboration -> generateContributorFromAuthorOrCollaboration(authorOrCollaboration,
-                                                                                       authorGroupTp,
-                                                                                       correspondencePerson))
-            .collect(Collectors.toList());
+    private void extractContributorFromAuthorOrCollaboration(Object authorOrCollaboration,
+                                                             AuthorGroupTp authorGroupTp) {
+        Optional<Contributor> matchingContributor = contributors.stream()
+            .filter(contributor -> compareContributorToAuthorOrCollaboration(contributor,
+                                                                             authorOrCollaboration))
+            .findAny();
+        if (matchingContributor.isPresent()) {
+            replaceExistingContributor(matchingContributor.get(), authorGroupTp);
+        } else {
+            Optional<PersonalnameType> correspondencePerson = correspondenceTps
+                .stream()
+                .map(this::extractPersonalNameType)
+                .findFirst().orElse(Optional.empty());
+            generateContributorFromAuthorOrCollaboration(authorOrCollaboration, authorGroupTp,
+                                                         correspondencePerson.orElse(null));
+        }
     }
 
-    private Contributor generateContributorFromAuthorOrCollaboration(Object authorOrCollaboration,
-                                                                     AuthorGroupTp authorGroupTp,
-                                                                     PersonalnameType correspondencePerson) {
+    private void replaceExistingContributor(Contributor existingContributor, AuthorGroupTp authorGroupTp) {
+        var optionalNewAffiliations = generateAffiliation(authorGroupTp);
+        optionalNewAffiliations.ifPresent(
+            organizations ->
+                createNewContributorWithAdditionalAffiliationsAndSwapItInContributorList(organizations,
+                                                                                         existingContributor));
+    }
+
+    private void createNewContributorWithAdditionalAffiliationsAndSwapItInContributorList(
+        Organization newAffiliation, Contributor matchingContributor) {
+        var newContributor =
+            cloneContributorAddingAffiliation(matchingContributor, newAffiliation);
+        replaceContributor(matchingContributor, newContributor);
+    }
+
+    private void replaceContributor(Contributor oldContributor, Contributor newContributor) {
+        contributors.remove(oldContributor);
+        contributors.add(newContributor);
+    }
+
+    private Contributor cloneContributorAddingAffiliation(Contributor existingContributor,
+                                                          Organization newAffiliation) {
+        List<Organization> affiliations = new ArrayList<>(existingContributor.getAffiliations());
+        affiliations.add(newAffiliation);
+        return new Contributor(existingContributor.getIdentity(),
+                               affiliations,
+                               existingContributor.getRole(),
+                               existingContributor.getSequence(),
+                               existingContributor.isCorrespondingAuthor());
+    }
+
+    private boolean compareContributorToAuthorOrCollaboration(Contributor contributor, Object authorOrCollaboration) {
         return authorOrCollaboration instanceof AuthorTp
-                   ? generateContributorFromAuthorTp((AuthorTp) authorOrCollaboration, authorGroupTp,
-                                                     correspondencePerson)
-                   : generateContributorFromCollaborationTp(
-                       (CollaborationTp) authorOrCollaboration, authorGroupTp, correspondencePerson);
+                   ? isSamePerson((AuthorTp) authorOrCollaboration, contributor)
+                   : isSameSequenceElement((CollaborationTp) authorOrCollaboration, contributor);
     }
 
-    private Contributor generateContributorFromAuthorTp(AuthorTp author, AuthorGroupTp authorGroup,
-                                                        PersonalnameType correspondencePerson) {
+    private boolean isSameSequenceElement(CollaborationTp collaboration, Contributor contributor) {
+        return collaboration.getSeq().equals(contributor.getSequence().toString());
+    }
+
+    private boolean isSamePerson(AuthorTp author, Contributor contributor) {
+        if (author.getSeq().equals(contributor.getSequence().toString())) {
+            return true;
+        } else if (nonNull(author.getOrcid()) && nonNull(contributor.getIdentity().getOrcId())) {
+            return craftOrcidUriString(author.getOrcid()).equals(contributor.getIdentity().getOrcId());
+        } else {
+            return false;
+        }
+    }
+
+    private void generateContributorFromAuthorOrCollaboration(Object authorOrCollaboration,
+                                                              AuthorGroupTp authorGroupTp,
+                                                              PersonalnameType correspondencePerson) {
+        if (authorOrCollaboration instanceof AuthorTp) {
+            generateContributorFromAuthorTp((AuthorTp) authorOrCollaboration, authorGroupTp,
+                                            correspondencePerson);
+        } else {
+            generateContributorFromCollaborationTp(
+                (CollaborationTp) authorOrCollaboration, authorGroupTp, correspondencePerson);
+        }
+    }
+
+    private void generateContributorFromAuthorTp(AuthorTp author, AuthorGroupTp authorGroup,
+                                                 PersonalnameType correspondencePerson) {
         var identity = generateContributorIdentityFromAuthorTp(author);
-        var affiliations = generateAffiliation(authorGroup);
-        return new Contributor(identity, affiliations.orElse(null), Role.CREATOR, getSequenceNumber(author),
-                               isCorrespondingAuthor(author, correspondencePerson));
+        var affiliation = generateAffiliation(authorGroup);
+        var newContributor = new Contributor(identity,
+                                             affiliation.map(List::of).orElse(List.of()),
+                                             Role.CREATOR,
+                                             getSequenceNumber(author),
+                                             isCorrespondingAuthor(author, correspondencePerson));
+        contributors.add(newContributor);
     }
 
-    private Contributor generateContributorFromCollaborationTp(CollaborationTp collaboration,
-                                                               AuthorGroupTp authorGroupTp,
-                                                               PersonalnameType correspondencePerson) {
+    private void generateContributorFromCollaborationTp(CollaborationTp collaboration,
+                                                        AuthorGroupTp authorGroupTp,
+                                                        PersonalnameType correspondencePerson) {
         var identity = new Identity();
         identity.setName(determineContributorName(collaboration));
-        var affiliations = generateAffiliation(authorGroupTp);
-        return new Contributor(identity, affiliations.orElse(null), null, getSequenceNumber(collaboration),
-                               isCorrespondingAuthor(collaboration, correspondencePerson));
+        var affiliation = generateAffiliation(authorGroupTp);
+        var newContributor = new Contributor(identity, affiliation.map(List::of).orElse(List.of()), null,
+                                             getSequenceNumber(collaboration),
+                                             isCorrespondingAuthor(collaboration, correspondencePerson));
+        contributors.add(newContributor);
     }
 
     private Identity generateContributorIdentityFromAuthorTp(AuthorTp authorTp) {
@@ -100,7 +163,7 @@ public class ContributorExtractor {
         return identity;
     }
 
-    private Optional<List<Organization>> generateAffiliation(AuthorGroupTp authorGroup) {
+    private Optional<Organization> generateAffiliation(AuthorGroupTp authorGroup) {
         var labels = getOrganizationLabels(authorGroup);
         return labels.map(this::generateOrganizationWithLabel);
     }
@@ -135,10 +198,10 @@ public class ContributorExtractor {
         return isNotBlank(authorTp.getOrcid()) ? craftOrcidUriString(authorTp.getOrcid()) : null;
     }
 
-    private List<Organization> generateOrganizationWithLabel(Map<String, String> label) {
+    private Organization generateOrganizationWithLabel(Map<String, String> label) {
         Organization organization = new Organization();
         organization.setLabels(label);
-        return List.of(organization);
+        return organization;
     }
 
     private Optional<Map<String, String>> getOrganizationLabels(AuthorGroupTp authorGroup) {
