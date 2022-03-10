@@ -1,8 +1,5 @@
 package no.sikt.nva.scopus.conversion;
 
-import static no.sikt.nva.scopus.ScopusSourceType.BOOK;
-import static no.sikt.nva.scopus.ScopusSourceType.JOURNAL;
-import static no.sikt.nva.scopus.ScopusSourceType.REPORT;
 import static nva.commons.core.attempt.Try.attempt;
 
 import java.util.Collections;
@@ -22,8 +19,8 @@ import no.scopus.generated.MetaTp;
 import no.scopus.generated.OrigItemTp;
 import no.scopus.generated.PublisherTp;
 import no.scopus.generated.SourceTp;
+import no.scopus.generated.SourcetypeAtt;
 import no.sikt.nva.scopus.ScopusConstants;
-import no.sikt.nva.scopus.ScopusSourceType;
 import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.contexttypes.Book;
@@ -35,8 +32,10 @@ import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.Report;
+import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
+import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.paths.UriWrapper;
 
@@ -65,6 +64,9 @@ public class PublicationContextCreator {
         if (isBook()) {
             return createBook();
         }
+        if (isBookSeries()) {
+            return createBookInSeries();
+        }
         if (isReport()) {
             return createReport();
         }
@@ -75,7 +77,7 @@ public class PublicationContextCreator {
         return Optional.ofNullable(docTp)
                 .map(DocTp::getMeta)
                 .map(MetaTp::getSrctype)
-                .map(srcTyp -> JOURNAL.equals(ScopusSourceType.valueOfCode(srcTyp)))
+                .map(srcType -> srcType.equals(SourcetypeAtt.J.value()))
                 .orElse(false);
     }
 
@@ -96,7 +98,15 @@ public class PublicationContextCreator {
         return Optional.ofNullable(docTp)
                 .map(DocTp::getMeta)
                 .map(MetaTp::getSrctype)
-                .map(srcType -> BOOK.equals(ScopusSourceType.valueOfCode(srcType)))
+                .map(srcType -> srcType.equals(SourcetypeAtt.B.value()))
+                .orElse(false);
+    }
+
+    private boolean isBookSeries() {
+        return Optional.ofNullable(docTp)
+                .map(DocTp::getMeta)
+                .map(MetaTp::getSrctype)
+                .map(srcType -> srcType.equals(SourcetypeAtt.K.value()))
                 .orElse(false);
     }
 
@@ -104,7 +114,7 @@ public class PublicationContextCreator {
         return Optional.ofNullable(docTp)
                 .map(DocTp::getMeta)
                 .map(MetaTp::getSrctype)
-                .map(srcType -> REPORT.equals(ScopusSourceType.valueOfCode(srcType)))
+                .map(srcType -> srcType.equals(SourcetypeAtt.R.value()))
                 .orElse(false);
     }
 
@@ -114,6 +124,14 @@ public class PublicationContextCreator {
 
     public Book createBook() {
         BookSeries bookSeries = null;
+        String seriesNumber = null;
+        PublishingHouse publishingHouse = createPublisher();
+        List<String> isbnList = findIsbn();
+        return attempt(() -> new Book(bookSeries, seriesNumber, publishingHouse, isbnList)).orElseThrow();
+    }
+
+    public Book createBookInSeries() {
+        BookSeries bookSeries = createBookSeries();
         String seriesNumber = null;
         PublishingHouse publishingHouse = createPublisher();
         List<String> isbnList = findIsbn();
@@ -131,7 +149,7 @@ public class PublicationContextCreator {
     }
 
     public Chapter createChapter() {
-        //Todo: we do not have access to partOf URI for chapter yet -> se a dummy-uri
+        // TODO: We do not have access to partOf URI for chapter yet -> set a dummy URI
         return attempt(() -> new Chapter.Builder().withPartOf(ScopusConstants.DUMMY_URI).build()).orElseThrow();
     }
 
@@ -139,6 +157,19 @@ public class PublicationContextCreator {
         return fetchConfirmedPublisherFromPublicationChannels().orElseGet(this::createUnconfirmedPublisher);
     }
 
+    private BookSeries createBookSeries() {
+        return fetchConfirmedSeriesFromPublicationChannels().orElseGet(this::createUnconfirmedSeries);
+    }
+
+    private Optional<BookSeries> fetchConfirmedSeriesFromPublicationChannels() {
+        var sourceTitle = findSourceTitle();
+        var printIssn = findPrintIssn().orElse(null);
+        var electronicIssn = findElectronicIssn().orElse(null);
+        var publicationYear = findPublicationYear().orElseThrow();
+        return metadataService
+                .fetchJournalIdFromPublicationChannel(sourceTitle, electronicIssn, printIssn, publicationYear)
+                .map(id -> new Series(UriWrapper.fromUri(id).getUri()));
+    }
 
     private Optional<PublishingHouse> fetchConfirmedPublisherFromPublicationChannels() {
         var publisherName = findPublisherName();
@@ -150,6 +181,13 @@ public class PublicationContextCreator {
     private UnconfirmedPublisher createUnconfirmedPublisher() {
         var publisherName = findPublisherName();
         return new UnconfirmedPublisher(publisherName);
+    }
+
+    private UnconfirmedSeries createUnconfirmedSeries() {
+        var title = findSourceTitle();
+        var issn = findPrintIssn().orElse(null);
+        var onlineIssn = findElectronicIssn().orElse(null);
+        return attempt(() -> new UnconfirmedSeries(title, issn, onlineIssn)).orElseThrow();
     }
 
     private String findPublisherName() {
@@ -171,7 +209,7 @@ public class PublicationContextCreator {
         var publicationYear = findPublicationYear().orElseThrow();
 
         return metadataService
-            .lookUpJournalIdAtPublicationChannel(sourceTitle, electronicIssn, printIssn, publicationYear)
+            .fetchJournalIdFromPublicationChannel(sourceTitle, electronicIssn, printIssn, publicationYear)
             .map(Journal::new);
     }
 

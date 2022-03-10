@@ -168,9 +168,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         throws URISyntaxException, IOException, InvalidIssnException,
                MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
         Publication publication = IdentityUpdater.enrichPublicationCreators(bareProxyClient,
-                                                                            getPublicationMetadataFromDoi(url, owner,
-                                                                                                          URI.create(
-                                                                                                              customerId)));
+                        getPublicationMetadataFromDoi(url, owner, URI.create(customerId)));
         return restServiceObjectMapper.convertValue(publication, CreatePublicationRequest.class);
     }
 
