@@ -149,7 +149,7 @@ public class PublicationContextCreator {
     }
 
     public Chapter createChapter() {
-        //Todo: we do not have access to partOf URI for chapter yet -> se a dummy-uri
+        // TODO: We do not have access to partOf URI for chapter yet -> set a dummy URI
         return attempt(() -> new Chapter.Builder().withPartOf(ScopusConstants.DUMMY_URI).build()).orElseThrow();
     }
 
