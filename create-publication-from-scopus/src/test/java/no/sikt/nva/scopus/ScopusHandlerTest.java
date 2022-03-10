@@ -467,8 +467,7 @@ class ScopusHandlerTest {
         scopusData.clearIssn();
         final var expectedIssn = randomIssn();
         scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
-        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
-        var s3Event = createS3Event(uri);
+        var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
             .getPublicationContext();
@@ -696,8 +695,7 @@ class ScopusHandlerTest {
     void shouldExtractCitationTypesToBookMonographPublicationInstance(CitationtypeAtt citationtypeAtt)
         throws IOException {
         scopusData = ScopusGenerator.create(citationtypeAtt);
-        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
-        var s3Event = createS3Event(uri);
+        var s3Event = createNewScopusPublicationEvent();
         CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationInstance =
             createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
@@ -718,8 +716,7 @@ class ScopusHandlerTest {
         var expectedVolume = randomString();
         var expectedPages = randomString();
         scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
-        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
-        var s3Event = createS3Event(uri);
+        var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationInstance = (JournalArticle) createPublicationRequest.getEntityDescription().getReference()
                 .getPublicationInstance();
@@ -733,8 +730,7 @@ class ScopusHandlerTest {
         var authors = keepOnlyTheAuthors();
         var correspondingAuthorTp = authors.get(0);
         scopusData.setCorrespondence(correspondingAuthorTp);
-        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
-        var s3Event = createS3Event(uri);
+        var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationContributors = createPublicationRequest.getEntityDescription()
                 .getContributors();
