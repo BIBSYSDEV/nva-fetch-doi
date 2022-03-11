@@ -101,7 +101,6 @@ import no.unit.nva.doi.models.Doi;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.language.Language;
 import no.unit.nva.language.LanguageConstants;
-import no.unit.nva.language.LanguageMapper;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.AdditionalIdentifier;
