@@ -792,7 +792,7 @@ public final class ScopusGenerator {
         document.getItem().getItem().getBibrecord().getHead().getSource().setVolisspag(volisspagTp);
     }
 
-    private LanguagesWrapper createRandomLanguages(){
+    private LanguagesWrapper createRandomLanguages() {
         return new LanguagesWrapper(List.of(randomElement(LanguageConstants.ALL_LANGUAGES)));
     }
 }

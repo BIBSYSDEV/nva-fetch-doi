@@ -1,8 +1,6 @@
 package no.sikt.nva.scopus.conversion;
 
 import static no.sikt.nva.scopus.ScopusConstants.UNKNOWN_LANGUAGE_DETECTED;
-import static no.unit.nva.language.LanguageConstants.MISCELLANEOUS;
-import static no.unit.nva.language.LanguageConstants.MULTIPLE;
 import static no.unit.nva.language.LanguageConstants.UNDEFINED_LANGUAGE;
 import java.net.URI;
 import java.util.List;
@@ -45,11 +43,7 @@ public class LanguageExtractor {
                 UNKNOWN_LANGUAGE_DETECTED,
                 citationLanguageTp.getLang(),
                 citationLanguageTp.getLanguage()));
-            return language.getLexvoUri();
-        } else if (MISCELLANEOUS.equals(language)) {
-            return MULTIPLE.getLexvoUri();
-        } else {
-            return language.getLexvoUri();
         }
+        return language.getLexvoUri();
     }
 }

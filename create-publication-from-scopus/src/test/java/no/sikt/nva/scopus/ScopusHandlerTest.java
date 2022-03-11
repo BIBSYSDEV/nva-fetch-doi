@@ -580,7 +580,6 @@ class ScopusHandlerTest {
             assertThat(orcids, not(hasItem(contributor.getIdentity().getOrcId())));
             orcids.add(contributor.getIdentity().getOrcId());
         }
-
     }
 
     @Test
@@ -816,7 +815,7 @@ class ScopusHandlerTest {
                                          List.of(norwegianName),
                                          List.of(englishName),
                                          List.of(nonDeterminableName)
-                                         )));
+            )));
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var organizations =
@@ -858,7 +857,7 @@ class ScopusHandlerTest {
         if (MISCELLANEOUS.equals(language)) {
             languageUri = MULTIPLE.getLexvoUri();
         }
-        if(NORWEGIAN.equals(language)) {
+        if (NORWEGIAN.equals(language)) {
             languageUri = BOKMAAL.getLexvoUri();
         }
         return Arguments.of(List.of(language), languageUri);
