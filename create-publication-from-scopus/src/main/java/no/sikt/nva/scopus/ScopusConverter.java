@@ -8,10 +8,6 @@ import static no.sikt.nva.scopus.ScopusConstants.INF_END;
 import static no.sikt.nva.scopus.ScopusConstants.INF_START;
 import static no.sikt.nva.scopus.ScopusConstants.SUP_END;
 import static no.sikt.nva.scopus.ScopusConstants.SUP_START;
-import static no.sikt.nva.scopus.ScopusConstants.UNKNOWN_LANGUAGE_DETECTED;
-import static no.unit.nva.language.LanguageConstants.MISCELLANEOUS;
-import static no.unit.nva.language.LanguageConstants.MULTIPLE;
-import static no.unit.nva.language.LanguageConstants.UNDEFINED_LANGUAGE;
 import static nva.commons.core.StringUtils.isEmpty;
 import jakarta.xml.bind.JAXBElement;
 import java.net.URI;
@@ -35,10 +31,9 @@ import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.conversion.ContributorExtractor;
+import no.sikt.nva.scopus.conversion.LanguageExtractor;
 import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
-import no.unit.nva.language.LanguageConstants;
-import no.unit.nva.language.LanguageMapper;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -46,14 +41,10 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import nva.commons.core.paths.UriWrapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class ScopusConverter {
 
     private final DocTp docTp;
-    private static final Logger logger = LoggerFactory.getLogger(ScopusConverter.class);
     private final MetadataService metadataService;
 
     protected ScopusConverter(DocTp docTp, MetadataService metadataService) {
@@ -87,38 +78,8 @@ public class ScopusConverter {
             extractCorrespondence(), extractAuthorGroup()).generateContributors());
         entityDescription.setTags(generateTags());
         entityDescription.setDate(extractPublicationDate());
-        entityDescription.setLanguage(extractLanguage());
+        entityDescription.setLanguage(new LanguageExtractor(extractCitationLanguages()).extractLanguage());
         return entityDescription;
-    }
-
-    private URI extractLanguage() {
-        var citationLanguages = extractCitationLanguages();
-        switch (citationLanguages.size()) {
-            case 0: return UNDEFINED_LANGUAGE.getLexvoUri();
-            case 1: return convertToSupportedLanguage(citationLanguages.get(0));
-            default: return LanguageConstants.MULTIPLE.getLexvoUri();
-        }
-    }
-
-    private URI convertToSupportedLanguage(CitationLanguageTp citationLanguageTp) {
-        var language = LanguageMapper.getLanguageByIso6393Code(citationLanguageTp.getLang());
-        if (UNDEFINED_LANGUAGE.equals(language)) {
-            language = LanguageMapper.getLanguageByIso6392Code(citationLanguageTp.getLang());
-        }
-        if (UNDEFINED_LANGUAGE.equals(language)) {
-            language = LanguageMapper.getLanguageByIso6391Code(citationLanguageTp.getLang());
-        }
-        if(UNDEFINED_LANGUAGE.equals(language)) {
-            logger.info(String.format(
-                UNKNOWN_LANGUAGE_DETECTED,
-                citationLanguageTp.getLang(),
-                citationLanguageTp.getLanguage()));
-            return language.getLexvoUri();
-        }else if (MISCELLANEOUS.equals(language)) {
-            return MULTIPLE.getLexvoUri();
-        }else {
-            return language.getLexvoUri();
-        }
     }
 
     private List<CitationLanguageTp> extractCitationLanguages() {
@@ -284,7 +245,6 @@ public class ScopusConverter {
 
     private AdditionalIdentifier extractScopusIdentifier() {
         return new AdditionalIdentifier(ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME, docTp.getMeta().getEid());
-
     }
 
     private List<AuthorGroupTp> extractAuthorGroup() {
