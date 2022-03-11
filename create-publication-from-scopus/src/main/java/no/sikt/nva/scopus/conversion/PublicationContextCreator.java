@@ -32,8 +32,10 @@ import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.Report;
+import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
+import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.paths.UriWrapper;
 
@@ -61,6 +63,9 @@ public class PublicationContextCreator {
         }
         if (isBook()) {
             return createBook();
+        }
+        if (isBookSeries()) {
+            return createBookInSeries();
         }
         if (isReport()) {
             return createReport();
@@ -97,6 +102,14 @@ public class PublicationContextCreator {
                 .orElse(false);
     }
 
+    private boolean isBookSeries() {
+        return Optional.ofNullable(docTp)
+                .map(DocTp::getMeta)
+                .map(MetaTp::getSrctype)
+                .map(srcType -> srcType.equals(SourcetypeAtt.K.value()))
+                .orElse(false);
+    }
+
     private boolean isReport() {
         return Optional.ofNullable(docTp)
                 .map(DocTp::getMeta)
@@ -117,6 +130,14 @@ public class PublicationContextCreator {
         return attempt(() -> new Book(bookSeries, seriesNumber, publishingHouse, isbnList)).orElseThrow();
     }
 
+    public Book createBookInSeries() {
+        BookSeries bookSeries = createBookSeries();
+        String seriesNumber = null;
+        PublishingHouse publishingHouse = createPublisher();
+        List<String> isbnList = findIsbn();
+        return attempt(() -> new Book(bookSeries, seriesNumber, publishingHouse, isbnList)).orElseThrow();
+    }
+
     public Book createReport() {
         BookSeries bookSeries = null;
         String seriesTitle = null;
@@ -128,7 +149,7 @@ public class PublicationContextCreator {
     }
 
     public Chapter createChapter() {
-        //Todo: we do not have access to partOf URI for chapter yet -> se a dummy-uri
+        // TODO: We do not have access to partOf URI for chapter yet -> set a dummy URI
         return attempt(() -> new Chapter.Builder().withPartOf(ScopusConstants.DUMMY_URI).build()).orElseThrow();
     }
 
@@ -136,6 +157,19 @@ public class PublicationContextCreator {
         return fetchConfirmedPublisherFromPublicationChannels().orElseGet(this::createUnconfirmedPublisher);
     }
 
+    private BookSeries createBookSeries() {
+        return fetchConfirmedSeriesFromPublicationChannels().orElseGet(this::createUnconfirmedSeries);
+    }
+
+    private Optional<BookSeries> fetchConfirmedSeriesFromPublicationChannels() {
+        var sourceTitle = findSourceTitle();
+        var printIssn = findPrintIssn().orElse(null);
+        var electronicIssn = findElectronicIssn().orElse(null);
+        var publicationYear = findPublicationYear().orElseThrow();
+        return metadataService
+                .fetchJournalIdFromPublicationChannel(sourceTitle, electronicIssn, printIssn, publicationYear)
+                .map(id -> new Series(UriWrapper.fromUri(id).getUri()));
+    }
 
     private Optional<PublishingHouse> fetchConfirmedPublisherFromPublicationChannels() {
         var publisherName = findPublisherName();
@@ -147,6 +181,13 @@ public class PublicationContextCreator {
     private UnconfirmedPublisher createUnconfirmedPublisher() {
         var publisherName = findPublisherName();
         return new UnconfirmedPublisher(publisherName);
+    }
+
+    private UnconfirmedSeries createUnconfirmedSeries() {
+        var title = findSourceTitle();
+        var issn = findPrintIssn().orElse(null);
+        var onlineIssn = findElectronicIssn().orElse(null);
+        return attempt(() -> new UnconfirmedSeries(title, issn, onlineIssn)).orElseThrow();
     }
 
     private String findPublisherName() {
@@ -168,7 +209,7 @@ public class PublicationContextCreator {
         var publicationYear = findPublicationYear().orElseThrow();
 
         return metadataService
-            .lookUpJournalIdAtPublicationChannel(sourceTitle, electronicIssn, printIssn, publicationYear)
+            .fetchJournalIdFromPublicationChannel(sourceTitle, electronicIssn, printIssn, publicationYear)
             .map(Journal::new);
     }
 

@@ -2,6 +2,7 @@ package no.sikt.nva.scopus;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
+import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
 import static no.sikt.nva.scopus.ScopusConstants.DOI_OPEN_URL_FORMAT;
 import static no.sikt.nva.scopus.ScopusConstants.INF_END;
 import static no.sikt.nva.scopus.ScopusConstants.INF_START;
@@ -19,31 +20,23 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordTp;
 import no.scopus.generated.AuthorKeywordsTp;
 import no.scopus.generated.CitationInfoTp;
 import no.scopus.generated.CitationLanguageTp;
-import no.scopus.generated.CitationTypeTp;
-import no.scopus.generated.CitationtypeAtt;
 import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
 import no.scopus.generated.InfTp;
-import no.scopus.generated.ItemidTp;
-import no.scopus.generated.PagerangeTp;
-import no.scopus.generated.SourceTp;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
-import no.scopus.generated.VolissTp;
-import no.scopus.generated.VolisspagTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.conversion.ContributorExtractor;
 import no.sikt.nva.scopus.conversion.PublicationContextCreator;
-import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
+import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
 import no.unit.nva.language.LanguageConstants;
 import no.unit.nva.language.LanguageMapper;
 import no.unit.nva.metadata.CreatePublicationRequest;
@@ -52,15 +45,6 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
-import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.book.BookMonograph;
-import no.unit.nva.model.instancetypes.journal.JournalArticle;
-import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
-import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
-import no.unit.nva.model.instancetypes.journal.JournalLeader;
-import no.unit.nva.model.instancetypes.journal.JournalLetter;
-import no.unit.nva.model.pages.Pages;
-import no.unit.nva.model.pages.Range;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,7 +52,6 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class ScopusConverter {
 
-    public static final String UNSUPPORTED_CITATION_TYPE_MESSAGE = "Unsupported citation type, cannot convert eid %s";
     private final DocTp docTp;
     private static final Logger logger = LoggerFactory.getLogger(ScopusConverter.class);
     private final MetadataService metadataService;
@@ -268,7 +251,7 @@ public class ScopusConverter {
 
     private Reference generateReference() {
         Reference reference = new Reference();
-        reference.setPublicationInstance(generatePublicationInstance());
+        reference.setPublicationInstance(new PublicationInstanceCreator(docTp).getPublicationInstance());
         reference.setDoi(extractDOI());
         reference.setPublicationContext(new PublicationContextCreator(metadataService, docTp).getPublicationContext());
         return reference;
@@ -278,161 +261,6 @@ public class ScopusConverter {
         return nonNull(docTp.getMeta().getDoi())
                    ? UriWrapper.fromUri(DOI_OPEN_URL_FORMAT).addChild(docTp.getMeta().getDoi()).getUri()
                    : null;
-    }
-
-    private PublicationInstance<? extends Pages> generatePublicationInstance() {
-        return getCitationType()
-            .flatMap(this::convertCitationTypeToPublicationInstance)
-            .orElseThrow(this::getUnsupportedCitationTypeException);
-    }
-
-    private UnsupportedCitationTypeException getUnsupportedCitationTypeException() {
-        return new UnsupportedCitationTypeException(
-            String.format(UNSUPPORTED_CITATION_TYPE_MESSAGE, docTp.getMeta().getEid()));
-    }
-
-    /*
-    See enum explanation in "SCOPUS CUSTOM DATA DOCUMENTATION", copy can be found at
-    https://isikt.sharepoint.com/:b:/s/Dovre/EQGVGp2Xn-RDvDi8zg3XFlQB6vo95nGLbINztJcXjStG5w?e=O9wQwB
-     */
-    private Optional<PublicationInstance<? extends Pages>> convertCitationTypeToPublicationInstance(
-        CitationtypeAtt citationtypeAtt) {
-        switch (citationtypeAtt) {
-            case AR:
-                return Optional.of(generateJournalArticle());
-            case BK:
-            case CH:
-                return Optional.of(new BookMonograph());
-            case ED:
-                return Optional.of(generateJournalLeader());
-            case ER:
-                return Optional.of(generateJournalCorrigendum());
-            case LE:
-            case NO:
-                return Optional.of(generateJournalLetter());
-            case RE:
-            case SH:
-                return Optional.of(generateJournalArticle(JournalArticleContentType.REVIEW_ARTICLE));
-            default:
-                return Optional.empty();
-        }
-    }
-
-    private Optional<CitationtypeAtt> getCitationType() {
-        return docTp
-            .getItem()
-            .getItem()
-            .getBibrecord()
-            .getHead()
-            .getCitationInfo()
-            .getCitationType()
-            .stream()
-            .findFirst()
-            .map(CitationTypeTp::getCode);
-    }
-
-    private JournalArticle generateJournalArticle(JournalArticleContentType contentType) {
-        JournalArticle journalArticle = generateJournalArticle();
-        journalArticle.setContentType(contentType);
-        return journalArticle;
-    }
-
-    private JournalArticle generateJournalArticle() {
-        JournalArticle journalArticle = new JournalArticle();
-        extractPages().ifPresent(journalArticle::setPages);
-        extractVolume().ifPresent(journalArticle::setVolume);
-        extractIssue().ifPresent(journalArticle::setIssue);
-        extractArticleNumber().ifPresent(journalArticle::setArticleNumber);
-        return journalArticle;
-    }
-
-    private JournalLeader generateJournalLeader() {
-        JournalLeader.Builder builder = new JournalLeader.Builder();
-        extractPages().ifPresent(builder::withPages);
-        extractVolume().ifPresent(builder::withVolume);
-        extractIssue().ifPresent(builder::withIssue);
-        extractArticleNumber().ifPresent(builder::withArticleNumber);
-        return builder.build();
-    }
-
-    private JournalCorrigendum generateJournalCorrigendum() {
-        JournalCorrigendum.Builder builder = new JournalCorrigendum.Builder();
-        extractPages().ifPresent(builder::withPages);
-        extractVolume().ifPresent(builder::withVolume);
-        extractIssue().ifPresent(builder::withIssue);
-        extractArticleNumber().ifPresent(builder::withArticleNumber);
-        builder.withCorrigendumFor(ScopusConstants.DUMMY_URI);
-        return builder.build();
-    }
-
-    private JournalLetter generateJournalLetter() {
-        JournalLetter.Builder builder = new JournalLetter.Builder();
-        extractPages().ifPresent(builder::withPages);
-        extractVolume().ifPresent(builder::withVolume);
-        extractIssue().ifPresent(builder::withIssue);
-        extractArticleNumber().ifPresent(builder::withArticleNumber);
-        return builder.build();
-    }
-
-    private Optional<Range> extractPages() {
-        return getVolisspagTpStream()
-            .filter(this::isPageRange)
-            .map(this::extractPageRange)
-            .findAny().orElse(Optional.empty());
-    }
-
-    private Stream<JAXBElement<?>> getVolisspagTpStream() {
-        return Optional.ofNullable(getSourceTp().getVolisspag())
-            .map(VolisspagTp::getContent)
-            .orElse(emptyList())
-            .stream();
-    }
-
-    private Optional<String> extractVolume() {
-        return getVolisspagTpStream()
-            .filter(this::isVolumeIssue)
-            .map(this::extractVolumeValue)
-            .findAny().orElse(Optional.empty());
-    }
-
-    private Optional<String> extractIssue() {
-        return getVolisspagTpStream()
-            .filter(this::isVolumeIssue)
-            .map(this::extractIssueValue)
-            .findAny().orElse(Optional.empty());
-    }
-
-    private Optional<String> extractArticleNumber() {
-        return Optional.ofNullable(getSourceTp().getArticleNumber());
-    }
-
-    private boolean isVolumeIssue(JAXBElement<?> content) {
-        return content.getValue() instanceof VolissTp;
-    }
-
-    private Optional<String> extractVolumeValue(JAXBElement<?> content) {
-        return Optional.ofNullable(((VolissTp) content.getValue()).getVolume());
-    }
-
-    private Optional<String> extractIssueValue(JAXBElement<?> content) {
-        return Optional.ofNullable(((VolissTp) content.getValue()).getIssue());
-    }
-
-    private SourceTp getSourceTp() {
-        return docTp.getItem()
-            .getItem()
-            .getBibrecord()
-            .getHead()
-            .getSource();
-    }
-
-    private boolean isPageRange(JAXBElement<?> content) {
-        return content.getValue() instanceof PagerangeTp;
-    }
-
-    private Optional<Range> extractPageRange(JAXBElement<?> content) {
-        return Optional.of(new Range(((PagerangeTp) content.getValue()).getFirst(),
-                                     ((PagerangeTp) content.getValue()).getLast()));
     }
 
     private Optional<TitletextTp> getMainTitleTextTp() {
@@ -451,29 +279,12 @@ public class ScopusConverter {
     }
 
     private Set<AdditionalIdentifier> generateAdditionalIdentifiers() {
-        return extractItemIdentifiers()
-            .stream()
-            .filter(this::isScopusIdentifier)
-            .map(this::toAdditionalIdentifier)
-            .collect(Collectors.toSet());
+        return Set.of(extractScopusIdentifier());
     }
 
-    private List<ItemidTp> extractItemIdentifiers() {
-        return docTp.getItem()
-            .getItem()
-            .getBibrecord()
-            .getItemInfo()
-            .getItemidlist()
-            .getItemid();
-    }
+    private AdditionalIdentifier extractScopusIdentifier() {
+        return new AdditionalIdentifier(ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME, docTp.getMeta().getEid());
 
-    private boolean isScopusIdentifier(ItemidTp itemIdTp) {
-        return itemIdTp.getIdtype().equalsIgnoreCase(ScopusConstants.SCOPUS_ITEM_IDENTIFIER_SCP_FIELD_NAME);
-    }
-
-    private AdditionalIdentifier toAdditionalIdentifier(ItemidTp itemIdTp) {
-        return new AdditionalIdentifier(ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME,
-                                        itemIdTp.getValue());
     }
 
     private List<AuthorGroupTp> extractAuthorGroup() {

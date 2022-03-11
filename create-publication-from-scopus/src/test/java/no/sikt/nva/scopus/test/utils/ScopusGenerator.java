@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
+
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AbstractsTp;
 import no.scopus.generated.AffiliationTp;
@@ -52,6 +53,7 @@ import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
 import no.scopus.generated.InfTp;
+import no.scopus.generated.IsbnTp;
 import no.scopus.generated.IssnTp;
 import no.scopus.generated.ItemInfoTp;
 import no.scopus.generated.ItemTp;
@@ -273,7 +275,7 @@ public final class ScopusGenerator {
         return date;
     }
 
-    private static Integer randomYear() {
+    public static Integer randomYear() {
         return 1 + randomInteger(currentYear());
     }
 
@@ -729,6 +731,13 @@ public final class ScopusGenerator {
         issnTp.setContent(issn);
         issnTp.setType(type);
         document.getItem().getItem().getBibrecord().getHead().getSource().getIssn().add(issnTp);
+    }
+
+    public void addIsbn(String isbn, String length) {
+        IsbnTp isbnTp = new IsbnTp();
+        isbnTp.setContent(isbn);
+        isbnTp.setLength(length);
+        document.getItem().getItem().getBibrecord().getHead().getSource().getIsbn().add(isbnTp);
     }
 
     public void clearIssn() {
