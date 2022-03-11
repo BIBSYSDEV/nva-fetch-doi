@@ -70,6 +70,13 @@ public class PublicationContextCreator {
         if (isReport()) {
             return createReport();
         }
+        if (isConferenceProceeding()) {
+            if (hasIsbn() && hasNoIssn()) {
+                return createChapter();
+            } else {
+                return createJournal();
+            }
+        }
         throw new UnsupportedSrcTypeException(String.format(UNSUPPORTED_SOURCE_TYPE, docTp.getMeta().getEid()));
     }
 
@@ -116,6 +123,38 @@ public class PublicationContextCreator {
                 .map(MetaTp::getSrctype)
                 .map(srcType -> srcType.equals(SourcetypeAtt.R.value()))
                 .orElse(false);
+    }
+
+    private boolean isConferenceProceeding() {
+        return Optional.ofNullable(docTp)
+                .map(DocTp::getMeta)
+                .map(MetaTp::getSrctype)
+                .map(srcType -> srcType.equals(SourcetypeAtt.P.value()))
+                .orElse(false);
+    }
+
+    private boolean hasIsbn() {
+        return Optional.ofNullable(docTp)
+                .map(DocTp::getItem)
+                .map(ItemTp::getItem)
+                .map(OrigItemTp::getBibrecord)
+                .map(BibrecordTp::getHead)
+                .map(HeadTp::getSource)
+                .map(SourceTp::getIsbn)
+                .stream()
+                .noneMatch(List::isEmpty);
+    }
+
+    private boolean hasNoIssn() {
+        return Optional.ofNullable(docTp)
+                .map(DocTp::getItem)
+                .map(ItemTp::getItem)
+                .map(OrigItemTp::getBibrecord)
+                .map(BibrecordTp::getHead)
+                .map(HeadTp::getSource)
+                .map(SourceTp::getIssn)
+                .stream()
+                .anyMatch(List::isEmpty);
     }
 
     public Periodical createJournal() {
