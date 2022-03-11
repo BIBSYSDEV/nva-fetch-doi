@@ -142,7 +142,7 @@ public class PublicationContextCreator {
                 .map(HeadTp::getSource)
                 .map(SourceTp::getIsbn)
                 .stream()
-                .anyMatch(isbnList -> isbnList.size() > 0);
+                .noneMatch(List::isEmpty);
     }
 
     private boolean hasNoIssn() {
