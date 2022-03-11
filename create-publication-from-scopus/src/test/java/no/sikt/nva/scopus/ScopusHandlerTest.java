@@ -481,6 +481,44 @@ class ScopusHandlerTest {
     }
 
     @Test
+    void shouldReturnPublicationContextUnconfirmedJournalWhenSrctypeIsPAndIssnExists()
+        throws IOException {
+        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.P);
+        final var expectedYear = String.valueOf(randomYear());
+        scopusData.setPublicationYear(expectedYear);
+        scopusData.clearIssn();
+        final var expectedIssn = randomIssn();
+        scopusData.addIssn(expectedIssn, ISSN_TYPE_ELECTRONIC);
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
+            .getPublicationContext();
+        assertThat(actualPublicationContext, instanceOf(UnconfirmedJournal.class));
+        var actualIssn = ((UnconfirmedJournal) actualPublicationContext).getOnlineIssn();
+        assertThat(actualIssn, is(expectedIssn));
+    }
+
+    @Test
+    void shouldReturnPublicationContextChapterWhenSrctypeIsPAndIsbnExists()
+        throws IOException {
+        scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.P);
+        final var expectedYear = String.valueOf(randomYear());
+        scopusData.setPublicationYear(expectedYear);
+        scopusData.clearIssn();
+        final var expectedIsbn = randomIsbn13();
+        scopusData.addIsbn(expectedIsbn, "13");
+        var uri = s3Driver.insertFile(UnixPath.of(randomString()), scopusData.toXml());
+        var s3Event = createS3Event(uri);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationContext = createPublicationRequest.getEntityDescription().getReference()
+            .getPublicationContext();
+        assertThat(actualPublicationContext, instanceOf(Chapter.class));
+        var actualPartOfUri = ((Chapter) actualPublicationContext).getPartOf();
+        assertThat(actualPartOfUri, is(ScopusConstants.DUMMY_URI));
+    }
+
+    @Test
     void shouldReturnPublicationContextConfirmedBookSeriesWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeK()
         throws IOException, ParseException {
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.K);

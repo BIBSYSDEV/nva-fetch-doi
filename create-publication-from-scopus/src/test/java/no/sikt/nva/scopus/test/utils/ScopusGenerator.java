@@ -705,6 +705,13 @@ public final class ScopusGenerator {
         IsbnTp isbnTp = new IsbnTp();
         isbnTp.setContent(isbn);
         isbnTp.setLength(length);
+        if (randomBoolean()) {
+            isbnTp.setType(ScopusConstants.ISSN_TYPE_ELECTRONIC);
+        }
+        if (randomBoolean()) {
+            isbnTp.setType(ScopusConstants.ISSN_TYPE_PRINT);
+        }
+        isbnTp.setLevel("Volume");
         document.getItem().getItem().getBibrecord().getHead().getSource().getIsbn().add(isbnTp);
     }
 
