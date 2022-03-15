@@ -10,6 +10,11 @@ import no.scopus.generated.VolissTp;
 import no.scopus.generated.VolisspagTp;
 import no.sikt.nva.scopus.ScopusConstants;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
+import no.unit.nva.model.contexttypes.BookSeries;
+import no.unit.nva.model.contexttypes.Chapter;
+import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
@@ -32,9 +37,11 @@ public class PublicationInstanceCreator {
     public static final String UNSUPPORTED_CITATION_TYPE_MESSAGE = "Unsupported citation type, cannot convert eid %s";
 
     private final DocTp docTp;
+    private final PublicationContext publicationContext;
 
-    public PublicationInstanceCreator(DocTp docTp) {
+    public PublicationInstanceCreator(DocTp docTp, PublicationContext publicationContext) {
         this.docTp = docTp;
+        this.publicationContext = publicationContext;
     }
 
     public PublicationInstance<? extends Pages> getPublicationInstance() {
@@ -61,6 +68,12 @@ public class PublicationInstanceCreator {
                 return Optional.of(new BookMonograph());
             case CH:
                 return Optional.of(generateChapterArticle());
+            case CP:
+                if (isJournal()) {
+                    return Optional.of(generateJournalArticle());
+                } else if (isChapter()) {
+                    return Optional.of(generateChapterArticle());
+                }
             case ED:
                 return Optional.of(generateJournalLeader());
             case ER:
@@ -185,6 +198,14 @@ public class PublicationInstanceCreator {
                 .getBibrecord()
                 .getHead()
                 .getSource();
+    }
+
+    private boolean isJournal() {
+        return publicationContext instanceof Journal || publicationContext instanceof UnconfirmedJournal;
+    }
+
+    private boolean isChapter() {
+        return publicationContext instanceof Chapter || publicationContext instanceof BookSeries;
     }
 
     private Optional<CitationtypeAtt> getCitationTypeCode() {
