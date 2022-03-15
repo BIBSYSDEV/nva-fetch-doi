@@ -662,7 +662,7 @@ class ScopusHandlerTest {
     void shouldExtractJournalArticleWhenScopusCitationTypeIsArticle() throws IOException {
         scopusData = ScopusGenerator.create(CitationtypeAtt.AR);
         var s3Event = createNewScopusPublicationEvent();
-        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationInstance =
             createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
         assertThat(actualPublicationInstance, isA(JournalArticle.class));
@@ -672,7 +672,7 @@ class ScopusHandlerTest {
     void shouldExtractJournalArticleWhenScopusCitationTypeIsReview() throws IOException {
         scopusData = ScopusGenerator.create(CitationtypeAtt.RE);
         var s3Event = createNewScopusPublicationEvent();
-        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationInstance =
             createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
         assertThat(actualPublicationInstance, isA(JournalArticle.class));
@@ -686,7 +686,7 @@ class ScopusHandlerTest {
         var expectedPages = randomString();
         scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
         var s3Event = createNewScopusPublicationEvent();
-        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationInstance =
             createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
         assertThat(actualPublicationInstance, isA(JournalLeader.class));
@@ -702,7 +702,7 @@ class ScopusHandlerTest {
         var expectedPages = randomString();
         scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
         var s3Event = createNewScopusPublicationEvent();
-        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationInstance =
             createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
         assertThat(actualPublicationInstance, isA(JournalCorrigendum.class));
@@ -717,7 +717,7 @@ class ScopusHandlerTest {
         var expectedPages = randomString();
         scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
         var s3Event = createNewScopusPublicationEvent();
-        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationInstance =
             createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
         assertThat(actualPublicationInstance, isA(JournalLetter.class));
@@ -736,7 +736,7 @@ class ScopusHandlerTest {
         var expectedPages = randomString();
         scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPages);
         var s3Event = createNewScopusPublicationEvent();
-        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationInstance =
                 createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
         assertThat(actualPublicationInstance, isA(JournalArticle.class));
@@ -756,7 +756,7 @@ class ScopusHandlerTest {
         var expectedPagesEnd = randomString();
         scopusData.setJournalInfo(expectedVolume, expectedIssue, expectedPagesEnd);
         var s3Event = createNewScopusPublicationEvent();
-        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationInstance =
                 createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
         assertThat(actualPublicationInstance, isA(ChapterArticle.class));
@@ -794,7 +794,7 @@ class ScopusHandlerTest {
         throws IOException {
         scopusData = ScopusGenerator.create(CitationtypeAtt.BK);
         var s3Event = createNewScopusPublicationEvent();
-        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationInstance =
             createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
         assertThat(actualPublicationInstance, isA(BookMonograph.class));
@@ -805,7 +805,7 @@ class ScopusHandlerTest {
         throws IOException {
         scopusData = ScopusGenerator.create(CitationtypeAtt.CH);
         var s3Event = createNewScopusPublicationEvent();
-        CreatePublicationRequest createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualPublicationInstance =
             createPublicationRequest.getEntityDescription().getReference().getPublicationInstance();
         assertThat(actualPublicationInstance, isA(ChapterArticle.class));
