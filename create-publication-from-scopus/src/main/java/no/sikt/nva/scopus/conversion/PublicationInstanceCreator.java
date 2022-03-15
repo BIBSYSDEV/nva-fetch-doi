@@ -1,19 +1,20 @@
 package no.sikt.nva.scopus.conversion;
 
 import jakarta.xml.bind.JAXBElement;
-import no.scopus.generated.BibrecordTp;
 import no.scopus.generated.CitationTypeTp;
 import no.scopus.generated.CitationtypeAtt;
 import no.scopus.generated.DocTp;
-import no.scopus.generated.HeadTp;
-import no.scopus.generated.ItemTp;
-import no.scopus.generated.OrigItemTp;
 import no.scopus.generated.PagerangeTp;
 import no.scopus.generated.SourceTp;
 import no.scopus.generated.VolissTp;
 import no.scopus.generated.VolisspagTp;
 import no.sikt.nva.scopus.ScopusConstants;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
+import no.unit.nva.model.contexttypes.BookSeries;
+import no.unit.nva.model.contexttypes.Chapter;
+import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
@@ -26,7 +27,6 @@ import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -37,9 +37,11 @@ public class PublicationInstanceCreator {
     public static final String UNSUPPORTED_CITATION_TYPE_MESSAGE = "Unsupported citation type, cannot convert eid %s";
 
     private final DocTp docTp;
+    private final PublicationContext publicationContext;
 
-    public PublicationInstanceCreator(DocTp docTp) {
+    public PublicationInstanceCreator(DocTp docTp, PublicationContext publicationContext) {
         this.docTp = docTp;
+        this.publicationContext = publicationContext;
     }
 
     public PublicationInstance<? extends Pages> getPublicationInstance() {
@@ -67,10 +69,10 @@ public class PublicationInstanceCreator {
             case CH:
                 return Optional.of(generateChapterArticle());
             case CP:
-                if (hasIsbn() && hasNoIssn()) {
-                    return Optional.of(generateChapterArticle());
-                } else {
+                if (isJournal()) {
                     return Optional.of(generateJournalArticle());
+                } else if (isChapter()) {
+                    return Optional.of(generateChapterArticle());
                 }
             case ED:
                 return Optional.of(generateJournalLeader());
@@ -198,6 +200,14 @@ public class PublicationInstanceCreator {
                 .getSource();
     }
 
+    private boolean isJournal() {
+        return publicationContext instanceof Journal || publicationContext instanceof UnconfirmedJournal;
+    }
+
+    private boolean isChapter() {
+        return publicationContext instanceof Chapter || publicationContext instanceof BookSeries;
+    }
+
     private Optional<CitationtypeAtt> getCitationTypeCode() {
         return docTp.getItem()
                 .getItem()
@@ -210,27 +220,4 @@ public class PublicationInstanceCreator {
                 .map(CitationTypeTp::getCode);
     }
 
-    private boolean hasIsbn() {
-        return Optional.ofNullable(docTp)
-                .map(DocTp::getItem)
-                .map(ItemTp::getItem)
-                .map(OrigItemTp::getBibrecord)
-                .map(BibrecordTp::getHead)
-                .map(HeadTp::getSource)
-                .map(SourceTp::getIsbn)
-                .stream()
-                .anyMatch(isbnList -> isbnList.size() > 0);
-    }
-
-    private boolean hasNoIssn() {
-        return Optional.ofNullable(docTp)
-                .map(DocTp::getItem)
-                .map(ItemTp::getItem)
-                .map(OrigItemTp::getBibrecord)
-                .map(BibrecordTp::getHead)
-                .map(HeadTp::getSource)
-                .map(SourceTp::getIssn)
-                .stream()
-                .anyMatch(List::isEmpty);
-    }
 }

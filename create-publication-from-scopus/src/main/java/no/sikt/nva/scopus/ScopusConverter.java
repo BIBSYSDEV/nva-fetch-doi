@@ -200,9 +200,10 @@ public class ScopusConverter {
 
     private Reference generateReference() {
         Reference reference = new Reference();
-        reference.setPublicationInstance(new PublicationInstanceCreator(docTp).getPublicationInstance());
-        reference.setDoi(extractDOI());
         reference.setPublicationContext(new PublicationContextCreator(metadataService, docTp).getPublicationContext());
+        reference.setPublicationInstance(new PublicationInstanceCreator(docTp, reference.getPublicationContext())
+                .getPublicationInstance());
+        reference.setDoi(extractDOI());
         return reference;
     }
 

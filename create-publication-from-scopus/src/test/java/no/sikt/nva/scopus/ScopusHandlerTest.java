@@ -725,8 +725,9 @@ class ScopusHandlerTest {
     }
 
     @Test
-    void shouldExtractJournalArticleWhenScopusCitationTypeIsConferencePaperAndHasIssn() throws IOException {
+    void shouldExtractJournalArticleWhenScopusCitationTypeIsConferencePaperAndContextJournal() throws IOException {
         scopusData = ScopusGenerator.create(CitationtypeAtt.CP);
+        scopusData.setSrcType(SourcetypeAtt.P);
         scopusData.clearIssn();
         var expectedIssn = randomIssn();
         scopusData.addIssn(expectedIssn, ISSN_TYPE_PRINT);
@@ -743,8 +744,10 @@ class ScopusHandlerTest {
     }
 
     @Test
-    void shouldExtractChapterArticleWhenScopusCitationTypeIsConferencePaperAndHasIsbnAndNoIssn() throws IOException {
+    void shouldExtractChapterArticleWhenScopusCitationTypeIsConferencePaperAndContextChapter()
+            throws IOException {
         scopusData = ScopusGenerator.create(CitationtypeAtt.CP);
+        scopusData.setSrcType(SourcetypeAtt.P);
         scopusData.clearIssn();
         var expectedIsbn13 = randomIsbn13();
         scopusData.addIsbn(expectedIsbn13, "13");
