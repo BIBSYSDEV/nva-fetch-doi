@@ -3,13 +3,7 @@ package no.sikt.nva.scopus.test.utils;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFieldsAndClasses;
-import static no.unit.nva.testutils.RandomDataGenerator.randomBoolean;
-import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
-import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
-import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
-import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
-import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.*;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import jakarta.xml.bind.JAXB;
@@ -60,6 +54,7 @@ import no.scopus.generated.ItemidTp;
 import no.scopus.generated.ItemidlistTp;
 import no.scopus.generated.MetaTp;
 import no.scopus.generated.ObjectFactory;
+import no.scopus.generated.OpenAccessType;
 import no.scopus.generated.OrganizationTp;
 import no.scopus.generated.OrigItemTp;
 import no.scopus.generated.PagerangeTp;
@@ -74,8 +69,12 @@ import no.scopus.generated.SourcetitleTp;
 import no.scopus.generated.SourcetypeAtt;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
+import no.scopus.generated.UpwOaLocationType;
+import no.scopus.generated.UpwOaLocationsType;
+import no.scopus.generated.UpwOpenAccessType;
 import no.scopus.generated.VolissTp;
 import no.scopus.generated.VolisspagTp;
+import no.scopus.generated.WebsiteTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.ScopusConstants;
 import no.unit.nva.language.LanguageConstants;
@@ -745,6 +744,35 @@ public final class ScopusGenerator {
     public void setPublishername(String publisherName) {
         document.getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0)
                 .setPublishername(publisherName);
+    }
+
+    public void setOpenAccess(String urlToFile, String isBest, String license) {
+        OpenAccessType openAccessType = new OpenAccessType();
+
+        OpenAccessType.OaArticleStatus oaArticleStatus = new OpenAccessType.OaArticleStatus();
+        oaArticleStatus.setIsOpenAccess(String.valueOf(randomInteger(2)));
+
+        openAccessType.setOaArticleStatus(oaArticleStatus);
+
+        UpwOpenAccessType upwOpenAccessType = new UpwOpenAccessType();
+
+        UpwOaLocationType upwOaLocationType = new UpwOaLocationType();
+        upwOaLocationType.setUpwIsBest(isBest);
+        upwOaLocationType.setUpwUrlForPdf(urlToFile);
+        upwOaLocationType.setUpwLicense(license);
+
+        UpwOaLocationType upwOaLocationTypeAdditional = new UpwOaLocationType();
+        upwOaLocationTypeAdditional.setUpwUrlForPdf(urlToFile);
+        upwOaLocationTypeAdditional.setUpwLicense(license);
+
+        upwOpenAccessType.setUpwBestOaLocation(upwOaLocationType);
+        UpwOaLocationsType upwOaLocationsType = new UpwOaLocationsType();
+        upwOaLocationsType.getUpwOaLocation().add(upwOaLocationTypeAdditional);
+        upwOpenAccessType.setUpwOaLocations(upwOaLocationsType);
+
+        openAccessType.setUpwOpenAccess(upwOpenAccessType);
+
+        document.getMeta().setOpenAccess(openAccessType);
     }
 
     public void setSrcType(SourcetypeAtt sourcetypeAtt) {

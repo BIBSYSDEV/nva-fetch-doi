@@ -1,8 +1,6 @@
 package no.sikt.nva.scopus;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
@@ -24,6 +22,9 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.StringUtils.isNotBlank;
+import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
+import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static org.apache.hc.core5.http.ContentType.APPLICATION_PDF;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -54,6 +55,9 @@ import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotificatio
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.UserIdentityEntity;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.http.HttpHeader;
+import com.github.tomakehurst.wiremock.http.HttpHeaders;
 import jakarta.xml.bind.JAXBElement;
 import java.io.IOException;
 import java.io.Serializable;
@@ -848,6 +852,20 @@ class ScopusHandlerTest {
                 startsWith(correspondingAuthorTp.getSurname()));
     }
 
+//    @Test
+    void shouldExtractFile() throws IOException {
+        var expectedUri = randomPdfUri();
+        var expectedLicense = "cc-by";
+        var expectedFileSize = String.valueOf(randomInteger());
+        scopusData.setOpenAccess(expectedUri.toString(), Boolean.TRUE.toString(), expectedLicense);
+        mockedPdfHeadRequestThatReturnsMimeTypeAndContentLengthHeaders(expectedUri,
+                APPLICATION_PDF.getMimeType(),expectedFileSize);
+        var s3Event = createNewScopusPublicationEvent();
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualPublicationFiles = createPublicationRequest.getFileSet().getFiles();
+        assertThat(actualPublicationFiles.get(0).getName(), is(expectedUri.toString()));
+    }
+
     private Contributor getCorrespondingContributor(List<Contributor> actualPublicationContributors) {
         return actualPublicationContributors
                 .stream()
@@ -1024,6 +1042,24 @@ class ScopusHandlerTest {
 
     public static URI randomPublicationChannelUri() {
         return URI.create("https://example.nva.aws.unit.no/publication-channels/" + randomString());
+    }
+
+    private void mockedPdfHeadRequestThatReturnsMimeTypeAndContentLengthHeaders(URI uri, String mimeType,
+                                                                              String contentLength) {
+        stubFor(head(WireMock.urlEqualTo(uri.toString()))
+                .willReturn(aResponse()
+                        .withHeaders(createHttpHeaders(mimeType, contentLength))
+                        .withStatus(HttpURLConnection.HTTP_OK)));
+    }
+
+    private HttpHeaders createHttpHeaders(String mimeType, String contentLength) {
+        HttpHeader headerContentType = new HttpHeader(CONTENT_TYPE, mimeType);
+        HttpHeader headerContentLength = new HttpHeader(CONTENT_LENGTH, contentLength);
+        return new HttpHeaders(headerContentLength, headerContentType);
+    }
+
+    public static URI randomPdfUri() {
+        return URI.create("https://example.nva.aws.unit.no/pdf/" + randomString());
     }
 
     private void startWiremockServer() {

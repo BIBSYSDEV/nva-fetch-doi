@@ -1,5 +1,7 @@
 package no.sikt.nva.scopus;
 
+//import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
+//import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
@@ -9,8 +11,14 @@ import static no.sikt.nva.scopus.ScopusConstants.INF_START;
 import static no.sikt.nva.scopus.ScopusConstants.SUP_END;
 import static no.sikt.nva.scopus.ScopusConstants.SUP_START;
 import static nva.commons.core.StringUtils.isEmpty;
+
 import jakarta.xml.bind.JAXBElement;
+
 import java.net.URI;
+//import java.net.http.HttpClient;
+//import java.net.http.HttpHeaders;
+//import java.net.http.HttpRequest;
+//import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -32,6 +40,8 @@ import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.conversion.ContributorExtractor;
 import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
+//import no.unit.nva.file.model.File;
+//import no.unit.nva.file.model.FileSet;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -54,8 +64,34 @@ public class ScopusConverter {
         CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
         createPublicationRequest.setAdditionalIdentifiers(generateAdditionalIdentifiers());
         createPublicationRequest.setEntityDescription(generateEntityDescription());
+//        createPublicationRequest.setFileSet(generateFileSet());
         return createPublicationRequest;
     }
+
+//    private FileSet generateFileSet() {
+//        try {
+//            String url = docTp.getMeta().getOpenAccess().getUpwOpenAccess().getUpwBestOaLocation().getUpwUrlForPdf();
+//
+//            HttpClient client = HttpClient.newHttpClient();
+//            HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+//                    .method("HEAD", HttpRequest.BodyPublishers.noBody())
+//                    .build();
+//            HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
+//
+//            HttpHeaders headers = response.headers();
+//
+//            File.Builder builder = new File.Builder();
+//            builder.withName(url);
+//            headers.firstValueAsLong(CONTENT_LENGTH).ifPresent(builder::withSize);
+//            headers.firstValue(CONTENT_TYPE).ifPresent(builder::withMimeType);
+//            File file = builder.build();
+//
+//            return new FileSet(List.of(file));
+//
+//        } catch (Exception e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
 
     private Optional<AuthorKeywordsTp> extractAuthorKeyWords() {
         return Optional.ofNullable(extractHead())
