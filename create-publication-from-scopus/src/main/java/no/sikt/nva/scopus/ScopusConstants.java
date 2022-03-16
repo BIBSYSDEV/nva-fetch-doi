@@ -28,6 +28,10 @@ public class ScopusConstants {
     public static final String INF_START = "<inf>";
     public static final String INF_END = "</inf>";
 
+    // Logger messages start:
+    public static final String UNKNOWN_LANGUAGE_DETECTED = "Uknown language detected, the following language is not "
+                                                           + "supported %s %s";
+
     @JacocoGenerated
     public ScopusConstants() {
     }

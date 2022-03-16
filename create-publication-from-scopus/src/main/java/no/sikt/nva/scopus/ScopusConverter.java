@@ -21,6 +21,7 @@ import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordTp;
 import no.scopus.generated.AuthorKeywordsTp;
 import no.scopus.generated.CitationInfoTp;
+import no.scopus.generated.CitationLanguageTp;
 import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
@@ -30,6 +31,7 @@ import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.conversion.ContributorExtractor;
+import no.sikt.nva.scopus.conversion.LanguageExtractor;
 import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
 import no.unit.nva.metadata.CreatePublicationRequest;
@@ -76,7 +78,18 @@ public class ScopusConverter {
             extractCorrespondence(), extractAuthorGroup()).generateContributors());
         entityDescription.setTags(generateTags());
         entityDescription.setDate(extractPublicationDate());
+        entityDescription.setLanguage(new LanguageExtractor(extractCitationLanguages()).extractLanguage());
         return entityDescription;
+    }
+
+    private List<CitationLanguageTp> extractCitationLanguages() {
+        return docTp
+            .getItem()
+            .getItem()
+            .getBibrecord()
+            .getHead()
+            .getCitationInfo()
+            .getCitationLanguage();
     }
 
     private PublicationDate extractPublicationDate() {
@@ -153,7 +166,6 @@ public class ScopusConverter {
             .stream()
             .map(ScopusConverter::extractContentAndPreserveXmlSupAndInfTags)
             .collect(Collectors.joining());
-
     }
 
     public static String extractContentString(Object content) {
@@ -234,7 +246,6 @@ public class ScopusConverter {
 
     private AdditionalIdentifier extractScopusIdentifier() {
         return new AdditionalIdentifier(ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME, docTp.getMeta().getEid());
-
     }
 
     private List<AuthorGroupTp> extractAuthorGroup() {
