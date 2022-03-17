@@ -1,7 +1,7 @@
 package no.sikt.nva.scopus;
 
-//import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
-//import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
+import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
@@ -15,10 +15,7 @@ import static nva.commons.core.StringUtils.isEmpty;
 import jakarta.xml.bind.JAXBElement;
 
 import java.net.URI;
-//import java.net.http.HttpClient;
-//import java.net.http.HttpHeaders;
-//import java.net.http.HttpRequest;
-//import java.net.http.HttpResponse;
+import java.net.http.HttpHeaders;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -34,14 +31,17 @@ import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
 import no.scopus.generated.InfTp;
+import no.scopus.generated.OpenAccessType;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
+import no.scopus.generated.UpwOaLocationType;
+import no.scopus.generated.UpwOpenAccessType;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.conversion.ContributorExtractor;
 import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
-//import no.unit.nva.file.model.File;
-//import no.unit.nva.file.model.FileSet;
+import no.unit.nva.file.model.File;
+import no.unit.nva.file.model.FileSet;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -64,34 +64,42 @@ public class ScopusConverter {
         CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
         createPublicationRequest.setAdditionalIdentifiers(generateAdditionalIdentifiers());
         createPublicationRequest.setEntityDescription(generateEntityDescription());
-//        createPublicationRequest.setFileSet(generateFileSet());
+        generateFileSet().ifPresent(createPublicationRequest::setFileSet);
         return createPublicationRequest;
     }
 
-//    private FileSet generateFileSet() {
-//        try {
-//            String url = docTp.getMeta().getOpenAccess().getUpwOpenAccess().getUpwBestOaLocation().getUpwUrlForPdf();
-//
-//            HttpClient client = HttpClient.newHttpClient();
-//            HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-//                    .method("HEAD", HttpRequest.BodyPublishers.noBody())
-//                    .build();
-//            HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
-//
-//            HttpHeaders headers = response.headers();
-//
-//            File.Builder builder = new File.Builder();
-//            builder.withName(url);
-//            headers.firstValueAsLong(CONTENT_LENGTH).ifPresent(builder::withSize);
-//            headers.firstValue(CONTENT_TYPE).ifPresent(builder::withMimeType);
-//            File file = builder.build();
-//
-//            return new FileSet(List.of(file));
-//
-//        } catch (Exception e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
+    private Optional<FileSet> generateFileSet() {
+        // TODO: Also iterate the other non-best files
+        List<File> files = extractUpwBestOaLocationType().stream()
+                .map(this::generateFile)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
+        return Optional.of(new FileSet(files));
+    }
+
+    private Optional<UpwOaLocationType> extractUpwBestOaLocationType() {
+        return Optional.ofNullable(docTp.getMeta().getOpenAccess())
+                .map(OpenAccessType::getUpwOpenAccess)
+                .map(UpwOpenAccessType::getUpwBestOaLocation);
+    }
+
+    private Optional<File> generateFile(UpwOaLocationType upwOaLocationType) {
+        // TODO: License
+        String url = upwOaLocationType.getUpwUrlForPdf();
+        Optional<HttpHeaders> httpHeaders = metadataService.fetchHeadResponseHeadersFromUrl(url);
+
+        if (httpHeaders.isPresent()) {
+            HttpHeaders headers = httpHeaders.get();
+            File.Builder builder = new File.Builder();
+            builder.withName(url);
+            headers.firstValueAsLong(CONTENT_LENGTH).ifPresent(builder::withSize);
+            headers.firstValue(CONTENT_TYPE).ifPresent(builder::withMimeType);
+            File file = builder.build();
+            return Optional.of(file);
+        }
+        return Optional.empty();
+    }
 
     private Optional<AuthorKeywordsTp> extractAuthorKeyWords() {
         return Optional.ofNullable(extractHead())
