@@ -858,7 +858,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractFile() throws IOException {
-        var expectedLicense = "cc-by";
+        var expectedLicense = "CC-BY";
         var expectedFileSize = String.valueOf(randomInteger());
         var expectedFilename = randomString();
         var expectedMimeType = APPLICATION_PDF.getMimeType();
@@ -871,6 +871,7 @@ class ScopusHandlerTest {
         assertThat(actualPublicationFiles.get(0).getName(), is(expectedUri.toString()));
         assertThat(actualPublicationFiles.get(0).getMimeType(), is(expectedMimeType));
         assertThat(actualPublicationFiles.get(0).getSize(), is(Long.valueOf(expectedFileSize)));
+        assertThat(actualPublicationFiles.get(0).getLicense().getIdentifier(), is(expectedLicense));
     }
 
     private URI mockedPdfHeadRequestThatReturnsMimeTypeAndContentLengthHeaders(String filename, String mimeType,

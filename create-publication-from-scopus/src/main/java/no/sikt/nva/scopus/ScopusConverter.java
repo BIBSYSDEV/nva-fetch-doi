@@ -72,7 +72,7 @@ public class ScopusConverter {
     }
 
     private Optional<FileSet> generateFileSet() {
-        // TODO: Also iterate the other non-best files
+        // TODO: Iterate other UpwOaLocationTypes if UpwBestOaLocationType is not present?
         List<File> files = extractUpwBestOaLocationType().stream()
                 .map(this::generateFile)
                 .filter(Optional::isPresent)
@@ -120,6 +120,7 @@ public class ScopusConverter {
     }
 
     private License mapUpwLicenseToLicense(String scopusLicense) {
+        // TODO: Mapping from scopus-xml license to License
         License.Builder builder = new License.Builder();
         builder.withIdentifier(scopusLicense);
         return builder.build();

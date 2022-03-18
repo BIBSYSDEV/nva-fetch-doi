@@ -754,30 +754,16 @@ public final class ScopusGenerator {
 
     public void setOpenAccess(String urlToFile, String isBest, String license) {
         OpenAccessType openAccessType = new OpenAccessType();
-
         OpenAccessType.OaArticleStatus oaArticleStatus = new OpenAccessType.OaArticleStatus();
         oaArticleStatus.setIsOpenAccess(String.valueOf(randomInteger(2)));
-
         openAccessType.setOaArticleStatus(oaArticleStatus);
-
-        UpwOpenAccessType upwOpenAccessType = new UpwOpenAccessType();
-
         UpwOaLocationType upwOaLocationType = new UpwOaLocationType();
         upwOaLocationType.setUpwIsBest(isBest);
         upwOaLocationType.setUpwUrlForPdf(urlToFile);
         upwOaLocationType.setUpwLicense(license);
-
-        UpwOaLocationType upwOaLocationTypeAdditional = new UpwOaLocationType();
-        upwOaLocationTypeAdditional.setUpwUrlForPdf(urlToFile);
-        upwOaLocationTypeAdditional.setUpwLicense(license);
-
+        UpwOpenAccessType upwOpenAccessType = new UpwOpenAccessType();
         upwOpenAccessType.setUpwBestOaLocation(upwOaLocationType);
-        UpwOaLocationsType upwOaLocationsType = new UpwOaLocationsType();
-        upwOaLocationsType.getUpwOaLocation().add(upwOaLocationTypeAdditional);
-        upwOpenAccessType.setUpwOaLocations(upwOaLocationsType);
-
         openAccessType.setUpwOpenAccess(upwOpenAccessType);
-
         document.getMeta().setOpenAccess(openAccessType);
     }
 
