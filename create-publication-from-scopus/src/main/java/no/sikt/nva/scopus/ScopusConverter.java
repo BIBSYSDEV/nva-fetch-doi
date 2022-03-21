@@ -95,6 +95,7 @@ public class ScopusConverter {
 
     private File createFile(UpwOaLocationType upwOaLocationType) {
         File.Builder builder = new File.Builder();
+        // TODO: Set url in appropriate field (when implemented)
         builder.withName(upwOaLocationType.getUpwUrlForPdf());
         extractLicense(upwOaLocationType).ifPresent(builder::withLicense);
         Optional<HttpHeaders> httpHeaders = fetchHeadersFromPdfUrl(upwOaLocationType);
