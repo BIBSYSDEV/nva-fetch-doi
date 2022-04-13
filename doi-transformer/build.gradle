@@ -5,12 +5,15 @@ dependencies {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
 
-    implementation libs.nva.json
+    implementation project(":json-config")
+    implementation libs.nva.core
+    implementation libs.nva.identifiers
+    implementation libs.nva.apigateway
+    implementation libs.nva.doi
 
-    api libs.nva.identifiers
-    api libs.nva.doi
     runtimeOnly libs.jersey.common
     implementation libs.bundles.logging
+    implementation libs.bundles.jackson
     implementation libs.jakarta
     implementation libs.ordinals.to.numbers
     implementation libs.commons.validator

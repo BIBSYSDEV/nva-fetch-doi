@@ -1,13 +1,11 @@
 package no.unit.nva.doi.transformer;
 
-
-import static no.unit.nva.doi.transformer.DoiTransformerConfig.doiTransformerObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.UUID;
-
+import no.sikt.nva.doi.fetch.jsonconfig.Json;
 import no.unit.nva.doi.fetch.exceptions.UnsupportedDocumentTypeException;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossRefDocument;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefApiResponse;
@@ -77,14 +75,14 @@ public class DoiTransformService {
 
     private Publication convertFromDatacite(String body, Instant now, String owner, UUID uuid, URI publisherId)
             throws JsonProcessingException, URISyntaxException, InvalidIssnException {
-        DataciteResponse dataciteResponse = doiTransformerObjectMapper.readValue(body, DataciteResponse.class);
+        DataciteResponse dataciteResponse = Json.readValue(body, DataciteResponse.class);
         return dataciteConverter.toPublication(dataciteResponse, now, uuid, owner, publisherId);
     }
 
     private Publication convertFromCrossRef(String body, String owner, UUID identifier)
             throws JsonProcessingException {
 
-        CrossRefDocument document = doiTransformerObjectMapper.readValue(body, CrossrefApiResponse.class).getMessage();
+        CrossRefDocument document = Json.readValue(body, CrossrefApiResponse.class).getMessage();
         return crossRefConverter.toPublication(document, owner, identifier);
     }
 }

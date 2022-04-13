@@ -2,7 +2,6 @@ package no.unit.nva.doi.transformer;
 
 import static java.util.Objects.nonNull;
 import static java.util.function.Predicate.not;
-import static no.unit.nva.doi.transformer.DoiTransformerConfig.doiTransformerObjectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -17,6 +16,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import no.sikt.nva.doi.fetch.jsonconfig.Json;
 import no.unit.nva.doi.transformer.exception.MalformedContributorException;
 import no.unit.nva.doi.transformer.language.SimpleLanguageDetector;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteContainer;
@@ -116,7 +116,7 @@ public class DataciteResponseConverter extends AbstractConverter {
     }
 
     private List<String> createTags() {
-        return null;
+        return Collections.emptyList();
     }
 
     private Reference createReference(DataciteResponse dataciteResponse) throws InvalidIssnException {
@@ -270,7 +270,7 @@ public class DataciteResponseConverter extends AbstractConverter {
 
     private Identity createCreatorIdentity(DataciteCreator dataciteCreator) throws MalformedContributorException {
         if (creatorHasNoName(dataciteCreator)) {
-            String jsonString = attempt(() -> doiTransformerObjectMapper.writeValueAsString(dataciteCreator))
+            String jsonString = attempt(() -> Json.writeValueAsString(dataciteCreator))
                 .orElseThrow();
             throw new MalformedContributorException(CREATOR_HAS_NO_NAME_ERROR + jsonString);
         }
@@ -285,6 +285,6 @@ public class DataciteResponseConverter extends AbstractConverter {
     }
 
     protected List<Organization> toAffiliations() {
-        return null;
+        return Collections.emptyList();
     }
 }

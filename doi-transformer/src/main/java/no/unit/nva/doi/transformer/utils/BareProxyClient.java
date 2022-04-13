@@ -1,6 +1,6 @@
 package no.unit.nva.doi.transformer.utils;
 
-import static no.unit.nva.doi.transformer.DoiTransformerConfig.doiTransformerObjectMapper;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -18,9 +18,10 @@ import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import no.sikt.nva.doi.fetch.jsonconfig.Json;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import org.apache.http.client.utils.URIBuilder;
+import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +77,7 @@ public class BareProxyClient {
     }
 
     private Optional<String> extractArpid(Optional<String> authorityDataForOrcid) throws JsonProcessingException {
-        JsonNode node = doiTransformerObjectMapper.readTree(authorityDataForOrcid.get());
+        JsonNode node = Json.readTree(authorityDataForOrcid.get());
         if (node.isArray() && ((ArrayNode) node).size() == WANT_JUST_ONE_HIT) {
             return Optional.of(node.at(AUTHORITY_ID_JSON_POINTER).asText());
         } else {
@@ -134,15 +135,10 @@ public class BareProxyClient {
     }
 
     protected URI createUrlToBareProxy(URI apiUrl, String orcid) {
-        try {
-            String strippedOrcid = new URI(orcid).toString().substring(orcid.lastIndexOf('/') + 1);
-            return new URIBuilder(apiUrl)
-                    .setPathSegments(PERSON)
-                    .setParameter(ORCID, strippedOrcid)
-                    .build();
-        } catch (URISyntaxException orcidException) {
-            logger.error(EXCEPTION_TRYING_TO_CREATE_URI_OUT_OF_ORCID, apiUrl, PERSON, orcid);
-            throw new IllegalArgumentException(ILLEGAL_ORCID_MESSAGE);
-        }
+        String strippedOrcid =  UriWrapper.fromUri(orcid).getLastPathElement();
+        return  UriWrapper.fromUri(apiUrl)
+                .addChild(PERSON)
+                .addQueryParameter(ORCID, strippedOrcid)
+                .getUri();
     }
 }

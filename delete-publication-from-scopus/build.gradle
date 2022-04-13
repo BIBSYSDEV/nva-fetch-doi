@@ -3,6 +3,7 @@ dependencies {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
     implementation project(":metadata-transformer")
+    implementation project(":json-config")
     implementation libs.aws.java.sdk2.s3
     implementation libs.nva.s3
     implementation libs.nva.core

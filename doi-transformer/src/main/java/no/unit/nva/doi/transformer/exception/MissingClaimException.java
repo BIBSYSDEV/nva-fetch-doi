@@ -1,7 +1,7 @@
 package no.unit.nva.doi.transformer.exception;
 
+import java.net.HttpURLConnection;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import org.apache.http.HttpStatus;
 
 public class MissingClaimException extends ApiGatewayException {
 
@@ -11,6 +11,6 @@ public class MissingClaimException extends ApiGatewayException {
 
     @Override
     protected Integer statusCode() {
-        return HttpStatus.SC_BAD_REQUEST;
+        return HttpURLConnection.HTTP_BAD_REQUEST;
     }
 }

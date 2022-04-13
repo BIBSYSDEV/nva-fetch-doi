@@ -1,0 +1,6 @@
+apply plugin: 'nva-fetch-doi.java-library-conventions'
+
+dependencies{
+    implementation libs.nva.json
+    implementation libs.bundles.jackson
+}

@@ -708,14 +708,14 @@ public class MetadataServiceTest {
     }
 
     private URI createExpectedQueryUriForJournalName(String name, String year) {
-        return new UriWrapper(serverUriPublisher)
+        return UriWrapper.fromUri(serverUriPublisher)
                 .addQueryParameter(MetadataService.QUERY_PARAM_QUERY, name)
                 .addQueryParameter(MetadataService.QUERY_PARAM_YEAR, year)
                 .getUri();
     }
 
     private URI createExpectedQueryUriForPublisherWithName(String name) {
-        return new UriWrapper(serverUriPublisher)
+        return UriWrapper.fromUri(serverUriPublisher)
                 .addQueryParameter(MetadataService.QUERY_PARAM_QUERY, name)
                 .getUri();
     }

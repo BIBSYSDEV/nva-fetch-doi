@@ -8,6 +8,7 @@ import nva.commons.core.JacocoGenerated;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @SuppressWarnings({"PMD.TooManyFields", "PMD.ExcessivePublicCount"})
 public class DataciteResponse {
+
     private URL id;
     private String doi;
     private URL url;
@@ -58,46 +59,57 @@ public class DataciteResponse {
         return id;
     }
 
+    @JacocoGenerated
     public void setId(URL id) {
         this.id = id;
     }
 
+    @JacocoGenerated
     public String getDoi() {
         return doi;
     }
 
+    @JacocoGenerated
     public void setDoi(String doi) {
         this.doi = doi;
     }
 
+    @JacocoGenerated
     public URL getUrl() {
         return url;
     }
 
+    @JacocoGenerated
     public void setUrl(URL url) {
         this.url = url;
     }
 
+    @JacocoGenerated
     public DataciteTypes getTypes() {
         return types;
     }
 
+    @JacocoGenerated
     public void setTypes(DataciteTypes types) {
         this.types = types;
     }
 
+    @JacocoGenerated
     public List<DataciteCreator> getCreators() {
         return creators;
     }
 
+    @JacocoGenerated
     public void setCreators(List<DataciteCreator> creators) {
         this.creators = creators;
     }
 
+    @JacocoGenerated
     public List<DataciteTitle> getTitles() {
         return titles;
     }
 
+    @JacocoGenerated
     public void setTitles(List<DataciteTitle> titles) {
         this.titles = titles;
     }
@@ -107,14 +119,17 @@ public class DataciteResponse {
         return publisher;
     }
 
+    @JacocoGenerated
     public void setPublisher(String publisher) {
         this.publisher = publisher;
     }
 
+    @JacocoGenerated
     public DataciteContainer getContainer() {
         return container;
     }
 
+    @JacocoGenerated
     public void setContainer(DataciteContainer container) {
         this.container = container;
     }
@@ -124,6 +139,7 @@ public class DataciteResponse {
         return contributors;
     }
 
+    @JacocoGenerated
     public void setContributors(List<DataciteContributor> contributors) {
         this.contributors = contributors;
     }
@@ -133,14 +149,17 @@ public class DataciteResponse {
         return dates;
     }
 
+    @JacocoGenerated
     public void setDates(List<DataciteDate> dates) {
         this.dates = dates;
     }
 
+    @JacocoGenerated
     public Integer getPublicationYear() {
         return publicationYear;
     }
 
+    @JacocoGenerated
     public void setPublicationYear(Integer publicationYear) {
         this.publicationYear = publicationYear;
     }
@@ -150,14 +169,17 @@ public class DataciteResponse {
         return identifiers;
     }
 
+    @JacocoGenerated
     public void setIdentifiers(List<DataciteIdentifier> identifiers) {
         this.identifiers = identifiers;
     }
 
+    @JacocoGenerated
     public List<DataciteRelatedIdentifier> getRelatedIdentifiers() {
         return relatedIdentifiers;
     }
 
+    @JacocoGenerated
     public void setRelatedIdentifiers(List<DataciteRelatedIdentifier> relatedIdentifiers) {
         this.relatedIdentifiers = relatedIdentifiers;
     }
@@ -167,6 +189,7 @@ public class DataciteResponse {
         return schemaVersion;
     }
 
+    @JacocoGenerated
     public void setSchemaVersion(String schemaVersion) {
         this.schemaVersion = schemaVersion;
     }
@@ -176,6 +199,7 @@ public class DataciteResponse {
         return providerId;
     }
 
+    @JacocoGenerated
     public void setProviderId(String providerId) {
         this.providerId = providerId;
     }
@@ -185,6 +209,7 @@ public class DataciteResponse {
         return clientId;
     }
 
+    @JacocoGenerated
     public void setClientId(String clientId) {
         this.clientId = clientId;
     }
@@ -194,6 +219,7 @@ public class DataciteResponse {
         return agency;
     }
 
+    @JacocoGenerated
     public void setAgency(String agency) {
         this.agency = agency;
     }
@@ -203,19 +229,24 @@ public class DataciteResponse {
         return state;
     }
 
+    @JacocoGenerated
     public void setState(String state) {
         this.state = state;
     }
 
+    @JacocoGenerated
     public List<DataciteRights> getRightsList() {
         return rightsList;
     }
 
+    @JacocoGenerated
     public void setRightsList(List<DataciteRights> rightsList) {
         this.rightsList = rightsList;
     }
 
     public static final class Builder {
+
+        public List<DataciteRights> rightsList;
         private URL id;
         private String doi;
         private URL url;
@@ -234,7 +265,6 @@ public class DataciteResponse {
         private String clientId;
         private String agency;
         private String state;
-        public List<DataciteRights> rightsList;
 
         public Builder() {
         }
@@ -257,6 +287,7 @@ public class DataciteResponse {
             return this;
         }
 
+        @JacocoGenerated
         public Builder withTypes(DataciteTypes types) {
             this.types = types;
             return this;
