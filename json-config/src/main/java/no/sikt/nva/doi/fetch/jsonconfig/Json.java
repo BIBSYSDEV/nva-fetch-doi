@@ -5,28 +5,28 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.commons.json.JsonUtils;
 
-@SuppressWarnings({"PMD.ShortClassName","PMD.AvoidFieldNameMatchingTypeName"})
+@SuppressWarnings({"PMD.ShortClassName"})
 public final class Json {
 
-    private static final ObjectMapper JSON = JsonUtils.dtoObjectMapper;
+    private static final ObjectMapper OBJECT_MAPPER = JsonUtils.dtoObjectMapper;
 
     private Json() {
 
     }
 
     public static <T> T readValue(String input, Class<T> valueType) throws JsonProcessingException {
-        return JSON.readValue(input, valueType);
+        return OBJECT_MAPPER.readValue(input, valueType);
     }
 
     public static String writeValueAsString(Object value) throws JsonProcessingException {
-        return JSON.writeValueAsString(value);
+        return OBJECT_MAPPER.writeValueAsString(value);
     }
 
     public static JsonNode readTree(String input) throws JsonProcessingException {
-        return JSON.readTree(input);
+        return OBJECT_MAPPER.readTree(input);
     }
 
     public static JsonNode convertValue(Object fromValue, Class<JsonNode> jsonNodeClass) {
-        return JSON.convertValue(fromValue,jsonNodeClass);
+        return OBJECT_MAPPER.convertValue(fromValue, jsonNodeClass);
     }
 }
