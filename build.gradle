@@ -7,7 +7,7 @@ version '1.0-SNAPSHOT'
 
 wrapper{
     distributionType = Wrapper.DistributionType.ALL
-    gradleVersion ='7.4.2'
+    gradleVersion ='7.1.1'
 }
 
 allprojects {
