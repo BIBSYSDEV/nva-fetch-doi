@@ -1,6 +1,6 @@
 [versions]
 nva = { strictly = "1.21.0" }
-jacksonVersion = { require = "2.13.1" }
+jacksonVersion = { strictly = "2.13.1" }
 jakartaVersion = { strictly = "2.1.6" }
 awsSdkVersion = { strictly = "1.12.129" }
 awsSdk2Version = { strictly = "2.17.152" }
