@@ -3,11 +3,12 @@ package no.unit.nva.doi.fetch;
 import static java.util.Objects.isNull;
 import static no.unit.nva.doi.fetch.RestApiConfig.restServiceObjectMapper;
 import static nva.commons.core.attempt.Try.attempt;
-import static org.apache.http.HttpStatus.SC_OK;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.net.HttpHeaders;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -37,15 +38,14 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import org.apache.http.HttpHeaders;
-import org.apache.http.client.utils.URIBuilder;
+
+import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     public static final String PUBLICATION_API_HOST_ENV = "PUBLICATION_API_HOST";
-    public static final String PUBLICATION_API_SCHEME = "https";
     public static final JsonPointer FEIDE_ID = JsonPointer.compile("/authorizer/claims/custom:feideId");
     public static final JsonPointer CUSTOMER_ID = JsonPointer.compile("/authorizer/claims/custom:customerId");
     public static final String NULL_DOI_URL_ERROR = "doiUrl can not be null";
@@ -73,11 +73,6 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
              getMetadataService(), environment);
     }
 
-    /**
-     * Constructor for MainHandler.
-     *
-     * @param environment  environment.
-     */
     public MainHandler(PublicationConverter publicationConverter,
                        DoiTransformService doiTransformService,
                        DoiProxyService doiProxyService,
@@ -168,12 +163,12 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         throws URISyntaxException, IOException, InvalidIssnException,
                MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
         Publication publication = IdentityUpdater.enrichPublicationCreators(bareProxyClient,
-                        getPublicationMetadataFromDoi(url, owner, URI.create(customerId)));
+                                                                            getPublicationMetadataFromDoi(url, owner, URI.create(customerId)));
         return restServiceObjectMapper.convertValue(publication, CreatePublicationRequest.class);
     }
 
     private URI urlToPublicationProxy() {
-        return attempt(() -> new URIBuilder().setHost(publicationApiHost).setScheme(PUBLICATION_API_SCHEME).build())
+        return attempt(() -> UriWrapper.fromHost(publicationApiHost).getUri())
             .orElseThrow(failure -> new IllegalStateException(failure.getException()));
     }
 
@@ -185,7 +180,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     @Override
     protected Integer getSuccessStatusCode(RequestBody input, Summary output) {
-        return SC_OK;
+        return HttpURLConnection.HTTP_OK;
     }
 
     private Publication getPublicationMetadataFromDoi(URL doiUrl,

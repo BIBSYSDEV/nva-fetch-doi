@@ -1,19 +1,27 @@
 dependencies {
-    api libs.bundles.any23
-    implementation libs.bundles.rdf4j
+
+    implementation project(":json-config")
+
+    implementation(libs.bundles.any23) {
+        exclude group: 'org.yaml', module: 'snakeyaml'
+    }
+    implementation libs.snakeyaml
+//    implementation group: 'org.eclipse.rdf4j', name: 'rdf4j-rio-jsonld', version: '3.7.7'
+
+
+    implementation(libs.bundles.rdf4j)
     implementation libs.nva.core
     implementation libs.nva.json
     implementation(libs.nva.datamodel) {
         exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
     }
 
-    runtimeOnly libs.jackson.datatype.jdk8
-    runtimeOnly libs.jackson.datatype.jsr310
+    implementation libs.bundles.jackson
 
     implementation libs.nva.apigateway
     implementation libs.bundles.logging
 
-    testImplementation project (":fetch-doi-testing")
+    testImplementation project(":fetch-doi-testing")
     testImplementation libs.nva.logutils
     testCompileClasspath libs.jackson.databind
 
@@ -22,6 +30,6 @@ dependencies {
     testImplementation libs.j2html
 }
 
-test{
+test {
     environment "API_HOST", "api.localhost.nva.aws.unit.no"
 }

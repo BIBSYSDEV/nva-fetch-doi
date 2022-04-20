@@ -1,13 +1,13 @@
 package no.unit.nva.doi.fetch;
 
+import static com.google.common.net.HttpHeaders.AUTHORIZATION;
+import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
+import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
+import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
+import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.doi.fetch.RestApiConfig.restServiceObjectMapper;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
-import static org.apache.http.HttpHeaders.AUTHORIZATION;
-import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
-import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
-import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
-import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.core.Is.is;
@@ -69,10 +69,10 @@ import no.unit.nva.testutils.TestHeaders;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.core.Environment;
+import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
 import org.zalando.problem.Problem;
 import org.zalando.problem.Status;
 
@@ -90,6 +90,7 @@ public class MainHandlerTest {
     private static final String SOME_ERROR_MESSAGE = "SomeErrorMessage";
     private Environment environment;
     private Context context;
+    private ByteArrayOutputStream output;
 
     /**
      * Set up environment.
@@ -98,8 +99,9 @@ public class MainHandlerTest {
     public void setUp() {
         environment = mock(Environment.class);
         context = getMockContext();
+        output = new ByteArrayOutputStream();
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALL_ORIGINS);
-        when(environment.readEnv(MainHandler.PUBLICATION_API_HOST_ENV)).thenReturn("localhost:3000");
+        when(environment.readEnv(MainHandler.PUBLICATION_API_HOST_ENV)).thenReturn("localhost");
     }
 
     @Test
@@ -107,9 +109,9 @@ public class MainHandlerTest {
         throws Exception {
         MainHandler mainHandler = createMainHandler(environment);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        mainHandler.handleRequest(mainHandlerInputStream(), output, context);
+        mainHandler.handleRequest(createSampleRequest(), output, context);
         GatewayResponse<Summary> gatewayResponse = parseSuccessResponse(output.toString());
-        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
         Summary summary = gatewayResponse.getBodyObject(Summary.class);
@@ -123,7 +125,7 @@ public class MainHandlerTest {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         mainHandler.handleRequest(nonDoiUrlInputStream(), output, context);
         GatewayResponse<Summary> gatewayResponse = parseSuccessResponse(output.toString());
-        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
         Summary summary = gatewayResponse.getBodyObject(Summary.class);
@@ -135,24 +137,26 @@ public class MainHandlerTest {
         PublicationConverter publicationConverter = mock(PublicationConverter.class);
 
         MainHandler mainHandler = handlerReceivingEmptyResponse(publicationConverter);
-
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
         mainHandler.handleRequest(nonDoiUrlInputStream(), output, context);
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse(output);
-        assertEquals(SC_BAD_GATEWAY, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_BAD_GATEWAY, gatewayResponse.getStatusCode());
         assertThat(getProblemDetail(gatewayResponse), containsString(MainHandler.NO_METADATA_FOUND_FOR));
     }
 
     @Test
-    public void processInputThrowsIllegalStateExceptionWithInternalCauseWhenUrlToPublicationProxyIsNotValid()
+    public void shouldReturnInternalErrorWhenUrlToPublicationProxyIsNotValidAndContainInformativeMessage()
         throws IOException, InvalidIssnException, URISyntaxException,
                MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
+
+        var logger = LogUtils.getTestingAppenderForRootLogger();
         Environment environmentWithInvalidHost = createEnvironmentWithInvalidHost();
         MainHandler mainHandler = createMainHandler(environmentWithInvalidHost);
-        RequestBody requestBody = createSampleRequest(new URL(VALID_DOI));
-        Executable action = () -> mainHandler.processInput(requestBody, null, context);
-        IllegalStateException exception = assertThrows(IllegalStateException.class, action);
-        assertThat(exception.getCause().getClass(), is(equalTo(URISyntaxException.class)));
+
+        mainHandler.handleRequest(createSampleRequest(), output, context);
+        var response = GatewayResponse.fromOutputStream(output,Problem.class);
+        assertThat(response.getStatusCode(),is(equalTo(HTTP_INTERNAL_ERROR)));
+        assertThat(logger.getMessages(),containsString("Missing host for creating URI"));
+
     }
 
     @Test
@@ -169,7 +173,7 @@ public class MainHandlerTest {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         mainHandler.handleRequest(malformedInputStream(), output, context);
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse(output);
-        assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_BAD_REQUEST, gatewayResponse.getStatusCode());
         assertThat(getProblemDetail(gatewayResponse), containsString(MainHandler.NULL_DOI_URL_ERROR));
     }
 
@@ -187,9 +191,9 @@ public class MainHandlerTest {
                                                   doiProxyService, publicationPersistenceService, bareProxyClient,
                                                   metadataService, environment);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        mainHandler.handleRequest(mainHandlerInputStream(), output, context);
+        mainHandler.handleRequest(createSampleRequest(), output, context);
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse(output);
-        assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
+        assertEquals(HTTP_INTERNAL_ERROR, gatewayResponse.getStatusCode());
         assertThat(getProblemDetail(gatewayResponse), containsString(
             MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS));
     }
@@ -210,7 +214,7 @@ public class MainHandlerTest {
                                               publicationPersistenceService, bareProxyClient, metadataService,
                                               environment);
         ByteArrayOutputStream outputStream = outputStream();
-        handler.handleRequest(mainHandlerInputStream(), outputStream, context);
+        handler.handleRequest(createSampleRequest(), outputStream, context);
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse(outputStream);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(Status.BAD_GATEWAY.getStatusCode())));
         assertThat(getProblemDetail(gatewayResponse), containsString(DoiProxyService.ERROR_READING_METADATA));
@@ -234,7 +238,7 @@ public class MainHandlerTest {
                                               publicationPersistenceService, bareProxyClient, metadataService,
                                               environment);
         ByteArrayOutputStream outputStream = outputStream();
-        handler.handleRequest(mainHandlerInputStream(), outputStream, context);
+        handler.handleRequest(createSampleRequest(), outputStream, context);
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse(outputStream);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(Status.BAD_GATEWAY.getStatusCode())));
         assertThat(getProblemDetail(gatewayResponse), containsString(PublicationPersistenceService.WARNING_MESSAGE));
@@ -365,9 +369,9 @@ public class MainHandlerTest {
         return context;
     }
 
-    private InputStream mainHandlerInputStream(URL url) throws JsonProcessingException {
+    private InputStream createSampleRequest(URL url) throws JsonProcessingException {
 
-        RequestBody requestBody = createSampleRequest(url);
+        RequestBody requestBody = createSampleRequestBody(url);
 
         Map<String, String> requestHeaders = new HashMap<>();
         requestHeaders.put(AUTHORIZATION, "some api key");
@@ -380,12 +384,12 @@ public class MainHandlerTest {
             .build();
     }
 
-    private InputStream mainHandlerInputStream() throws MalformedURLException, JsonProcessingException {
-        return mainHandlerInputStream(new URL(VALID_DOI));
+    private InputStream createSampleRequest() throws MalformedURLException, JsonProcessingException {
+        return createSampleRequest(new URL(VALID_DOI));
     }
 
     private InputStream nonDoiUrlInputStream() throws MalformedURLException, JsonProcessingException {
-        return mainHandlerInputStream(new URL("http://example.org/metadata"));
+        return createSampleRequest(new URL("http://example.org/metadata"));
     }
 
     private InputStream malformedInputStream() throws JsonProcessingException {
@@ -428,7 +432,7 @@ public class MainHandlerTest {
         return restServiceObjectMapper.readValue(output, typeRef);
     }
 
-    private RequestBody createSampleRequest(URL url) {
+    private RequestBody createSampleRequestBody(URL url) {
         RequestBody requestBody = new RequestBody();
         requestBody.setDoiUrl(url);
         return requestBody;

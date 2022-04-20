@@ -3,7 +3,7 @@ package no.unit.nva.doi.transformer.exception;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.apache.http.HttpStatus;
+import java.net.HttpURLConnection;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -36,6 +36,6 @@ class MissingClaimExceptionTest {
             throw new MissingClaimException(EXPECTED_MESSAGE);
         });
 
-        assertEquals(HttpStatus.SC_BAD_REQUEST, exception.statusCode());
+        assertEquals(HttpURLConnection.HTTP_BAD_REQUEST, exception.statusCode());
     }
 }

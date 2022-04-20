@@ -1,16 +1,16 @@
 [versions]
-nva = { strictly = "1.20.12" }
-jacksonVersion = { strictly = "2.13.0" }
+nva = { strictly = "1.22.0" }
+jacksonVersion = { strictly = "2.13.1" }
 jakartaVersion = { strictly = "2.1.6" }
 awsSdkVersion = { strictly = "1.12.129" }
-awsSdk2Version = { strictly = "2.17.99" }
+awsSdk2Version = { strictly = "2.17.152" }
 awsLambdaEvents = { strictly = '3.11.0' }
 awsLambdaCore = { strictly = '1.2.1' }
 nvaDatamodelVersion = { strictly = "0.15.1" }
 jerseyVersion = { strictly = "2.30.1" }
-rdf4jVersion = { strictly = "3.1.2" }
+rdf4jVersion = { strictly = "3.7.7" }
 problemVersion = { strictly = "0.26.0" }
-any23core = { strictly = "2.4" }
+any23core = { strictly = "2.7" }
 icu4j = { strictly = "69.1" }
 commonsValidator = { strictly = "1.7" }
 apacheHttpClient = { strictly = "4.5.13" }
@@ -23,6 +23,9 @@ mockito = { strictly = '3.9.0' }
 log4j = { strictly = '2.17.1' }
 slf4j = { strictly = '1.8.0-beta4' }
 nvaLanguage = { strictly = '1.0' }
+snakeyaml = {strictly= '1.29'}
+guava = { strictly = '31.0.1-jre' }
+
 
 [libraries]
 nva-s3 = { group = "com.github.bibsysdev", name = "s3", version.ref = "nva" }
@@ -37,11 +40,7 @@ nva-events = { group = "com.github.bibsysdev", name = "eventhandlers", version.r
 nva-testutils = { group = "com.github.bibsysdev", name = "nvatestutils", version.ref = "nva" }
 nva-datamodel = { group = "com.github.bibsysdev", name = "nva-datamodel-java", version.ref = "nvaDatamodelVersion" }
 nva-datamodeltestutils = { group = 'com.github.bibsysdev', name = 'nva-datamodel-testutils', version.ref = 'nvaDatamodelVersion' }
-
-
 nva-language = { group = 'com.github.bibsysdev', name = 'nva-language', version.ref = "nvaLanguage" }
-
-
 
 jackson-core = { group = "com.fasterxml.jackson.core", name = "jackson-core", version.ref = "jacksonVersion" }
 jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-databind", version.ref = "jacksonVersion" }
@@ -72,7 +71,6 @@ rdf4j-sail-memory = { group = "org.eclipse.rdf4j", name = "rdf4j-sail-memory", v
 rdf4j-repository-api = { group = "org.eclipse.rdf4j", name = "rdf4j-repository-api", version.ref = "rdf4jVersion" }
 rdf4j-rio-api = { group = "org.eclipse.rdf4j", name = "rdf4j-rio-api", version.ref = "rdf4jVersion" }
 
-
 apache-any23-core = { group = "org.apache.any23", name = "apache-any23-core", version.ref = "any23core" }
 apache-any23-api = { group = "org.apache.any23", name = "apache-any23-api", version.ref = "any23core" }
 
@@ -82,6 +80,7 @@ commons-validator = { group = "commons-validator", name = "commons-validator", v
 httpclient = { group = "org.apache.httpcomponents", name = "httpclient", version.ref = "apacheHttpClient" }
 wiremock = { group = "com.github.tomakehurst", name = "wiremock-jre8", version.ref = "wiremock" }
 j2html = { group = "com.j2html", name = "j2html", version.ref = "j2html" }
+guava = { group = 'com.google.guava', name = 'guava', version.ref = 'guava' }
 
 mockito-core = { group = 'org.mockito', name = 'mockito-core', version.ref = 'mockito' }
 hamcrest-base = { group = 'org.hamcrest', name = 'hamcrest', version.ref = 'hamcrest' }
@@ -101,6 +100,7 @@ log4j-core = { group = 'org.apache.logging.log4j', name = 'log4j-core', version.
 log4j-api = { group = 'org.apache.logging.log4j', name = 'log4j-api', version.ref = 'log4j' }
 log4j-slf4j18-impl = { group = 'org.apache.logging.log4j', name = 'log4j-slf4j18-impl', version.ref = 'log4j' }
 slf4j-api = { group = 'org.slf4j', name = 'slf4j-api', version.ref = 'slf4j' }
+snakeyaml ={ group= 'org.yaml', name= 'snakeyaml', version.ref= 'snakeyaml'}
 
 
 [bundles]
@@ -108,6 +108,7 @@ rdf4j = ["rdf4j-sail-api", "rdf4j-model", "rdf4j-repository-sail", "rdf4j-sail-m
 any23 = ["apache-any23-core", "apache-any23-api"]
 testing = ["mockito-core", "hamcrest-base", "hamcrest-core", "junit-jupiter-engine", "junit-jupiter-params",
     "junit-jupiter-api", "junit-vintage-engine", "nva-testutils", "nva-logutils","wiremock"]
-problem = ["zalando-jackson-datatype-problem", "zalando-problem"]
+problem = ["zalando-jackson-datatype-problem", "zalando-problem","snakeyaml"]
 xsd2java = ["xsd2java-xjc", "xsd2java-impl", "xsd2java-api", "xsd2java-activation", "xsd2java-jakarta"]
 logging = ['log4j-core', 'log4j-api', 'log4j-slf4j18-impl', 'slf4j-api']
+jackson = ['jackson-core','jackson-databind', 'jackson-datatype-jdk8', 'jackson-annotations', 'jackson-datatype-jsr310']

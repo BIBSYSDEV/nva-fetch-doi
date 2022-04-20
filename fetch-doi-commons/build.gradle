@@ -1,16 +1,15 @@
 
 dependencies {
 
-    api libs.nva.core
-    api libs.nva.apigateway
-    api libs.nva.identifiers
-    api libs.jackson.core
-    api libs.jackson.databind
-    api libs.jackson.datatype.jdk8
-    api libs.jackson.datatype.jsr310
-    api libs.httpclient
-
+    implementation project(":json-config")
+    implementation libs.nva.core
     implementation libs.nva.json
+    implementation libs.nva.apigateway
+    implementation libs.nva.identifiers
+    implementation libs.httpclient
+    implementation libs.bundles.jackson
+
+
     implementation libs.bundles.problem
 
     runtimeOnly libs.aws.lambda.java.core

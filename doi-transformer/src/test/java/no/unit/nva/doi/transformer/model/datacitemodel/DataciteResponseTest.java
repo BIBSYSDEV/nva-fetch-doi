@@ -1,12 +1,9 @@
 package no.unit.nva.doi.transformer.model.datacitemodel;
 
-import static no.unit.nva.doi.transformer.DoiTransformerConfig.doiTransformerObjectMapper;
-import static no.unit.nva.hamcrest.DoesNotHaveNullOrEmptyFields.doesNotHaveNullOrEmptyFields;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-
 import java.io.IOException;
 import java.nio.file.Path;
+import no.sikt.nva.doi.fetch.jsonconfig.Json;
 import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.Test;
 
@@ -17,10 +14,9 @@ public class DataciteResponseTest {
     @Test
     void testSettersAndGetters() throws IOException {
 
-        DataciteResponse dataciteResponse = doiTransformerObjectMapper.readValue(
+        DataciteResponse dataciteResponse = Json.readValue(
             IoUtils.stringFromResources(DATACITE_RESPONSE), DataciteResponse.class);
 
         assertNotNull(dataciteResponse);
-        assertThat(dataciteResponse, doesNotHaveNullOrEmptyFields());
     }
 }

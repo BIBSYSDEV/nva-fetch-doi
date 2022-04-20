@@ -1,11 +1,9 @@
 package no.unit.nva.doi.transformer;
 
 import static java.time.Instant.now;
-import static no.unit.nva.doi.transformer.DoiTransformerConfig.doiTransformerObjectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -20,12 +18,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import no.sikt.nva.doi.fetch.jsonconfig.Json;
 import no.unit.nva.doi.transformer.language.LanguageMapper;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteAffiliation;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteCreator;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteResponse;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteRights;
-import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import nva.commons.core.ioutils.IoUtils;
@@ -54,7 +52,7 @@ public class DataciteResponseConverterTest {
                                                                        InvalidIssnException {
         DataciteResponse dataciteResponse = sampleDataciteResponse();
         Publication publication = toPublication(dataciteResponse);
-        String json = doiTransformerObjectMapper.writeValueAsString(publication);
+        String json = Json.writeValueAsString(publication);
         assertNotNull(json);
     }
 
@@ -126,15 +124,15 @@ public class DataciteResponseConverterTest {
     }
 
     private DataciteResponse sampleDataciteResponse() throws IOException {
-        return doiTransformerObjectMapper.readValue(IoUtils.stringFromResources(SAMPLE_DATACITE_RESPOSNE),
-            DataciteResponse.class);
+        return Json.readValue(IoUtils.stringFromResources(SAMPLE_DATACITE_RESPOSNE),
+                              DataciteResponse.class);
     }
 
     private Publication readPublicationWithMultipleTitles() throws IOException, URISyntaxException,
                                                                    InvalidIssnException {
         String input = IoUtils.stringFromResources(Path.of(ENTRY_WITH_ALTERNATIVE_TITLE));
         DataciteResponseConverter converter = new DataciteResponseConverter(new DoiConverter(uri -> true));
-        DataciteResponse response = doiTransformerObjectMapper.readValue(input, DataciteResponse.class);
+        DataciteResponse response = Json.readValue(input, DataciteResponse.class);
         return converter.toPublication(response, now(), SOME_ID,
                                        SOME_OWNER, SOME_URI);
     }

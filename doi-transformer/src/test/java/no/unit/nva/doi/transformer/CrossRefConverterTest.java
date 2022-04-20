@@ -2,8 +2,6 @@ package no.unit.nva.doi.transformer;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.doi.transformer.CrossRefConverter.UNRECOGNIZED_TYPE_MESSAGE;
-import static no.unit.nva.doi.transformer.DoiTransformerConfig.doiTransformerObjectMapper;
-import static no.unit.nva.doi.transformer.utils.IsbnCleaner.ERROR_WHEN_TRYING_TO_CLEAN_ISSN;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
@@ -20,7 +18,6 @@ import static org.hamcrest.text.MatchesPattern.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
@@ -41,6 +38,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import no.sikt.nva.doi.fetch.jsonconfig.Json;
 import no.unit.nva.doi.transformer.language.LanguageMapper;
 import no.unit.nva.doi.transformer.language.exceptions.LanguageUriNotFoundException;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossRefDocument;
@@ -301,8 +299,7 @@ public class CrossRefConverterTest extends ConversionTest {
     void toPublicationSetsAbstractWhenInputHasNonEmptyAbstract()
         throws IOException {
         String json = IoUtils.stringFromResources(Path.of(CROSSREF_WITH_ABSTRACT_JSON));
-        CrossRefDocument crossRefDocument = doiTransformerObjectMapper
-            .readValue(json, CrossrefApiResponse.class).getMessage();
+        CrossRefDocument crossRefDocument = Json.readValue(json, CrossrefApiResponse.class).getMessage();
         String abstractText = toPublication(crossRefDocument).getEntityDescription().getAbstract();
         assertThat(abstractText, is(not(emptyString())));
         String expectedAbstract = IoUtils.stringFromResources(Path.of(PROCESSED_ABSTRACT));

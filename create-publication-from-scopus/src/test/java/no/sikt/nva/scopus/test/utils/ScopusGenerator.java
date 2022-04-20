@@ -243,7 +243,7 @@ public final class ScopusGenerator {
 
     private String randomScopusDoi() {
         return nonNull(doi)
-                   ? new UriWrapper(doi).getPath().removeRoot().toString()
+                   ? UriWrapper.fromUri(doi).getPath().removeRoot().toString()
                    : null;
     }
 
