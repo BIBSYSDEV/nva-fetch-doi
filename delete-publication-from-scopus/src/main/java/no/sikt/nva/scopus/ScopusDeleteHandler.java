@@ -4,12 +4,12 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 
+import com.google.common.collect.Lists;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.google.common.collect.Lists;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -100,7 +100,7 @@ public class ScopusDeleteHandler implements RequestHandler<S3Event, Void> {
     private String readFile(S3Event event) {
         var s3Driver = new S3Driver(s3Client, extractBucketName(event));
         var fileUri = createS3BucketUri(event);
-        return attempt(() -> s3Driver.getFile(new UriWrapper(fileUri).toS3bucketPath()))
+        return attempt(() -> s3Driver.getFile(UriWrapper.fromUri(fileUri).toS3bucketPath()))
                 .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
     }
 

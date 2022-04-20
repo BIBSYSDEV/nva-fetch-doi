@@ -2,8 +2,9 @@ package no.unit.nva.metadata.service;
 
 import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
-import com.github.openjson.JSONArray;
-import com.github.openjson.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.net.HttpHeaders;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -19,6 +20,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import no.sikt.nva.doi.fetch.jsonconfig.Json;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.MetadataConverter;
 import no.unit.nva.metadata.type.Bibo;
@@ -76,8 +78,9 @@ public class MetadataService {
 
     /**
      * Deprecated constructor.
-     * @deprecated  For testing, we should also inject the URI so that we can use WireMock.
+     *
      * @param httpClient the HttpClient.
+     * @deprecated For testing, we should also inject the URI so that we can use WireMock.
      */
     @Deprecated
     public MetadataService(HttpClient httpClient) {
@@ -256,15 +259,19 @@ public class MetadataService {
     }
 
     private Optional<String> getIdOfFirstElement(HttpResponse<String> response) {
-        JSONArray jsonArray = new JSONArray(response.body());
-        JSONObject jsonObject = jsonArray.getJSONObject(0);
-        return Optional.ofNullable(jsonObject.getString("id"));
+        return attempt(() -> Json.readTree(response.body()))
+            .map(ArrayNode.class::cast)
+            .map(array -> array.get(0))
+            .map(ObjectNode.class::cast)
+            .map(node -> node.get("id"))
+            .map(JsonNode::textValue)
+            .toOptional();
     }
 
     private HttpResponse<String> sendQueryToPublicationChannelsProxy(String term, int year)
         throws IOException, InterruptedException {
         var searchTerm = URLEncoder.encode(term, StandardCharsets.UTF_8.toString());
-        var uri = new UriWrapper(publicationChannelsHostUri)
+        var uri = UriWrapper.fromUri(publicationChannelsHostUri)
             .addQueryParameter(QUERY_PARAM_QUERY, searchTerm)
             .addQueryParameter(QUERY_PARAM_YEAR, Integer.toString(year))
             .getUri();
@@ -281,7 +288,7 @@ public class MetadataService {
     private HttpResponse<String> sendQueryToPublicationChannelsProxy(String term)
         throws IOException, InterruptedException {
         var searchTerm = URLEncoder.encode(term, StandardCharsets.UTF_8.toString());
-        var uri = new UriWrapper(publicationChannelsHostUriPublisher)
+        var uri = UriWrapper.fromUri(publicationChannelsHostUriPublisher)
             .addQueryParameter(QUERY_PARAM_QUERY, searchTerm)
             .getUri();
 
@@ -295,15 +302,16 @@ public class MetadataService {
     }
 
     /**
-     * Fetches publisherId as URI from publication-channels by publisherName only with exact single match
-     * or returns null.
+     * Fetches publisherId as URI from publication-channels by publisherName only with exact single match or returns
+     * null.
+     *
      * @param publisherName the name of the publisher
      * @return jsonString representing the publisher
      */
     public String fetchPublisherIdFromPublicationChannel(String publisherName) {
         return Optional.ofNullable(publisherName)
-                .flatMap(queryTerm -> queryPublicationChannelForPublisher(queryTerm))
-                .stream()
-                .collect(SingletonCollector.collectOrElse(null));
+            .flatMap(queryTerm -> queryPublicationChannelForPublisher(queryTerm))
+            .stream()
+            .collect(SingletonCollector.collectOrElse(null));
     }
 }

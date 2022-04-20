@@ -178,7 +178,6 @@ class ScopusHandlerTest {
     private URI serverUriPublisher;
     private MetadataService metadataService;
 
-    private HttpClient httpClient;
     private FakeEventBridgeClient eventBridgeClient;
     private ScopusGenerator scopusData;
 
@@ -187,7 +186,7 @@ class ScopusHandlerTest {
         s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, "ignoredValue");
         startWiremockServer();
-        httpClient = WiremockHttpClient.create();
+        HttpClient httpClient = WiremockHttpClient.create();
         metadataService = new MetadataService(httpClient, serverUriJournal, serverUriPublisher);
         eventBridgeClient = new FakeEventBridgeClient();
         scopusHandler = new ScopusHandler(s3Client, metadataService, eventBridgeClient);
@@ -472,7 +471,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldReturnPublicationContextUnconfirmedBookSeriesWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeK()
-        throws IOException, ParseException {
+        throws IOException {
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.K);
         final var expectedYear = String.valueOf(randomYear());
         scopusData.setPublicationYear(expectedYear);
@@ -530,7 +529,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldReturnPublicationContextConfirmedBookSeriesWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeK()
-        throws IOException, ParseException {
+        throws IOException {
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.K);
         final var expectedYear = String.valueOf(randomYear());
         scopusData.setPublicationYear(expectedYear);
@@ -660,7 +659,7 @@ class ScopusHandlerTest {
         var event = createNewScopusPublicationEvent();
         var expectedRequest = scopusHandler.handleRequest(event, CONTEXT);
         var emittedEvent = fetchEmittedEvent();
-        var createPublicationRequestS3Path = new UriWrapper(emittedEvent.getUri()).toS3bucketPath();
+        var createPublicationRequestS3Path = UriWrapper.fromUri(emittedEvent.getUri()).toS3bucketPath();
         var createPublicationRequestJson = s3Driver.getFile(createPublicationRequestS3Path);
         var request = CreatePublicationRequest.fromJson(createPublicationRequestJson);
         assertThat(request, is(not(nullValue())));
@@ -1037,7 +1036,7 @@ class ScopusHandlerTest {
     }
 
     private URI createExpectedQueryUriForJournalWithEIssn(String electronicIssn, String year) {
-        return new UriWrapper(serverUriJournal)
+        return  UriWrapper.fromUri(serverUriJournal)
             .addQueryParameter("query", electronicIssn)
             .addQueryParameter("year", year)
             .getUri();
@@ -1048,7 +1047,7 @@ class ScopusHandlerTest {
     }
 
     private URI createExpectedQueryUriForPublisherWithName(String name) {
-        return new UriWrapper(serverUriPublisher)
+        return UriWrapper.fromUri(serverUriPublisher)
             .addQueryParameter("query", name)
             .getUri();
     }
@@ -1155,7 +1154,7 @@ class ScopusHandlerTest {
     }
 
     private S3Event createS3Event(URI uri) {
-        return createS3Event(new UriWrapper(uri).toS3bucketPath().toString());
+        return createS3Event(UriWrapper.fromUri(uri).toS3bucketPath().toString());
     }
 
     private String randomDate() {

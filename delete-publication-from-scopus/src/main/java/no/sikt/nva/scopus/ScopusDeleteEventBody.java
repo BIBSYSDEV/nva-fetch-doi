@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Objects;
 
+import no.sikt.nva.doi.fetch.jsonconfig.Json;
 import no.unit.nva.events.models.EventBody;
 import nva.commons.core.JacocoGenerated;
 
@@ -25,11 +26,11 @@ public class ScopusDeleteEventBody implements EventBody {
     }
 
     public static ScopusDeleteEventBody fromJson(String json) {
-        return attempt(() -> JsonConfig.JSON.readValue(json, ScopusDeleteEventBody.class)).orElseThrow();
+        return attempt(() -> Json.readValue(json, ScopusDeleteEventBody.class)).orElseThrow();
     }
 
     public String toJson() {
-        return attempt(() -> JsonConfig.JSON.writeValueAsString(this)).orElseThrow();
+        return attempt(() -> Json.writeValueAsString(this)).orElseThrow();
     }
 
     @JacocoGenerated

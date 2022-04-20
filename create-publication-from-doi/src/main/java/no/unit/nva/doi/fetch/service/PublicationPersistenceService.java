@@ -1,21 +1,21 @@
 package no.unit.nva.doi.fetch.service;
 
-import static no.unit.nva.doi.fetch.RestApiConfig.restServiceObjectMapper;
-import static org.apache.http.HttpHeaders.AUTHORIZATION;
-import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.http.entity.ContentType.APPLICATION_JSON;
+import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static javax.ws.rs.core.HttpHeaders.AUTHORIZATION;
+import com.google.common.net.MediaType;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import no.sikt.nva.doi.fetch.jsonconfig.Json;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.doi.fetch.exceptions.CreatePublicationException;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UriWrapper;
 
 public class PublicationPersistenceService extends RestClient {
 
@@ -37,22 +37,21 @@ public class PublicationPersistenceService extends RestClient {
     /**
      * Create Publication in Database.
      *
-     * @param request   CreatePublicationRequest
+     * @param request       CreatePublicationRequest
      * @param apiUrl        apiUrl
      * @param authorization authorization
      * @throws IOException                when json parsing fails
      * @throws InterruptedException       When HttpClient throws it.
      * @throws CreatePublicationException When publication api service responds with failure.
-     * @throws URISyntaxException         when the input URL is invalid.
      */
     public PublicationResponse createPublication(CreatePublicationRequest request, URI apiUrl, String authorization)
-        throws IOException, InterruptedException, CreatePublicationException, URISyntaxException {
-        String requestBodyString = restServiceObjectMapper.writeValueAsString(request);
+        throws IOException, InterruptedException, CreatePublicationException {
+        String requestBodyString = Json.writeValueAsString(request);
 
         HttpRequest httpRequest = HttpRequest.newBuilder()
-            .uri(createURI(apiUrl, PATH))
+            .uri(UriWrapper.fromUri(apiUrl).addChild(PATH).getUri())
             .header(AUTHORIZATION, authorization)
-            .header(CONTENT_TYPE, APPLICATION_JSON.getMimeType())
+            .header(CONTENT_TYPE, MediaType.JSON_UTF_8.toString())
             .POST(BodyPublishers.ofString(requestBodyString))
             .build();
 
@@ -62,7 +61,7 @@ public class PublicationPersistenceService extends RestClient {
             throw new CreatePublicationException(insertionErrorMessage(apiUrl, requestBodyString));
         }
 
-        return restServiceObjectMapper.readValue(response.body(), PublicationResponse.class);
+        return Json.readValue(response.body(), PublicationResponse.class);
     }
 
     private String insertionErrorMessage(URI apiUrl, String requestBodyString) {

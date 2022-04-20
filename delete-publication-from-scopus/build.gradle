@@ -12,6 +12,8 @@ dependencies {
     implementation libs.nva.apigateway
     implementation libs.nva.json
     implementation libs.aws.lambda.java.core
+    implementation libs.bundles.jackson
+    implementation libs.guava
     implementation libs.aws.lambda.events
     implementation libs.bundles.logging
     testImplementation libs.nva.testutils

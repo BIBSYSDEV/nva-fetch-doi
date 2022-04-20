@@ -1,3 +1,5 @@
 dependencies {
-    implementation libs.bundles.testing
+    implementation (libs.bundles.testing){
+        exclude group: 'org.yaml', module: 'snakeyaml'
+    }
 }
