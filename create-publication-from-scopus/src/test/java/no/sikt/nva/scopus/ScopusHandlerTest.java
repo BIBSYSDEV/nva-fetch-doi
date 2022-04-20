@@ -186,7 +186,7 @@ class ScopusHandlerTest {
         s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, "ignoredValue");
         startWiremockServer();
-        HttpClient httpClient = WiremockHttpClient.create();
+        var httpClient = WiremockHttpClient.create();
         metadataService = new MetadataService(httpClient, serverUriJournal, serverUriPublisher);
         eventBridgeClient = new FakeEventBridgeClient();
         scopusHandler = new ScopusHandler(s3Client, metadataService, eventBridgeClient);
