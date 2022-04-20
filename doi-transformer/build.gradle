@@ -10,14 +10,12 @@ dependencies {
     implementation libs.nva.identifiers
     implementation libs.nva.apigateway
     implementation libs.nva.doi
-
-
-
-    runtimeOnly libs.jersey.common
     implementation libs.bundles.logging
     implementation libs.bundles.jackson
     implementation libs.jakarta
     implementation libs.ordinals.to.numbers
     implementation libs.commons.validator
+
+    runtimeOnly libs.jersey.common
     testImplementation libs.bundles.testing
 }
