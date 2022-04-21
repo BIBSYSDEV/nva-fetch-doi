@@ -7,6 +7,8 @@ import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.doi.fetch.RestApiConfig.restServiceObjectMapper;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasKey;
@@ -15,7 +17,6 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -76,15 +77,9 @@ import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
 import org.zalando.problem.Status;
 
-public class MainHandlerTest {
+class MainHandlerTest {
 
     public static final String VALID_DOI = "https://doi.org/10.1109/5.771073";
-    public static final String SAMPLE_CUSTOMER_ID = "http://example.org/publisher/123";
-    public static final String AUTHORIZER = "authorizer";
-    public static final String CLAIMS = "claims";
-    public static final String CUSTOM_FEIDE_ID = "custom:feideId";
-    public static final String CUSTOM_CUSTOMER_ID = "custom:customerId";
-    public static final String JUNIT = "junit";
     public static final String ALL_ORIGINS = "*";
     public static final String INVALID_HOST_STRING = "https://\\.)_";
     private static final String SOME_ERROR_MESSAGE = "SomeErrorMessage";
@@ -92,9 +87,6 @@ public class MainHandlerTest {
     private Context context;
     private ByteArrayOutputStream output;
 
-    /**
-     * Set up environment.
-     */
     @BeforeEach
     public void setUp() {
         environment = mock(Environment.class);
@@ -153,10 +145,9 @@ public class MainHandlerTest {
         MainHandler mainHandler = createMainHandler(environmentWithInvalidHost);
 
         mainHandler.handleRequest(createSampleRequest(), output, context);
-        var response = GatewayResponse.fromOutputStream(output,Problem.class);
-        assertThat(response.getStatusCode(),is(equalTo(HTTP_INTERNAL_ERROR)));
-        assertThat(logger.getMessages(),containsString("Missing host for creating URI"));
-
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_INTERNAL_ERROR)));
+        assertThat(logger.getMessages(), containsString("Missing host for creating URI"));
     }
 
     @Test
@@ -380,7 +371,8 @@ public class MainHandlerTest {
         return new HandlerRequestBuilder<RequestBody>(restServiceObjectMapper)
             .withBody(requestBody)
             .withHeaders(requestHeaders)
-            .withRequestContext(getRequestContext())
+            .withNvaUsername(randomString())
+            .withCustomerId(randomUri().toString())
             .build();
     }
 
@@ -400,21 +392,13 @@ public class MainHandlerTest {
 
         return new HandlerRequestBuilder<RequestBody>(restServiceObjectMapper)
             .withHeaders(requestHeaders)
-            .withRequestContext(getRequestContext())
+            .withNvaUsername(randomString())
+            .withCustomerId(randomUri().toString())
             .build();
     }
 
     private ByteArrayOutputStream outputStream() {
         return new ByteArrayOutputStream();
-    }
-
-    private Map<String, Object> getRequestContext() {
-        return Map.of(AUTHORIZER, Map.of(
-            CLAIMS, Map.of(
-                CUSTOM_FEIDE_ID, JUNIT,
-                CUSTOM_CUSTOMER_ID, SAMPLE_CUSTOMER_ID
-            ))
-        );
     }
 
     private GatewayResponse<Summary> parseSuccessResponse(String output) throws JsonProcessingException {

@@ -4,14 +4,13 @@ import static java.util.Objects.isNull;
 import static no.unit.nva.doi.fetch.RestApiConfig.restServiceObjectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.net.HttpHeaders;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import no.sikt.nva.doi.fetch.jsonconfig.Json;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.doi.DataciteContentType;
 import no.unit.nva.doi.DoiProxyService;
@@ -19,7 +18,6 @@ import no.unit.nva.doi.MetadataAndContentLocation;
 import no.unit.nva.doi.fetch.exceptions.CreatePublicationException;
 import no.unit.nva.doi.fetch.exceptions.MalformedRequestException;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
-import no.unit.nva.doi.fetch.exceptions.TransformFailedException;
 import no.unit.nva.doi.fetch.exceptions.UnsupportedDocumentTypeException;
 import no.unit.nva.doi.fetch.model.RequestBody;
 import no.unit.nva.doi.fetch.model.Summary;
@@ -38,7 +36,6 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,11 +43,9 @@ import org.slf4j.LoggerFactory;
 public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     public static final String PUBLICATION_API_HOST_ENV = "PUBLICATION_API_HOST";
-    public static final JsonPointer FEIDE_ID = JsonPointer.compile("/authorizer/claims/custom:feideId");
-    public static final JsonPointer CUSTOMER_ID = JsonPointer.compile("/authorizer/claims/custom:customerId");
     public static final String NULL_DOI_URL_ERROR = "doiUrl can not be null";
     public static final String NO_METADATA_FOUND_FOR = "No metadata found for: ";
-
+    private static final Logger logger = LoggerFactory.getLogger(MainHandler.class);
     private final transient PublicationConverter publicationConverter;
     private final transient DoiTransformService doiTransformService;
     private final transient DoiProxyService doiProxyService;
@@ -58,8 +53,6 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     private final transient BareProxyClient bareProxyClient;
     private final transient String publicationApiHost;
     private final transient MetadataService metadataService;
-
-    private static final Logger logger = LoggerFactory.getLogger(MainHandler.class);
 
     @JacocoGenerated
     public MainHandler() {
@@ -91,11 +84,6 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         this.publicationApiHost = environment.readEnv(PUBLICATION_API_HOST_ENV);
     }
 
-    @JacocoGenerated
-    private static MetadataService getMetadataService() {
-        return new MetadataService();
-    }
-
     @Override
     protected Summary processInput(RequestBody input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
@@ -103,38 +91,39 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         URI apiUrl = urlToPublicationProxy();
         validate(input);
 
-        String owner = requestInfo.getRequestContextParameter(FEIDE_ID);
-        String customerId = requestInfo.getRequestContextParameter(CUSTOMER_ID);
-        String authorization = requestInfo.getHeader(HttpHeaders.AUTHORIZATION);
-        boolean interrupted = false;
+        var owner = requestInfo.getNvaUsername();
+        var customerId = requestInfo.getCustomerId();
+        var authHeader = requestInfo.getAuthHeader();
 
-        URL url = input.getDoiUrl();
-
-        try {
-            CreatePublicationRequest request = getPublicationRequest(owner, customerId, url);
-            long insertStartTime = System.nanoTime();
-            PublicationResponse publicationResponse = tryCreatePublication(authorization, apiUrl, request);
-            long insertEndTime = System.nanoTime();
-            logger.info("Publication inserted after {} ms", (insertEndTime - insertStartTime) / 1000);
-            return publicationConverter
-                .toSummary(restServiceObjectMapper.convertValue(publicationResponse, JsonNode.class));
-        } catch (IllegalArgumentException
-                     | URISyntaxException
-                     | IOException
-                     | InvalidIssnException
-                     | InvalidIsbnException e) {
-            throw new TransformFailedException(e.getMessage());
-        } catch (InterruptedException e) {
-            interrupted = true;
-            throw new TransformFailedException(e.getMessage());
-        } finally {
-            if (interrupted) {
-                Thread.currentThread().interrupt();
-            }
-        }
+        var inputUri = input.getDoiUrl();
+        return attempt(() -> newCreatePublicationRequest(owner, customerId, inputUri))
+            .map(createPublicationRequest -> tryCreatePublication(authHeader, apiUrl, createPublicationRequest))
+            .map(response -> Json.convertValue(response, JsonNode.class))
+            .map(publicationConverter::toSummary)
+            .orElseThrow(fail -> handleError(fail.getException()));
     }
 
-    private CreatePublicationRequest getPublicationRequest(String owner, String customerId, URL url)
+    @Override
+    protected Integer getSuccessStatusCode(RequestBody input, Summary output) {
+        return HttpURLConnection.HTTP_OK;
+    }
+
+    @JacocoGenerated
+    private static MetadataService getMetadataService() {
+        return new MetadataService();
+    }
+
+    private ApiGatewayException handleError(Exception exception) {
+        if (exception instanceof ApiGatewayException) {
+            return (ApiGatewayException) exception;
+        }
+        if (exception instanceof RuntimeException) {
+            throw (RuntimeException) exception;
+        }
+        throw new RuntimeException(exception);
+    }
+
+    private CreatePublicationRequest newCreatePublicationRequest(String owner, URI customerId, URL url)
         throws URISyntaxException, IOException, InvalidIssnException,
                MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
         CreatePublicationRequest request;
@@ -149,7 +138,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         return request;
     }
 
-    private Boolean urlIsValidDoi(URL url) throws URISyntaxException {
+    private boolean urlIsValidDoi(URL url) {
         return DoiValidator.validate(url);
     }
 
@@ -159,11 +148,12 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
             .orElseThrow(() -> new MetadataNotFoundException(NO_METADATA_FOUND_FOR + url));
     }
 
-    private CreatePublicationRequest getPublicationFromDoi(String owner, String customerId, URL url)
+    private CreatePublicationRequest getPublicationFromDoi(String owner, URI customerId, URL doi)
         throws URISyntaxException, IOException, InvalidIssnException,
                MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
-        Publication publication = IdentityUpdater.enrichPublicationCreators(bareProxyClient,
-                                                                            getPublicationMetadataFromDoi(url, owner, URI.create(customerId)));
+        var publicationMetadata = getPublicationMetadataFromDoi(doi, owner, customerId);
+        Publication publication =
+            IdentityUpdater.enrichPublicationCreators(bareProxyClient, publicationMetadata);
         return restServiceObjectMapper.convertValue(publication, CreatePublicationRequest.class);
     }
 
@@ -176,11 +166,6 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         if (isNull(input) || isNull(input.getDoiUrl())) {
             throw new MalformedRequestException(NULL_DOI_URL_ERROR);
         }
-    }
-
-    @Override
-    protected Integer getSuccessStatusCode(RequestBody input, Summary output) {
-        return HttpURLConnection.HTTP_OK;
     }
 
     private Publication getPublicationMetadataFromDoi(URL doiUrl,
@@ -197,12 +182,12 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     }
 
     private PublicationResponse tryCreatePublication(String authorization, URI apiUrl, CreatePublicationRequest request)
-        throws InterruptedException, IOException, CreatePublicationException, URISyntaxException {
+        throws InterruptedException, IOException, CreatePublicationException {
         return createPublication(authorization, apiUrl, request);
     }
 
     private PublicationResponse createPublication(String authorization, URI apiUrl, CreatePublicationRequest request)
-        throws InterruptedException, CreatePublicationException, IOException, URISyntaxException {
+        throws InterruptedException, CreatePublicationException, IOException {
         return publicationPersistenceService.createPublication(request, apiUrl, authorization);
     }
 }
