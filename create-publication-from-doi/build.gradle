@@ -9,6 +9,7 @@ dependencies {
     implementation project(":doi-proxy")
     implementation project(":metadata-transformer")
     implementation project(":json-config")
+    implementation libs.aws.core
     implementation libs.nva.json
     implementation libs.nva.identifiers
     implementation libs.bundles.jackson
@@ -17,7 +18,9 @@ dependencies {
     implementation libs.nva.datamodel
     implementation libs.bundles.logging
     implementation libs.guava
-    implementation(libs.bundles.problem)
+    implementation libs.bundles.problem
+
+
 }
 
 test{
