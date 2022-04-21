@@ -6,7 +6,6 @@ import static no.unit.nva.doi.CrossRefClient.CROSSREF_API_KEY_SECRET_NOT_FOUND_T
 import static no.unit.nva.doi.CrossRefClient.CROSSREF_USER_AGENT;
 import static no.unit.nva.doi.CrossRefClient.ILLEGAL_DOI_MESSAGE;
 import static no.unit.nva.doi.CrossRefClient.WORKS;
-import static no.unit.nva.doi.DoiProxyConfig.doiProxyObjectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.nullValue;
@@ -19,6 +18,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.net.HttpHeaders;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -28,6 +28,7 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import no.sikt.nva.doi.fetch.jsonconfig.Json;
 import no.unit.nva.doi.utils.HttpResponseStatus200;
 import no.unit.nva.doi.utils.HttpResponseStatus404;
 import no.unit.nva.doi.utils.HttpResponseStatus500;
@@ -36,7 +37,6 @@ import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
 import nva.commons.secrets.SecretsReader;
-import org.apache.http.HttpHeaders;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -241,8 +241,7 @@ public class CrossRefClientTest {
         var secretsManager = mock(SecretsManagerClient.class);
         var secretsReader = new SecretsReader(secretsManager);
         if (withApiSecret) {
-            var secretString = doiProxyObjectMapper.writeValueAsString(
-                Map.of(KEY, "irrelevant"));
+            var secretString = Json.writeValueAsString(Map.of(KEY, "irrelevant"));
             var secretValue = GetSecretValueResponse.builder().name(NAME)
                 .secretString(secretString)
                 .build();

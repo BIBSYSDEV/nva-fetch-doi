@@ -1,6 +1,6 @@
 package no.unit.nva.doi.utils;
 
-import org.apache.http.HttpStatus;
+import java.net.HttpURLConnection;
 
 public class HttpResponseStatus200<S> extends AbstractHttpResponse<S> {
 
@@ -10,7 +10,7 @@ public class HttpResponseStatus200<S> extends AbstractHttpResponse<S> {
 
     @Override
     public int statusCode() {
-        return HttpStatus.SC_OK;
+        return HttpURLConnection.HTTP_OK;
     }
 
     @Override

@@ -2,15 +2,11 @@ package no.unit.nva.doi;
 
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import javax.ws.rs.BadRequestException;
@@ -19,10 +15,9 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UriWrapper;
 import nva.commons.secrets.ErrorReadingSecretException;
 import nva.commons.secrets.SecretsReader;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,25 +68,28 @@ public class CrossRefClient {
      *
      * @param doi a doi identifier or URL.
      * @return FetchResult contains the JSON object and the location from where it was fetched.
-     * @throws URISyntaxException when the input cannot be transformed to a valid URI.
      */
-    public Optional<MetadataAndContentLocation> fetchDataForDoi(String doi) throws URISyntaxException {
+    public Optional<MetadataAndContentLocation> fetchDataForDoi(String doi) {
         URI targetUri = createUrlToCrossRef(doi);
         return fetchJson(targetUri);
     }
 
-    protected URI createUrlToCrossRef(String doi)
-        throws URISyntaxException {
-        List<String> doiPathSegments = extractPathSegmentsFromDoiUri(doi);
-        List<String> pathSegments = composeAllPathSegmentsForCrossrefUrl(doiPathSegments);
-        return addPathSegments(pathSegments);
+    protected URI createUrlToCrossRef(String doi) {
+        var crossRefWorks = UriWrapper.fromUri(CROSSREF_LINK).addChild(WORKS);
+        return Optional.ofNullable(doi)
+            .map(URI::create)
+            .map(URI::getPath)
+            .filter(path -> !path.isBlank())
+            .map(crossRefWorks::addChild)
+            .map(UriWrapper::getUri)
+            .orElseThrow(() -> new IllegalArgumentException(String.format(ILLEGAL_DOI_MESSAGE,doi)));
     }
 
     private Optional<MetadataAndContentLocation> fetchJson(URI doiUri) {
         HttpRequest request = createRequest(doiUri);
         try {
             return Optional.ofNullable(getFromWeb(request))
-                       .map(json -> new MetadataAndContentLocation(CROSSREF_LINK, json));
+                .map(json -> new MetadataAndContentLocation(CROSSREF_LINK, json));
         } catch (InterruptedException
                      | ExecutionException
                      | NotFoundException
@@ -105,10 +103,10 @@ public class CrossRefClient {
 
     private HttpRequest createRequest(URI doiUri) {
         HttpRequest.Builder builder = HttpRequest.newBuilder(doiUri)
-                                          .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
-                                          .header(HttpHeaders.USER_AGENT, CROSSREF_USER_AGENT)
-                                          .timeout(Duration.ofSeconds(TIMEOUT_DURATION))
-                                          .GET();
+            .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+            .header(HttpHeaders.USER_AGENT, CROSSREF_USER_AGENT)
+            .timeout(Duration.ofSeconds(TIMEOUT_DURATION))
+            .GET();
 
         logger.info(ADDING_TOKEN_IN_HEADER);
         builder.setHeader(CROSSREF_PLUSAPI_HEADER,
@@ -136,27 +134,6 @@ public class CrossRefClient {
 
     private boolean responseIsSuccessful(HttpResponse<String> response) {
         return response.statusCode() == HttpURLConnection.HTTP_OK;
-    }
-
-    private URI addPathSegments(List<String> pathSegments) throws URISyntaxException {
-        return new URIBuilder(CROSSREF_LINK)
-                   .setPathSegments(pathSegments)
-                   .build();
-    }
-
-    private List<String> composeAllPathSegmentsForCrossrefUrl(List<String> doiPathSegments) {
-        List<String> pathSegments = new ArrayList<>();
-        pathSegments.add(WORKS);
-        pathSegments.addAll(doiPathSegments);
-        return pathSegments;
-    }
-
-    private List<String> extractPathSegmentsFromDoiUri(String doi) {
-        String path = URI.create(doi).getPath();
-        if (Objects.isNull(path) || path.isBlank()) {
-            throw new IllegalArgumentException(String.format(ILLEGAL_DOI_MESSAGE, doi));
-        }
-        return URLEncodedUtils.parsePathSegments(path);
     }
 
     private String getCrossRefApiPlusToken() {
