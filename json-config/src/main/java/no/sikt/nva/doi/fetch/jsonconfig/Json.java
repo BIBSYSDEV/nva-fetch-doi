@@ -29,4 +29,8 @@ public final class Json {
     public static JsonNode convertValue(Object fromValue, Class<JsonNode> jsonNodeClass) {
         return OBJECT_MAPPER.convertValue(fromValue, jsonNodeClass);
     }
+
+    public static JsonNode createObjectNode() {
+        return OBJECT_MAPPER.createObjectNode();
+    }
 }
