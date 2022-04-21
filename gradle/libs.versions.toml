@@ -24,6 +24,7 @@ slf4j = { strictly = '1.8.0-beta4' }
 nvaLanguage = { strictly = '1.0' }
 snakeyaml = { strictly = '1.29' }
 guava = { strictly = '31.0.1-jre' }
+awslog4j = { strictly = '1.5.1' }
 
 
 [libraries]
@@ -97,6 +98,7 @@ log4j-core = { group = 'org.apache.logging.log4j', name = 'log4j-core', version.
 log4j-api = { group = 'org.apache.logging.log4j', name = 'log4j-api', version.ref = 'log4j' }
 log4j-slf4j18-impl = { group = 'org.apache.logging.log4j', name = 'log4j-slf4j18-impl', version.ref = 'log4j' }
 slf4j-api = { group = 'org.slf4j', name = 'slf4j-api', version.ref = 'slf4j' }
+aws-lambda-log4j = { group = 'com.amazonaws', name = 'aws-lambda-java-log4j2', version.ref = 'awslog4j' }
 
 snakeyaml = { group = 'org.yaml', name = 'snakeyaml', version.ref = 'snakeyaml' }
 
@@ -108,5 +110,5 @@ testing = ["mockito-core", "hamcrest-base", "hamcrest-core", "junit-jupiter-engi
     "junit-jupiter-api", "junit-vintage-engine", "nva-testutils", "nva-logutils", "wiremock"]
 problem = ["zalando-jackson-datatype-problem", "zalando-problem"]
 xsd2java = ["xsd2java-xjc", "xsd2java-impl", "xsd2java-api", "xsd2java-activation", "xsd2java-jakarta"]
-logging = ['log4j-core', 'log4j-api', 'log4j-slf4j18-impl', 'slf4j-api']
-jackson = ['jackson-core', 'jackson-databind', 'jackson-datatype-jdk8', 'jackson-annotations', 'jackson-datatype-jsr310','zalando-jackson-datatype-problem']
+logging = ['log4j-core', 'log4j-api', 'log4j-slf4j18-impl', 'slf4j-api','aws-lambda-log4j']
+jackson = ['jackson-core', 'jackson-databind', 'jackson-datatype-jdk8', 'jackson-annotations', 'jackson-datatype-jsr310', 'zalando-jackson-datatype-problem']
