@@ -68,6 +68,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
+import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.TestHeaders;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -368,11 +369,14 @@ class MainHandlerTest {
     }
 
     private Context getMockContext() {
-        Context context = mock(Context.class);
         CognitoIdentity cognitoIdentity = mock(CognitoIdentity.class);
-        when(context.getIdentity()).thenReturn(cognitoIdentity);
         when(cognitoIdentity.getIdentityPoolId()).thenReturn("junit");
-        return context;
+        return new FakeContext(){
+            @Override
+            public CognitoIdentity getIdentity(){
+                return cognitoIdentity;
+            }
+        };
     }
 
     private InputStream createSampleRequest(URL url) throws JsonProcessingException {
