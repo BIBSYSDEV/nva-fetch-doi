@@ -90,7 +90,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
         URI apiUrl = urlToPublicationProxy();
         validate(input);
-
+        logger.info("Hello world");
         var owner = requestInfo.getNvaUsername();
         var customerId = requestInfo.getCustomerId();
         var authHeader = requestInfo.getAuthHeader();
