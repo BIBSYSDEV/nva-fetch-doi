@@ -123,7 +123,7 @@ class ScopusDeleteHandlerTest {
     }
 
     private S3Event createS3Event(URI uri) {
-        return createS3Event(new UriWrapper(uri).toS3bucketPath().toString());
+        return createS3Event(UriWrapper.fromUri(uri).toS3bucketPath().toString());
     }
 
     private String randomDate() {
