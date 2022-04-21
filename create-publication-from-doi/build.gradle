@@ -17,12 +17,7 @@ dependencies {
     implementation libs.nva.datamodel
     implementation libs.bundles.logging
     implementation libs.guava
-
-    testImplementation(libs.zalando.problem) {
-        compileOnly(libs.apiGuardian) {
-            because 'Dependency has maven scope provided'
-        }
-    }
+    implementation(libs.bundles.problem)
 }
 
 test{
