@@ -48,7 +48,8 @@ jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-datab
 jackson-datatype-jdk8 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jdk8", version.ref = "jacksonVersion" }
 jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations", version.ref = "jacksonVersion" }
 jackson-datatype-jsr310 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jsr310", version.ref = "jacksonVersion" }
-
+jackson-module-parameter-names = { group = 'com.fasterxml.jackson.module', name = 'jackson-module-parameter-names', version.ref = 'jackson' }
+jackson-dataformat-xml = { group = 'com.fasterxml.jackson.dataformat', name = 'jackson-dataformat-xml', version.ref = 'jackson' }
 
 aws-java-sdk-core = { group = 'com.amazonaws', name = 'aws-java-sdk-core', version.ref = 'awsSdk' }
 
@@ -60,6 +61,7 @@ aws-core = { group = 'software.amazon.awssdk', name = 'aws-core', version.ref = 
 
 aws-lambda-java-core = { group = "com.amazonaws", name = "aws-lambda-java-core", version.ref = "awsLambdaCore" }
 aws-lambda-events = { group = 'com.amazonaws', name = 'aws-lambda-java-events', version.ref = 'awsLambdaEvents' }
+
 jakarta = { group = "jakarta.ws.rs", name = "jakarta.ws.rs-api", version.ref = "jakartaVersion" }
 jersey-common = { group = "org.glassfish.jersey.core", name = "jersey-common", version.ref = "jerseyVersion" }
 
@@ -119,4 +121,5 @@ testing = ["mockito-core", "hamcrest-base", "hamcrest-core", "junit-jupiter-engi
 problem = ["zalando-jackson-datatype-problem", "zalando-problem"]
 xsd2java = ["xsd2java-xjc", "xsd2java-impl", "xsd2java-api", "xsd2java-activation", "xsd2java-jakarta"]
 logging = ['log4j-core', 'log4j-api', 'log4j-slf4j18-impl', 'slf4j-api', 'aws-lambda-log4j']
-jackson = ['jackson-core', 'jackson-databind', 'jackson-datatype-jdk8', 'jackson-annotations', 'jackson-datatype-jsr310', 'zalando-jackson-datatype-problem']
+jackson = ['jackson-core', 'jackson-databind', 'jackson-datatype-jdk8', 'jackson-annotations',
+    'jackson-datatype-jsr310', 'zalando-jackson-datatype-problem','jackson-module-parameter-names']
