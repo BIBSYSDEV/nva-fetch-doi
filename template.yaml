@@ -10,6 +10,9 @@ Parameters:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Description: Reference to Cognito UserPool for the stage
     Default: CognitoAuthorizerArn
+  CognitoAuthorizationUri:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/NVA/CognitoUri'
   ApiDomain:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Description: The Api domain
@@ -54,6 +57,9 @@ Globals:
     Timeout: 900
     MemorySize: 1798
     Runtime: java11
+    Environment:
+      Variables:
+        COGNITO_URI: !Ref CognitoAuthorizationUri
   Api:
     Cors:
       AllowMethods: "'POST,OPTIONS'"
