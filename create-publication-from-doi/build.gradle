@@ -13,7 +13,6 @@ dependencies {
     implementation libs.nva.core
     implementation libs.nva.json
     implementation libs.nva.identifiers
-    implementation libs.aws.core
     implementation libs.aws.lambda.java.core
     implementation libs.bundles.jackson
     implementation (libs.nva.datamodel){
