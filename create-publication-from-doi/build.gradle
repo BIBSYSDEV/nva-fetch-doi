@@ -10,6 +10,7 @@ dependencies {
     implementation project(":metadata-transformer")
     implementation project(":json-config")
     implementation libs.aws.core
+    implementation libs.aws.sdk2.core
     implementation libs.nva.json
     implementation libs.nva.identifiers
     implementation libs.bundles.jackson
