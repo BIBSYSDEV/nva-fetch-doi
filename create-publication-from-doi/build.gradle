@@ -9,14 +9,17 @@ dependencies {
     implementation project(":doi-proxy")
     implementation project(":metadata-transformer")
     implementation project(":json-config")
-    implementation libs.aws.core
-    implementation libs.aws.sdk2.core
-    implementation libs.nva.json
-    implementation libs.nva.identifiers
-    implementation libs.bundles.jackson
     implementation libs.nva.apigateway
     implementation libs.nva.core
-    implementation libs.nva.datamodel
+    implementation libs.nva.json
+    implementation libs.nva.identifiers
+    implementation libs.aws.core
+    implementation libs.aws.lambda.java.core
+    implementation libs.aws.sdk2.core
+    implementation libs.bundles.jackson
+    implementation (libs.nva.datamodel){
+        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
+    }
     implementation libs.bundles.logging
     implementation libs.guava
     implementation libs.bundles.problem

@@ -105,7 +105,7 @@ class MainHandlerTest {
         MainHandler mainHandler = createMainHandler(environment);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         mainHandler.handleRequest(createSampleRequest(), output, context);
-        assertThat(logger.getMessages(),containsString("world"));
+        assertThat(logger.getMessages(), containsString("world"));
     }
 
     @Test
@@ -367,9 +367,9 @@ class MainHandlerTest {
     private Context getMockContext() {
         CognitoIdentity cognitoIdentity = mock(CognitoIdentity.class);
         when(cognitoIdentity.getIdentityPoolId()).thenReturn("junit");
-        return new FakeContext(){
+        return new FakeContext() {
             @Override
-            public CognitoIdentity getIdentity(){
+            public CognitoIdentity getIdentity() {
                 return cognitoIdentity;
             }
         };
