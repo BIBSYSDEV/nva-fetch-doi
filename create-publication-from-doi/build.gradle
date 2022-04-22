@@ -23,6 +23,8 @@ dependencies {
     implementation libs.bundles.problem
 
     implementation group: 'com.amazonaws', name: 'aws-java-sdk-core', version: '1.12.129'
+    implementation group: 'com.amazonaws', name: 'aws-java-sdk-lambda', version: '1.12.129'
+
 
     testImplementation libs.bundles.testing
 
