@@ -15,7 +15,6 @@ dependencies {
     implementation libs.nva.identifiers
     implementation libs.aws.core
     implementation libs.aws.lambda.java.core
-    implementation libs.aws.sdk2.core
     implementation libs.bundles.jackson
     implementation (libs.nva.datamodel){
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
