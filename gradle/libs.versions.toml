@@ -107,9 +107,6 @@ slf4j-api = { group = 'org.slf4j', name = 'slf4j-api', version.ref = 'slf4j' }
 
 aws-lambda-log4j = { group = 'com.amazonaws', name = 'aws-lambda-java-log4j2', version.ref = 'awslog4j' }
 
-
-
-
 snakeyaml = { group = 'org.yaml', name = 'snakeyaml', version.ref = 'snakeyaml' }
 
 

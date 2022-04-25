@@ -14,9 +14,9 @@ dependencies {
     implementation libs.nva.core
     implementation libs.nva.json
     implementation libs.guava
-//    implementation libs.nva.identifiers
+    implementation libs.nva.identifiers
     implementation libs.bundles.jackson
-//    implementation (libs.nva.datamodel)
+    implementation libs.nva.datamodel
     implementation libs.bundles.problem
     implementation libs.bundles.logging
     implementation libs.aws.lambda.java.core

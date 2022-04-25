@@ -2,6 +2,8 @@ package no.unit.nva.doi.fetch;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Publication;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -44,7 +46,9 @@ public class MainHandler extends ApiGatewayHandler<String, String> {
     protected String processInput(String input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
             logger.info("Some message from "+input);
-            return "Orestis";
+            var publication =
+                new Publication.Builder().withIdentifier(SortableIdentifier.next()).build();
+            return publication.getIdentifier().toString();
 
     }
 
