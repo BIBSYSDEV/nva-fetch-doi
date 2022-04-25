@@ -134,7 +134,7 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     private String readFile(S3Event event) {
         var s3Driver = new S3Driver(s3Client, extractBucketName(event));
         var fileUri = createS3BucketUri(event);
-        return s3Driver.getFile(new UriWrapper(fileUri).toS3bucketPath());
+        return s3Driver.getFile(UriWrapper.fromUri(fileUri).toS3bucketPath());
     }
 
     private String extractBucketName(S3Event event) {
