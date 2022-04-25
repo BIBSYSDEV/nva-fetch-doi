@@ -6,13 +6,15 @@ import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.JacocoGenerated;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MainHandler extends ApiGatewayHandler<String, String> {
 
 //    public static final String PUBLICATION_API_HOST_ENV = "PUBLICATION_API_HOST";
 //    public static final String NULL_DOI_URL_ERROR = "doiUrl can not be null";
 //    public static final String NO_METADATA_FOUND_FOR = "No metadata found for: ";
-//    private static final Logger logger = LoggerFactory.getLogger(MainHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(MainHandler.class);
 //    private final transient PublicationConverter publicationConverter;
 //    private final transient DoiTransformService doiTransformService;
 //    private final transient DoiProxyService doiProxyService;
@@ -41,6 +43,7 @@ public class MainHandler extends ApiGatewayHandler<String, String> {
     @Override
     protected String processInput(String input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
+
             return "Orestis";
 
     }
