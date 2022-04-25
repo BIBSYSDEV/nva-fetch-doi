@@ -1,6 +1,6 @@
 
 dependencies {
-//    implementation project(":fetch-doi-commons")
+    implementation project(":fetch-doi-commons")
 //    implementation project(":doi-transformer") {
 //        compileOnly(libs.jakarta) {
 //            because 'PMD'

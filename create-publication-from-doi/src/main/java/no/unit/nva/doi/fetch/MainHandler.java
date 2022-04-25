@@ -11,7 +11,7 @@ import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MainHandler extends ApiGatewayHandler<String, String> {
+public class MainHandler extends ApiGatewayHandler<RequestBody, String> {
 
 //    public static final String PUBLICATION_API_HOST_ENV = "PUBLICATION_API_HOST";
 //    public static final String NULL_DOI_URL_ERROR = "doiUrl can not be null";
@@ -27,7 +27,7 @@ public class MainHandler extends ApiGatewayHandler<String, String> {
 
     @JacocoGenerated
     public MainHandler() {
-        super(String.class);
+        super(RequestBody.class);
     }
 
 //    @JacocoGenerated
@@ -43,17 +43,17 @@ public class MainHandler extends ApiGatewayHandler<String, String> {
 //    }
 
     @Override
-    protected String processInput(String input, RequestInfo requestInfo, Context context)
+    protected String processInput(RequestBody input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-            logger.info("Some message from "+input);
+            logger.info("Some message from "+ input);
             var publication =
-                new Publication.Builder().withIdentifier(SortableIdentifier.next()).build();
-            return publication.getIdentifier().toString();
+                new Publication.Builder().withIdentifier(SortableIdentifier.next()).withDoi(input.getDoiUrl()).build();
+            return publication.getDoi().toString();
 
     }
 
     @Override
-    protected Integer getSuccessStatusCode(String input, String output) {
+    protected Integer getSuccessStatusCode(RequestBody input, String output) {
         return HttpURLConnection.HTTP_OK;
     }
 
