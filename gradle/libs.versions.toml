@@ -2,7 +2,6 @@
 nva = { strictly = "1.22.1-alpha1" }
 jacksonVersion = { strictly = "2.13.1" }
 jakartaVersion = { strictly = "2.1.6" }
-awsSdk = { strictly = '1.12.129' }
 awsSdk2Version = { strictly = "2.17.152" }
 awsLambdaEvents = { strictly = '3.11.0' }
 awsLambdaCore = { strictly = '1.2.1' }
@@ -50,8 +49,6 @@ jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-an
 jackson-datatype-jsr310 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jsr310", version.ref = "jacksonVersion" }
 jackson-module-parameter-names = { group = 'com.fasterxml.jackson.module', name = 'jackson-module-parameter-names', version.ref = 'jacksonVersion' }
 jackson-dataformat-xml = { group = 'com.fasterxml.jackson.dataformat', name = 'jackson-dataformat-xml', version.ref = 'jacksonVersion' }
-
-aws-java-sdk-core = { group = 'com.amazonaws', name = 'aws-java-sdk-core', version.ref = 'awsSdk' }
 
 aws-java-sdk2-s3 = { group = "software.amazon.awssdk", name = "s3", version.ref = "awsSdk2Version" }
 aws-java-sdk2-eventbridge = { group = 'software.amazon.awssdk', name = 'eventbridge', version.ref = 'awsSdk2Version' }
