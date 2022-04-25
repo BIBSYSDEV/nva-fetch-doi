@@ -6,7 +6,7 @@ dependencies {
 //            because 'PMD'
 //        }
 //    }
-//    implementation project(":doi-proxy")
+    implementation project(":doi-proxy")
 //    implementation project(":metadata-transformer")
     implementation project(":json-config")
 
@@ -29,4 +29,6 @@ dependencies {
 test{
     environment "API_HOST", "api.localhost.nva.aws.unit.no"
     environment "ALLOWED_ORIGIN", "*"
+    environment "CROSSREFPLUSAPITOKEN_NAME", "tokenName"
+    environment "CROSSREFPLUSAPITOKEN_KEY", "tokenKey"
 }

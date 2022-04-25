@@ -1,13 +1,17 @@
 package no.unit.nva.doi.fetch;
 
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
+import no.unit.nva.doi.DataciteContentType;
+import no.unit.nva.doi.DoiProxyService;
 import no.unit.nva.doi.fetch.model.Summary;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,37 +20,40 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     public static final String PUBLICATION_API_HOST_ENV = "PUBLICATION_API_HOST";
 //    public static final String NULL_DOI_URL_ERROR = "doiUrl can not be null";
-//    public static final String NO_METADATA_FOUND_FOR = "No metadata found for: ";
+    public static final String NO_METADATA_FOUND_FOR = "No metadata found for: ";
     private static final Logger logger = LoggerFactory.getLogger(MainHandler.class);
-//    private final transient PublicationConverter publicationConverter;
+    private static final Environment ENVIRONMENT = new Environment();
+    //    private final transient PublicationConverter publicationConverter;
 //    private final transient DoiTransformService doiTransformService;
-//    private final transient DoiProxyService doiProxyService;
+    private final transient DoiProxyService doiProxyService;
 //    private final transient PublicationPersistenceService publicationPersistenceService;
 //    private final transient BareProxyClient bareProxyClient;
 //    private final transient String publicationApiHost;
 //    private final transient MetadataService metadataService;
 
+
     @JacocoGenerated
     public MainHandler() {
-        super(RequestBody.class);
+        this(new DoiProxyService(ENVIRONMENT));
+//        this(new PublicationConverter(), new DoiTransformService(),
+//             new DoiProxyService(environment), new PublicationPersistenceService(), new BareProxyClient(),
+//             getMetadataService(), environment);
     }
 
-//    @JacocoGenerated
-//    public MainHandler(Environment environment) {
-////        this(new PublicationConverter(), new DoiTransformService(),
-////             new DoiProxyService(environment), new PublicationPersistenceService(), new BareProxyClient(),
-////             getMetadataService(), environment);
-//    }
+    public MainHandler(DoiProxyService doiProxyService) {
+        super(RequestBody.class);
+        this.doiProxyService = doiProxyService;
 
-//    public MainHandler() {
-//        super(RequestBody.class);
-//
-//    }
+    }
 
     @Override
     protected Summary processInput(RequestBody input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
             logger.info("Some message from "+ input);
+            var doiProxyResult=attempt(()->doiProxyService.lookupDoiMetadata(input.getDoiUrl().toString(),
+                                                        DataciteContentType.DATACITE_JSON))
+                .orElseThrow();
+            logger.info(doiProxyResult.getJson());
             return new Summary.Builder()
                 .withCreatorName(input.getDoiUrl().toString())
                 .withIdentifier(SortableIdentifier.next())
