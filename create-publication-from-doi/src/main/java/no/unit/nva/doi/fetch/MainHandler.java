@@ -43,7 +43,7 @@ public class MainHandler extends ApiGatewayHandler<String, String> {
     @Override
     protected String processInput(String input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-
+            logger.info("Some message from "+input);
             return "Orestis";
 
     }
