@@ -2,10 +2,12 @@ package no.unit.nva.doi.fetch;
 
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasKey;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -29,18 +31,25 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.DoiProxyService;
 import no.unit.nva.doi.MetadataAndContentLocation;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
+import no.unit.nva.doi.fetch.exceptions.UnsupportedDocumentTypeException;
 import no.unit.nva.doi.fetch.model.Summary;
+import no.unit.nva.doi.fetch.service.PublicationConverter;
+import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
+import no.unit.nva.doi.transformer.DoiTransformService;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.exceptions.InvalidIsbnException;
+import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.TestHeaders;
 import nva.commons.apigateway.GatewayResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.zalando.problem.Problem;
 
 class MainHandlerTest {
 
@@ -81,51 +90,35 @@ class MainHandlerTest {
         assertNotNull(summary.getIdentifier());
     }
 
-    //    @Test
-    //    public void testBadGatewayResponseWhenUrlIsInvalidNonDoi() throws Exception {
-    //        PublicationConverter publicationConverter = mock(PublicationConverter.class);
+    //        @Test
+    //        public void testBadGatewayResponseWhenUrlIsInvalidNonDoi() throws Exception {
+    //            PublicationConverter publicationConverter = mock(PublicationConverter.class);
     //
-    //        MainHandler mainHandler = handlerReceivingEmptyResponse(publicationConverter);
-    //        mainHandler.handleRequest(nonDoiUrlInputStream(), output, context);
-    //        GatewayResponse<Problem> gatewayResponse = GatewayResponse.fromOutputStream(output,Problem.class);
-    //        assertEquals(HTTP_BAD_GATEWAY, gatewayResponse.getStatusCode());
-    //        Problem problem = gatewayResponse.getBodyObject(Problem.class);
-    //        assertThat(problem.getDetail(), containsString(MainHandler.NO_METADATA_FOUND_FOR));
-    //    }
+    //            MainHandler mainHandler = handlerReceivingEmptyResponse(publicationConverter);
+    //            mainHandler.handleRequest(nonDoiUrlInputStream(), output, context);
+    //            GatewayResponse<Problem> gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
+    //            assertEquals(HTTP_BAD_GATEWAY, gatewayResponse.getStatusCode());
+    //            Problem problem = gatewayResponse.getBodyObject(Problem.class);
+    //            assertThat(problem.getDetail(), containsString(MainHandler.NO_METADATA_FOUND_FOR));
+    //        }
 
-    //
-    //    @Test
-    //    public void shouldReturnInternalErrorWhenUrlToPublicationProxyIsNotValidAndContainInformativeMessage()
-    //        throws IOException, InvalidIssnException, URISyntaxException,
-    //               MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
-    //
-    //        var logger = LogUtils.getTestingAppenderForRootLogger();
-    //        Environment environmentWithInvalidHost = createEnvironmentWithInvalidHost();
-    //        MainHandler mainHandler = createMainHandler(environmentWithInvalidHost);
-    //
-    //        mainHandler.handleRequest(createSampleRequest(), output, context);
-    //        var response = GatewayResponse.fromOutputStream(output, Problem.class);
-    //        assertThat(response.getStatusCode(), is(equalTo(HTTP_INTERNAL_ERROR)));
-    //        assertThat(logger.getMessages(), containsString("Missing host for creating URI"));
-    //    }
-    //
-    //    @Test
-    //    public void testBadRequestResponse() throws Exception {
-    //        PublicationConverter publicationConverter = mock(PublicationConverter.class);
-    //        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
-    //        DoiProxyService doiProxyService = mock(DoiProxyService.class);
-    //        PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
-    //        BareProxyClient bareProxyClient = mock(BareProxyClient.class);
-    //        MetadataService metadataService = mock(MetadataService.class);
-    //        MainHandler mainHandler = new MainHandler(publicationConverter, doiTransformService,
-    //                                                  doiProxyService, publicationPersistenceService, bareProxyClient,
-    //                                                  metadataService, environment);
-    //        ByteArrayOutputStream output = new ByteArrayOutputStream();
-    //        mainHandler.handleRequest(malformedInputStream(), output, context);
-    //        GatewayResponse<Problem> gatewayResponse = parseFailureResponse(output);
-    //        assertEquals(HTTP_BAD_REQUEST, gatewayResponse.getStatusCode());
-    //        assertThat(getProblemDetail(gatewayResponse), containsString(MainHandler.NULL_DOI_URL_ERROR));
-    //    }
+    @Test
+    void shouldReturnBadRequestWhenInputDoesNotContainAUri() throws Exception {
+        PublicationConverter publicationConverter = mock(PublicationConverter.class);
+        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
+        DoiProxyService doiProxyService = mock(DoiProxyService.class);
+        PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
+
+        //            MetadataService metadataService = mock(MetadataService.class);
+        MainHandler mainHandler = new MainHandler(doiProxyService);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        mainHandler.handleRequest(malformedRequest(), output, context);
+        GatewayResponse<Problem> gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
+        var problem = gatewayResponse.getBodyObject(Problem.class);
+        assertEquals(HTTP_BAD_REQUEST, gatewayResponse.getStatusCode());
+        assertThat(problem.getDetail(), containsString(MainHandler.NULL_DOI_URL_ERROR));
+    }
+
     //
     //    @Test
     //    public void testInternalServerErrorResponse() throws Exception {
@@ -195,20 +188,17 @@ class MainHandlerTest {
     //        .WARNING_MESSAGE));
     //    }
     //
-    //        private MainHandler handlerReceivingEmptyResponse(PublicationConverter publicationConverter) {
-    //            DoiTransformService doiTransformService = mock(DoiTransformService.class);
-    //            DoiProxyService doiProxyService = mock(DoiProxyService.class);
-    //            PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService
-    //            .class);
-    //            BareProxyClient bareProxyClient = mock(BareProxyClient.class);
-    //            MetadataService metadataService = mock(MetadataService.class);
-    //            when(metadataService.generateCreatePublicationRequest(any())).thenReturn(Optional.empty());
-    //
-    //            return new MainHandler(publicationConverter, doiTransformService,
-    //                                   doiProxyService, publicationPersistenceService, bareProxyClient,
-    //                                   metadataService,
-    //                                   environment);
-    //        }
+    private MainHandler handlerReceivingEmptyResponse(PublicationConverter publicationConverter) {
+        DoiTransformService doiTransformService = mock(DoiTransformService.class);
+        DoiProxyService doiProxyService = mock(DoiProxyService.class);
+        PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
+
+        //        MetadataService metadataService = mock(MetadataService.class);
+        //        when(metadataService.generateCreatePublicationRequest(any())).thenReturn(Optional.empty());
+
+        return new MainHandler(doiProxyService);
+    }
+
     //
     //    private String getProblemDetail(GatewayResponse<Problem> gatewayResponse) throws JsonProcessingException {
     //        return gatewayResponse.getBodyObject(Problem.class).getDetail();
@@ -239,14 +229,15 @@ class MainHandlerTest {
     //        return publicationConverter;
     //    }
     //
-    //    private DoiTransformService mockDoiTransformServiceReturningSuccessfulResult()
-    //        throws URISyntaxException, IOException, InvalidIssnException,
-    //               InvalidIsbnException, UnsupportedDocumentTypeException {
-    //        DoiTransformService service = mock(DoiTransformService.class);
-    //        when(service.transformPublication(anyString(), anyString(), anyString(), any()))
-    //            .thenReturn(getPublication());
-    //        return service;
-    //    }
+    private DoiTransformService mockDoiTransformServiceReturningSuccessfulResult()
+        throws URISyntaxException, IOException, InvalidIssnException,
+               InvalidIsbnException, UnsupportedDocumentTypeException {
+        DoiTransformService service = mock(DoiTransformService.class);
+        when(service.transformPublication(anyString(), anyString(), anyString(), any()))
+            .thenReturn(getPublication());
+        return service;
+    }
+
     //
     //    private MetadataService mockMetadataServiceReturningSuccessfulResult() {
     //        MetadataService service = mock(MetadataService.class);
@@ -329,19 +320,19 @@ class MainHandlerTest {
         return createSampleRequest(randomUri());
     }
 
-    //
-    //    private InputStream malformedInputStream() throws JsonProcessingException {
-    //
-    //        Map<String, String> requestHeaders = new HashMap<>();
-    //        requestHeaders.put(AUTHORIZATION, "some api key");
-    //        requestHeaders.putAll(TestHeaders.getRequestHeaders());
-    //
-    //        return new HandlerRequestBuilder<RequestBody>(restServiceObjectMapper)
-    //            .withHeaders(requestHeaders)
-    //            .withNvaUsername(randomString())
-    //            .withCustomerId(randomUri().toString())
-    //            .build();
-    //    }
+    private InputStream malformedRequest() throws JsonProcessingException {
+
+        Map<String, String> requestHeaders = new HashMap<>();
+        requestHeaders.put(AUTHORIZATION, "some api key");
+        requestHeaders.putAll(TestHeaders.getRequestHeaders());
+
+        return new HandlerRequestBuilder<RequestBody>(JsonUtils.dtoObjectMapper)
+            .withHeaders(requestHeaders)
+            .withNvaUsername(randomString())
+            .withCustomerId(randomUri().toString())
+            .build();
+    }
+
     //
     //    private ByteArrayOutputStream outputStream() {
     //        return new ByteArrayOutputStream();
@@ -387,11 +378,4 @@ class MainHandlerTest {
         requestBody.setDoiUrl(url);
         return requestBody;
     }
-    //
-    //    private Environment createEnvironmentWithInvalidHost() {
-    //        Environment environment = mock(Environment.class);
-    //        when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALL_ORIGINS);
-    //        when(environment.readEnv(MainHandler.PUBLICATION_API_HOST_ENV)).thenReturn(INVALID_HOST_STRING);
-    //        return environment;
-    //    }
 }

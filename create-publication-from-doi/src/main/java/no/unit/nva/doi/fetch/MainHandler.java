@@ -1,5 +1,6 @@
 package no.unit.nva.doi.fetch;
 
+import static java.util.Objects.isNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
@@ -7,10 +8,10 @@ import no.unit.nva.doi.DataciteContentType;
 import no.unit.nva.doi.DoiProxyService;
 import no.unit.nva.doi.fetch.model.Summary;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Publication;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
@@ -19,7 +20,7 @@ import org.slf4j.LoggerFactory;
 public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     public static final String PUBLICATION_API_HOST_ENV = "PUBLICATION_API_HOST";
-//    public static final String NULL_DOI_URL_ERROR = "doiUrl can not be null";
+    public static final String NULL_DOI_URL_ERROR = "doiUrl can not be null";
     public static final String NO_METADATA_FOUND_FOR = "No metadata found for: ";
     private static final Logger logger = LoggerFactory.getLogger(MainHandler.class);
     private static final Environment ENVIRONMENT = new Environment();
@@ -50,6 +51,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     protected Summary processInput(RequestBody input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
             logger.info("Some message from "+ input);
+            validate(input);
             var doiProxyResult=attempt(()->doiProxyService.lookupDoiMetadata(input.getDoiUrl().toString(),
                                                         DataciteContentType.DATACITE_JSON))
                 .orElseThrow();
@@ -120,11 +122,11 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 //            .orElseThrow(failure -> new IllegalStateException(failure.getException()));
 //    }
 //
-//    private void validate(RequestBody input) throws MalformedRequestException {
-//        if (isNull(input) || isNull(input.getDoiUrl())) {
-//            throw new MalformedRequestException(NULL_DOI_URL_ERROR);
-//        }
-//    }
+    private void validate(RequestBody input) throws BadRequestException {
+        if (isNull(input) || isNull(input.getDoiUrl())) {
+            throw new BadRequestException(NULL_DOI_URL_ERROR);
+        }
+    }
 //
 //    private Publication getPublicationMetadataFromDoi(URL doiUrl,
 //                                                      String owner, URI customerId)

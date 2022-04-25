@@ -17,12 +17,6 @@ public class ExceptionsTest {
         assertEquals(HttpStatus.SC_BAD_GATEWAY, exception.statusCode());
     }
 
-    @Test
-    public void canCreateMalformedRequestException() {
-        MalformedRequestException exception = new MalformedRequestException(MESSAGE);
-        assertNotNull(exception);
-        assertEquals(HttpStatus.SC_BAD_REQUEST, exception.statusCode());
-    }
 
     @Test
     public void canCreateMetadataNotFoundException() {
