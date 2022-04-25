@@ -100,7 +100,7 @@ xsd2java-jakarta = { group = 'jakarta.xml.bind', name = 'jakarta.xml.bind-api', 
 log4j-core = { group = 'org.apache.logging.log4j', name = 'log4j-core', version.ref = 'log4j' }
 log4j-api = { group = 'org.apache.logging.log4j', name = 'log4j-api', version.ref = 'log4j' }
 log4j-slf4j18-impl = { group = 'org.apache.logging.log4j', name = 'log4j-slf4j18-impl', version.ref = 'log4j' }
-log4j-slf4j-impl ={ group= 'org.apache.logging.log4j', name= 'log4j-slf4j-impl', version= 'log4j'}
+log4j-slf4j-impl ={ group= 'org.apache.logging.log4j', name= 'log4j-slf4j-impl', version.ref = 'log4j'}
 
 slf4j-api = { group = 'org.slf4j', name = 'slf4j-api', version.ref = 'slf4j' }
 
