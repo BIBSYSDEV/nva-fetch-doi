@@ -1,39 +1,25 @@
 
 dependencies {
-    implementation project(":fetch-doi-commons")
-    implementation project(":doi-transformer") {
-        compileOnly(libs.jakarta) {
-            because 'PMD'
-        }
-    }
-    implementation project(":doi-proxy")
-    implementation project(":metadata-transformer")
+//    implementation project(":fetch-doi-commons")
+//    implementation project(":doi-transformer") {
+//        compileOnly(libs.jakarta) {
+//            because 'PMD'
+//        }
+//    }
+//    implementation project(":doi-proxy")
+//    implementation project(":metadata-transformer")
     implementation project(":json-config")
+
     implementation libs.nva.apigateway
     implementation libs.nva.core
     implementation libs.nva.json
-    implementation libs.nva.identifiers
-    implementation libs.aws.lambda.java.core
-    implementation libs.bundles.jackson
-    implementation libs.aws.java.sdk2.s3
-
-    implementation (libs.nva.datamodel){
-        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
-    }
     implementation libs.guava
+//    implementation libs.nva.identifiers
+    implementation libs.bundles.jackson
+//    implementation (libs.nva.datamodel)
     implementation libs.bundles.problem
-
-    implementation platform('software.amazon.awssdk:bom:2.17.152')
-    implementation 'org.apache.logging.log4j:log4j-api:2.17.1'
-    implementation 'org.apache.logging.log4j:log4j-core:2.17.1'
-    runtimeOnly 'org.apache.logging.log4j:log4j-slf4j18-impl:2.17.1'
-    runtimeOnly 'com.amazonaws:aws-lambda-java-log4j2:1.5.1'
-
-
-    implementation group: 'software.amazon.awssdk', name: 'lambda', version: '2.17.152'
-
-    implementation group: 'com.amazonaws', name: 'aws-java-sdk-core', version: '1.12.129'
-    implementation group: 'com.amazonaws', name: 'aws-java-sdk-lambda', version: '1.12.129'
+    implementation libs.bundles.logging
+    implementation libs.aws.lambda.java.core
 
 
     testImplementation libs.bundles.testing
