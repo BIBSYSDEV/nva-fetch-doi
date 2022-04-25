@@ -28,5 +28,5 @@ dependencies {
 
 test{
     environment "API_HOST", "api.localhost.nva.aws.unit.no"
-
+    environment "ALLOWED_ORIGIN", "*"
 }

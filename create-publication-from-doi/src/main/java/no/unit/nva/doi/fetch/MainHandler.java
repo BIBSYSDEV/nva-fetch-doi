@@ -2,6 +2,7 @@ package no.unit.nva.doi.fetch;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
+import no.unit.nva.doi.fetch.model.Summary;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -11,9 +12,9 @@ import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MainHandler extends ApiGatewayHandler<RequestBody, String> {
+public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
-//    public static final String PUBLICATION_API_HOST_ENV = "PUBLICATION_API_HOST";
+    public static final String PUBLICATION_API_HOST_ENV = "PUBLICATION_API_HOST";
 //    public static final String NULL_DOI_URL_ERROR = "doiUrl can not be null";
 //    public static final String NO_METADATA_FOUND_FOR = "No metadata found for: ";
     private static final Logger logger = LoggerFactory.getLogger(MainHandler.class);
@@ -43,17 +44,18 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, String> {
 //    }
 
     @Override
-    protected String processInput(RequestBody input, RequestInfo requestInfo, Context context)
+    protected Summary processInput(RequestBody input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
             logger.info("Some message from "+ input);
-            var publication =
-                new Publication.Builder().withIdentifier(SortableIdentifier.next()).withDoi(input.getDoiUrl()).build();
-            return publication.getDoi().toString();
+            return new Summary.Builder()
+                .withCreatorName(input.getDoiUrl().toString())
+                .withIdentifier(SortableIdentifier.next())
+                .build();
 
     }
 
     @Override
-    protected Integer getSuccessStatusCode(RequestBody input, String output) {
+    protected Integer getSuccessStatusCode(RequestBody input, Summary output) {
         return HttpURLConnection.HTTP_OK;
     }
 
