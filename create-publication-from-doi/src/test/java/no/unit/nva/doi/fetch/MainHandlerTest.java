@@ -9,24 +9,36 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasKey;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.net.HttpHeaders;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import no.sikt.nva.doi.fetch.jsonconfig.Json;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.doi.DoiProxyService;
+import no.unit.nva.doi.MetadataAndContentLocation;
+import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
 import no.unit.nva.doi.fetch.model.Summary;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Organization;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.TestHeaders;
-import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
-import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -69,17 +81,18 @@ class MainHandlerTest {
         assertNotNull(summary.getIdentifier());
     }
 
-    //
     //    @Test
     //    public void testBadGatewayResponseWhenUrlIsInvalidNonDoi() throws Exception {
     //        PublicationConverter publicationConverter = mock(PublicationConverter.class);
     //
     //        MainHandler mainHandler = handlerReceivingEmptyResponse(publicationConverter);
     //        mainHandler.handleRequest(nonDoiUrlInputStream(), output, context);
-    //        GatewayResponse<Problem> gatewayResponse = parseFailureResponse(output);
+    //        GatewayResponse<Problem> gatewayResponse = GatewayResponse.fromOutputStream(output,Problem.class);
     //        assertEquals(HTTP_BAD_GATEWAY, gatewayResponse.getStatusCode());
-    //        assertThat(getProblemDetail(gatewayResponse), containsString(MainHandler.NO_METADATA_FOUND_FOR));
+    //        Problem problem = gatewayResponse.getBodyObject(Problem.class);
+    //        assertThat(problem.getDetail(), containsString(MainHandler.NO_METADATA_FOUND_FOR));
     //    }
+
     //
     //    @Test
     //    public void shouldReturnInternalErrorWhenUrlToPublicationProxyIsNotValidAndContainInformativeMessage()
@@ -182,18 +195,20 @@ class MainHandlerTest {
     //        .WARNING_MESSAGE));
     //    }
     //
-    //    private MainHandler handlerReceivingEmptyResponse(PublicationConverter publicationConverter) {
-    //        DoiTransformService doiTransformService = mock(DoiTransformService.class);
-    //        DoiProxyService doiProxyService = mock(DoiProxyService.class);
-    //        PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
-    //        BareProxyClient bareProxyClient = mock(BareProxyClient.class);
-    //        MetadataService metadataService = mock(MetadataService.class);
-    //        when(metadataService.generateCreatePublicationRequest(any())).thenReturn(Optional.empty());
+    //        private MainHandler handlerReceivingEmptyResponse(PublicationConverter publicationConverter) {
+    //            DoiTransformService doiTransformService = mock(DoiTransformService.class);
+    //            DoiProxyService doiProxyService = mock(DoiProxyService.class);
+    //            PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService
+    //            .class);
+    //            BareProxyClient bareProxyClient = mock(BareProxyClient.class);
+    //            MetadataService metadataService = mock(MetadataService.class);
+    //            when(metadataService.generateCreatePublicationRequest(any())).thenReturn(Optional.empty());
     //
-    //        return new MainHandler(publicationConverter, doiTransformService,
-    //                               doiProxyService, publicationPersistenceService, bareProxyClient, metadataService,
-    //                               environment);
-    //    }
+    //            return new MainHandler(publicationConverter, doiTransformService,
+    //                                   doiProxyService, publicationPersistenceService, bareProxyClient,
+    //                                   metadataService,
+    //                                   environment);
+    //        }
     //
     //    private String getProblemDetail(GatewayResponse<Problem> gatewayResponse) throws JsonProcessingException {
     //        return gatewayResponse.getBodyObject(Problem.class).getDetail();
@@ -205,17 +220,18 @@ class MainHandlerTest {
     //        return new DoiProxyService(crossRefClient, dataciteClient);
     //    }
     //
-    private MainHandler createMainHandler() {
+    private MainHandler createMainHandler() throws MetadataNotFoundException, IOException, URISyntaxException {
         //        PublicationConverter publicationConverter = mockPublicationConverter();
         //        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
-        //        DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
+        var doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
         //        PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService
         //        .class);
         //        BareProxyClient bareProxyClient = mock(BareProxyClient.class);
         //        MetadataService metadataService = mockMetadataServiceReturningSuccessfulResult();
 
-        return new MainHandler();
+        return new MainHandler(doiProxyService);
     }
+
     //
     //    private PublicationConverter mockPublicationConverter() {
     //        PublicationConverter publicationConverter = mock(PublicationConverter.class);
@@ -245,29 +261,30 @@ class MainHandlerTest {
     //        return service;
     //    }
     //
-    //    private Publication getPublication() {
-    //        return new Publication.Builder()
-    //            .withIdentifier(new SortableIdentifier(UUID.randomUUID().toString()))
-    //            .withCreatedDate(Instant.now())
-    //            .withModifiedDate(Instant.now())
-    //            .withStatus(PublicationStatus.DRAFT)
-    //            .withPublisher(new Organization.Builder().withId(URI.create("http://example.org/123")).build())
-    //            .withEntityDescription(new EntityDescription.Builder().withMainTitle("Main title").build())
-    //            .withOwner("Owner")
-    //            .build();
-    //    }
+    private Publication getPublication() {
+        return new Publication.Builder()
+            .withIdentifier(SortableIdentifier.next())
+            .withCreatedDate(Instant.now())
+            .withModifiedDate(Instant.now())
+            .withStatus(PublicationStatus.DRAFT)
+            .withPublisher(new Organization.Builder().withId(URI.create("http://example.org/123")).build())
+            .withEntityDescription(new EntityDescription.Builder().withMainTitle("Main title").build())
+            .withOwner("Owner")
+            .build();
+    }
+
     //
-    //    private DoiProxyService mockDoiProxyServiceReceivingSuccessfulResult()
-    //        throws MetadataNotFoundException, IOException, URISyntaxException {
-    //        DoiProxyService doiProxyService = mock(DoiProxyService.class);
-    //        when(doiProxyService.lookupDoiMetadata(anyString(), any())).thenReturn(metadataAndContentLocation());
-    //        return doiProxyService;
-    //    }
-    //
-    //    private MetadataAndContentLocation metadataAndContentLocation() throws JsonProcessingException {
-    //        return new MetadataAndContentLocation("datacite",
-    //                                              restServiceObjectMapper.writeValueAsString(getPublication()));
-    //    }
+    private DoiProxyService mockDoiProxyServiceReceivingSuccessfulResult()
+        throws MetadataNotFoundException, IOException, URISyntaxException {
+        DoiProxyService doiProxyService = mock(DoiProxyService.class);
+        when(doiProxyService.lookupDoiMetadata(anyString(), any())).thenReturn(metadataAndContentLocation());
+        return doiProxyService;
+    }
+
+    private MetadataAndContentLocation metadataAndContentLocation() throws JsonProcessingException {
+        return new MetadataAndContentLocation("datacite",
+                                              Json.writeValueAsString(getPublication()));
+    }
     //
     //    private Summary createSummary() {
     //        return new Summary.Builder().withIdentifier(SortableIdentifier.next())
