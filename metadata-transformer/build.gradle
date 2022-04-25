@@ -4,6 +4,7 @@ dependencies {
 
     implementation(libs.bundles.any23) {
         exclude group: 'org.yaml', module: 'snakeyaml'
+        exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j-impl'
     }
     implementation libs.snakeyaml
 //    implementation group: 'org.eclipse.rdf4j', name: 'rdf4j-rio-jsonld', version: '3.7.7'
