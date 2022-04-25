@@ -8,7 +8,7 @@ dependencies {
 //        }
 //    }
     implementation project(":doi-proxy")
-//    implementation project(":metadata-transformer")
+    implementation project(":metadata-transformer")
     implementation project(":json-config")
 
     implementation libs.nva.apigateway

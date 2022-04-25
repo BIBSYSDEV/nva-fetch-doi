@@ -26,8 +26,8 @@ public final class Json {
         return OBJECT_MAPPER.readTree(input);
     }
 
-    public static JsonNode convertValue(Object fromValue, Class<JsonNode> jsonNodeClass) {
-        return OBJECT_MAPPER.convertValue(fromValue, jsonNodeClass);
+    public static <T>  T convertValue(Object fromValue, Class<T> toTypeValue) {
+        return OBJECT_MAPPER.convertValue(fromValue, toTypeValue);
     }
 
     public static JsonNode createObjectNode() {

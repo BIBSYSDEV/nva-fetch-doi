@@ -110,7 +110,7 @@ class MainHandlerTest {
         PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
 
         //            MetadataService metadataService = mock(MetadataService.class);
-        MainHandler mainHandler = new MainHandler(doiProxyService);
+        MainHandler mainHandler = new MainHandler(doiProxyService,doiTransformService);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         mainHandler.handleRequest(malformedRequest(), output, context);
         GatewayResponse<Problem> gatewayResponse = GatewayResponse.fromOutputStream(output, Problem.class);
@@ -196,7 +196,7 @@ class MainHandlerTest {
         //        MetadataService metadataService = mock(MetadataService.class);
         //        when(metadataService.generateCreatePublicationRequest(any())).thenReturn(Optional.empty());
 
-        return new MainHandler(doiProxyService);
+        return new MainHandler(doiProxyService,doiTransformService);
     }
 
     //
@@ -210,16 +210,18 @@ class MainHandlerTest {
     //        return new DoiProxyService(crossRefClient, dataciteClient);
     //    }
     //
-    private MainHandler createMainHandler() throws MetadataNotFoundException, IOException, URISyntaxException {
+    private MainHandler createMainHandler()
+        throws MetadataNotFoundException, IOException, URISyntaxException, InvalidIssnException, InvalidIsbnException,
+               UnsupportedDocumentTypeException {
         //        PublicationConverter publicationConverter = mockPublicationConverter();
-        //        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
+        var doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         var doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
         //        PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService
         //        .class);
         //        BareProxyClient bareProxyClient = mock(BareProxyClient.class);
         //        MetadataService metadataService = mockMetadataServiceReturningSuccessfulResult();
 
-        return new MainHandler(doiProxyService);
+        return new MainHandler(doiProxyService,doiTransformService);
     }
 
     //
