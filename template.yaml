@@ -58,6 +58,9 @@ Globals:
     Timeout: 900
     MemorySize: 1798
     Runtime: java11
+    Environment:
+      Variables:
+        COGNITO_URI: !Ref CognitoUri
   Api:
     Cors:
       AllowMethods: "'POST,OPTIONS'"
