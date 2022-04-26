@@ -185,11 +185,11 @@ Resources:
     Properties:
       CodeUri: create-publication-from-doi
       Handler: no.unit.nva.doi.fetch.MainHandler::handleRequest
-      AutoPublishAlias: live
-      DeploymentPreference:
-        Type: AllAtOnce
-      ProvisionedConcurrencyConfig:
-        ProvisionedConcurrentExecutions: 1
+#      AutoPublishAlias: live
+#      DeploymentPreference:
+#        Type: AllAtOnce
+#      ProvisionedConcurrencyConfig:
+#        ProvisionedConcurrentExecutions: 1
       Role: !GetAtt NvaFetchDoiFunctionRole.Arn
       Environment:
         Variables:
@@ -229,27 +229,27 @@ Resources:
                   - Name: suffix
                     Value: '.txt'
 
-  NvaFetchDoiFunctionScalableTarget:
-    Type: AWS::ApplicationAutoScaling::ScalableTarget
-    Properties:
-      MaxCapacity: 10
-      MinCapacity: 1
-      ResourceId: !Sub function:${NvaFetchDoiFunction}:live # You need to specify an alias or version here
-      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
-      ScalableDimension: lambda:function:ProvisionedConcurrency
-      ServiceNamespace: lambda
-    DependsOn: NvaFetchDoiFunctionAliaslive # This is your function logical ID + "Alias" + what you use for AutoPublishAlias
-
-  NvaFetchDoiFunctionScalingPolicy:
-    Type: AWS::ApplicationAutoScaling::ScalingPolicy
-    Properties:
-      PolicyName: NvaFetchDoiFunctionScalingPolicy
-      PolicyType: TargetTrackingScaling
-      ScalingTargetId: !Ref NvaFetchDoiFunctionScalableTarget
-      TargetTrackingScalingPolicyConfiguration:
-        TargetValue: 0.70 # Any value between 0.1 and 0.9 can be used here
-        PredefinedMetricSpecification:
-          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
+#  NvaFetchDoiFunctionScalableTarget:
+#    Type: AWS::ApplicationAutoScaling::ScalableTarget
+#    Properties:
+#      MaxCapacity: 10
+#      MinCapacity: 1
+#      ResourceId: !Sub function:${NvaFetchDoiFunction}:live # You need to specify an alias or version here
+#      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
+#      ScalableDimension: lambda:function:ProvisionedConcurrency
+#      ServiceNamespace: lambda
+#    DependsOn: NvaFetchDoiFunctionAliaslive # This is your function logical ID + "Alias" + what you use for AutoPublishAlias
+#
+#  NvaFetchDoiFunctionScalingPolicy:
+#    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+#    Properties:
+#      PolicyName: NvaFetchDoiFunctionScalingPolicy
+#      PolicyType: TargetTrackingScaling
+#      ScalingTargetId: !Ref NvaFetchDoiFunctionScalableTarget
+#      TargetTrackingScalingPolicyConfiguration:
+#        TargetValue: 0.70 # Any value between 0.1 and 0.9 can be used here
+#        PredefinedMetricSpecification:
+#          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
 
 
   NvaFetchDoiFunctionBasePathMapping:
