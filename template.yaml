@@ -10,6 +10,10 @@ Parameters:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Description: Reference to Cognito UserPool for the stage
     Default: CognitoAuthorizerArn
+  CognitoUri:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: URI to the OAUTH endpoint of the Cognito client
+    Default: /NVA/CognitoUri
   ApiDomain:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Description: The Api domain
