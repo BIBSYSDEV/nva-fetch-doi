@@ -30,15 +30,17 @@ import java.time.Instant;
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.forbidden;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static com.google.common.net.HttpHeaders.CONTENT_DISPOSITION;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static no.sikt.nva.scopus.ScopusEmailHandler.ERROR_STORING_SCOPUS_ZIP_FILE_FROM_URL;
+import static no.sikt.nva.scopus.ScopusEmailHandler.SCOPUS_ZIP_FILE_STORED_FROM_URL;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -49,6 +51,7 @@ class ScopusEmailHandlerTest {
     public static final RequestParametersEntity EMPTY_REQUEST_PARAMETERS = null;
     public static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;
     public static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
+    public static final String WIREMOCK_SCOPUS_ZIP_FILE = "scopus.zip";
     public static final long SOME_FILE_SIZE = 100L;
     public static final String FILE_URI_TEMPLATE = "http://localhost:%d/file/%s";
 
@@ -70,7 +73,9 @@ class ScopusEmailHandlerTest {
 
     @AfterEach
     public void tearDown() {
-        httpServer.stop();
+        if (httpServer != null && httpServer.isRunning()) {
+            httpServer.stop();
+        }
     }
 
     @Test
@@ -85,13 +90,44 @@ class ScopusEmailHandlerTest {
     }
 
     @Test
-    void shouldDownloadFilesFromUrlFoundInEmailToZipFilesBucket() throws IOException {
-        var expectedFilename = "scopus.zip";
-        var uri = mockedGetRequestThatReturnsFile(expectedFilename);
+    void shouldDownloadFileFromUrlFoundInEmailToS3Bucket() throws IOException {
+        var uri = mockedGetRequestThatReturnsFile(WIREMOCK_SCOPUS_ZIP_FILE);
         var s3Event = createNewScopusEmailEvent(uri.toString());
         scopusEmailHandler = new ScopusEmailHandler(s3Client, httpClient);
-        var response = scopusEmailHandler.handleRequest(s3Event, CONTEXT);
-        assertThat(response, is(1));
+        var appender = LogUtils.getTestingAppenderForRootLogger();
+        scopusEmailHandler.handleRequest(s3Event, CONTEXT);
+        var expectedLogMessage = createExpectedFileStoredLogMessage(WIREMOCK_SCOPUS_ZIP_FILE, uri);
+        assertThat(appender.getMessages(), containsString(expectedLogMessage));
+    }
+
+    @Test
+    void shouldLogErrorWhenNotOkStatusRequestingFile() throws IOException {
+        var uri = mockedGetRequestThatReturnsForbidden(WIREMOCK_SCOPUS_ZIP_FILE);
+        var s3Event = createNewScopusEmailEvent(uri.toString());
+        scopusEmailHandler = new ScopusEmailHandler(s3Client, httpClient);
+        var expectedLogMessage = createExpectedFileStoreErrorLogMessage(WIREMOCK_SCOPUS_ZIP_FILE, uri);
+        var appender = LogUtils.getTestingAppenderForRootLogger();
+        assertThrows(RuntimeException.class, () -> scopusEmailHandler.handleRequest(s3Event, CONTEXT));
+        assertThat(appender.getMessages(), containsString(expectedLogMessage));
+    }
+
+    @Test
+    void shouldLogErrorWhenExceptionRequestingFile() throws IOException {
+        var uri = mockedGetRequestThatReturnsForbidden(WIREMOCK_SCOPUS_ZIP_FILE);
+        var s3Event = createNewScopusEmailEvent(uri.toString());
+        scopusEmailHandler = new ScopusEmailHandler(s3Client, HttpClient.newBuilder().build());
+        var expectedLogMessage = createExpectedFileStoreErrorLogMessage(WIREMOCK_SCOPUS_ZIP_FILE, uri);
+        var appender = LogUtils.getTestingAppenderForRootLogger();
+        assertThrows(RuntimeException.class, () -> scopusEmailHandler.handleRequest(s3Event, CONTEXT));
+        assertThat(appender.getMessages(), containsString(expectedLogMessage));
+    }
+
+    private String createExpectedFileStoredLogMessage(String filename, URI uri) {
+        return String.format(SCOPUS_ZIP_FILE_STORED_FROM_URL, filename, uri.toString());
+    }
+
+    private String createExpectedFileStoreErrorLogMessage(String filename, URI uri) {
+        return String.format(ERROR_STORING_SCOPUS_ZIP_FILE_FROM_URL, filename, uri.toString());
     }
 
     private S3Event createNewScopusEmailEvent(String emailContents) throws IOException {
@@ -162,4 +198,10 @@ class ScopusEmailHandlerTest {
                         .withBodyFile(filename)));
         return URI.create(String.format(FILE_URI_TEMPLATE, httpServer.port(), filename));
     }
+
+    private URI mockedGetRequestThatReturnsForbidden(String filename) {
+        stubFor(get(urlEqualTo("/file/" + filename)).willReturn(forbidden()));
+        return URI.create(String.format(FILE_URI_TEMPLATE, httpServer.port(), filename));
+    }
+
 }
