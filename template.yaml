@@ -40,6 +40,10 @@ Parameters:
     Type: String
     Default: "scopus-xml-files"
     Description: Name of bucket for unzipped scopus xml files
+  ScopusEmailBucketName:
+    Type: String
+    Default: "scopus-emails"
+    Description: Name of bucket for unzipped scopus xml files
   NvaEventsBucketName:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/Events/EventsBucketName'
@@ -259,6 +263,28 @@ Resources:
       RestApiId: !Ref NvaFetchDoiFunctionApi
       Stage: !Ref NvaFetchDoiFunctionApi.Stage
 
+  NvaScopusEmailFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: download-scopus-publications
+      Handler: no.sikt.nva.scopus.ScopusEmailHandler::handleRequest
+      Role: !GetAtt ScopusHandlersRole.Arn
+      ReservedConcurrentExecutions: 1 # Throttled to slow down create publication requests from scopus files
+      Environment:
+        Variables:
+          ZIP_BUCKET_NAME: !Ref ScopusZipBucket
+          API_HOST: !Ref ApiDomain
+      Events:
+        Scopus:
+          Type: S3
+          Properties:
+            Bucket: !Ref ScopusEmailBucket
+            Events: 's3:ObjectCreated:*'
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: '.txt'
 
 #============Event based functions====================================================================================#
   NvaScopusFunction:
@@ -267,7 +293,7 @@ Resources:
       CodeUri: create-publication-from-scopus
       Handler: no.sikt.nva.scopus.ScopusHandler::handleRequest
       Role: !GetAtt ScopusHandlersRole.Arn
-      ReservedConcurrentExecutions: 5 # Throttled to slow down create publication requests from scopus files
+      ReservedConcurrentExecutions: 1 # Throttled to slow down create publication requests from scopus files
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketName
@@ -394,6 +420,7 @@ Resources:
             Resource:
               - !Sub '${ScopusXmlBucket.Arn}/*'
               - !Sub '${ScopusZipBucket.Arn}/*'
+              - !Sub '${ScopusEmailBucket.Arn}/*'
 
   SendEventsToNvaPolicy:
     Type: AWS::IAM::Policy
@@ -472,6 +499,17 @@ Resources:
     Properties:
       AccessControl: Private
       BucketName: !Sub "${ScopusXmlBucketName}-${AWS::AccountId}"
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteContentAfter3Days
+            Status: Enabled
+            ExpirationInDays: 3
+
+  ScopusEmailBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      BucketName: !Sub "${ScopusEmailBucketName}-${AWS::AccountId}"
       LifecycleConfiguration:
         Rules:
           - Id: DeleteContentAfter3Days
