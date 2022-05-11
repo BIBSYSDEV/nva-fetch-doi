@@ -26,12 +26,14 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import static nva.commons.core.attempt.Try.attempt;
 
-public class ScopusEmailHandler implements RequestHandler<S3Event, String> {
+public class ScopusEmailHandler implements RequestHandler<S3Event, Integer> {
 
     public static final int SINGLE_EXPECTED_RECORD = 0;
     public static final String S3_URI_TEMPLATE = "s3://%s/%s";
     private static final Logger logger = LoggerFactory.getLogger(ScopusEmailHandler.class);
     private static final String ZIP_FILE_BUCKET = new Environment().readEnv("ZIP_FILE_BUCKET");
+    public static final String ERROR_PUTTING_FILE_TO_SCOPUS_ZIP_BUCKET_FROM_URL = "Error putting file to "
+            + "scopus-zip-bucket ({}) from url: {}";
     private final S3Client s3Client;
     private final HttpClient httpClient;
 
@@ -47,7 +49,7 @@ public class ScopusEmailHandler implements RequestHandler<S3Event, String> {
 
 
     @Override
-    public String handleRequest(S3Event event, Context context) {
+    public Integer handleRequest(S3Event event, Context context) {
         // 1. Get download url from email
         // 2. Download zip files to zip-bucket
 
@@ -74,29 +76,35 @@ public class ScopusEmailHandler implements RequestHandler<S3Event, String> {
         return URI.create(String.format(S3_URI_TEMPLATE, extractBucketName(s3Event), extractFilename(s3Event)));
     }
 
-    private String processEmail(String emailContents) {
-        extractUrlsFromEmail(emailContents).forEach(this::downloadFile);
-        return emailContents;
+    private int processEmail(String emailContents) {
+        List<String> validUrlsFromEmail = extractValidUrlsFromEmail(emailContents);
+        validUrlsFromEmail.forEach(this::downloadFile);
+        return validUrlsFromEmail.size();
     }
 
     private void downloadFile(String url) {
-        try {
-            URI uri = URI.create(url);
-            String filename = extractFilenameFromUrl(url);
-            HttpRequest request = HttpRequest.newBuilder().uri(uri).build();
-            InputStream inputStream = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream()).body();
+        URI uri = URI.create(url);
+        String filename = extractFilenameFromUrl(url);
+        HttpRequest request = HttpRequest.newBuilder().uri(uri).build();
+        try (InputStream inputStream = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream()).body()) {
+//            File targetFile = new File("src/main/resources/scopus.zip");
+//
+//            java.nio.file.Files.copy(
+//                    inputStream,
+//                    targetFile.toPath(),
+//                    StandardCopyOption.REPLACE_EXISTING);
             s3Client.putObject(newPutObjectRequest(filename), createRequestBody(inputStream));
-        } catch (Exception ignored) {
-
+        } catch (IOException | InterruptedException e) {
+            logger.error(ERROR_PUTTING_FILE_TO_SCOPUS_ZIP_BUCKET_FROM_URL, ZIP_FILE_BUCKET, url);
+            throw new RuntimeException(e);
         }
-
     }
 
     private String extractFilenameFromUrl(String url) {
         return url;
     }
 
-    private List<String> extractUrlsFromEmail(String emailContents) {
+    private List<String> extractValidUrlsFromEmail(String emailContents) {
         ArrayList<String> urls = new ArrayList<>();
         urls.add(emailContents);
         return urls;

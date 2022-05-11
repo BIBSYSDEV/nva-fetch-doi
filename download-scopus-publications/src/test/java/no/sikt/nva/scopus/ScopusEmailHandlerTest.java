@@ -23,11 +23,19 @@ import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.time.Instant;
 import java.util.List;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static com.google.common.net.HttpHeaders.CONTENT_DISPOSITION;
+import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -42,7 +50,7 @@ class ScopusEmailHandlerTest {
     public static final ResponseElementsEntity EMPTY_RESPONSE_ELEMENTS = null;
     public static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     public static final long SOME_FILE_SIZE = 100L;
-    public static final String START_OF_QUERY = "/?";
+    public static final String FILE_URI_TEMPLATE = "http://localhost:%d/file/%s";
 
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
@@ -78,11 +86,12 @@ class ScopusEmailHandlerTest {
 
     @Test
     void shouldDownloadFilesFromUrlFoundInEmailToZipFilesBucket() throws IOException {
-        var expected = randomString();
-        var s3Event = createNewScopusEmailEvent(expected);
+        var expectedFilename = "scopus.zip";
+        var uri = mockedGetRequestThatReturnsFile(expectedFilename);
+        var s3Event = createNewScopusEmailEvent(uri.toString());
         scopusEmailHandler = new ScopusEmailHandler(s3Client, httpClient);
         var response = scopusEmailHandler.handleRequest(s3Event, CONTEXT);
-        assertThat(response, is(expected));
+        assertThat(response, is(1));
     }
 
     private S3Event createNewScopusEmailEvent(String emailContents) throws IOException {
@@ -142,5 +151,15 @@ class ScopusEmailHandlerTest {
                                            ResponseTransformer<GetObjectResponse, ReturnT> responseTransformer) {
             throw new RuntimeException(expectedErrorMessage);
         }
+    }
+
+    private URI mockedGetRequestThatReturnsFile(String filename) {
+        stubFor(get(urlEqualTo("/file/" + filename))
+                .willReturn(aResponse()
+                        .withHeader(CONTENT_TYPE, "application/octet-stream")
+                        .withHeader(CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                        .withStatus(HttpURLConnection.HTTP_OK)
+                        .withBodyFile(filename)));
+        return URI.create(String.format(FILE_URI_TEMPLATE, httpServer.port(), filename));
     }
 }
