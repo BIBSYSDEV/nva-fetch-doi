@@ -31,6 +31,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.forbidden;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
@@ -185,6 +186,7 @@ class ScopusEmailHandlerTest {
     }
 
     private URI mockedGetRequestThatReturnsFile(String filename) {
+        setupWiremockPorts();
         stubFor(get(urlEqualTo("/file/" + filename))
                 .willReturn(aResponse()
                         .withHeader(CONTENT_TYPE, "application/octet-stream")
@@ -195,8 +197,13 @@ class ScopusEmailHandlerTest {
     }
 
     private URI mockedGetRequestThatReturnsForbidden(String filename) {
+        setupWiremockPorts();
         stubFor(get(urlEqualTo("/file/" + filename)).willReturn(forbidden()));
         return UriWrapper.fromUri(serverUri).addChild("file").addChild(filename).getUri();
+    }
+
+    private void setupWiremockPorts() {
+        configureFor(serverUri.getScheme(), serverUri.getHost(), serverUri.getPort());
     }
 
 }
