@@ -10,15 +10,11 @@ dependencies {
     implementation libs.nva.s3
     implementation libs.nva.json
     implementation libs.nva.core
-    implementation libs.nva.doi
-    implementation libs.nva.events
     implementation libs.nva.apigateway
-    implementation libs.nva.language
 
     implementation libs.aws.lambda.java.core
     implementation libs.aws.lambda.events
     implementation libs.bundles.logging
-
 
     testImplementation libs.nva.testutils
 
@@ -31,7 +27,6 @@ dependencies {
         }
     }
 }
-
 
 test{
     environment "API_HOST", "api.localhost.nva.aws.unit.no"
