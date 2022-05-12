@@ -53,7 +53,6 @@ class ScopusEmailHandlerTest {
     public static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     public static final String WIREMOCK_SCOPUS_ZIP_FILE = "scopus.zip";
     public static final long SOME_FILE_SIZE = 100L;
-    public static final String FILE_URI_TEMPLATE = "http://localhost:%d/file/%s";
 
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
@@ -196,12 +195,12 @@ class ScopusEmailHandlerTest {
                         .withHeader(CONTENT_DISPOSITION, "attachment; filename=" + filename)
                         .withStatus(HttpURLConnection.HTTP_OK)
                         .withBodyFile(filename)));
-        return URI.create(String.format(FILE_URI_TEMPLATE, httpServer.port(), filename));
+        return URI.create(httpServer.baseUrl() + "/file/" + filename);
     }
 
     private URI mockedGetRequestThatReturnsForbidden(String filename) {
         stubFor(get(urlEqualTo("/file/" + filename)).willReturn(forbidden()));
-        return URI.create(String.format(FILE_URI_TEMPLATE, httpServer.port(), filename));
+        return URI.create(httpServer.baseUrl() + "/file/" + filename);
     }
 
 }
