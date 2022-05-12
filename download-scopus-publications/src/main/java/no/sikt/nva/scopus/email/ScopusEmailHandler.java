@@ -1,4 +1,4 @@
-package no.sikt.nva.scopus;
+package no.sikt.nva.scopus.email;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
@@ -80,7 +80,7 @@ public class ScopusEmailHandler implements RequestHandler<S3Event, Void> {
     }
 
     private List<URI> extractValidUrlsFromEmail(String emailContents) {
-        // TODO: extract valid scopus urls
+        // TODO: extract valid Scopus urls
         ArrayList<URI> uriList = new ArrayList<>();
         uriList.add(URI.create(emailContents));
         return uriList;
@@ -105,8 +105,7 @@ public class ScopusEmailHandler implements RequestHandler<S3Event, Void> {
     }
 
     private String extractFilenameFromUri(URI uri) {
-        String path = uri.getPath();
-        return path.substring(path.lastIndexOf('/') + 1);
+        return UriWrapper.fromUri(uri).getLastPathElement();
     }
 
     private RequestBody createRequestBody(InputStream input) throws IOException {
