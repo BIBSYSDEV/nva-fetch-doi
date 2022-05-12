@@ -58,6 +58,7 @@ class ScopusEmailHandlerTest {
     private S3Driver s3Driver;
     private ScopusEmailHandler scopusEmailHandler;
     private WireMockServer httpServer;
+    private URI serverUri;
 
     @BeforeEach
     public void init() {
@@ -135,6 +136,7 @@ class ScopusEmailHandlerTest {
     private void startWiremockServer() {
         httpServer = new WireMockServer(options().dynamicHttpsPort());
         httpServer.start();
+        serverUri = URI.create(httpServer.baseUrl());
     }
 
     private S3Event createS3Event(String expectedObjectKey) {
@@ -189,12 +191,12 @@ class ScopusEmailHandlerTest {
                         .withHeader(CONTENT_DISPOSITION, "attachment; filename=" + filename)
                         .withStatus(HttpURLConnection.HTTP_OK)
                         .withBodyFile(filename)));
-        return URI.create(httpServer.baseUrl() + "/file/" + filename);
+        return UriWrapper.fromUri(serverUri).addChild("file").addChild(filename).getUri();
     }
 
     private URI mockedGetRequestThatReturnsForbidden(String filename) {
         stubFor(get(urlEqualTo("/file/" + filename)).willReturn(forbidden()));
-        return URI.create(httpServer.baseUrl() + "/file/" + filename);
+        return UriWrapper.fromUri(serverUri).addChild("file").addChild(filename).getUri();
     }
 
 }
