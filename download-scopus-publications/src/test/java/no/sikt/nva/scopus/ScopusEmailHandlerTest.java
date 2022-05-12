@@ -139,7 +139,7 @@ class ScopusEmailHandlerTest {
     }
 
     private void startWiremockServer() {
-        httpServer = new WireMockServer(options().dynamicHttpsPort());
+        httpServer = new WireMockServer(options().dynamicHttpsPort().dynamicPort());
         httpServer.start();
     }
 
