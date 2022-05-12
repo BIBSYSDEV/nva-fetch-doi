@@ -72,9 +72,7 @@ class ScopusEmailHandlerTest {
 
     @AfterEach
     public void tearDown() {
-        if (httpServer != null && httpServer.isRunning()) {
-            httpServer.stop();
-        }
+        httpServer.stop();
     }
 
     @Test
@@ -139,7 +137,7 @@ class ScopusEmailHandlerTest {
     }
 
     private void startWiremockServer() {
-        httpServer = new WireMockServer(options().dynamicHttpsPort().dynamicPort());
+        httpServer = new WireMockServer(options().dynamicHttpsPort());
         httpServer.start();
     }
 
