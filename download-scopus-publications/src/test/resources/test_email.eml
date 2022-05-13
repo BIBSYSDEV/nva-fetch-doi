@@ -1,0 +1,54 @@
+Delivered-To: john.doe@sikt.no
+Return-Path: <scopus.data@sikt.no>
+From: Scopus Data <scopus.data@sikt.no>
+To: "john.doe@sikt.no" <john.doe@sikt.no>
+Subject: [importdata] Scopus Data available for downloading
+Thread-Topic: [importdata] Scopus Data available for downloading
+Thread-Index: AQHYX7ylv2ninxYRk0OkGRh6HO4MTK0QMbrwgAr3LR0=
+Date: Thu, 12 May 2022 11:34:31 +0000
+Message-ID: <DB9P192MB1588AD41E89894AC64648CA793CB9@DB9P192MB1588.EURP192.PROD.OUTLOOK.COM>
+Content-Type: multipart/alternative; boundary="_000_DB9P192MB1588AD41E89894AC64648CA793CB9DB9P192MB1588EURP_"
+MIME-Version: 1.0
+
+--_000_DB9P192MB1588AD41E89894AC64648CA793CB9DB9P192MB1588EURP_
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+
+
+________________________________
+From: Scopus Data <scopus.data@sikt.no>
+Sent: Thursday, May 5, 2022 2:07 PM
+To: John Doe <john.doe@sikt.no>
+Subject: [importdata] Scopus Data available for downloading
+
+Dear Cristin, Scopus Custom Data has been created
+
+Abstract and Indexes
+
+Format: full-format
+Created: 2022-05-04T13:35:58.549
+Size: 18142;703532961 bytes
+Number of zip files: 1
+It can be downloaded from :
+FULLFORMAT_ZIP_DOWNLOAD_URL
+
+Abstract and Indexes Citedby
+
+Created: 2022-05-04T13:35:58.549
+Size: 18142;10674480 bytes
+Number of zip files: 1
+It can be downloaded from :
+CITEDBY_ZIP_DOWNLOAD_URL
+
+
+Delete Signed URL's:
+
+Abstract and Indexes
+
+Created: 2022-05-04T13:35:58.549
+Size: 516;2796 bytes
+Number of zip files: 1
+It can be downloaded from :
+DELETE_ZIP_DOWNLOAD_URL
+
+--_000_DB9P192MB1588AD41E89894AC64648CA793CB9DB9P192MB1588EURP_

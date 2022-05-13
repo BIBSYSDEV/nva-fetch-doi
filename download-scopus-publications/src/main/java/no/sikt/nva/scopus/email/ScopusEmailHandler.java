@@ -10,14 +10,18 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
+import org.simplejavamail.api.email.Email;
+import org.simplejavamail.converter.EmailConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -36,6 +40,8 @@ public class ScopusEmailHandler implements RequestHandler<S3Event, Void> {
     public static final String ERROR_STORING_SCOPUS_ZIP_FILE_FROM_URL = "Error storing file '%s' from url: '%s'";
     public static final String SCOPUS_ZIP_FILE_STORED_FROM_URL = "File '%s' stored from url: '%s'";
     public static final String ERROR_UNEXPECTED_STATUS_CODE = "Unexpected status code '%s' for request to uri";
+    public static final String REGEX_PATTERN_VALID_URL = "https://(sccontent-scudd-delivery-prod\\.s3\\.amazonaws\\.com"
+            + "/sccontent-scudd-delivery-prod/|localhost){1}[\\w.\\-/:#?=&;%~+]+";
     private final S3Client s3Client;
     private final HttpClient httpClient;
 
@@ -75,15 +81,19 @@ public class ScopusEmailHandler implements RequestHandler<S3Event, Void> {
     }
 
     private Void processEmailFile(String emailContents) {
-        extractValidUrlsFromEmail(emailContents).forEach(this::downloadFile);
+        Email email = EmailConverter.emlToEmailBuilder(emailContents).buildEmail();
+        extractValidUrlsFromEmail(email.getPlainText()).forEach(this::downloadFile);
         return null;
     }
 
-    private List<URI> extractValidUrlsFromEmail(String emailContents) {
-        // TODO: extract valid Scopus urls
-        ArrayList<URI> uriList = new ArrayList<>();
-        uriList.add(URI.create(emailContents));
-        return uriList;
+    private Set<URI> extractValidUrlsFromEmail(String emailContents) {
+        Set<URI> uris = new HashSet<>();
+        Pattern pattern = Pattern.compile(REGEX_PATTERN_VALID_URL, Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(emailContents);
+        while (matcher.find()) {
+            uris.add(URI.create(emailContents.substring(matcher.start(0),matcher.end(0))));
+        }
+        return uris;
     }
 
     private void downloadFile(URI uri) {

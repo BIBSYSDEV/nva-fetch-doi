@@ -273,7 +273,6 @@ Resources:
       Environment:
         Variables:
           ZIP_BUCKET_NAME: !Ref ScopusZipBucket
-          API_HOST: !Ref ApiDomain
       Events:
         Scopus:
           Type: S3
@@ -284,7 +283,7 @@ Resources:
               S3Key:
                 Rules:
                   - Name: suffix
-                    Value: '.txt'
+                    Value: '.eml'
 
 #============Event based functions====================================================================================#
   NvaScopusFunction:

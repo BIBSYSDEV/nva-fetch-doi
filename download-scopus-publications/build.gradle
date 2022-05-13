@@ -5,6 +5,8 @@ dependencies {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
 
+    implementation group: 'org.simplejavamail', name: 'simple-java-mail', version: '7.1.1'
+
     implementation libs.aws.java.sdk2.s3
 
     implementation libs.nva.s3
