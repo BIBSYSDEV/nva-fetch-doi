@@ -491,7 +491,7 @@ Resources:
           - Id: DeleteContentAfter3Days
             Status: Enabled
             ExpirationInDays: 3
-            Prefix: 'unzipped'
+            Prefix: 'unzipped/'
 
   ScopusXmlBucket:
     Type: AWS::S3::Bucket
