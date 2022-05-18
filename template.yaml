@@ -266,7 +266,7 @@ Resources:
   NvaScopusEmailFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: download-scopus-publications
+      CodeUri: scopus-email-file-downloader
       Handler: no.sikt.nva.scopus.ScopusEmailHandler::handleRequest
       Role: !GetAtt ScopusHandlersRole.Arn
       ReservedConcurrentExecutions: 1 # Throttled to slow down create publication requests from scopus files
