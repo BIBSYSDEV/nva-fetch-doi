@@ -10,6 +10,7 @@ import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotificatio
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3ObjectEntity;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.UserIdentityEntity;
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.http.Fault;
 import no.sikt.nva.testing.http.WiremockHttpClient;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeContext;
@@ -120,11 +121,10 @@ class ScopusEmailHandlerTest {
 
     @Test
     void shouldLogErrorWhenExceptionRequestingFile() throws IOException {
-        var uri = mockedGetRequestThatReturnsForbidden(WIREMOCK_SCOPUS_ZIP_FILE);
+        var uri = mockedGetRequestWhereConnectionResetByPeer(WIREMOCK_SCOPUS_ZIP_FILE);
         var emailContents = IoUtils.stringFromResources(Path.of(TEST_EMAIL_EML))
                 .replace(TEST_EMAIL_FULLFORMAT_ZIP_DOWNLOAD_URL, uri.toString());
         var s3Event = createNewScopusEmailEvent(emailContents);
-        scopusEmailHandler = new ScopusEmailHandler(s3Client, HttpClient.newBuilder().build());
         var expectedLogMessage = createExpectedFileStoreErrorLogMessage(WIREMOCK_SCOPUS_ZIP_FILE, uri);
         var appender = LogUtils.getTestingAppenderForRootLogger();
         assertThrows(RuntimeException.class, () -> scopusEmailHandler.handleRequest(s3Event, context));
@@ -213,6 +213,13 @@ class ScopusEmailHandlerTest {
     private URI mockedGetRequestThatReturnsForbidden(String filename) {
         setupWiremockPorts();
         stubFor(get(urlEqualTo("/file/" + filename)).willReturn(forbidden()));
+        return UriWrapper.fromUri(serverUri).addChild("file").addChild(filename).getUri();
+    }
+
+    private URI mockedGetRequestWhereConnectionResetByPeer(String filename) {
+        setupWiremockPorts();
+        stubFor(get(urlEqualTo("/file/" + filename))
+                .willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
         return UriWrapper.fromUri(serverUri).addChild("file").addChild(filename).getUri();
     }
 
