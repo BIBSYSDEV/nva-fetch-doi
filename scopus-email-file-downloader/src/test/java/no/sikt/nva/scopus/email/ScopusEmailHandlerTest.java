@@ -120,7 +120,7 @@ class ScopusEmailHandlerTest {
     }
 
     @Test
-    void shouldLogErrorWhenExceptionRequestingFile() throws IOException {
+    void shouldLogErrorWhenConnectionResetWhenRequestingFile() throws IOException {
         var uri = mockedGetRequestWhereConnectionResetByPeer(WIREMOCK_SCOPUS_ZIP_FILE);
         var emailContents = IoUtils.stringFromResources(Path.of(TEST_EMAIL_EML))
                 .replace(TEST_EMAIL_FULLFORMAT_ZIP_DOWNLOAD_URL, uri.toString());
