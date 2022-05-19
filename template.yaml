@@ -42,8 +42,8 @@ Parameters:
     Description: Name of bucket for unzipped scopus xml files
   ScopusEmailBucketName:
     Type: String
-    Default: "scopus-emails"
-    Description: Name of bucket for unzipped scopus xml files
+    Default: "scopus-email-files"
+    Description: Name of bucket for scopus email files
   NvaEventsBucketName:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/Events/EventsBucketName'
@@ -509,8 +509,3 @@ Resources:
     Properties:
       AccessControl: Private
       BucketName: !Sub "${ScopusEmailBucketName}-${AWS::AccountId}"
-      LifecycleConfiguration:
-        Rules:
-          - Id: DeleteContentAfter3Days
-            Status: Enabled
-            ExpirationInDays: 3
