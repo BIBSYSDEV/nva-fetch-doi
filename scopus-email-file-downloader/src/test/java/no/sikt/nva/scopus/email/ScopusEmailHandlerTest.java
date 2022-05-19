@@ -36,8 +36,10 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.forbidden;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static com.google.common.net.HttpHeaders.CONTENT_DISPOSITION;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
@@ -100,6 +102,7 @@ class ScopusEmailHandlerTest {
         scopusEmailHandler.handleRequest(s3Event, context);
         var expectedLogMessage = createExpectedFileStoredLogMessage(WIREMOCK_SCOPUS_ZIP_FILE, uri);
         assertThat(appender.getMessages(), containsString(expectedLogMessage));
+        verify(getRequestedFor(urlEqualTo(UriWrapper.fromUri(uri).getPath().toString())));
     }
 
     @Test
@@ -112,6 +115,7 @@ class ScopusEmailHandlerTest {
         var appender = LogUtils.getTestingAppenderForRootLogger();
         assertThrows(RuntimeException.class, () -> scopusEmailHandler.handleRequest(s3Event, context));
         assertThat(appender.getMessages(), containsString(expectedLogMessage));
+        verify(getRequestedFor(urlEqualTo(UriWrapper.fromUri(uri).getPath().toString())));
     }
 
     @Test
