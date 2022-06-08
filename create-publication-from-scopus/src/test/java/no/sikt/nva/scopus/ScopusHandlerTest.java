@@ -98,6 +98,7 @@ import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
 import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.sikt.nva.scopus.test.utils.ContentWrapper;
 import no.sikt.nva.scopus.test.utils.LanguagesWrapper;
+import no.sikt.nva.scopus.test.utils.PiaAuthorResponseGenerator;
 import no.sikt.nva.scopus.test.utils.ScopusGenerator;
 import no.sikt.nva.testing.http.WiremockHttpClient;
 import no.unit.nva.doi.models.Doi;
@@ -915,6 +916,14 @@ class ScopusHandlerTest {
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualLanguageUri = createPublicationRequest.getEntityDescription().getLanguage();
         assertEquals(expectedLanguageUri, actualLanguageUri);
+    }
+
+    @Test
+    void shouldExtractCristinAndOrcid() {
+        PiaAuthorResponseGenerator piaAuthorResponseGenerator = new PiaAuthorResponseGenerator();
+        var authors = piaAuthorResponseGenerator.generateAuthors();
+        var authorsJson = piaAuthorResponseGenerator.convertToJson(authors);
+
     }
 
     public static Stream<Arguments> providedLanguagesAndExpectedOutput() {
