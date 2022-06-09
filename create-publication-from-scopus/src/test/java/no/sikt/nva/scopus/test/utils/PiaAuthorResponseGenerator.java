@@ -12,26 +12,24 @@ public class PiaAuthorResponseGenerator {
 
     private static final String SOURCE_CODE = "SCOPUS";
 
-    public String convertToJson(List<Author> authors) {
+    public static String convertToJson(List<Author> authors) {
         Gson gson = new Gson();
         return gson.toJson(authors);
     }
 
-    public List<Author> generateAuthors() {
+    public List<Author> generateAuthors(String scopusId, int cristinId ) {
         int maxNumberOfAuthors = 20;
-        var externalId = randomString();
         var firstname = randomString();
         var surname = randomString();
         var authorName = randomString();
-        var cristinId = randomBoolean() ? 0 : randomInteger();
-        return IntStream.range(0, randomInteger(maxNumberOfAuthors))
+        return IntStream.range(0, randomInteger(maxNumberOfAuthors) +1)
                    .boxed()
                    .map(index ->
-                            generateAuthor(externalId,
+                            generateAuthor(scopusId,
                                            firstname,
                                            surname,
                                            authorName,
-                                           cristinId
+                                    cristinId
                             ))
                    .collect(Collectors.toList());
     }
@@ -64,7 +62,7 @@ public class PiaAuthorResponseGenerator {
         return publication;
     }
 
-    class Author {
+    public class Author {
 
         Publication publication;
         String externalId;
