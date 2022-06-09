@@ -372,7 +372,7 @@ class MainHandlerTest {
             .withBody(requestBody)
             .withHeaders(requestHeaders)
             .withNvaUsername(randomString())
-            .withCustomerId(randomUri().toString())
+            .withCustomerId(randomUri())
             .build();
     }
 
@@ -393,7 +393,7 @@ class MainHandlerTest {
         return new HandlerRequestBuilder<RequestBody>(restServiceObjectMapper)
             .withHeaders(requestHeaders)
             .withNvaUsername(randomString())
-            .withCustomerId(randomUri().toString())
+            .withCustomerId(randomUri())
             .build();
     }
 

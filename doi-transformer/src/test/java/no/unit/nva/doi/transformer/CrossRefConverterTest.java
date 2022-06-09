@@ -85,7 +85,8 @@ public class CrossRefConverterTest extends ConversionTest {
     public static final String AUTHOR_FAMILY_NAME = "familyName";
     public static final String FIRST_AUTHOR = "first";
     public static final Integer EXPECTED_YEAR = 2019;
-    public static final String SURNAME_COMMA_FIRSTNAME = "%s,.*%s";
+//    public static final String SURNAME_COMMA_FIRSTNAME = "%s,.*%s";
+    public static final String FIRSTNAME_SURNAME = "%s %s";
     public static final String SECOND_AUTHOR = "second";
     public static final String CROSSREF_WITH_ABSTRACT_JSON = "crossrefWithAbstract.json";
     public static final String ENG_ISO_639_3 = "eng";
@@ -229,8 +230,8 @@ public class CrossRefConverterTest extends ConversionTest {
     }
 
     @Test
-    @DisplayName("The creator's name in the publication contains first family and then given name")
-    void creatorsNameContainsFirstFamilyAndThenGivenName()
+    @DisplayName("The creator's name in the publication contains first given name and then family name name")
+    void creatorsNameContainsFirstGivenAndThenFamilyName()
         throws IllegalArgumentException {
 
         CrossRefDocument sampleJournalArticle = sampleJournalArticle();
@@ -248,7 +249,7 @@ public class CrossRefConverterTest extends ConversionTest {
         String familyName = sampleJournalArticle.getAuthor().get(NUMBER_OF_SAMPLE_AUTHORS - 1).getFamilyName();
         assertThat(actualName, containsString(familyName));
 
-        String expectedNameRegEx = String.format(SURNAME_COMMA_FIRSTNAME, familyName, givenName);
+        String expectedNameRegEx = String.format(FIRSTNAME_SURNAME, givenName, familyName);
         assertThat(actualName, matchesPattern(expectedNameRegEx));
     }
 
