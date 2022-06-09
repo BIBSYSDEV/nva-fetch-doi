@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 public class AbstractConverter {
 
     public static final PublicationStatus DEFAULT_NEW_PUBLICATION_STATUS = PublicationStatus.NEW;
-    public static final String FAMILY_NAME_GIVEN_NAME_SEPARATOR = ", ";
+    public static final String PLAIN_NAME_SEPARATOR = " ";
 
     protected DoiConverter doiConverter;
     protected LanguageDetector languageDetector;
@@ -24,8 +24,8 @@ public class AbstractConverter {
         this.doiConverter = doiConverter;
     }
 
-    protected String toName(String familyName, String givenName) {
-        return String.join(FAMILY_NAME_GIVEN_NAME_SEPARATOR, familyName, givenName);
+    protected String toName(String givenName, String familyName) {
+        return String.join(PLAIN_NAME_SEPARATOR, givenName, familyName);
     }
 
     protected PublicationDate toDate(Integer publicationYear) {
