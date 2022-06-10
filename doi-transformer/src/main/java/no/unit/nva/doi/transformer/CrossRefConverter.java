@@ -506,7 +506,7 @@ public class CrossRefConverter extends AbstractConverter {
      */
     private Contributor toContributorWithRole(CrossrefContributor contributor, Role role, int registrationSequence) {
         Identity identity = new Identity.Builder()
-            .withName(toName(contributor.getFamilyName(), contributor.getGivenName()))
+            .withName(toName(contributor.getGivenName(), contributor.getFamilyName()))
             .withOrcId(contributor.getOrcid())
             .build();
         final Contributor.Builder contributorBuilder = new Contributor.Builder();

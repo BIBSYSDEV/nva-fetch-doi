@@ -275,7 +275,7 @@ public class DataciteResponseConverter extends AbstractConverter {
             throw new MalformedContributorException(CREATOR_HAS_NO_NAME_ERROR + jsonString);
         }
         return new Identity.Builder()
-            .withName(toName(dataciteCreator.getFamilyName(), dataciteCreator.getGivenName()))
+            .withName(toName(dataciteCreator.getGivenName(), dataciteCreator.getFamilyName()))
             .withNameType(NameType.lookup(dataciteCreator.getNameType())).build();
     }
 

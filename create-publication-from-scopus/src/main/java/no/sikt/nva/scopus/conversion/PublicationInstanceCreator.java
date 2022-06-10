@@ -83,7 +83,7 @@ public class PublicationInstanceCreator {
                 return Optional.of(generateJournalLetter());
             case RE:
             case SH:
-                return Optional.of(generateJournalArticle(JournalArticleContentType.REVIEW_ARTICLE));
+                return Optional.of(generateJournalArticle(JournalArticleContentType.ACADEMIC_LITERATURE_REVIEW));
             default:
                 return Optional.empty();
         }
