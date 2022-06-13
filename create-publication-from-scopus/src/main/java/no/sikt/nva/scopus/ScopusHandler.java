@@ -10,6 +10,7 @@ import java.io.StringReader;
 import java.net.URI;
 import java.time.Instant;
 import no.scopus.generated.DocTp;
+import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -40,16 +41,19 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     private final S3Client s3Client;
     private final MetadataService metadataService;
     private final EventBridgeClient eventBridgeClient;
+    private final PiaConnection piaConnection;
 
     @JacocoGenerated
     public ScopusHandler() {
-        this(S3Driver.defaultS3Client().build(), defaultMetadataService(), defaultEventBridgeClient());
+        this(S3Driver.defaultS3Client().build(), defaultMetadataService(), defaultEventBridgeClient(), defaultPiaConnection());
     }
 
-    public ScopusHandler(S3Client s3Client, MetadataService metadataService, EventBridgeClient eventBridgeClient) {
+    public ScopusHandler(S3Client s3Client, MetadataService metadataService, EventBridgeClient eventBridgeClient,
+                         PiaConnection piaConnection) {
         this.metadataService = metadataService;
         this.s3Client = s3Client;
         this.eventBridgeClient = eventBridgeClient;
+        this.piaConnection = piaConnection;
     }
 
     @Override
@@ -75,6 +79,12 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     @JacocoGenerated
     private static MetadataService defaultMetadataService() {
         return new MetadataService();
+    }
+
+
+    @JacocoGenerated
+    private static PiaConnection defaultPiaConnection() {
+        return new PiaConnection();
     }
 
     private void emitEventToEventBridge(Context context, CreatePublicationRequest request) {
@@ -127,7 +137,7 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     }
 
     private CreatePublicationRequest generateCreatePublicationRequest(DocTp docTp) {
-        var scopusConverter = new ScopusConverter(docTp, metadataService);
+        var scopusConverter = new ScopusConverter(docTp, metadataService, piaConnection);
         return scopusConverter.generateCreatePublicationRequest();
     }
 

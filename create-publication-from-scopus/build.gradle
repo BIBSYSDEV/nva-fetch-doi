@@ -42,4 +42,5 @@ test{
     environment "API_HOST", "api.localhost.nva.aws.unit.no"
     environment "EVENTS_BUCKET", "NvaEventsBucket"
     environment "EVENTS_BUS", "NvaEventBus"
+    environment "PIA_REST_API", "localhost/sentralimport"
 }

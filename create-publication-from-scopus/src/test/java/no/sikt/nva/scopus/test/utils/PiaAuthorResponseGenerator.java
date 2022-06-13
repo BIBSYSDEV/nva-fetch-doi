@@ -7,6 +7,8 @@ import com.google.gson.Gson;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import no.sikt.nva.scopus.conversion.model.Author;
+import no.sikt.nva.scopus.conversion.model.Publication;
 
 public class PiaAuthorResponseGenerator {
 
@@ -17,19 +19,19 @@ public class PiaAuthorResponseGenerator {
         return gson.toJson(authors);
     }
 
-    public List<Author> generateAuthors(String scopusId, int cristinId ) {
+    public List<Author> generateAuthors(String scopusId, int cristinId) {
         int maxNumberOfAuthors = 20;
         var firstname = randomString();
         var surname = randomString();
         var authorName = randomString();
-        return IntStream.range(0, randomInteger(maxNumberOfAuthors) +1)
+        return IntStream.range(0, randomInteger(maxNumberOfAuthors) + 1)
                    .boxed()
                    .map(index ->
                             generateAuthor(scopusId,
                                            firstname,
                                            surname,
                                            authorName,
-                                    cristinId
+                                           cristinId
                             ))
                    .collect(Collectors.toList());
     }
@@ -62,101 +64,7 @@ public class PiaAuthorResponseGenerator {
         return publication;
     }
 
-    public class Author {
 
-        Publication publication;
-        String externalId;
-        int cristinId;
-        int sequenceNr;
-        String surname;
-        String firstname;
-        String authorName;
-        String orcid;
 
-        public Publication getPublication() {
-            return publication;
-        }
 
-        public void setPublication(Publication publication) {
-            this.publication = publication;
-        }
-
-        public String getExternalId() {
-            return externalId;
-        }
-
-        public void setExternalId(String externalId) {
-            this.externalId = externalId;
-        }
-
-        public int getCristinId() {
-            return cristinId;
-        }
-
-        public void setCristinId(int cristinId) {
-            this.cristinId = cristinId;
-        }
-
-        public int getSequenceNr() {
-            return sequenceNr;
-        }
-
-        public void setSequenceNr(int sequenceNr) {
-            this.sequenceNr = sequenceNr;
-        }
-
-        public String getSurname() {
-            return surname;
-        }
-
-        public void setSurname(String surname) {
-            this.surname = surname;
-        }
-
-        public String getFirstname() {
-            return firstname;
-        }
-
-        public void setFirstname(String firstname) {
-            this.firstname = firstname;
-        }
-
-        public String getAuthorName() {
-            return authorName;
-        }
-
-        public void setAuthorName(String authorName) {
-            this.authorName = authorName;
-        }
-
-        public String getOrcid() {
-            return orcid;
-        }
-
-        public void setOrcid(String orcid) {
-            this.orcid = orcid;
-        }
-    }
-
-    class Publication {
-
-        String sourceCode;
-        String externalId;
-
-        public String getExternalId() {
-            return externalId;
-        }
-
-        public void setExternalId(String externalId) {
-            this.externalId = externalId;
-        }
-
-        public String getSourceCode() {
-            return sourceCode;
-        }
-
-        public void setSourceCode(String sourceCode) {
-            this.sourceCode = sourceCode;
-        }
-    }
 }

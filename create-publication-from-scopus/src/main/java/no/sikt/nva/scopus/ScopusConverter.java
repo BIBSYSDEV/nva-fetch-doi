@@ -32,6 +32,7 @@ import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.conversion.ContributorExtractor;
 import no.sikt.nva.scopus.conversion.LanguageExtractor;
+import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
 import no.unit.nva.metadata.CreatePublicationRequest;
@@ -46,10 +47,12 @@ public class ScopusConverter {
 
     private final DocTp docTp;
     private final MetadataService metadataService;
+    private final PiaConnection piaConnection;
 
-    protected ScopusConverter(DocTp docTp, MetadataService metadataService) {
+    protected ScopusConverter(DocTp docTp, MetadataService metadataService, PiaConnection piaConnection) {
         this.docTp = docTp;
         this.metadataService = metadataService;
+        this.piaConnection = piaConnection;
     }
 
     public CreatePublicationRequest generateCreatePublicationRequest() {
@@ -75,7 +78,7 @@ public class ScopusConverter {
         entityDescription.setMainTitle(extractMainTitle());
         entityDescription.setAbstract(extractMainAbstract());
         entityDescription.setContributors(new ContributorExtractor(
-            extractCorrespondence(), extractAuthorGroup()).generateContributors());
+            extractCorrespondence(), extractAuthorGroup(), piaConnection).generateContributors());
         entityDescription.setTags(generateTags());
         entityDescription.setDate(extractPublicationDate());
         entityDescription.setLanguage(new LanguageExtractor(extractCitationLanguages()).extractLanguage());
