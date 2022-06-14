@@ -193,7 +193,7 @@ class ScopusHandlerTest {
         startWiremockServer();
         var httpClient = WiremockHttpClient.create();
         metadataService = new MetadataService(httpClient, serverUriJournal, serverUriPublisher);
-        piaConnection = new PiaConnection(httpClient, UriWrapper.fromUri(httpServer.baseUrl()).getUri());
+        piaConnection = new PiaConnection(httpClient, httpServer.baseUrl());
         eventBridgeClient = new FakeEventBridgeClient();
         scopusHandler = new ScopusHandler(s3Client, metadataService, eventBridgeClient, piaConnection);
         scopusData = new ScopusGenerator();
@@ -206,6 +206,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldLogExceptionMessageWhenExceptionOccurs() {
+        createEmptyPiaMock();
         var s3Event = createS3Event(randomString());
         var expectedMessage = randomString();
         s3Client = new FakeS3ClientThrowingException(expectedMessage);
@@ -217,6 +218,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractOnlyScopusIdentifierIgnoreAllOtherIdentifiersAndStoreItInPublication() throws IOException {
+        createEmptyPiaMock();
         var scopusIdentifiers = scopusData.getDocument().getMeta().getEid();
         var expectedAdditionalIdentifier = new AdditionalIdentifier(ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME,
                                                                     scopusIdentifiers);
@@ -228,6 +230,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractDoiAndPlaceItInsideReferenceObject() throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.createScopusGeneratorWithSpecificDoi(randomDoi());
         var expectedURI = Doi.fromDoiIdentifier(scopusData.getDocument().getMeta().getDoi()).getUri();
         var s3Event = createNewScopusPublicationEvent();
@@ -237,6 +240,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldReturnCreatePublicationRequestWithMainTitle() throws IOException {
+        createEmptyPiaMock();
         var s3Event = createNewScopusPublicationEvent();
         var titleObject = extractTitle(scopusData);
         var expectedTitleString = expectedTitle(titleObject);
@@ -247,6 +251,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldConvertSpecifiedSupAndInfContentToString() throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.createWithSpecifiedSupAndInfContent(createContentWithSupAndInfTags());
         var s3Event = createNewScopusPublicationEvent();
         var expectedTitleString =
@@ -286,6 +291,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractContributorsNamesAndSequenceNumberCorrectly() throws IOException {
+        createEmptyPiaMock();
         var authors = keepOnlyTheAuthors();
         var collaborations = keepOnlyTheCollaborations();
         var s3Event = createNewScopusPublicationEvent();
@@ -297,6 +303,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractContributorAffiliation() throws IOException {
+        createEmptyPiaMock();
         var authorsGroups = scopusData.getDocument().getItem().getItem().getBibrecord().getHead().getAuthorGroup();
         var authors = keepOnlyTheAuthors();
         var s3Event = createNewScopusPublicationEvent();
@@ -351,6 +358,7 @@ class ScopusHandlerTest {
     @Test
     void shouldReturnCreatePublicationRequestWithUnconfirmedPublicationContextWhenEventWithS3UriThatPointsToScopusXml()
         throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -362,6 +370,7 @@ class ScopusHandlerTest {
     @Test
     void shouldReturnCreatePublicationRequestWithUnconfirmedPublicationContextWhenEventS3UriScopusXmlWithValidIssn()
         throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
         scopusData.clearIssn();
         scopusData.addIssn(VALID_ISSN, ISSN_TYPE_PRINT);
@@ -375,6 +384,7 @@ class ScopusHandlerTest {
     @Test
     void shouldReturnCreatePublicationRequestWithUnconfirmedPublicationContextWhenEventS3UriScopusXmlWithInvalidIssn()
         throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
         scopusData.clearIssn();
         scopusData.addIssn(INVALID_ISSN, ISSN_TYPE_PRINT);
@@ -389,6 +399,7 @@ class ScopusHandlerTest {
     @Test
     void shouldReturnDefaultPublicationContextWhenEventWithS3UriThatPointsToScopusXmlWithoutPrintIssn()
         throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -400,6 +411,7 @@ class ScopusHandlerTest {
     @Test
     void shouldReturnPublicationContextBookWithUnconfirmedPublisherWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeB()
         throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.B);
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -417,6 +429,7 @@ class ScopusHandlerTest {
     @Test
     void shouldReturnPublicationContextBookWithConfirmedPublisherWhenScopusXmlHasSrctypeBandIsNotAchapter()
         throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.B);
         var expectedPublisherName = randomString();
         scopusData.setPublishername(expectedPublisherName);
@@ -443,6 +456,7 @@ class ScopusHandlerTest {
     @Test
     void shouldReturnPublicationContextChapterWhenScopusXmlHasCitationTypeChEvenIfSrctypeIsB()
         throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.create(CitationtypeAtt.CH);
         scopusData.setSrcType(SourcetypeAtt.B);
         var expectedPublisherName = randomString();
@@ -459,6 +473,7 @@ class ScopusHandlerTest {
     @Test
     void shouldReturnPublicationContextReportWithConfirmedPublisherWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeR()
         throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.R);
         var expectedPublisherName = randomString();
         scopusData.setPublishername(expectedPublisherName);
@@ -478,6 +493,7 @@ class ScopusHandlerTest {
     @Test
     void shouldReturnPublicationContextUnconfirmedBookSeriesWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeK()
         throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.K);
         final var expectedYear = String.valueOf(randomYear());
         scopusData.setPublicationYear(expectedYear);
@@ -498,6 +514,7 @@ class ScopusHandlerTest {
     @Test
     void shouldReturnPublicationContextUnconfirmedJournalWhenSrctypeIsPAndIssnExists()
         throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.P);
         final var expectedYear = String.valueOf(randomYear());
         scopusData.setPublicationYear(expectedYear);
@@ -517,6 +534,7 @@ class ScopusHandlerTest {
     @Test
     void shouldReturnPublicationContextChapterWhenSrctypeIsPAndIsbnExists()
         throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.P);
         final var expectedYear = String.valueOf(randomYear());
         scopusData.setPublicationYear(expectedYear);
@@ -536,6 +554,7 @@ class ScopusHandlerTest {
     @Test
     void shouldReturnPublicationContextConfirmedBookSeriesWhenEventWithS3UriThatPointsToScopusXmlWithSrctypeK()
         throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.K);
         final var expectedYear = String.valueOf(randomYear());
         scopusData.setPublicationYear(expectedYear);
@@ -558,6 +577,7 @@ class ScopusHandlerTest {
     @Test
     void shouldReturnCreatePublicationRequestWithJournalWhenEventWithS3UriThatPointsToScopusXmlWhereSourceTitleIsInNsd()
         throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
         var expectedYear = "2022";
         scopusData.setPublicationYear(expectedYear);
@@ -577,6 +597,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldThrowExceptionWhenSrcTypeIsNotSupported() throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.X);
         var expectedMessage = String.format(UNSUPPORTED_SOURCE_TYPE, scopusData.getDocument().getMeta().getEid());
         var s3Event = createNewScopusPublicationEvent();
@@ -587,6 +608,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractAuthorKeyWordsAsPlainText() throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
         scopusData.clearAuthorKeywords();
         scopusData.addAuthorKeyword(HARDCODED_EXPECTED_KEYWORD_1, LANGUAGE_ENG);
@@ -604,6 +626,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldHaveNoDuplicateContributers() throws IOException {
+        createEmptyPiaMock();
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var contributors = createPublicationRequest.getEntityDescription().getContributors();
@@ -627,6 +650,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractPublicationDate() throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.createWithSpecifiedSrcType(SourcetypeAtt.J);
         var year = "1978";
         var month = "02";
@@ -643,6 +667,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractMainAbstract() throws IOException {
+        createEmptyPiaMock();
         var scopusFile = IoUtils.stringFromResources(Path.of(SCOPUS_XML_0000469852));
         var uri = s3Driver.insertFile(randomS3Path(), scopusFile);
         var s3Event = createS3Event(uri);
@@ -655,6 +680,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldNotThrowExceptionWhenScopusXmlDoesNotContainAbstract() throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.createWithSpecifiedAbstract(null);
         var event = createNewScopusPublicationEvent();
         assertDoesNotThrow(() -> scopusHandler.handleRequest(event, CONTEXT));
@@ -662,6 +688,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldEmitMessageToEventReferenceContainingS3UriPointingToNewCreatePublicationRequest() throws IOException {
+        createEmptyPiaMock();
         var event = createNewScopusPublicationEvent();
         var expectedRequest = scopusHandler.handleRequest(event, CONTEXT);
         var emittedEvent = fetchEmittedEvent();
@@ -674,6 +701,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractJournalArticleWhenScopusCitationTypeIsArticle() throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.create(CitationtypeAtt.AR);
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -684,6 +712,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractJournalArticleWhenScopusCitationTypeIsReview() throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.create(CitationtypeAtt.RE);
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -694,6 +723,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractJournalArticleWhenScopusCitationTypeIsEditorial() throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.create(CitationtypeAtt.ED);
         var expectedIssue = String.valueOf(randomInteger());
         var expectedVolume = randomString();
@@ -710,6 +740,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractJournalArticleWhenScopusCitationTypeIsErratum() throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.create(CitationtypeAtt.ER);
         var expectedIssue = String.valueOf(randomInteger());
         var expectedVolume = randomString();
@@ -725,6 +756,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractJournalLetterWhenScopusCitationTypeIsLetter() throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.create(CitationtypeAtt.LE);
         var expectedIssue = String.valueOf(randomInteger());
         var expectedVolume = randomString();
@@ -740,6 +772,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractJournalArticleWhenScopusCitationTypeIsConferencePaperAndContextJournal() throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.create(CitationtypeAtt.CP);
         scopusData.setSrcType(SourcetypeAtt.P);
         scopusData.clearIssn();
@@ -760,6 +793,7 @@ class ScopusHandlerTest {
     @Test
     void shouldExtractChapterArticleWhenScopusCitationTypeIsConferencePaperAndContextChapter()
         throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.create(CitationtypeAtt.CP);
         scopusData.setSrcType(SourcetypeAtt.P);
         scopusData.clearIssn();
@@ -784,6 +818,7 @@ class ScopusHandlerTest {
         mode = Mode.EXCLUDE)
     void shouldNotGenerateCreatePublicationFromUnsupportedPublicationTypes(CitationtypeAtt citationtypeAtt)
         throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.create(citationtypeAtt);
         // eid is chosen because it seems to match the file name in the bucket.
         var eid = scopusData.getDocument().getMeta().getEid();
@@ -796,6 +831,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractAuthorOrcidAndSequenceNumber() throws IOException {
+        createEmptyPiaMock();
         var authors = keepOnlyTheAuthors();
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -806,6 +842,7 @@ class ScopusHandlerTest {
     @Test
     void shouldExtractCitationTypesToBookMonographPublicationInstance()
         throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.create(CitationtypeAtt.BK);
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -817,6 +854,7 @@ class ScopusHandlerTest {
     @Test
     void shouldExtractCitationTypesToChapterArticlePublicationInstance()
         throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.create(CitationtypeAtt.CH);
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -827,6 +865,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldNotThrowExceptionWhenDoiInScopusIsNull() throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.createScopusGeneratorWithSpecificDoi(null);
         var s3Event = createNewScopusPublicationEvent();
         assertDoesNotThrow(() -> scopusHandler.handleRequest(s3Event, CONTEXT));
@@ -834,6 +873,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractVolumeIssueAndPageRange() throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.create(CitationtypeAtt.AR);
         var expectedIssue = String.valueOf(randomInteger());
         var expectedVolume = randomString();
@@ -850,6 +890,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldExtractCorrespondingAuthor() throws IOException {
+        createEmptyPiaMock();
         var authors = keepOnlyTheAuthors();
         var correspondingAuthorTp = authors.get(0);
         scopusData.setCorrespondence(correspondingAuthorTp);
@@ -863,6 +904,7 @@ class ScopusHandlerTest {
     }
 
     private Contributor getCorrespondingContributor(List<Contributor> actualPublicationContributors) {
+        createEmptyPiaMock();
         return actualPublicationContributors
                    .stream()
                    .filter(Contributor::isCorrespondingAuthor)
@@ -871,6 +913,7 @@ class ScopusHandlerTest {
 
     @Test
     void shouldAssignCorrectLanguageForAffiliationNames() throws IOException {
+        createEmptyPiaMock();
         var frenchName = new String(
             "Collège de France, Lab. de Physique Corpusculaire".getBytes(),
             StandardCharsets.UTF_8);
@@ -916,6 +959,7 @@ class ScopusHandlerTest {
     @ParameterizedTest(name = "Should have entityDescription with language:{1}")
     @MethodSource("providedLanguagesAndExpectedOutput")
     void shouldExtractLanguage(List<Language> languageCodes, URI expectedLanguageUri) throws IOException {
+        createEmptyPiaMock();
         scopusData = ScopusGenerator.createScopusGeneratorWithSpecificLanguage(new LanguagesWrapper(languageCodes));
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -924,7 +968,7 @@ class ScopusHandlerTest {
     }
 
     @Test
-    void shouldExtractCristinAndOrcid() throws IOException {
+    void shouldExtractCristinID() throws IOException {
         var authorTypes = keepOnlyTheAuthors();
         var cristinIdAndAuthor = new HashMap<Integer, AuthorTp>();
         authorTypes.forEach(authorTp -> cristinIdAndAuthor.put(randomInteger(), authorTp));
@@ -954,6 +998,13 @@ class ScopusHandlerTest {
         var scopusId = author.get(0).getExternalId();
         var response = PiaAuthorResponseGenerator.convertToJson(author);
         mockedPiaIdSearch(scopusId, response);
+    }
+
+    private void createEmptyPiaMock(){
+        stubFor(get(urlPathEqualTo(
+            "sentralimport/authors"))
+                    .willReturn(aResponse().withBody("[]")
+                                    .withStatus(HttpURLConnection.HTTP_OK)));
     }
 
     private void mockedPiaIdSearch(String scopusId, String response) {
