@@ -45,7 +45,11 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
 
     @JacocoGenerated
     public ScopusHandler() {
-        this(S3Driver.defaultS3Client().build(), defaultMetadataService(), defaultEventBridgeClient(), defaultPiaConnection());
+        this(
+            S3Driver.defaultS3Client().build(),
+            defaultMetadataService(),
+            defaultEventBridgeClient(),
+            defaultPiaConnection());
     }
 
     public ScopusHandler(S3Client s3Client, MetadataService metadataService, EventBridgeClient eventBridgeClient,

@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import no.sikt.nva.scopus.conversion.model.Author;
 import nva.commons.core.Environment;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,12 +42,13 @@ public class PiaConnection {
     private final transient String piaAuthorization;
     private final String piaHost;
 
-    public PiaConnection (HttpClient httpClient, String piaHost) {
+    public PiaConnection(HttpClient httpClient, String piaHost) {
         this.httpClient = httpClient;
         this.piaHost = piaHost;
         this.piaAuthorization = createAuthorization();
     }
 
+    @JacocoGenerated
     public PiaConnection() {
         this(HttpClient.newBuilder().version(HttpClient.Version.HTTP_2).build(),
              PIA_REST_API);
@@ -65,12 +67,13 @@ public class PiaConnection {
                    .build();
     }
 
-
     private String getPiaJsonAsString(String scopusId) {
         var uri =
-            UriWrapper.fromHost(piaHost).addChild("sentralimport/authors")
+            UriWrapper.fromUri(piaHost)
+                .addChild("sentralimport")
+                .addChild("authors")
                 .addQueryParameter(
-                "author_id", "SCOPUS:" + scopusId).getUri();
+                    "author_id", "SCOPUS:" + scopusId).getUri();
         return attempt(
             () -> getPiaResponse(uri))
                    .map(this::getBodyFromResponse)
@@ -87,7 +90,6 @@ public class PiaConnection {
     }
 
     private String getBodyFromResponse(HttpResponse<String> response) {
-        var something = response;
         if (response.statusCode() != HttpURLConnection.HTTP_OK) {
             logger.info(PIA_RESPONSE_ERROR + response.statusCode());
             throw new RuntimeException();
@@ -95,17 +97,18 @@ public class PiaConnection {
         return response.body();
     }
 
-    private HttpResponse getPiaResponse (URI uri) throws IOException, InterruptedException {
+    private HttpResponse getPiaResponse(URI uri) throws IOException, InterruptedException {
         var request = createRequest(uri);
         var response = httpClient.send(request, BodyHandlers.ofString());
         return response;
     }
 
-    private List<Author> getPiaAuthorResponse(String scopusID){
-            var piaResponse = getPiaJsonAsString(scopusID);
-            Type listType = new TypeToken<ArrayList<Author>>(){}.getType();
-            var gson = new Gson();
-            return gson.fromJson(piaResponse, listType);
+    private List<Author> getPiaAuthorResponse(String scopusID) {
+        var piaResponse = getPiaJsonAsString(scopusID);
+        Type listType = new TypeToken<ArrayList<Author>>() {
+        }.getType();
+        var gson = new Gson();
+        return gson.fromJson(piaResponse, listType);
     }
 
     private Optional<Integer> getCristinNumber(List<Author> authors) {
@@ -120,6 +123,8 @@ public class PiaConnection {
     public URI getCristinID(String scopusId) {
         List<Author> piaAuthorResponse = getPiaAuthorResponse(scopusId);
         var optionalCristinNumber = getCristinNumber(piaAuthorResponse);
-        return optionalCristinNumber.map(cristinNumber ->UriWrapper.fromUri(NVA_DOMAIN + CRISTIN_PERSON_PATH + cristinNumber).getUri()).orElse(null);
+        return optionalCristinNumber.map(
+                cristinNumber -> UriWrapper.fromUri(NVA_DOMAIN + CRISTIN_PERSON_PATH + cristinNumber).getUri())
+                   .orElse(null);
     }
 }

@@ -1,16 +1,19 @@
 package no.sikt.nva.scopus.conversion.model;
 
+import nva.commons.core.JacocoGenerated;
+
 public class Author {
 
-    Publication publication;
-    String externalId;
-    int cristinId;
-    int sequenceNr;
-    String surname;
-    String firstname;
-    String authorName;
-    String orcid;
+    private Publication publication;
+    private String externalId;
+    private int cristinId;
+    private int sequenceNr;
+    private String surname;
+    private String firstname;
+    private String authorName;
+    private String orcid;
 
+    @JacocoGenerated
     public Publication getPublication() {
         return publication;
     }
@@ -19,6 +22,7 @@ public class Author {
         this.publication = publication;
     }
 
+    @JacocoGenerated
     public String getExternalId() {
         return externalId;
     }
@@ -27,6 +31,7 @@ public class Author {
         this.externalId = externalId;
     }
 
+    @JacocoGenerated
     public int getCristinId() {
         return cristinId;
     }
@@ -35,6 +40,7 @@ public class Author {
         this.cristinId = cristinId;
     }
 
+    @JacocoGenerated
     public int getSequenceNr() {
         return sequenceNr;
     }
@@ -43,6 +49,7 @@ public class Author {
         this.sequenceNr = sequenceNr;
     }
 
+    @JacocoGenerated
     public String getSurname() {
         return surname;
     }
@@ -51,6 +58,7 @@ public class Author {
         this.surname = surname;
     }
 
+    @JacocoGenerated
     public String getFirstname() {
         return firstname;
     }
@@ -59,6 +67,7 @@ public class Author {
         this.firstname = firstname;
     }
 
+    @JacocoGenerated
     public String getAuthorName() {
         return authorName;
     }
@@ -67,6 +76,7 @@ public class Author {
         this.authorName = authorName;
     }
 
+    @JacocoGenerated
     public String getOrcid() {
         return orcid;
     }

@@ -1,6 +1,9 @@
 package no.sikt.nva.scopus;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
@@ -42,10 +45,10 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
-
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.RequestParametersEntity;
@@ -58,23 +61,24 @@ import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotificatio
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.http.Fault;
 import jakarta.xml.bind.JAXBElement;
-
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.text.ParseException;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.namespace.QName;
-
-import net.bytebuddy.utility.RandomString;
 import no.scopus.generated.AffiliationTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
@@ -129,7 +133,6 @@ import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeS3Client;
-import no.unit.nva.testutils.RandomDataGenerator;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
@@ -980,18 +983,57 @@ class ScopusHandlerTest {
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualContributors = createPublicationRequest.getEntityDescription().getContributors();
-        actualContributors.forEach(
+        actualContributors.stream().filter(contributor -> isAuthor(contributor, authorTypes)).forEach(
             contributor -> assertThatContributorHasCorrectCristinId(contributor, cristinIdAndAuthor));
+    }
+
+    @Test
+    void shouldIgnoreCristinNumberThatIsNull() throws IOException {
+        var authorTypes = keepOnlyTheAuthors();
+        PiaAuthorResponseGenerator piaAuthorResponseGenerator = new PiaAuthorResponseGenerator();
+        var authors = new ArrayList<List<Author>>();
+        authorTypes.forEach((authorTp) -> authors.add(
+            piaAuthorResponseGenerator.generateAuthors(authorTp.getAuid(), 0)));
+        authors.forEach(this::createPiaMock);
+        var s3Event = createNewScopusPublicationEvent();
+        var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
+        var actualContributors = createPublicationRequest.getEntityDescription().getContributors();
+        actualContributors.stream().filter(contributor -> isAuthor(contributor, authorTypes)).forEach(
+            contributor -> assertNull(contributor.getIdentity().getId()));
+    }
+
+    private boolean isAuthor(Contributor contributor, List<AuthorTp> authorTypes) {
+        return authorTypes.stream()
+                   .filter(authorTp -> isEqualContributor(contributor, authorTp))
+                   .findFirst()
+                   .isPresent();
+    }
+
+    private boolean isEqualContributor(Contributor contributor, AuthorTp authorTp) {
+        return contributor.getSequence() == Integer.parseInt(authorTp.getSeq());
+    }
+
+    @Test
+    void shouldHandlePiaConnectionException() throws IOException {
+        mockedPiaException();
+        var s3Event = createNewScopusPublicationEvent();
+        assertThrows(RuntimeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
+    }
+
+    @Test
+    void shouldHandlePiaBadRequest() throws IOException {
+        mockedPiaBadRequest();
+        var s3Event = createNewScopusPublicationEvent();
+        assertThrows(RuntimeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
     }
 
     private void assertThatContributorHasCorrectCristinId(Contributor contributor,
                                                           HashMap<Integer, AuthorTp> cristinIdAndAuthor) {
-        //var dummyURI = UriWrapper.fromUri(httpServer.baseUrl() + "/cristin/person/" + "2378943274").getUri();
         var actualCristinId = contributor.getIdentity().getId();
         assertThat(actualCristinId, hasProperty("path", containsString("/cristin/person")));
-        var actualCristinNumber = actualCristinId.getPath().split("/")[2];
+        var actualCristinNumber = actualCristinId.getPath().split("/")[3];
         var expectedAuthor = cristinIdAndAuthor.get(Integer.parseInt(actualCristinNumber));
-        assertThat(contributor.getSequence(), is(equalTo(expectedAuthor.getSeq())));
+        assertThat(contributor.getSequence(), is(equalTo(Integer.parseInt(expectedAuthor.getSeq()))));
     }
 
     private void createPiaMock(List<Author> author) {
@@ -1000,17 +1042,27 @@ class ScopusHandlerTest {
         mockedPiaIdSearch(scopusId, response);
     }
 
-    private void createEmptyPiaMock(){
+    private void createEmptyPiaMock() {
         stubFor(get(urlPathEqualTo(
-            "sentralimport/authors"))
+            "/sentralimport/authors"))
                     .willReturn(aResponse().withBody("[]")
                                     .withStatus(HttpURLConnection.HTTP_OK)));
     }
 
+    private void mockedPiaException() {
+        stubFor(get(urlPathEqualTo("/sentralimport/authors")).willReturn(
+            aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
+    }
+
+    private void mockedPiaBadRequest() {
+        stubFor(get(urlPathEqualTo("/sentralimport/authors")).willReturn(
+            aResponse().withStatus(HttpURLConnection.HTTP_BAD_REQUEST)));
+    }
+
     private void mockedPiaIdSearch(String scopusId, String response) {
         stubFor(get(urlPathEqualTo(
-            "sentralimport/authors"))
-                    .withQueryParam("author_id=SCOPUS:", WireMock.equalTo("SCOPUS:" + scopusId))
+            "/sentralimport/authors"))
+                    .withQueryParam("author_id", WireMock.equalTo("SCOPUS:" + scopusId))
                     .willReturn(aResponse().withBody(response)
                                     .withStatus(HttpURLConnection.HTTP_OK)));
     }

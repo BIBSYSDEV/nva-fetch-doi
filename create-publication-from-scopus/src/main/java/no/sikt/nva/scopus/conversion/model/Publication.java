@@ -1,10 +1,13 @@
 package no.sikt.nva.scopus.conversion.model;
 
+import nva.commons.core.JacocoGenerated;
+
 public class Publication {
 
-    String sourceCode;
-    String externalId;
+    private String sourceCode;
+    private String externalId;
 
+    @JacocoGenerated
     public String getExternalId() {
         return externalId;
     }
@@ -13,6 +16,7 @@ public class Publication {
         this.externalId = externalId;
     }
 
+    @JacocoGenerated
     public String getSourceCode() {
         return sourceCode;
     }
