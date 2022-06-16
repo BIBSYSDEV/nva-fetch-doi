@@ -975,7 +975,7 @@ class ScopusHandlerTest {
         var authorTypes = keepOnlyTheAuthors();
         var cristinIdAndAuthor = new HashMap<Integer, AuthorTp>();
         authorTypes.forEach(authorTp -> cristinIdAndAuthor.put(randomInteger(), authorTp));
-        PiaAuthorResponseGenerator piaAuthorResponseGenerator = new PiaAuthorResponseGenerator();
+        var piaAuthorResponseGenerator = new PiaAuthorResponseGenerator();
         var authors = new ArrayList<List<Author>>();
         cristinIdAndAuthor.forEach((cristinId, authorTp) -> authors.add(
             piaAuthorResponseGenerator.generateAuthors(authorTp.getAuid(), cristinId)));
@@ -990,7 +990,7 @@ class ScopusHandlerTest {
     @Test
     void shouldIgnoreCristinNumberThatIsNull() throws IOException {
         var authorTypes = keepOnlyTheAuthors();
-        PiaAuthorResponseGenerator piaAuthorResponseGenerator = new PiaAuthorResponseGenerator();
+        var piaAuthorResponseGenerator = new PiaAuthorResponseGenerator();
         var authors = new ArrayList<List<Author>>();
         authorTypes.forEach((authorTp) -> authors.add(
             piaAuthorResponseGenerator.generateAuthors(authorTp.getAuid(), 0)));
@@ -1004,9 +1004,7 @@ class ScopusHandlerTest {
 
     private boolean isAuthor(Contributor contributor, List<AuthorTp> authorTypes) {
         return authorTypes.stream()
-                   .filter(authorTp -> isEqualContributor(contributor, authorTp))
-                   .findFirst()
-                   .isPresent();
+                   .anyMatch(authorTp -> isEqualContributor(contributor, authorTp));
     }
 
     private boolean isEqualContributor(Contributor contributor, AuthorTp authorTp) {
@@ -1016,15 +1014,19 @@ class ScopusHandlerTest {
     @Test
     void shouldHandlePiaConnectionException() throws IOException {
         mockedPiaException();
+        var appender = LogUtils.getTestingAppenderForRootLogger();
         var s3Event = createNewScopusPublicationEvent();
-        assertThrows(RuntimeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
+        scopusHandler.handleRequest(s3Event, CONTEXT);
+        assertThat(appender.getMessages(), containsString(PiaConnection.ERROR_MESSAGE_EXTRACT_CRISTINID_ERROR));
     }
 
     @Test
     void shouldHandlePiaBadRequest() throws IOException {
         mockedPiaBadRequest();
+        var appender = LogUtils.getTestingAppenderForRootLogger();
         var s3Event = createNewScopusPublicationEvent();
-        assertThrows(RuntimeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
+        scopusHandler.handleRequest(s3Event, CONTEXT);
+        assertThat(appender.getMessages(), containsString(PiaConnection.ERROR_MESSAGE_EXTRACT_CRISTINID_ERROR));
     }
 
     private void assertThatContributorHasCorrectCristinId(Contributor contributor,

@@ -73,13 +73,6 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
         return EventBridgeClient.create();
     }
 
-    private CreatePublicationRequest createPublicationRequest(S3Event event) {
-        return attempt(() -> readFile(event))
-            .map(this::parseXmlFile)
-            .map(this::generateCreatePublicationRequest)
-            .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
-    }
-
     @JacocoGenerated
     private static MetadataService defaultMetadataService() {
         return new MetadataService();
@@ -116,6 +109,13 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
         return PutEventsRequest.builder().entries(entry).build();
     }
 
+    private CreatePublicationRequest createPublicationRequest(S3Event event) {
+        return attempt(() -> readFile(event))
+                   .map(this::parseXmlFile)
+                   .map(this::generateCreatePublicationRequest)
+                   .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
+    }
+
     private UnixPath constructPathForEventBody(CreatePublicationRequest request) {
         return UnixPath.of(SCOPUS_EVENTS_FOLDER, extractOneOfPossiblyManyScopusIdentifiers(request));
     }
@@ -148,7 +148,7 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     private String readFile(S3Event event) {
         var s3Driver = new S3Driver(s3Client, extractBucketName(event));
         var fileUri = createS3BucketUri(event);
-        return s3Driver.getFile(new UriWrapper(fileUri).toS3bucketPath());
+        return s3Driver.getFile(UriWrapper.fromUri(fileUri).toS3bucketPath());
     }
 
     private String extractBucketName(S3Event event) {

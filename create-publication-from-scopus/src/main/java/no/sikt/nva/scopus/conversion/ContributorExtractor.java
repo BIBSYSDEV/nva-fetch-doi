@@ -57,16 +57,18 @@ public class ContributorExtractor {
     private void extractContributorFromAuthorOrCollaboration(Object authorOrCollaboration,
                                                              AuthorGroupTp authorGroupTp) {
         Optional<Contributor> matchingContributor = contributors.stream()
-            .filter(contributor -> compareContributorToAuthorOrCollaboration(contributor,
-                                                                             authorOrCollaboration))
-            .findAny();
+                                                        .filter(
+                                                            contributor -> compareContributorToAuthorOrCollaboration(
+                                                                contributor,
+                                                                authorOrCollaboration))
+                                                        .findAny();
         if (matchingContributor.isPresent()) {
             replaceExistingContributor(matchingContributor.get(), authorGroupTp);
         } else {
             Optional<PersonalnameType> correspondencePerson = correspondenceTps
-                .stream()
-                .map(this::extractPersonalNameType)
-                .findFirst().orElse(Optional.empty());
+                                                                  .stream()
+                                                                  .map(this::extractPersonalNameType)
+                                                                  .findFirst().orElse(Optional.empty());
             generateContributorFromAuthorOrCollaboration(authorOrCollaboration, authorGroupTp,
                                                          correspondencePerson.orElse(null));
         }

@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 public class PiaConnection {
 
     public static final String CRISTIN_PERSON_PATH = "/cristin/person/";
+    public static final String ERROR_MESSAGE_EXTRACT_CRISTINID_ERROR = "Could not extract cristin id";
     private static final String PIA_RESPONSE_ERROR = "Pia responded with status code";
     private static final String COULD_NOT_GET_ERROR_MESSAGE = "Could not get response from Pia for scopus id ";
     private final HttpClient httpClient;
@@ -97,10 +98,9 @@ public class PiaConnection {
         return response.body();
     }
 
-    private HttpResponse getPiaResponse(URI uri) throws IOException, InterruptedException {
+    private HttpResponse<String> getPiaResponse(URI uri) throws IOException, InterruptedException {
         var request = createRequest(uri);
-        var response = httpClient.send(request, BodyHandlers.ofString());
-        return response;
+        return httpClient.send(request, BodyHandlers.ofString());
     }
 
     private List<Author> getPiaAuthorResponse(String scopusID) {
@@ -112,8 +112,8 @@ public class PiaConnection {
     }
 
     private Optional<Integer> getCristinNumber(List<Author> authors) {
-        var optionalAuthWithCristinId = authors.stream().filter(author -> hasCristinId(author)).findFirst();
-        return optionalAuthWithCristinId.map(author -> Optional.of(author.getCristinId())).orElse(Optional.empty());
+        var optionalAuthWithCristinId = authors.stream().filter(this::hasCristinId).findFirst();
+        return optionalAuthWithCristinId.map(Author::getCristinId);
     }
 
     private boolean hasCristinId(Author author) {
@@ -121,10 +121,17 @@ public class PiaConnection {
     }
 
     public URI getCristinID(String scopusId) {
-        List<Author> piaAuthorResponse = getPiaAuthorResponse(scopusId);
-        var optionalCristinNumber = getCristinNumber(piaAuthorResponse);
-        return optionalCristinNumber.map(
-                cristinNumber -> UriWrapper.fromUri(NVA_DOMAIN + CRISTIN_PERSON_PATH + cristinNumber).getUri())
-                   .orElse(null);
+        URI cristinId = null;
+        try {
+            List<Author> piaAuthorResponse = getPiaAuthorResponse(scopusId);
+            var optionalCristinNumber = getCristinNumber(piaAuthorResponse);
+
+            cristinId = optionalCristinNumber.map(
+                    cristinNumber -> UriWrapper.fromUri(NVA_DOMAIN + CRISTIN_PERSON_PATH + cristinNumber).getUri())
+                            .orElse(null);
+        } catch (Exception e) {
+            logger.info(ERROR_MESSAGE_EXTRACT_CRISTINID_ERROR, e);
+        }
+        return cristinId;
     }
 }
