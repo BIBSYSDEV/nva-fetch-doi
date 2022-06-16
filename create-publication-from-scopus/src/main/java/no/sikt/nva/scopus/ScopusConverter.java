@@ -1,5 +1,7 @@
 package no.sikt.nva.scopus;
 
+import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
+import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static no.sikt.nva.scopus.ScopusConstants.ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME;
@@ -9,13 +11,17 @@ import static no.sikt.nva.scopus.ScopusConstants.INF_START;
 import static no.sikt.nva.scopus.ScopusConstants.SUP_END;
 import static no.sikt.nva.scopus.ScopusConstants.SUP_START;
 import static nva.commons.core.StringUtils.isEmpty;
+
 import jakarta.xml.bind.JAXBElement;
+
 import java.net.URI;
+import java.net.http.HttpHeaders;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import no.scopus.generated.AbstractTp;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorKeywordTp;
@@ -27,13 +33,19 @@ import no.scopus.generated.DateSortTp;
 import no.scopus.generated.DocTp;
 import no.scopus.generated.HeadTp;
 import no.scopus.generated.InfTp;
+import no.scopus.generated.OpenAccessType;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
+import no.scopus.generated.UpwOaLocationType;
+import no.scopus.generated.UpwOpenAccessType;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.conversion.ContributorExtractor;
 import no.sikt.nva.scopus.conversion.LanguageExtractor;
 import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
+import no.unit.nva.file.model.File;
+import no.unit.nva.file.model.FileSet;
+import no.unit.nva.file.model.License;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -42,6 +54,7 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import nva.commons.core.paths.UriWrapper;
 
+@SuppressWarnings({"PMD.GodClass"})
 public class ScopusConverter {
 
     private final DocTp docTp;
@@ -56,7 +69,64 @@ public class ScopusConverter {
         CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
         createPublicationRequest.setAdditionalIdentifiers(generateAdditionalIdentifiers());
         createPublicationRequest.setEntityDescription(generateEntityDescription());
+        generateFileSet().ifPresent(createPublicationRequest::setFileSet);
         return createPublicationRequest;
+    }
+
+    private Optional<FileSet> generateFileSet() {
+        // TODO: Iterate other UpwOaLocationTypes if UpwBestOaLocationType is not present?
+        List<File> files = extractUpwBestOaLocationType().stream()
+                .map(this::generateFile)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
+        return Optional.of(new FileSet(files));
+    }
+
+    private Optional<UpwOaLocationType> extractUpwBestOaLocationType() {
+        return Optional.ofNullable(docTp.getMeta().getOpenAccess())
+                .map(OpenAccessType::getUpwOpenAccess)
+                .map(UpwOpenAccessType::getUpwBestOaLocation);
+    }
+
+    private Optional<File> generateFile(UpwOaLocationType upwOaLocationType) {
+        return nonNull(upwOaLocationType.getUpwUrlForPdf())
+                ? Optional.of(createFile(upwOaLocationType))
+                : Optional.empty();
+    }
+
+    private File createFile(UpwOaLocationType upwOaLocationType) {
+        File.Builder builder = new File.Builder();
+        // TODO: Set url in appropriate field (when implemented)
+        builder.withName(upwOaLocationType.getUpwUrlForPdf());
+        extractLicense(upwOaLocationType).ifPresent(builder::withLicense);
+        Optional<HttpHeaders> httpHeaders = fetchHeadersFromPdfUrl(upwOaLocationType);
+        if (httpHeaders.isPresent()) {
+            HttpHeaders headers = httpHeaders.get();
+            headers.firstValueAsLong(CONTENT_LENGTH).ifPresent(builder::withSize);
+            headers.firstValue(CONTENT_TYPE).ifPresent(builder::withMimeType);
+        }
+        return builder.build();
+    }
+
+    private Optional<HttpHeaders> fetchHeadersFromPdfUrl(UpwOaLocationType upwOaLocationType) {
+        return Optional.ofNullable(upwOaLocationType.getUpwUrlForPdf()).stream()
+                .map(metadataService::fetchHeadResponseHeadersFromUrl)
+                .flatMap(Optional::stream)
+                .findAny();
+    }
+
+    private Optional<License> extractLicense(UpwOaLocationType upwOaLocationType) {
+        return Optional.ofNullable(upwOaLocationType.getUpwLicense()).stream()
+                .map(this::mapUpwLicenseToLicense)
+                .findFirst();
+    }
+
+    private License mapUpwLicenseToLicense(String scopusLicense) {
+        // TODO: Mapping from scopus-xml license to License
+        License.Builder builder = new License.Builder();
+        builder.withIdentifier(scopusLicense);
+        return builder.build();
     }
 
     private Optional<AuthorKeywordsTp> extractAuthorKeyWords() {

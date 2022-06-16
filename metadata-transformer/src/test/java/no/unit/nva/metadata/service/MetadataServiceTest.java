@@ -3,9 +3,11 @@ package no.unit.nva.metadata.service;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.head;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static j2html.TagCreator.body;
 import static j2html.TagCreator.div;
 import static j2html.TagCreator.head;
@@ -490,6 +492,15 @@ public class MetadataServiceTest {
         );
     }
 
+    @Test
+    void fetchRequestHeadersFromUrlShouldReturnHeaders() {
+        URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML);
+        MetadataService metadataService = new MetadataService(httpClient, serverUriJournal, serverUriPublisher);
+        Optional<HttpHeaders> httpHeaders = metadataService.fetchHeadResponseHeadersFromUrl(uri.toString());
+        var actualContentType = httpHeaders.get().firstValue(CONTENT_TYPE).get();
+        assertThat(actualContentType, equalTo("text/html"));
+    }
+
     private static CreatePublicationRequest createRequestWithTitle(String title) {
         EntityDescription entityDescription = new EntityDescription.Builder()
             .withMainTitle(title)
@@ -757,6 +768,20 @@ public class MetadataServiceTest {
                     .willReturn(aResponse()
                                     .withHeader("Content-Type", "text/html")
                                     .withBody(body)));
+    }
+
+    private URI prepareWebServerAndReturnUriToMetadata(String filename) {
+        startMockHeadRequest(filename);
+        var uriString = String.format(URI_TEMPLATE, wireMockServer.port(), filename);
+        return URI.create(uriString);
+    }
+
+    private void startMockHeadRequest(String filename) {
+        configureFor("localhost", wireMockServer.port());
+        stubFor(head(urlEqualTo("/article/" + filename))
+                .willReturn(aResponse()
+                        .withHeader("Content-Type", "text/html")
+                        .withStatus(200)));
     }
 
     private static class TestBipredicate implements BiPredicate<String, String> {

@@ -61,6 +61,7 @@ import no.scopus.generated.ItemidTp;
 import no.scopus.generated.ItemidlistTp;
 import no.scopus.generated.MetaTp;
 import no.scopus.generated.ObjectFactory;
+import no.scopus.generated.OpenAccessType;
 import no.scopus.generated.OrganizationTp;
 import no.scopus.generated.OrigItemTp;
 import no.scopus.generated.PagerangeTp;
@@ -74,8 +75,12 @@ import no.scopus.generated.SourcetitleTp;
 import no.scopus.generated.SourcetypeAtt;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
+import no.scopus.generated.UpwOaLocationType;
+import no.scopus.generated.UpwOaLocationsType;
+import no.scopus.generated.UpwOpenAccessType;
 import no.scopus.generated.VolissTp;
 import no.scopus.generated.VolisspagTp;
+import no.scopus.generated.WebsiteTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.ScopusConstants;
 import no.unit.nva.language.Language;
@@ -777,6 +782,21 @@ public final class ScopusGenerator {
     public void setPublishername(String publisherName) {
         document.getItem().getItem().getBibrecord().getHead().getSource().getPublisher().get(0)
             .setPublishername(publisherName);
+    }
+
+    public void setOpenAccess(String urlToFile, String isBest, String license) {
+        OpenAccessType openAccessType = new OpenAccessType();
+        OpenAccessType.OaArticleStatus oaArticleStatus = new OpenAccessType.OaArticleStatus();
+        oaArticleStatus.setIsOpenAccess(String.valueOf(randomInteger(2)));
+        openAccessType.setOaArticleStatus(oaArticleStatus);
+        UpwOaLocationType upwOaLocationType = new UpwOaLocationType();
+        upwOaLocationType.setUpwIsBest(isBest);
+        upwOaLocationType.setUpwUrlForPdf(urlToFile);
+        upwOaLocationType.setUpwLicense(license);
+        UpwOpenAccessType upwOpenAccessType = new UpwOpenAccessType();
+        upwOpenAccessType.setUpwBestOaLocation(upwOaLocationType);
+        openAccessType.setUpwOpenAccess(upwOpenAccessType);
+        document.getMeta().setOpenAccess(openAccessType);
     }
 
     public void setSrcType(SourcetypeAtt sourcetypeAtt) {

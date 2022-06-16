@@ -123,6 +123,28 @@ public class MetadataService {
             .findFirst();
     }
 
+    public Optional<java.net.http.HttpHeaders> fetchHeadResponseHeadersFromUrl(String url) {
+        return attempt(() -> fetchHeadResponseFromUrl(url))
+                .map(this::parseHeadersFromOkResponse)
+                .toOptional()
+                .flatMap(Function.identity());
+    }
+
+    private Optional<java.net.http.HttpHeaders> parseHeadersFromOkResponse(HttpResponse<Void> response) {
+        if (HttpURLConnection.HTTP_OK == response.statusCode()) {
+            return Optional.of(response.headers());
+        }
+        return Optional.empty();
+    }
+
+    private HttpResponse<Void> fetchHeadResponseFromUrl(String url) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .method(HEAD, HttpRequest.BodyPublishers.noBody())
+                .build();
+        return httpClient.send(request, HttpResponse.BodyHandlers.discarding());
+    }
+
     public static URI defaultPublicationChannelsHostUri() {
         return UriWrapper.fromHost(API_HOST).addChild("publication-channels").addChild("journal").getUri();
     }
