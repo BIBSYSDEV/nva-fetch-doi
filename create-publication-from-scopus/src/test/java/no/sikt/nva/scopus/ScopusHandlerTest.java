@@ -160,6 +160,12 @@ class ScopusHandlerTest {
     public static final UserIdentityEntity EMPTY_USER_IDENTITY = null;
     public static final long SOME_FILE_SIZE = 100L;
     public static final String START_OF_QUERY = "/?";
+    public static final String EXPECTED_CONTENT_STRING_TXT = "expectedContentString.txt";
+    public static final String INF_CLASS_NAME = "inf";
+    public static final String SUP_CLASS_NAME = "sup";
+    public static final String INVALID_ISSN = "096042";
+    public static final String VALID_ISSN = "0960-4286";
+    public static final String LANGUAGE_ENG = "eng";
     private static final String EXPECTED_RESULTS_PATH = "expectedResults";
     private static final String HARDCODED_EXPECTED_KEYWORD_1 = "<sup>64</sup>Cu";
     private static final String HARDCODED_EXPECTED_KEYWORD_2 = "excretion";
@@ -169,13 +175,6 @@ class ScopusHandlerTest {
     private static final String PUBLICATION_MONTH_FIELD_NAME = "month";
     private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
     private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
-    public static final String EXPECTED_CONTENT_STRING_TXT = "expectedContentString.txt";
-    public static final String INF_CLASS_NAME = "inf";
-    public static final String SUP_CLASS_NAME = "sup";
-    public static final String INVALID_ISSN = "096042";
-    public static final String VALID_ISSN = "0960-4286";
-    public static final String LANGUAGE_ENG = "eng";
-
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
     private ScopusHandler scopusHandler;
@@ -188,6 +187,15 @@ class ScopusHandlerTest {
 
     private PiaConnection piaConnection;
     private ScopusGenerator scopusData;
+
+    public static Stream<Arguments> providedLanguagesAndExpectedOutput() {
+        return Stream.concat(LanguageConstants.ALL_LANGUAGES.stream().map(ScopusHandlerTest::createArguments),
+                             addLanguageEdgeCases());
+    }
+
+    public static URI randomPublicationChannelUri() {
+        return URI.create("https://example.nva.aws.unit.no/publication-channels/" + randomString());
+    }
 
     @BeforeEach
     public void init() {
@@ -264,34 +272,6 @@ class ScopusHandlerTest {
         assertThat(actualMainTitle, is(equalTo(expectedTitleString)));
     }
 
-    private ContentWrapper createContentWithSupAndInfTags() {
-        return new ContentWrapper(contentWithSupInftagsScopus14244261628());
-    }
-
-    private static List<Serializable> contentWithSupInftagsScopus14244261628() {
-        // This is an actual title from doi: 10.1016/j.nuclphysbps.2005.01.029
-        return List.of("Non-factorizable contributions to B",
-                       generateInf("d"),
-                       generateSup("0"),
-                       " - D",
-                       generateInf("s"),
-                       "(*) D",
-                       generateInf("s"),
-                       "(*)");
-    }
-
-    private static JAXBElement<InfTp> generateInf(Serializable content) {
-        InfTp infTp = new InfTp();
-        infTp.getContent().add(content);
-        return new JAXBElement<>(new QName(INF_CLASS_NAME), InfTp.class, infTp);
-    }
-
-    private static JAXBElement<SupTp> generateSup(Serializable content) {
-        SupTp supTp = new SupTp();
-        supTp.getContent().add(content);
-        return new JAXBElement<>(new QName(SUP_CLASS_NAME), SupTp.class, supTp);
-    }
-
     @Test
     void shouldExtractContributorsNamesAndSequenceNumberCorrectly() throws IOException {
         createEmptyPiaMock();
@@ -313,49 +293,6 @@ class ScopusHandlerTest {
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualContributors = createPublicationRequest.getEntityDescription().getContributors();
         authors.forEach(author -> checkAffiliationForAuthor(author, actualContributors, authorsGroups));
-    }
-
-    private void checkAffiliationForAuthor(AuthorTp author, List<Contributor> actualContributors,
-                                           List<AuthorGroupTp> authorGroupTps) {
-        //when we remove duplicates this will have better CPU performance.
-        var expectedAffiliationsNames = getAffiliationNameForSequenceNumber(authorGroupTps, author.getSeq());
-        var actualAffiliationNames = findContributorsBySequence(author.getSeq(), actualContributors)
-                                         .stream()
-                                         .map(Contributor::getAffiliations)
-                                         .flatMap(Collection::stream)
-                                         .map(Organization::getLabels)
-                                         .map(Map::values)
-                                         .flatMap(Collection::stream)
-                                         .collect(Collectors.toList());
-        assertThat(actualAffiliationNames, containsInAnyOrder(expectedAffiliationsNames.toArray()));
-    }
-
-    private List<String> getAffiliationNameForSequenceNumber(List<AuthorGroupTp> authorGroupTps,
-                                                             String sequenceNumber) {
-        return authorGroupTps
-                   .stream()
-                   .filter(authorGroupTp -> authorGroupContainAuthorWithSequenceNumber(authorGroupTp, sequenceNumber))
-                   .collect(Collectors.toList())
-                   .stream()
-                   .map(this::expectedAffiliationName)
-                   .collect(Collectors.toList());
-    }
-
-    private String expectedAffiliationName(AuthorGroupTp authorGroupsWithAuthorsWithSequenceNumber) {
-        return authorGroupsWithAuthorsWithSequenceNumber
-                   .getAffiliation()
-                   .getOrganization()
-                   .stream()
-                   .map(organizationTp -> organizationTp.getContent()
-                                              .stream()
-                                              .map(Object::toString)
-                                              .collect(Collectors.joining()))
-                   .collect(Collectors.joining(AFFILIATION_DELIMITER));
-    }
-
-    private boolean authorGroupContainAuthorWithSequenceNumber(AuthorGroupTp authorGroupTp, String sequenceNumber) {
-        return keepOnlyTheAuthors(authorGroupTp).stream()
-                   .anyMatch(authorTp -> sequenceNumber.equals(authorTp.getSeq()));
     }
 
     @Test
@@ -636,21 +573,6 @@ class ScopusHandlerTest {
         checkForDuplicateContributors(contributors);
     }
 
-    private void checkForDuplicateContributors(List<Contributor> contributors) {
-        List<Integer> sequenceNumbers = new ArrayList<>();
-        List<String> orcids = new ArrayList<>();
-        contributors.forEach(contributor -> isNotDuplicated(sequenceNumbers, orcids, contributor));
-    }
-
-    private void isNotDuplicated(List<Integer> sequenceNumbers, List<String> orcids, Contributor contributor) {
-        assertThat(sequenceNumbers, not(hasItem(contributor.getSequence())));
-        sequenceNumbers.add(contributor.getSequence());
-        if (nonNull(contributor.getIdentity().getOrcId())) {
-            assertThat(orcids, not(hasItem(contributor.getIdentity().getOrcId())));
-            orcids.add(contributor.getIdentity().getOrcId());
-        }
-    }
-
     @Test
     void shouldExtractPublicationDate() throws IOException {
         createEmptyPiaMock();
@@ -906,14 +828,6 @@ class ScopusHandlerTest {
                    startsWith(correspondingAuthorTp.getSurname()));
     }
 
-    private Contributor getCorrespondingContributor(List<Contributor> actualPublicationContributors) {
-        createEmptyPiaMock();
-        return actualPublicationContributors
-                   .stream()
-                   .filter(Contributor::isCorrespondingAuthor)
-                   .findAny().orElse(null);
-    }
-
     @Test
     void shouldAssignCorrectLanguageForAffiliationNames() throws IOException {
         createEmptyPiaMock();
@@ -1002,15 +916,6 @@ class ScopusHandlerTest {
             contributor -> assertNull(contributor.getIdentity().getId()));
     }
 
-    private boolean isAuthor(Contributor contributor, List<AuthorTp> authorTypes) {
-        return authorTypes.stream()
-                   .anyMatch(authorTp -> isEqualContributor(contributor, authorTp));
-    }
-
-    private boolean isEqualContributor(Contributor contributor, AuthorTp authorTp) {
-        return contributor.getSequence() == Integer.parseInt(authorTp.getSeq());
-    }
-
     @Test
     void shouldHandlePiaConnectionException() throws IOException {
         mockedPiaException();
@@ -1027,6 +932,126 @@ class ScopusHandlerTest {
         var s3Event = createNewScopusPublicationEvent();
         scopusHandler.handleRequest(s3Event, CONTEXT);
         assertThat(appender.getMessages(), containsString(PiaConnection.ERROR_MESSAGE_EXTRACT_CRISTINID_ERROR));
+    }
+
+    private static List<Serializable> contentWithSupInftagsScopus14244261628() {
+        // This is an actual title from doi: 10.1016/j.nuclphysbps.2005.01.029
+        return List.of("Non-factorizable contributions to B",
+                       generateInf("d"),
+                       generateSup("0"),
+                       " - D",
+                       generateInf("s"),
+                       "(*) D",
+                       generateInf("s"),
+                       "(*)");
+    }
+
+    private static JAXBElement<InfTp> generateInf(Serializable content) {
+        InfTp infTp = new InfTp();
+        infTp.getContent().add(content);
+        return new JAXBElement<>(new QName(INF_CLASS_NAME), InfTp.class, infTp);
+    }
+
+    private static JAXBElement<SupTp> generateSup(Serializable content) {
+        SupTp supTp = new SupTp();
+        supTp.getContent().add(content);
+        return new JAXBElement<>(new QName(SUP_CLASS_NAME), SupTp.class, supTp);
+    }
+
+    private static Stream<Arguments> addLanguageEdgeCases() {
+        return Stream.of(
+            Arguments.of(null, UNDEFINED_LANGUAGE.getLexvoUri()),
+            Arguments.of(List.of(ENGLISH, NORWEGIAN), MULTIPLE.getLexvoUri()));
+    }
+
+    private static Arguments createArguments(Language language) {
+        var languageUri = language.getLexvoUri();
+        if (MISCELLANEOUS.equals(language)) {
+            languageUri = MULTIPLE.getLexvoUri();
+        }
+        if (NORWEGIAN.equals(language)) {
+            languageUri = BOKMAAL.getLexvoUri();
+        }
+        return Arguments.of(List.of(language), languageUri);
+    }
+
+    private ContentWrapper createContentWithSupAndInfTags() {
+        return new ContentWrapper(contentWithSupInftagsScopus14244261628());
+    }
+
+    private void checkAffiliationForAuthor(AuthorTp author, List<Contributor> actualContributors,
+                                           List<AuthorGroupTp> authorGroupTps) {
+        //when we remove duplicates this will have better CPU performance.
+        var expectedAffiliationsNames = getAffiliationNameForSequenceNumber(authorGroupTps, author.getSeq());
+        var actualAffiliationNames = findContributorsBySequence(author.getSeq(), actualContributors)
+                                         .stream()
+                                         .map(Contributor::getAffiliations)
+                                         .flatMap(Collection::stream)
+                                         .map(Organization::getLabels)
+                                         .map(Map::values)
+                                         .flatMap(Collection::stream)
+                                         .collect(Collectors.toList());
+        assertThat(actualAffiliationNames, containsInAnyOrder(expectedAffiliationsNames.toArray()));
+    }
+
+    private List<String> getAffiliationNameForSequenceNumber(List<AuthorGroupTp> authorGroupTps,
+                                                             String sequenceNumber) {
+        return authorGroupTps
+                   .stream()
+                   .filter(authorGroupTp -> authorGroupContainAuthorWithSequenceNumber(authorGroupTp, sequenceNumber))
+                   .collect(Collectors.toList())
+                   .stream()
+                   .map(this::expectedAffiliationName)
+                   .collect(Collectors.toList());
+    }
+
+    private String expectedAffiliationName(AuthorGroupTp authorGroupsWithAuthorsWithSequenceNumber) {
+        return authorGroupsWithAuthorsWithSequenceNumber
+                   .getAffiliation()
+                   .getOrganization()
+                   .stream()
+                   .map(organizationTp -> organizationTp.getContent()
+                                              .stream()
+                                              .map(Object::toString)
+                                              .collect(Collectors.joining()))
+                   .collect(Collectors.joining(AFFILIATION_DELIMITER));
+    }
+
+    private boolean authorGroupContainAuthorWithSequenceNumber(AuthorGroupTp authorGroupTp, String sequenceNumber) {
+        return keepOnlyTheAuthors(authorGroupTp).stream()
+                   .anyMatch(authorTp -> sequenceNumber.equals(authorTp.getSeq()));
+    }
+
+    private void checkForDuplicateContributors(List<Contributor> contributors) {
+        List<Integer> sequenceNumbers = new ArrayList<>();
+        List<String> orcids = new ArrayList<>();
+        contributors.forEach(contributor -> isNotDuplicated(sequenceNumbers, orcids, contributor));
+    }
+
+    private void isNotDuplicated(List<Integer> sequenceNumbers, List<String> orcids, Contributor contributor) {
+        assertThat(sequenceNumbers, not(hasItem(contributor.getSequence())));
+        sequenceNumbers.add(contributor.getSequence());
+        if (nonNull(contributor.getIdentity().getOrcId())) {
+            assertThat(orcids, not(hasItem(contributor.getIdentity().getOrcId())));
+            orcids.add(contributor.getIdentity().getOrcId());
+        }
+    }
+
+    private Contributor getCorrespondingContributor(List<Contributor> actualPublicationContributors) {
+        createEmptyPiaMock();
+        return actualPublicationContributors
+                   .stream()
+                   .filter(Contributor::isCorrespondingAuthor)
+                   .findAny().orElse(null);
+    }
+
+    private boolean isAuthor(Contributor contributor, List<AuthorTp> authorTypes) {
+        return authorTypes.stream()
+                   .anyMatch(authorTp -> isEqualContributor(contributor, authorTp));
+    }
+
+    private boolean isEqualContributor(Contributor contributor, AuthorTp authorTp) {
+        return contributor.getSequence() == Integer.parseInt(authorTp.getSeq());
     }
 
     private void assertThatContributorHasCorrectCristinId(Contributor contributor,
@@ -1067,28 +1092,6 @@ class ScopusHandlerTest {
                     .withQueryParam("author_id", WireMock.equalTo("SCOPUS:" + scopusId))
                     .willReturn(aResponse().withBody(response)
                                     .withStatus(HttpURLConnection.HTTP_OK)));
-    }
-
-    public static Stream<Arguments> providedLanguagesAndExpectedOutput() {
-        return Stream.concat(LanguageConstants.ALL_LANGUAGES.stream().map(ScopusHandlerTest::createArguments),
-                             addLanguageEdgeCases());
-    }
-
-    private static Stream<Arguments> addLanguageEdgeCases() {
-        return Stream.of(
-            Arguments.of(null, UNDEFINED_LANGUAGE.getLexvoUri()),
-            Arguments.of(List.of(ENGLISH, NORWEGIAN), MULTIPLE.getLexvoUri()));
-    }
-
-    private static Arguments createArguments(Language language) {
-        var languageUri = language.getLexvoUri();
-        if (MISCELLANEOUS.equals(language)) {
-            languageUri = MULTIPLE.getLexvoUri();
-        }
-        if (NORWEGIAN.equals(language)) {
-            languageUri = BOKMAAL.getLexvoUri();
-        }
-        return Arguments.of(List.of(language), languageUri);
     }
 
     private List<AffiliationTp> languageAffiliations(List<List<Serializable>> organizationNames) {
@@ -1212,10 +1215,6 @@ class ScopusHandlerTest {
                     .willReturn(aResponse().withBody(publicationChannelsResponseBody
                                                          .toPrettyString()).withStatus(HttpURLConnection.HTTP_OK)));
         return uri;
-    }
-
-    public static URI randomPublicationChannelUri() {
-        return URI.create("https://example.nva.aws.unit.no/publication-channels/" + randomString());
     }
 
     private void startWiremockServer() {
