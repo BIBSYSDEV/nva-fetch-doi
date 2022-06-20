@@ -18,7 +18,9 @@ import java.util.Optional;
 import no.sikt.nva.scopus.conversion.model.Author;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.attempt.Failure;
 import nva.commons.core.paths.UriWrapper;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,20 +28,18 @@ public class PiaConnection {
 
     public static final String CRISTIN_PERSON_PATH = "/cristin/person/";
     public static final String ERROR_MESSAGE_EXTRACT_CRISTINID_ERROR = "Could not extract cristin id";
+    public static final int FALSE_IN_PIA_INTEGER = 0;
     private static final String PIA_RESPONSE_ERROR = "Pia responded with status code";
     private static final String COULD_NOT_GET_ERROR_MESSAGE = "Could not get response from Pia for scopus id ";
-    private final HttpClient httpClient;
     private static final String USERNAME_PASSWORD_DELIMITER = ":";
-
     private static final String AUTHORIZATION = "Authorization";
     private static final String BASIC_AUTHORIZATION = "Basic %s";
     private static final String PIA_REST_API = new Environment().readEnv("PIA_REST_API");
     private static final String PIA_USERNAME = new Environment().readEnv("PIA_USERNAME");
     private static final String PIA_PASSWORD = new Environment().readEnv("PIA_PASSWORD");
-
     private static final String NVA_DOMAIN = new Environment().readEnv("API_HOST");
-
     private static final Logger logger = LoggerFactory.getLogger(PiaConnection.class);
+    private final HttpClient httpClient;
     private final transient String piaAuthorization;
     private final String piaHost;
 
@@ -53,6 +53,19 @@ public class PiaConnection {
     public PiaConnection() {
         this(HttpClient.newBuilder().version(HttpClient.Version.HTTP_2).build(),
              PIA_REST_API);
+    }
+
+    public URI getCristinID(String scopusId) {
+        return attempt(() -> getPiaAuthorResponse(scopusId))
+                            .map(this::getCristinNumber)
+                            .map(Optional::orElseThrow)
+                            .map(this::createCristinUriFromCristinNumber)
+                            .orElse(this::logFailureAndReturnNull);
+    }
+
+    private URI createCristinUriFromCristinNumber(int cristinNumber) {
+        return UriWrapper.fromUri(NVA_DOMAIN + CRISTIN_PERSON_PATH + cristinNumber)
+                   .getUri();
     }
 
     private String createAuthorization() {
@@ -99,8 +112,7 @@ public class PiaConnection {
     }
 
     private HttpResponse<String> getPiaResponse(URI uri) throws IOException, InterruptedException {
-        var request = createRequest(uri);
-        return httpClient.send(request, BodyHandlers.ofString());
+        return httpClient.send(createRequest(uri), BodyHandlers.ofString());
     }
 
     private List<Author> getPiaAuthorResponse(String scopusID) {
@@ -117,21 +129,12 @@ public class PiaConnection {
     }
 
     private boolean hasCristinId(Author author) {
-        return author.getCristinId() != 0;
+        return author.getCristinId() != FALSE_IN_PIA_INTEGER;
     }
 
-    public URI getCristinID(String scopusId) {
-        URI cristinId = null;
-        try {
-            List<Author> piaAuthorResponse = getPiaAuthorResponse(scopusId);
-            var optionalCristinNumber = getCristinNumber(piaAuthorResponse);
-
-            cristinId = optionalCristinNumber.map(
-                    cristinNumber -> UriWrapper.fromUri(NVA_DOMAIN + CRISTIN_PERSON_PATH + cristinNumber).getUri())
-                            .orElse(null);
-        } catch (Exception e) {
-            logger.info(ERROR_MESSAGE_EXTRACT_CRISTINID_ERROR, e);
-        }
-        return cristinId;
+    @Nullable
+    private URI logFailureAndReturnNull(Failure<URI> failure) {
+        logger.info(ERROR_MESSAGE_EXTRACT_CRISTINID_ERROR, failure.getException());
+        return null;
     }
 }
