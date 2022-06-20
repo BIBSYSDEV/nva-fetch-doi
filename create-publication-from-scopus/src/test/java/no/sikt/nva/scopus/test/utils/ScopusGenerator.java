@@ -368,7 +368,7 @@ public final class ScopusGenerator {
     }
 
     private List<?> randomAuthorOrCollaborations() {
-        int maxNumbersOfAuthors = 200;
+        final int maxNumbersOfAuthors = 50;
         return IntStream.range(0, randomInteger(maxNumbersOfAuthors) + 1)
             .boxed()
             .map(index -> randomAuthorOrCollaboration())
@@ -396,7 +396,7 @@ public final class ScopusGenerator {
     }
 
     private List<AffiliationTp> randomAffiliations() {
-        int maxNumberOfAuthorGroups = 100;
+        final int maxNumberOfAuthorGroups = 50;
         return IntStream.range(0, randomInteger(maxNumberOfAuthorGroups) + 1)
             .boxed()
             .map(ignored -> randomAffiliation())
@@ -440,7 +440,7 @@ public final class ScopusGenerator {
     }
 
     private String generateSequenceNumber() {
-        var maxGapInSequenceNumber = 200;
+        final var maxGapInSequenceNumber = 200;
         var sequenceNumber = getMinimumSequenceNumber() + randomInteger(maxGapInSequenceNumber) + 1;
         setMinimumSequenceNumber(sequenceNumber);
         return Integer.toString(sequenceNumber);

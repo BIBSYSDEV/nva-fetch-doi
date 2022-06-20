@@ -52,6 +52,10 @@ Parameters:
   NvaEventsBusName:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/Events/EventsBusName'
+  PiaRestApi:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: 'piaRest'
+
 
 Globals:
   Function:
@@ -273,6 +277,7 @@ Resources:
           EVENTS_BUCKET: !Ref NvaEventsBucketName
           EVENTS_BUS: !Ref NvaEventsBusName
           API_HOST: !Ref ApiDomain
+          PIA_REST_API: !Ref piaRest
       Events:
         Scopus:
           Type: S3
