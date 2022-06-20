@@ -57,11 +57,15 @@ public class PiaConnection {
 
     public URI getCristinID(String scopusId) {
         return attempt(() -> getPiaAuthorResponse(scopusId))
-                   .map(this::getCristinNumber)
-                   .map(cristinNumber ->
-                            UriWrapper.fromUri(NVA_DOMAIN + CRISTIN_PERSON_PATH + cristinNumber)
-                                .getUri())
-                   .orElse(this::logFailureAndReturnNull);
+                            .map(this::getCristinNumber)
+                            .map(Optional::orElseThrow)
+                            .map(this::createCristinUriFromCristinNumber)
+                            .orElse(this::logFailureAndReturnNull);
+    }
+
+    private URI createCristinUriFromCristinNumber(int cristinNumber) {
+        return UriWrapper.fromUri(NVA_DOMAIN + CRISTIN_PERSON_PATH + cristinNumber)
+                   .getUri();
     }
 
     private String createAuthorization() {
