@@ -14,8 +14,7 @@ import static java.util.Objects.nonNull;
 
 public final class IdentityUpdater {
 
-    public static final String PROBLEM_UPDATING_IDENTITY_MESSAGE = "Problem updating Identity";
-    public static final String IGNORING_EXCEPTION = "Ignoring exception: ";
+    public static final String PROBLEM_UPDATING_IDENTITY_MESSAGE = "Problem updating Identity, ignoring and moving on";
     private static final Logger logger = LoggerFactory.getLogger(IdentityUpdater.class);
 
     private IdentityUpdater() {
@@ -29,24 +28,16 @@ public final class IdentityUpdater {
      * @return an updated publication with identifiers added to identities or the original if unchanged or exception
      *             occurs for some reason
      */
-    @SuppressWarnings("PMD.AvoidRethrowingException")
     public static Publication enrichPublicationCreators(CristinProxyClient cristinProxyClient,
                                                         Publication publication) {
         Optional.ofNullable(publication).map(Publication::getEntityDescription).ifPresent(entityDescription -> {
             try {
                 updateContributors(cristinProxyClient, entityDescription);
-            } catch (IllegalArgumentException e) {
-                logErrorAndThrowIllegalArgumentException(e);
             } catch (Exception e) {
-                logger.info(IGNORING_EXCEPTION, e);
+                logger.info(PROBLEM_UPDATING_IDENTITY_MESSAGE, e);
             }
         });
         return publication;
-    }
-
-    private static void logErrorAndThrowIllegalArgumentException(IllegalArgumentException e) {
-        logger.info(PROBLEM_UPDATING_IDENTITY_MESSAGE, e);
-        throw e;
     }
 
     private static void updateContributors(CristinProxyClient cristinProxyClient, EntityDescription entityDescription) {

@@ -23,7 +23,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -75,15 +74,6 @@ class IdentityUpdaterTest {
     }
 
     @Test
-    public void enrichPublicationCreatorsDoesThrowExceptionWhenOrcidHasErrors() {
-        var identity = new Identity.Builder().withOrcId(ILLEGAL_ORCID).build();
-        var publication = createPublicationWithIdentity(identity);
-
-        assertThrows(IllegalArgumentException.class,
-            () -> IdentityUpdater.enrichPublicationCreators(new CristinProxyClient(), publication));
-    }
-
-    @Test
     public void enrichPublicationCreatorsDoesNotCrashOnPublicationWithoutContributors() {
         var cristinProxyClient = mock(CristinProxyClient.class);
         var publication = createPublicationWithIdentity(new Identity());
@@ -95,12 +85,11 @@ class IdentityUpdaterTest {
     }
 
     @Test
-    public void enrichPublicationCreatorsIgnoresUnknownExceptionsAndReturnsUnmodifiedPublication() {
+    public void enrichPublicationCreatorsIgnoresExceptionsAndReturnsUnmodifiedPublication() {
         var identity = new Identity.Builder().withOrcId(ILLEGAL_ORCID).build();
         var publication = createPublicationWithIdentity(identity);
         var cristinProxyClient = mock(CristinProxyClient.class);
-        doThrow(new RuntimeException("Some unknown error")).when(cristinProxyClient).lookupIdentifierFromOrcid(any());
-
+        doThrow(new RuntimeException()).when(cristinProxyClient).lookupIdentifierFromOrcid(any());
         var updatedPublication = IdentityUpdater.enrichPublicationCreators(cristinProxyClient, publication);
 
         assertEquals(publication, updatedPublication);
