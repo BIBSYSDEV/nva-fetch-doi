@@ -1,6 +1,8 @@
 package no.unit.nva.doi.fetch.service;
 
+import java.util.List;
 import no.unit.nva.doi.transformer.utils.CristinProxyClient;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
@@ -30,18 +32,30 @@ public final class IdentityUpdater {
      */
     public static Publication enrichPublicationCreators(CristinProxyClient cristinProxyClient,
                                                         Publication publication) {
-        Optional.ofNullable(publication).map(Publication::getEntityDescription).ifPresent(entityDescription -> {
-            try {
-                updateContributors(cristinProxyClient, entityDescription);
-            } catch (Exception e) {
-                logger.info(PROBLEM_UPDATING_IDENTITY_MESSAGE, e);
-            }
-        });
+
+        var possibleContributors = extractPossibleContributors(publication);
+        possibleContributors.ifPresent(contributors -> tryUpdatingContributorsOrLogError(cristinProxyClient,
+                                                                                         contributors));
         return publication;
     }
 
-    private static void updateContributors(CristinProxyClient cristinProxyClient, EntityDescription entityDescription) {
-        entityDescription.getContributors().forEach(contributor -> {
+    private static Optional<List<Contributor>> extractPossibleContributors(Publication publication) {
+        return Optional.ofNullable(publication)
+                   .map(Publication::getEntityDescription)
+                   .map(EntityDescription::getContributors);
+    }
+
+    private static void tryUpdatingContributorsOrLogError(CristinProxyClient cristinProxyClient,
+                                                          List<Contributor> contributors) {
+        try {
+            updateContributors(cristinProxyClient, contributors);
+        } catch (Exception e) {
+            logger.info(PROBLEM_UPDATING_IDENTITY_MESSAGE, e);
+        }
+    }
+
+    private static void updateContributors(CristinProxyClient cristinProxyClient, List<Contributor> contributors) {
+        contributors.forEach(contributor -> {
             var identity = contributor.getIdentity();
             if (hasNoIdentifierButCanPossiblyBeFetchedUsingOrcid(identity)) {
                 updateIdentifierIfFoundFromOrcid(cristinProxyClient, identity);
