@@ -69,6 +69,6 @@ public final class IdentityUpdater {
 
     private static void updateIdentifierIfFoundFromOrcid(CristinProxyClient cristinProxyClient, Identity identity) {
         var identifier = cristinProxyClient.lookupIdentifierFromOrcid(identity.getOrcId());
-        identifier.ifPresent(uri -> identity.setId(identifier.get()));
+        identifier.ifPresent(identity::setId);
     }
 }
