@@ -36,7 +36,7 @@ public final class IdentityUpdater {
             try {
                 updateContributors(cristinProxyClient, entityDescription);
             } catch (IllegalArgumentException e) {
-                logErrorAndThrowIllegalArgumentException(new IllegalArgumentException(e));
+                logErrorAndThrowIllegalArgumentException(e);
             } catch (Exception e) {
                 logger.info(IGNORING_EXCEPTION, e);
             }
@@ -63,11 +63,7 @@ public final class IdentityUpdater {
     }
 
     private static void updateIdentifierIfFoundFromOrcid(CristinProxyClient cristinProxyClient, Identity identity) {
-        try {
-            var identifier = cristinProxyClient.lookupIdentifierFromOrcid(identity.getOrcId());
-            identifier.ifPresent(uri -> identity.setId(identifier.get()));
-        } catch (IllegalArgumentException e) {
-            logErrorAndThrowIllegalArgumentException(e);
-        }
+        var identifier = cristinProxyClient.lookupIdentifierFromOrcid(identity.getOrcId());
+        identifier.ifPresent(uri -> identity.setId(identifier.get()));
     }
 }

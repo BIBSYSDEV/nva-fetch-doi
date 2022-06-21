@@ -18,12 +18,14 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -90,6 +92,27 @@ class IdentityUpdaterTest {
         publication.setEntityDescription(entityDescriptionWithoutContributors);
 
         IdentityUpdater.enrichPublicationCreators(cristinProxyClient, publication);
+    }
+
+    @Test
+    public void enrichPublicationCreatorsIgnoresUnknownExceptionsAndReturnsUnmodifiedPublication() {
+        var identity = new Identity.Builder().withOrcId(ILLEGAL_ORCID).build();
+        var publication = createPublicationWithIdentity(identity);
+        var cristinProxyClient = mock(CristinProxyClient.class);
+        doThrow(new RuntimeException("Some unknown error")).when(cristinProxyClient).lookupIdentifierFromOrcid(any());
+
+        var updatedPublication = IdentityUpdater.enrichPublicationCreators(cristinProxyClient, publication);
+
+        assertEquals(publication, updatedPublication);
+    }
+
+    @Test
+    public void enrichPublicationCreatorsDoesNotUpdateIdentifierWhenAlreadyExists() {
+        var identity = new Identity.Builder().withId(randomUri()).withOrcId(SAMPLE_ORCID).build();
+        var publication = createPublicationWithIdentity(identity);
+        var updatedPublication = IdentityUpdater.enrichPublicationCreators(new CristinProxyClient(), publication);
+
+        assertEquals(publication, updatedPublication);
     }
 
     private List<URI> getIdentifiers(Publication publication) {

@@ -10,6 +10,7 @@ import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@JacocoGenerated
 public class CristinProxyClient {
 
     private static final String API_HOST = "API_HOST";
