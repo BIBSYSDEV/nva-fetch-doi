@@ -1,14 +1,11 @@
 package no.unit.nva.doi.transformer.utils;
 
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @JacocoGenerated
 public class CristinProxyClient {
@@ -19,17 +16,14 @@ public class CristinProxyClient {
     private static final Pattern ORCID_PATTERN = Pattern.compile("[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9|Xx]");
     private static final String ERROR_INVALID_ORCID = "Supplied ORCID is not valid";
 
-    private final transient HttpClient httpClient;
     private final URI apiUrl;
-    private static final Logger logger = LoggerFactory.getLogger(BareProxyClient.class);
 
     @JacocoGenerated
     public CristinProxyClient() {
-        this(HttpClient.newHttpClient(), new Environment());
+        this(new Environment());
     }
 
-    public CristinProxyClient(HttpClient httpClient, Environment environment) {
-        this.httpClient = httpClient;
+    public CristinProxyClient(Environment environment) {
         this.apiUrl = URI.create(environment.readEnv(API_HOST));
     }
 
@@ -42,7 +36,7 @@ public class CristinProxyClient {
     public Optional<URI> lookupIdentifierFromOrcid(String orcid) {
 
         var strippedOrcid = stripAndValidateOrcid(orcid);
-        var cristinProxyUri = createUrlToCristinProxy(apiUrl, strippedOrcid);
+        createUrlToCristinProxy(apiUrl, strippedOrcid);
         return null;
     }
 
