@@ -55,7 +55,7 @@ import no.unit.nva.doi.fetch.model.Summary;
 import no.unit.nva.doi.fetch.service.PublicationConverter;
 import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
 import no.unit.nva.doi.transformer.DoiTransformService;
-import no.unit.nva.doi.transformer.utils.BareProxyClient;
+import no.unit.nva.doi.transformer.utils.CristinProxyClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
@@ -156,10 +156,10 @@ class MainHandlerTest {
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mock(DoiProxyService.class);
         PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
-        BareProxyClient bareProxyClient = mock(BareProxyClient.class);
+        CristinProxyClient cristinProxyClient = mock(CristinProxyClient.class);
         MetadataService metadataService = mock(MetadataService.class);
         MainHandler mainHandler = new MainHandler(publicationConverter, doiTransformService,
-                                                  doiProxyService, publicationPersistenceService, bareProxyClient,
+                                                  doiProxyService, publicationPersistenceService, cristinProxyClient,
                                                   metadataService, environment);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         mainHandler.handleRequest(malformedInputStream(), output, context);
@@ -175,11 +175,11 @@ class MainHandlerTest {
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
         PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
-        BareProxyClient bareProxyClient = mock(BareProxyClient.class);
+        CristinProxyClient cristinProxyClient = mock(CristinProxyClient.class);
         MetadataService metadataService = mock(MetadataService.class);
 
         MainHandler mainHandler = new MainHandler(publicationConverter, doiTransformService,
-                                                  doiProxyService, publicationPersistenceService, bareProxyClient,
+                                                  doiProxyService, publicationPersistenceService, cristinProxyClient,
                                                   metadataService, environment);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         mainHandler.handleRequest(createSampleRequest(), output, context);
@@ -198,11 +198,11 @@ class MainHandlerTest {
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mockDoiProxyReceivingFailedResult();
         PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
-        BareProxyClient bareProxyClient = mock(BareProxyClient.class);
+        CristinProxyClient cristinProxyClient = mock(CristinProxyClient.class);
         MetadataService metadataService = mock(MetadataService.class);
 
         MainHandler handler = new MainHandler(publicationConverter, doiTransformService, doiProxyService,
-                                              publicationPersistenceService, bareProxyClient, metadataService,
+                                              publicationPersistenceService, cristinProxyClient, metadataService,
                                               environment);
         ByteArrayOutputStream outputStream = outputStream();
         handler.handleRequest(createSampleRequest(), outputStream, context);
@@ -219,14 +219,14 @@ class MainHandlerTest {
         PublicationConverter publicationConverter = mockPublicationConverter();
         DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
-        BareProxyClient bareProxyClient = mock(BareProxyClient.class);
+        CristinProxyClient cristinProxyClient = mock(CristinProxyClient.class);
         MetadataService metadataService = mock(MetadataService.class);
 
         PublicationPersistenceService publicationPersistenceService =
             mockResourcePersistenceServiceReceivingFailedResult();
 
         MainHandler handler = new MainHandler(publicationConverter, doiTransformService, doiProxyService,
-                                              publicationPersistenceService, bareProxyClient, metadataService,
+                                              publicationPersistenceService, cristinProxyClient, metadataService,
                                               environment);
         ByteArrayOutputStream outputStream = outputStream();
         handler.handleRequest(createSampleRequest(), outputStream, context);
@@ -239,12 +239,12 @@ class MainHandlerTest {
         DoiTransformService doiTransformService = mock(DoiTransformService.class);
         DoiProxyService doiProxyService = mock(DoiProxyService.class);
         PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
-        BareProxyClient bareProxyClient = mock(BareProxyClient.class);
+        CristinProxyClient cristinProxyClient = mock(CristinProxyClient.class);
         MetadataService metadataService = mock(MetadataService.class);
         when(metadataService.generateCreatePublicationRequest(any())).thenReturn(Optional.empty());
 
         return new MainHandler(publicationConverter, doiTransformService,
-                               doiProxyService, publicationPersistenceService, bareProxyClient, metadataService,
+                               doiProxyService, publicationPersistenceService, cristinProxyClient, metadataService,
                                environment);
     }
 
@@ -265,11 +265,11 @@ class MainHandlerTest {
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
         PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
-        BareProxyClient bareProxyClient = mock(BareProxyClient.class);
+        CristinProxyClient cristinProxyClient = mock(CristinProxyClient.class);
         MetadataService metadataService = mockMetadataServiceReturningSuccessfulResult();
 
         return new MainHandler(publicationConverter, doiTransformService,
-                               doiProxyService, publicationPersistenceService, bareProxyClient, metadataService,
+                               doiProxyService, publicationPersistenceService, cristinProxyClient, metadataService,
                                environment);
     }
 

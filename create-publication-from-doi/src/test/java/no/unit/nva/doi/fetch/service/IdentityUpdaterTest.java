@@ -1,6 +1,7 @@
 package no.unit.nva.doi.fetch.service;
 
-import no.unit.nva.doi.transformer.utils.BareProxyClient;
+import java.util.Objects;
+import no.unit.nva.doi.transformer.utils.CristinProxyClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -11,18 +12,17 @@ import no.unit.nva.model.Role;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -30,42 +30,32 @@ import static org.mockito.Mockito.when;
 class IdentityUpdaterTest {
 
     public static final String SAMPLE_ORCID = "https://sandbox.orcid.org/0000-1111-2222-3333";
-    public static final String SAMPLE_ARPID = "https://api.dev.nva.aws.unit.no/person/123456789";
     public static final String ILLEGAL_ORCID = "hts:sdbox.orcid.org?0'0-1111-2222-3333";
+    public static final String SAMPLE_IDENTITY_IDENTIFIER = "https://api.dev.nva.aws.unit.no/cristin/person/123456";
 
     @Test
-    public void enrichPublicationCreatorsUpdatesPublicationWithCreatorHavingOrcidAndNoArpid() throws
-            URISyntaxException {
-        Identity identity = createIdentityWithOrcid();
-        BareProxyClient bareProxyClient = mock(BareProxyClient.class);
-        when(bareProxyClient.lookupArpidForOrcid(any())).thenReturn(Optional.of(SAMPLE_ARPID));
-        Publication publication = createPublicationWithIdentity(identity);
+    public void enrichPublicationCreatorsUpdatesPublicationWithIdentifierWhenCreatorHavingOrcidAndNoIdentifier() {
+        var identity = createIdentityWithOrcid();
+        var cristinProxyClient = mock(CristinProxyClient.class);
+        var sampleIdentifier = URI.create(SAMPLE_IDENTITY_IDENTIFIER);
+        when(cristinProxyClient.lookupIdentifierFromOrcid(any())).thenReturn(Optional.of(sampleIdentifier));
+        var publication = createPublicationWithIdentity(identity);
+        var intialIdentifiers = getIdentifiers(publication);
 
-        List<String> intialArpIds = getArpIds(publication);
-        assertFalse(intialArpIds.contains(SAMPLE_ARPID));
+        assertThat(hasIdentifierMatchingSample(intialIdentifiers), equalTo(false));
 
-        Publication updatedPublication = IdentityUpdater.enrichPublicationCreators(bareProxyClient, publication);
-        List<String> ids = getIdentifierIds(updatedPublication);
-        assertTrue(ids.contains(SAMPLE_ARPID));
+        var updatedPublication = IdentityUpdater.enrichPublicationCreators(cristinProxyClient, publication);
+        var updatedIdentifiers = getIdentifiers(updatedPublication);
+
+        assertThat(hasIdentifierMatchingSample(updatedIdentifiers), equalTo(true));
     }
-
-    private List<String> getArpIds(Publication updatedPublication) {
-        return updatedPublication.getEntityDescription().getContributors().stream()
-                .map(Contributor::getIdentity).map(Identity::getArpId).collect(Collectors.toList());
-    }
-
-    private List<String> getIdentifierIds(Publication updatedPublication) {
-        return updatedPublication.getEntityDescription().getContributors().stream()
-                .map(Contributor::getIdentity).map(Identity::getId).map(URI::toString).collect(Collectors.toList());
-    }
-
 
     @Test
     public void enrichPublicationCreatorsDoesNotAlterPublicationWithoutOrcid() {
-        Identity identity = new Identity();
-        BareProxyClient bareProxyClient = mock(BareProxyClient.class);
-        Publication publication = createPublicationWithIdentity(identity);
-        Publication updatedPublication = IdentityUpdater.enrichPublicationCreators(bareProxyClient, publication);
+        var cristinProxyClient = mock(CristinProxyClient.class);
+        var publication = createPublicationWithIdentity(new Identity());
+        var updatedPublication = IdentityUpdater.enrichPublicationCreators(cristinProxyClient, publication);
+
         assertNotNull(publication);
         assertNotNull(updatedPublication);
         assertEquals(publication, updatedPublication);
@@ -73,48 +63,54 @@ class IdentityUpdaterTest {
 
     @Test
     public void enrichPublicationCreatorsDoesNotAlterPublicationWithoutEntityDescription() {
-        Identity identity = new Identity();
-        BareProxyClient bareProxyClient = mock(BareProxyClient.class);
-        Publication publication = createPublicationWithIdentity(identity);
+        var cristinProxyClient = mock(CristinProxyClient.class);
+        var publication = createPublicationWithIdentity(new Identity());
         publication.setEntityDescription(null);
-        Publication updatedPublication = IdentityUpdater.enrichPublicationCreators(bareProxyClient, publication);
-        assertNotNull(publication);
-        assertNotNull(updatedPublication);
-    }
+        var updatedPublication = IdentityUpdater.enrichPublicationCreators(cristinProxyClient, publication);
 
-
-    @Test
-    public void enrichPublicationCreatorsDoesUpdatePublicationCreatorWithOrcid() {
-        Identity identity = createIdentityWithOrcid();
-        BareProxyClient bareProxyClient = mock(BareProxyClient.class);
-        Publication publication = createPublicationWithIdentity(identity);
-        Publication updatedPublication = IdentityUpdater.enrichPublicationCreators(bareProxyClient, publication);
         assertNotNull(publication);
         assertNotNull(updatedPublication);
     }
 
     @Test
-    public void enrichPublicationCreatorsDoesThrowExceptionWhenOrcidHasErrors() throws URISyntaxException {
-        Identity identity = new Identity();
-        identity.setOrcId(ILLEGAL_ORCID);
-        BareProxyClient bareProxyClient = mock(BareProxyClient.class);
-        when(bareProxyClient.lookupArpidForOrcid(any())).thenThrow(IllegalArgumentException.class);
-        Publication publication = createPublicationWithIdentity(identity);
+    public void enrichPublicationCreatorsDoesThrowExceptionWhenOrcidHasErrors() {
+        var identity = new Identity.Builder().withOrcId(ILLEGAL_ORCID).build();
+        var publication = createPublicationWithIdentity(identity);
 
         assertThrows(IllegalArgumentException.class,
-            () -> IdentityUpdater.enrichPublicationCreators(bareProxyClient, publication));
+            () -> IdentityUpdater.enrichPublicationCreators(new CristinProxyClient(), publication));
     }
 
+    @Test
+    public void enrichPublicationCreatorsDoesNotCrashOnPublicationWithoutContributors() {
+        var cristinProxyClient = mock(CristinProxyClient.class);
+        var publication = createPublicationWithIdentity(new Identity());
+        var entityDescriptionWithoutContributors =
+            new EntityDescription.Builder().withContributors(null).build();
+        publication.setEntityDescription(entityDescriptionWithoutContributors);
+
+        IdentityUpdater.enrichPublicationCreators(cristinProxyClient, publication);
+    }
+
+    private List<URI> getIdentifiers(Publication publication) {
+        return publication.getEntityDescription().getContributors().stream().map(Contributor::getIdentity)
+                   .map(Identity::getId).collect(Collectors.toList());
+    }
+
+    private boolean hasIdentifierMatchingSample(List<URI> identifiers) {
+        return identifiers.stream()
+                   .filter(Objects::nonNull)
+                   .map(URI::toString)
+                   .anyMatch(SAMPLE_IDENTITY_IDENTIFIER::contains);
+    }
 
     private Identity createIdentityWithOrcid() {
-        Identity identity = new Identity();
-        identity.setOrcId(SAMPLE_ORCID);
-        return identity;
+        return new Identity.Builder().withOrcId(SAMPLE_ORCID).build();
     }
 
 
     private Publication createPublicationWithIdentity(Identity identity) {
-        Contributor contributor = new Contributor.Builder()
+        var contributor = new Contributor.Builder()
                 .withRole(Role.CREATOR)
                 .withIdentity(identity)
                 .build();

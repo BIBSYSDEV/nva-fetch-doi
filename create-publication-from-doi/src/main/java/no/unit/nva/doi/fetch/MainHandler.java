@@ -25,7 +25,7 @@ import no.unit.nva.doi.fetch.service.IdentityUpdater;
 import no.unit.nva.doi.fetch.service.PublicationConverter;
 import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
 import no.unit.nva.doi.transformer.DoiTransformService;
-import no.unit.nva.doi.transformer.utils.BareProxyClient;
+import no.unit.nva.doi.transformer.utils.CristinProxyClient;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.Publication;
@@ -50,10 +50,11 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     private final transient DoiTransformService doiTransformService;
     private final transient DoiProxyService doiProxyService;
     private final transient PublicationPersistenceService publicationPersistenceService;
-    private final transient BareProxyClient bareProxyClient;
+    private final transient CristinProxyClient cristinProxyClient;
     private final transient String publicationApiHost;
     private final transient MetadataService metadataService;
 
+    @SuppressWarnings("unused")
     @JacocoGenerated
     public MainHandler() {
         this(new Environment());
@@ -62,7 +63,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     @JacocoGenerated
     public MainHandler(Environment environment) {
         this(new PublicationConverter(), new DoiTransformService(),
-             new DoiProxyService(environment), new PublicationPersistenceService(), new BareProxyClient(),
+             new DoiProxyService(environment), new PublicationPersistenceService(), new CristinProxyClient(),
              getMetadataService(), environment);
     }
 
@@ -70,7 +71,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
                        DoiTransformService doiTransformService,
                        DoiProxyService doiProxyService,
                        PublicationPersistenceService publicationPersistenceService,
-                       BareProxyClient bareProxyClient,
+                       CristinProxyClient cristinProxyClient,
                        MetadataService metadataService,
                        Environment environment) {
         super(RequestBody.class, environment);
@@ -78,7 +79,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         this.doiTransformService = doiTransformService;
         this.doiProxyService = doiProxyService;
         this.publicationPersistenceService = publicationPersistenceService;
-        this.bareProxyClient = bareProxyClient;
+        this.cristinProxyClient = cristinProxyClient;
         this.metadataService = metadataService;
 
         this.publicationApiHost = environment.readEnv(PUBLICATION_API_HOST_ENV);
@@ -92,7 +93,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         validate(input);
 
         var owner = requestInfo.getNvaUsername();
-        var customerId = requestInfo.getCustomerId();
+        var customerId = requestInfo.getCurrentCustomer();
         var authHeader = requestInfo.getAuthHeader();
 
         var inputUri = input.getDoiUrl();
@@ -153,7 +154,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
                MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
         var publicationMetadata = getPublicationMetadataFromDoi(doi, owner, customerId);
         Publication publication =
-            IdentityUpdater.enrichPublicationCreators(bareProxyClient, publicationMetadata);
+            IdentityUpdater.enrichPublicationCreators(cristinProxyClient, publicationMetadata);
         return restServiceObjectMapper.convertValue(publication, CreatePublicationRequest.class);
     }
 
