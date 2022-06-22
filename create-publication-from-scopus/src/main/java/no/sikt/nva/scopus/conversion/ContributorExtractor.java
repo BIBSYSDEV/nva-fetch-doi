@@ -30,13 +30,16 @@ public class ContributorExtractor {
     private final List<AuthorGroupTp> authorGroupTps;
     private final List<Contributor> contributors;
     private final PiaConnection piaConnection;
+    private final CristinConnection cristinConnection;
 
     public ContributorExtractor(List<CorrespondenceTp> correspondenceTps, List<AuthorGroupTp> authorGroupTps,
-                                PiaConnection piaConnection) {
+                                PiaConnection piaConnection, CristinConnection cristinConnection) {
         this.correspondenceTps = correspondenceTps;
         this.authorGroupTps = authorGroupTps;
         this.contributors = new ArrayList<>();
         this.piaConnection = piaConnection;
+        this.cristinConnection = cristinConnection;
+
     }
 
     public List<Contributor> generateContributors() {
@@ -162,6 +165,8 @@ public class ContributorExtractor {
     }
 
     private Identity generateContributorIdentityFromAuthorTp(AuthorTp authorTp) {
+        var cristinUri = piaConnection.getCristinID(authorTp.getAuid());
+        var person = cristinConnection.getCristinPersonByCristinId(cristinUri);
         var identity = new Identity();
         identity.setName(determineContributorName(authorTp));
         identity.setOrcId(getOrcidAsUriString(authorTp));

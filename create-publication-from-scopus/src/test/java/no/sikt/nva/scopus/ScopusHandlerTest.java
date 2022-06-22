@@ -99,6 +99,7 @@ import no.scopus.generated.SourcetypeAtt;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
+import no.sikt.nva.scopus.conversion.CristinConnection;
 import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
 import no.sikt.nva.scopus.conversion.model.cristin.Person;
@@ -192,6 +193,7 @@ class ScopusHandlerTest {
     private FakeEventBridgeClient eventBridgeClient;
 
     private PiaConnection piaConnection;
+    private CristinConnection cristinConnection;
     private ScopusGenerator scopusData;
 
     public static Stream<Arguments> providedLanguagesAndExpectedOutput() {
@@ -210,9 +212,14 @@ class ScopusHandlerTest {
         startWiremockServer();
         var httpClient = WiremockHttpClient.create();
         metadataService = new MetadataService(httpClient, serverUriJournal, serverUriPublisher);
-        piaConnection = new PiaConnection(httpClient, httpServer.baseUrl());
+        piaConnection = new PiaConnection(httpClient, httpServer.baseUrl(), httpServer.baseUrl());
+        cristinConnection = new CristinConnection(httpClient);
         eventBridgeClient = new FakeEventBridgeClient();
-        scopusHandler = new ScopusHandler(s3Client, metadataService, eventBridgeClient, piaConnection);
+        scopusHandler = new ScopusHandler(s3Client,
+                                          metadataService,
+                                          eventBridgeClient,
+                                          piaConnection,
+                                          cristinConnection);
         scopusData = new ScopusGenerator();
     }
 
@@ -227,7 +234,11 @@ class ScopusHandlerTest {
         var s3Event = createS3Event(randomString());
         var expectedMessage = randomString();
         s3Client = new FakeS3ClientThrowingException(expectedMessage);
-        scopusHandler = new ScopusHandler(s3Client, metadataService, eventBridgeClient, piaConnection);
+        scopusHandler = new ScopusHandler(s3Client,
+                                          metadataService,
+                                          eventBridgeClient,
+                                          piaConnection,
+                                          cristinConnection);
         var appender = LogUtils.getTestingAppenderForRootLogger();
         assertThrows(RuntimeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
@@ -1130,12 +1141,12 @@ class ScopusHandlerTest {
     }
 
     private void mockCristinPerson(String cristinPersonId, String response) {
-        stubFor(get(urlPathEqualTo("v2/persons/" + cristinPersonId)).willReturn(
+        stubFor(get(urlPathEqualTo("/cristin/person/" + cristinPersonId)).willReturn(
             aResponse().withBody(response).withStatus(HttpURLConnection.HTTP_OK)));
     }
 
     private void mockCristinPersonBadRequest() {
-        stubFor(get(urlMatching("v2/persons/.*")).willReturn(
+        stubFor(get(urlMatching("/cristin/person/.*")).willReturn(
             aResponse().withStatus(HttpURLConnection.HTTP_BAD_REQUEST)));
     }
 

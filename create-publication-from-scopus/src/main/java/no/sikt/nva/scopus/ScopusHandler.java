@@ -10,6 +10,7 @@ import java.io.StringReader;
 import java.net.URI;
 import java.time.Instant;
 import no.scopus.generated.DocTp;
+import no.sikt.nva.scopus.conversion.CristinConnection;
 import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.metadata.CreatePublicationRequest;
@@ -42,6 +43,7 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     private final MetadataService metadataService;
     private final EventBridgeClient eventBridgeClient;
     private final PiaConnection piaConnection;
+    private final CristinConnection cristinConnection;
 
     @JacocoGenerated
     public ScopusHandler() {
@@ -49,15 +51,17 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
             S3Driver.defaultS3Client().build(),
             defaultMetadataService(),
             defaultEventBridgeClient(),
-            defaultPiaConnection());
+            defaultPiaConnection(),
+            defaultCristinConnection());
     }
 
     public ScopusHandler(S3Client s3Client, MetadataService metadataService, EventBridgeClient eventBridgeClient,
-                         PiaConnection piaConnection) {
+                         PiaConnection piaConnection, CristinConnection cristinConnection) {
         this.metadataService = metadataService;
         this.s3Client = s3Client;
         this.eventBridgeClient = eventBridgeClient;
         this.piaConnection = piaConnection;
+        this.cristinConnection = cristinConnection;
     }
 
     @Override
@@ -82,6 +86,11 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     @JacocoGenerated
     private static PiaConnection defaultPiaConnection() {
         return new PiaConnection();
+    }
+
+    @JacocoGenerated
+    private static CristinConnection defaultCristinConnection(){
+        return new CristinConnection();
     }
 
     private void emitEventToEventBridge(Context context, CreatePublicationRequest request) {
@@ -141,7 +150,7 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     }
 
     private CreatePublicationRequest generateCreatePublicationRequest(DocTp docTp) {
-        var scopusConverter = new ScopusConverter(docTp, metadataService, piaConnection);
+        var scopusConverter = new ScopusConverter(docTp, metadataService, piaConnection, cristinConnection);
         return scopusConverter.generateCreatePublicationRequest();
     }
 
