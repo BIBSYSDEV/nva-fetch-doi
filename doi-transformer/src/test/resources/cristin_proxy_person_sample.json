@@ -1,0 +1,33 @@
+{
+  "@context" : "https://example.org/person-context.json",
+  "id" : "https://api.dev.nva.aws.unit.no/cristin/person/738",
+  "type" : "Person",
+  "identifiers" : [ {
+    "type" : "ORCID",
+    "value" : "0000-0002-3121-1236"
+  }, {
+    "type" : "CristinIdentifier",
+    "value" : "738"
+  } ],
+  "names" : [ {
+    "type" : "LastName",
+    "value" : "Sachse"
+  }, {
+    "type" : "FirstName",
+    "value" : "Daniel"
+  } ],
+  "image" : "https://api.cristin-test.uio.no/v2/persons/738/picture",
+  "affiliations" : [ {
+    "type" : "Affiliation",
+    "organization" : "https://api.dev.nva.aws.unit.no/cristin/organization/185.39.59.10",
+    "active" : false,
+    "role" : {
+      "type" : "Role",
+      "id" : "https://example.org/link/to/ontology#1026",
+      "labels" : {
+        "en" : "Guest",
+        "nb" : "Gjest"
+      }
+    }
+  } ]
+}

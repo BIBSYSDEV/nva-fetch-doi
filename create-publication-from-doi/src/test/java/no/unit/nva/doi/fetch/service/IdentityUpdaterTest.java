@@ -99,7 +99,8 @@ class IdentityUpdaterTest {
     public void enrichPublicationCreatorsDoesNotUpdateIdentifierWhenAlreadyExists() {
         var identity = new Identity.Builder().withId(randomUri()).withOrcId(SAMPLE_ORCID).build();
         var publication = createPublicationWithIdentity(identity);
-        var updatedPublication = IdentityUpdater.enrichPublicationCreators(new CristinProxyClient(), publication);
+        var cristinProxyClient = mock(CristinProxyClient.class);
+        var updatedPublication = IdentityUpdater.enrichPublicationCreators(cristinProxyClient, publication);
 
         assertEquals(publication, updatedPublication);
     }
