@@ -16,16 +16,21 @@ import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.PersonalnameType;
+import no.sikt.nva.scopus.conversion.model.cristin.Person;
+import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
 import no.unit.nva.language.LanguageMapper;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Role;
+import nva.commons.core.StringUtils;
 import org.apache.tika.langdetect.OptimaizeLangDetector;
 
 public class ContributorExtractor {
 
     public static final String NAME_DELIMITER = ", ";
+    public static final String FIRST_NAME_CRISTIN_FIELD_NAME = "FirstName";
+    public static final String LAST_NAME_CRISTIN_FIELD_NAME = "LastName";
     private final List<CorrespondenceTp> correspondenceTps;
     private final List<AuthorGroupTp> authorGroupTps;
     private final List<Contributor> contributors;
@@ -39,7 +44,6 @@ public class ContributorExtractor {
         this.contributors = new ArrayList<>();
         this.piaConnection = piaConnection;
         this.cristinConnection = cristinConnection;
-
     }
 
     public List<Contributor> generateContributors() {
@@ -78,6 +82,8 @@ public class ContributorExtractor {
     }
 
     private void replaceExistingContributor(Contributor existingContributor, AuthorGroupTp authorGroupTp) {
+        //TODO: when contributor with cristin id's have been enriched with cristin affiliations, then this step
+        // should be skipped
         var optionalNewAffiliations = generateAffiliation(authorGroupTp);
         optionalNewAffiliations.ifPresent(
             organizations ->
@@ -166,12 +172,28 @@ public class ContributorExtractor {
 
     private Identity generateContributorIdentityFromAuthorTp(AuthorTp authorTp) {
         var cristinUri = piaConnection.getCristinID(authorTp.getAuid());
-        var person = cristinConnection.getCristinPersonByCristinId(cristinUri);
+        var cristinPerson = cristinConnection.getCristinPersonByCristinId(cristinUri);
         var identity = new Identity();
-        identity.setName(determineContributorName(authorTp));
+        identity.setName(
+            cristinPerson.map(this::determineContributorName).orElseGet(() -> determineContributorName(authorTp)));
         identity.setOrcId(getOrcidAsUriString(authorTp));
-        identity.setId(piaConnection.getCristinID(authorTp.getAuid()));
+        identity.setId(cristinUri);
         return identity;
+    }
+
+    private String determineContributorName(Person person) {
+        return person.getNames().stream().filter(this::isSurname).findFirst().map(
+            TypedValue::getValue).orElse(StringUtils.EMPTY_STRING) + NAME_DELIMITER
+               + person.getNames().stream().filter(this::isFirstName).findFirst().map(
+            TypedValue::getValue).orElse(StringUtils.EMPTY_STRING);
+    }
+
+    private boolean isFirstName(TypedValue typedValue) {
+        return FIRST_NAME_CRISTIN_FIELD_NAME.equals(typedValue.getType());
+    }
+
+    private boolean isSurname(TypedValue nameType) {
+        return LAST_NAME_CRISTIN_FIELD_NAME.equals(nameType.getType());
     }
 
     private Optional<Organization> generateAffiliation(AuthorGroupTp authorGroup) {

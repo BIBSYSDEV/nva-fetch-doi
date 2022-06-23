@@ -53,22 +53,22 @@ public class PiaConnection {
     }
 
     @JacocoGenerated
-    public PiaConnection() {this(HttpClient.newBuilder().version(HttpClient.Version.HTTP_2).build(),
+    public PiaConnection() {
+        this(HttpClient.newBuilder().version(HttpClient.Version.HTTP_2).build(),
              PIA_REST_API, NVA_DOMAIN);
     }
 
     public URI getCristinID(String scopusId) {
         return attempt(() -> getPiaAuthorResponse(scopusId))
-                            .map(this::getCristinNumber)
-                            .map(Optional::orElseThrow)
-                            .map(this::createCristinUriFromCristinNumber)
-                            .orElse(this::logFailureAndReturnNull);
+                   .map(this::getCristinNumber)
+                   .map(Optional::orElseThrow)
+                   .map(this::createCristinUriFromCristinNumber)
+                   .orElse(this::logFailureAndReturnNull);
     }
 
     private URI createCristinUriFromCristinNumber(int cristinNumber) {
         return UriWrapper.fromUri(cristinHost + CRISTIN_PERSON_PATH + cristinNumber)
                    .getUri();
-
     }
 
     private String createAuthorization() {

@@ -82,14 +82,13 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
         return new MetadataService();
     }
 
-
     @JacocoGenerated
     private static PiaConnection defaultPiaConnection() {
         return new PiaConnection();
     }
 
     @JacocoGenerated
-    private static CristinConnection defaultCristinConnection(){
+    private static CristinConnection defaultCristinConnection() {
         return new CristinConnection();
     }
 
@@ -102,19 +101,19 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     private URI writeRequestToS3(CreatePublicationRequest request) {
         var s3Writer = new S3Driver(s3Client, EVENTS_BUCKET);
         return attempt(() -> constructPathForEventBody(request))
-            .map(path -> s3Writer.insertFile(path, request.toJsonString()))
-            .orElseThrow();
+                   .map(path -> s3Writer.insertFile(path, request.toJsonString()))
+                   .orElseThrow();
     }
 
     private PutEventsRequest createPutEventRequest(EventReference eventToEmit, Context context) {
         var entry = PutEventsRequestEntry.builder()
-            .detailType(EVENT_TOPIC_IS_SET_IN_EVENT_BODY)
-            .time(Instant.now())
-            .eventBusName(EVENT_BUS)
-            .detail(eventToEmit.toJsonString())
-            .source(context.getFunctionName())
-            .resources(context.getInvokedFunctionArn())
-            .build();
+                        .detailType(EVENT_TOPIC_IS_SET_IN_EVENT_BODY)
+                        .time(Instant.now())
+                        .eventBusName(EVENT_BUS)
+                        .detail(eventToEmit.toJsonString())
+                        .source(context.getFunctionName())
+                        .resources(context.getInvokedFunctionArn())
+                        .build();
         return PutEventsRequest.builder().entries(entry).build();
     }
 
@@ -131,11 +130,11 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
 
     private String extractOneOfPossiblyManyScopusIdentifiers(CreatePublicationRequest request) {
         return request.getAdditionalIdentifiers()
-            .stream()
-            .filter(identifier -> ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME.equals(identifier.getSource()))
-            .map(AdditionalIdentifier::getValue)
-            .findFirst()
-            .orElseThrow();
+                   .stream()
+                   .filter(identifier -> ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME.equals(identifier.getSource()))
+                   .map(AdditionalIdentifier::getValue)
+                   .findFirst()
+                   .orElseThrow();
     }
 
     private RuntimeException logErrorAndThrowException(Exception exception) {

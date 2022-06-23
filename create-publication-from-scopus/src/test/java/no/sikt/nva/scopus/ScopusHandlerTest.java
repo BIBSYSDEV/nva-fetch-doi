@@ -2,7 +2,6 @@ package no.sikt.nva.scopus;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.ok;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
@@ -31,7 +30,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomIsbn13;
 import static no.unit.nva.testutils.RandomDataGenerator.randomIssn;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.StringUtils.isNotBlank;
-import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -99,10 +97,12 @@ import no.scopus.generated.SourcetypeAtt;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
+import no.sikt.nva.scopus.conversion.ContributorExtractor;
 import no.sikt.nva.scopus.conversion.CristinConnection;
 import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
 import no.sikt.nva.scopus.conversion.model.cristin.Person;
+import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
 import no.sikt.nva.scopus.conversion.model.pia.Author;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
 import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
@@ -140,6 +140,7 @@ import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.SingletonCollector;
+import nva.commons.core.StringUtils;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
@@ -1020,8 +1021,11 @@ class ScopusHandlerTest {
     }
 
     private void generateCristinPersonsResponse(ArrayList<Person> cristinPersons, Integer cristinId) {
-        var cristinPerson = CristinPersonGenerator.generateCristinPerson(cristinId.toString(), randomString(),
-                                                                         randomString());
+        var cristinPerson =
+            CristinPersonGenerator.generateCristinPerson(
+                UriWrapper.fromUri(httpServer.baseUrl() + "/cristin/person/" + cristinId.toString()).getUri(),
+                randomString(),
+                randomString());
         cristinPersons.add(cristinPerson);
         mockCristinPerson(cristinId.toString(), CristinPersonGenerator.convertToJson(cristinPerson));
     }
@@ -1118,8 +1122,8 @@ class ScopusHandlerTest {
                                                                   List<Person> cristinPersons) {
         var actualCristinId = contributor.getIdentity().getId();
         assertThat(actualCristinId, hasProperty("path", containsString("/cristin/person")));
+        var expectedCristinPerson = getPersonByCristinNumber(cristinPersons, actualCristinId);
         var actualCristinNumber = actualCristinId.getPath().split("/")[3];
-        var expectedCristinPerson = getPersonByCristinNumber(cristinPersons, actualCristinNumber);
         var expectedName =
             expectedCristinPerson.map(
                 this::calculateExpectedNameFromCristinPerson).orElse(null);
@@ -1130,13 +1134,24 @@ class ScopusHandlerTest {
 
     @NotNull
     private String calculateExpectedNameFromCristinPerson(Person person) {
-        return person.getSurname() + ", " + person.getFirst_name();
+        return person.getNames().stream().filter(this::isSurname).findFirst().map(
+            TypedValue::getValue).orElse(StringUtils.EMPTY_STRING) + ", "
+               + person.getNames().stream().filter(this::isFirstName).findFirst().map(
+            TypedValue::getValue).orElse(StringUtils.EMPTY_STRING);
+    }
+
+    private boolean isFirstName(TypedValue typedValue) {
+        return ContributorExtractor.FIRST_NAME_CRISTIN_FIELD_NAME.equals(typedValue.getType());
+    }
+
+    private boolean isSurname(TypedValue nameType) {
+        return ContributorExtractor.LAST_NAME_CRISTIN_FIELD_NAME.equals(nameType.getType());
     }
 
     @NotNull
-    private Optional<Person> getPersonByCristinNumber(List<Person> cristinPersons, String cristinNumber) {
+    private Optional<Person> getPersonByCristinNumber(List<Person> cristinPersons, URI cristinId) {
         return cristinPersons.stream()
-                   .filter(person -> cristinNumber.equals(person.getCristin_person_id()))
+                   .filter(person -> cristinId.equals(person.getId()))
                    .findFirst();
     }
 

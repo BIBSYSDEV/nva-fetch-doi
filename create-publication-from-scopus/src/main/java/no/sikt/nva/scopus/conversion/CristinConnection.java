@@ -11,10 +11,8 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Optional;
 import no.sikt.nva.scopus.conversion.model.cristin.Person;
-import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
-import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,13 +20,9 @@ import org.slf4j.LoggerFactory;
 public class CristinConnection {
     private static final Logger logger = LoggerFactory.getLogger(CristinConnection.class);
 
-    public static final String CRISTIN_PERSON_PATH = "/cristin/person/";
-
     public static final String CRISTIN_RESPONDED_WITH_BAD_STATUS_CODE_ERROR_MESSAGE = "cristin responded with status "
                                                                                       + "code: ";
     public static final String COULD_NOT_EXTRACT_CRISTIN_PERSON_ERROR_MESSAGE = "could not extract cristin person";
-
-    private static final String NVA_DOMAIN = new Environment().readEnv("API_HOST");
 
     private final HttpClient httpClient;
 
