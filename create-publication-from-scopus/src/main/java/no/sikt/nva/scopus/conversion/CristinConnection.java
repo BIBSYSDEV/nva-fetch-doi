@@ -2,7 +2,6 @@ package no.sikt.nva.scopus.conversion;
 
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -12,6 +11,7 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Optional;
 import no.sikt.nva.scopus.conversion.model.cristin.Person;
+import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 import org.slf4j.Logger;
@@ -50,8 +50,7 @@ public class CristinConnection {
     }
 
     private Person getPiaAuthorResponse(String json) throws JsonProcessingException {
-        var objectMapper = new ObjectMapper();
-        return objectMapper.readValue(json, Person.class);
+        return JsonUtils.dtoObjectMapper.readValue(json, Person.class);
     }
 
     private String getBodyFromResponse(HttpResponse<String> response) {
