@@ -25,6 +25,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Role;
 import nva.commons.core.StringUtils;
 import org.apache.tika.langdetect.OptimaizeLangDetector;
+import org.jetbrains.annotations.NotNull;
 
 public class ContributorExtractor {
 
@@ -181,12 +182,7 @@ public class ContributorExtractor {
         return identity;
     }
 
-    private String determineContributorName(Person person) {
-        return person.getNames().stream().filter(this::isSurname).findFirst().map(
-            TypedValue::getValue).orElse(StringUtils.EMPTY_STRING) + NAME_DELIMITER
-               + person.getNames().stream().filter(this::isFirstName).findFirst().map(
-            TypedValue::getValue).orElse(StringUtils.EMPTY_STRING);
-    }
+
 
     private boolean isFirstName(TypedValue typedValue) {
         return FIRST_NAME_CRISTIN_FIELD_NAME.equals(typedValue.getType());
@@ -225,6 +221,25 @@ public class ContributorExtractor {
 
     private String determineContributorName(CollaborationTp collaborationTp) {
         return collaborationTp.getIndexedName();
+    }
+
+    private String determineContributorName(Person person) {
+        return getLastName(person)
+               + NAME_DELIMITER
+               + getFirstName(person);
+    }
+
+    @NotNull
+    private String getFirstName(Person person) {
+        return person.getNames().stream()
+                   .filter(this::isFirstName).findFirst().map(
+                TypedValue::getValue).orElse(StringUtils.EMPTY_STRING);
+    }
+
+    @NotNull
+    private String getLastName(Person person) {
+        return person.getNames().stream().filter(this::isSurname).findFirst()
+                   .map(TypedValue::getValue).orElse(StringUtils.EMPTY_STRING);
     }
 
     private String getOrcidAsUriString(AuthorTp authorTp) {
