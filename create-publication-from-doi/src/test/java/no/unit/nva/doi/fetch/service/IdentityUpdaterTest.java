@@ -1,5 +1,6 @@
 package no.unit.nva.doi.fetch.service;
 
+import java.util.Collections;
 import java.util.Objects;
 import no.unit.nva.doi.transformer.utils.CristinProxyClient;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -71,10 +72,11 @@ class IdentityUpdaterTest {
 
         assertNotNull(publication);
         assertNotNull(updatedPublication);
+        assertEquals(publication, updatedPublication);
     }
 
     @Test
-    public void enrichPublicationCreatorsDoesNotCrashOnPublicationWithoutContributors() {
+    public void enrichPublicationCreatorsDoesNotAlterPublicationWithoutContributors() {
         var cristinProxyClient = mock(CristinProxyClient.class);
         var publication = createPublicationWithIdentity(new Identity());
         var entityDescriptionWithoutContributors =
@@ -105,9 +107,24 @@ class IdentityUpdaterTest {
         assertEquals(publication, updatedPublication);
     }
 
+    @Test
+    public void enrichPublicationCreatorsDoesNotAlterPublicationOnMissingIdentity() {
+        var publication = createPublicationWithIdentity(null);
+        var cristinProxyClient = mock(CristinProxyClient.class);
+        var updatedPublication = IdentityUpdater.enrichPublicationCreators(cristinProxyClient, publication);
+
+        assertEquals(publication, updatedPublication);
+    }
+
     private List<URI> getIdentifiers(Publication publication) {
-        return publication.getEntityDescription().getContributors().stream().map(Contributor::getIdentity)
-                   .map(Identity::getId).collect(Collectors.toList());
+        return Optional.ofNullable(publication)
+                   .map(Publication::getEntityDescription)
+                   .map(EntityDescription::getContributors)
+                   .orElse(Collections.emptyList())
+                   .stream()
+                   .map(Contributor::getIdentity)
+                   .map(Identity::getId)
+                   .collect(Collectors.toList());
     }
 
     private boolean hasIdentifierMatchingSample(List<URI> identifiers) {

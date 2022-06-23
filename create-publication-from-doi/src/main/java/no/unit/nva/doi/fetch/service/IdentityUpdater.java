@@ -64,7 +64,7 @@ public final class IdentityUpdater {
     }
 
     private static boolean hasNoIdentifierButCanPossiblyBeFetchedUsingOrcid(Identity identity) {
-        return isNull(identity.getId()) && nonNull(identity.getOrcId());
+        return nonNull(identity) && isNull(identity.getId()) && nonNull(identity.getOrcId());
     }
 
     private static void updateIdentifierIfFoundFromOrcid(CristinProxyClient cristinProxyClient, Identity identity) {
