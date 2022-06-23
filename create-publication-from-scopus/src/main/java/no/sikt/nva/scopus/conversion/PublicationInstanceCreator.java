@@ -46,13 +46,13 @@ public class PublicationInstanceCreator {
 
     public PublicationInstance<? extends Pages> getPublicationInstance() {
         return getCitationTypeCode()
-                .flatMap(this::convertCitationTypeCodeToPublicationInstance)
-                .orElseThrow(this::getUnsupportedCitationTypeException);
+                   .flatMap(this::convertCitationTypeCodeToPublicationInstance)
+                   .orElseThrow(this::getUnsupportedCitationTypeException);
     }
 
     private UnsupportedCitationTypeException getUnsupportedCitationTypeException() {
         return new UnsupportedCitationTypeException(
-                String.format(UNSUPPORTED_CITATION_TYPE_MESSAGE, docTp.getMeta().getEid()));
+            String.format(UNSUPPORTED_CITATION_TYPE_MESSAGE, docTp.getMeta().getEid()));
     }
 
     /*
@@ -60,7 +60,7 @@ public class PublicationInstanceCreator {
     https://isikt.sharepoint.com/:b:/s/Dovre/EQGVGp2Xn-RDvDi8zg3XFlQB6vo95nGLbINztJcXjStG5w?e=O9wQwB
      */
     private Optional<PublicationInstance<? extends Pages>> convertCitationTypeCodeToPublicationInstance(
-            CitationtypeAtt citationtypeAtt) {
+        CitationtypeAtt citationtypeAtt) {
         switch (citationtypeAtt) {
             case AR:
                 return Optional.of(generateJournalArticle());
@@ -141,30 +141,30 @@ public class PublicationInstanceCreator {
 
     private Optional<Range> extractPages() {
         return getVolisspagTpStream()
-                .filter(this::isPageRange)
-                .map(this::extractPageRange)
-                .findAny().orElse(Optional.empty());
+                   .filter(this::isPageRange)
+                   .map(this::extractPageRange)
+                   .findAny().orElse(Optional.empty());
     }
 
     private Stream<JAXBElement<?>> getVolisspagTpStream() {
         return Optional.ofNullable(getSourceTp().getVolisspag())
-                .map(VolisspagTp::getContent)
-                .orElse(emptyList())
-                .stream();
+                   .map(VolisspagTp::getContent)
+                   .orElse(emptyList())
+                   .stream();
     }
 
     private Optional<String> extractVolume() {
         return getVolisspagTpStream()
-                .filter(this::isVolumeIssue)
-                .map(this::extractVolumeValue)
-                .findAny().orElse(Optional.empty());
+                   .filter(this::isVolumeIssue)
+                   .map(this::extractVolumeValue)
+                   .findAny().orElse(Optional.empty());
     }
 
     private Optional<String> extractIssue() {
         return getVolisspagTpStream()
-                .filter(this::isVolumeIssue)
-                .map(this::extractIssueValue)
-                .findAny().orElse(Optional.empty());
+                   .filter(this::isVolumeIssue)
+                   .map(this::extractIssueValue)
+                   .findAny().orElse(Optional.empty());
     }
 
     private Optional<String> extractArticleNumber() {
@@ -189,15 +189,15 @@ public class PublicationInstanceCreator {
 
     private Optional<Range> extractPageRange(JAXBElement<?> content) {
         return Optional.of(new Range(((PagerangeTp) content.getValue()).getFirst(),
-                ((PagerangeTp) content.getValue()).getLast()));
+                                     ((PagerangeTp) content.getValue()).getLast()));
     }
 
     private SourceTp getSourceTp() {
         return docTp.getItem()
-                .getItem()
-                .getBibrecord()
-                .getHead()
-                .getSource();
+                   .getItem()
+                   .getBibrecord()
+                   .getHead()
+                   .getSource();
     }
 
     private boolean isJournal() {
@@ -210,14 +210,13 @@ public class PublicationInstanceCreator {
 
     private Optional<CitationtypeAtt> getCitationTypeCode() {
         return docTp.getItem()
-                .getItem()
-                .getBibrecord()
-                .getHead()
-                .getCitationInfo()
-                .getCitationType()
-                .stream()
-                .findFirst()
-                .map(CitationTypeTp::getCode);
+                   .getItem()
+                   .getBibrecord()
+                   .getHead()
+                   .getCitationInfo()
+                   .getCitationType()
+                   .stream()
+                   .findFirst()
+                   .map(CitationTypeTp::getCode);
     }
-
 }

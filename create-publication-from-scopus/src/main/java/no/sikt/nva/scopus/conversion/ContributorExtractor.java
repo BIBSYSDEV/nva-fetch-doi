@@ -29,11 +29,14 @@ public class ContributorExtractor {
     private final List<CorrespondenceTp> correspondenceTps;
     private final List<AuthorGroupTp> authorGroupTps;
     private final List<Contributor> contributors;
+    private final PiaConnection piaConnection;
 
-    public ContributorExtractor(List<CorrespondenceTp> correspondenceTps, List<AuthorGroupTp> authorGroupTps) {
+    public ContributorExtractor(List<CorrespondenceTp> correspondenceTps, List<AuthorGroupTp> authorGroupTps,
+                                PiaConnection piaConnection) {
         this.correspondenceTps = correspondenceTps;
         this.authorGroupTps = authorGroupTps;
         this.contributors = new ArrayList<>();
+        this.piaConnection = piaConnection;
     }
 
     public List<Contributor> generateContributors() {
@@ -54,16 +57,18 @@ public class ContributorExtractor {
     private void extractContributorFromAuthorOrCollaboration(Object authorOrCollaboration,
                                                              AuthorGroupTp authorGroupTp) {
         Optional<Contributor> matchingContributor = contributors.stream()
-            .filter(contributor -> compareContributorToAuthorOrCollaboration(contributor,
-                                                                             authorOrCollaboration))
-            .findAny();
+                                                        .filter(
+                                                            contributor -> compareContributorToAuthorOrCollaboration(
+                                                                contributor,
+                                                                authorOrCollaboration))
+                                                        .findAny();
         if (matchingContributor.isPresent()) {
             replaceExistingContributor(matchingContributor.get(), authorGroupTp);
         } else {
             Optional<PersonalnameType> correspondencePerson = correspondenceTps
-                .stream()
-                .map(this::extractPersonalNameType)
-                .findFirst().orElse(Optional.empty());
+                                                                  .stream()
+                                                                  .map(this::extractPersonalNameType)
+                                                                  .findFirst().orElse(Optional.empty());
             generateContributorFromAuthorOrCollaboration(authorOrCollaboration, authorGroupTp,
                                                          correspondencePerson.orElse(null));
         }
@@ -160,6 +165,7 @@ public class ContributorExtractor {
         var identity = new Identity();
         identity.setName(determineContributorName(authorTp));
         identity.setOrcId(getOrcidAsUriString(authorTp));
+        identity.setId(piaConnection.getCristinID(authorTp.getAuid()));
         return identity;
     }
 
