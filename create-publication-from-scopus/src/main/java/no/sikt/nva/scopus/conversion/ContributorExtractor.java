@@ -16,6 +16,7 @@ import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.PersonalnameType;
+import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
 import no.sikt.nva.scopus.conversion.model.cristin.Person;
 import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
 import no.unit.nva.language.LanguageMapper;
@@ -138,24 +139,39 @@ public class ContributorExtractor {
                                                               AuthorGroupTp authorGroupTp,
                                                               PersonalnameType correspondencePerson) {
         if (authorOrCollaboration instanceof AuthorTp) {
-            generateContributorFromAuthorTp((AuthorTp) authorOrCollaboration, authorGroupTp,
-                                            correspondencePerson);
+            generateContributor((AuthorTp) authorOrCollaboration, authorGroupTp,
+                                correspondencePerson);
         } else {
             generateContributorFromCollaborationTp(
                 (CollaborationTp) authorOrCollaboration, authorGroupTp, correspondencePerson);
         }
     }
 
-    private void generateContributorFromAuthorTp(AuthorTp author, AuthorGroupTp authorGroup,
-                                                 PersonalnameType correspondencePerson) {
+    private void generateContributor(AuthorTp author, AuthorGroupTp authorGroup,
+                                     PersonalnameType correspondencePerson) {
+        var cristinUri = piaConnection.getCristinID(author.getAuid());
+        var cristinPerson = cristinConnection.getCristinPersonByCristinId(cristinUri);
+        contributors.add(
+            cristinPerson
+                .map(person -> generateContributorFromCristin(person, author, correspondencePerson))
+                .orElseGet(() -> generateContributorFromAuthorTp(author, authorGroup, correspondencePerson)));
+    }
+
+    private Contributor generateContributorFromAuthorTp(AuthorTp author, AuthorGroupTp authorGroup,
+                                                        PersonalnameType correspondencePerson) {
         var identity = generateContributorIdentityFromAuthorTp(author);
         var affiliation = generateAffiliation(authorGroup);
-        var newContributor = new Contributor(identity,
-                                             affiliation.map(List::of).orElse(List.of()),
-                                             Role.CREATOR,
-                                             getSequenceNumber(author),
-                                             isCorrespondingAuthor(author, correspondencePerson));
-        contributors.add(newContributor);
+        return new Contributor(identity,
+                               affiliation.map(List::of).orElse(List.of()),
+                               Role.CREATOR,
+                               getSequenceNumber(author),
+                               isCorrespondingAuthor(author, correspondencePerson));
+    }
+
+    private Contributor generateContributorFromCristin(Person person, AuthorTp authorTp,
+                                                       PersonalnameType correspondencePerson) {
+        return new Contributor(generateContributorIdentityFromCristinPerson(person), null, Role.CREATOR,
+                               getSequenceNumber(authorTp), isCorrespondingAuthor(authorTp, correspondencePerson));
     }
 
     private void generateContributorFromCollaborationTp(CollaborationTp collaboration,
@@ -171,14 +187,27 @@ public class ContributorExtractor {
     }
 
     private Identity generateContributorIdentityFromAuthorTp(AuthorTp authorTp) {
-        var cristinUri = piaConnection.getCristinID(authorTp.getAuid());
-        var cristinPerson = cristinConnection.getCristinPersonByCristinId(cristinUri);
         var identity = new Identity();
-        identity.setName(
-            cristinPerson.map(this::determineContributorName).orElseGet(() -> determineContributorName(authorTp)));
+        identity.setName(determineContributorName(authorTp));
         identity.setOrcId(getOrcidAsUriString(authorTp));
-        identity.setId(cristinUri);
         return identity;
+    }
+
+    private Identity generateContributorIdentityFromCristinPerson(Person cristinPerson) {
+        var identity = new Identity();
+        identity.setName(determineContributorName(cristinPerson));
+        identity.setOrcId((cristinPerson
+                               .getIdentifiers()
+                               .stream()
+                               .filter(this::isOrcid)
+                               .findAny().map(TypedValue::getValue)
+                               .orElse(null)));
+        identity.setId(cristinPerson.getId());
+        return identity;
+    }
+
+    private boolean isOrcid(TypedValue identifier) {
+        return identifier.getType().equalsIgnoreCase("orcid");
     }
 
     private String determineContributorName(Person person) {
