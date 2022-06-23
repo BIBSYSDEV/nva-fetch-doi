@@ -123,7 +123,9 @@ class IdentityUpdaterTest {
                    .orElse(Collections.emptyList())
                    .stream()
                    .map(Contributor::getIdentity)
+                   .filter(Objects::nonNull)
                    .map(Identity::getId)
+                   .filter(Objects::nonNull)
                    .collect(Collectors.toList());
     }
 
