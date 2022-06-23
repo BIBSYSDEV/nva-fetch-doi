@@ -96,7 +96,7 @@ public class CristinProxyClientTest {
     }
 
     @Test
-    void shouldProduceCorrectUrlToCristinFromSampleOrcid() {
+    void shouldProduceCorrectUrlToCristinProxyFromSampleOrcid() {
         assertEquals(SAMPLE_URI, cristinProxyClient.createUrlToCristinProxy(SAMPLE_ORCID));
     }
 

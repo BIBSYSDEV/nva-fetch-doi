@@ -64,29 +64,6 @@ class IdentityUpdaterTest {
     }
 
     @Test
-    public void enrichPublicationCreatorsDoesNotAlterPublicationWithoutEntityDescription() {
-        var cristinProxyClient = mock(CristinProxyClient.class);
-        var publication = createPublicationWithIdentity(new Identity());
-        publication.setEntityDescription(null);
-        var updatedPublication = IdentityUpdater.enrichPublicationCreators(cristinProxyClient, publication);
-
-        assertNotNull(publication);
-        assertNotNull(updatedPublication);
-        assertEquals(publication, updatedPublication);
-    }
-
-    @Test
-    public void enrichPublicationCreatorsDoesNotAlterPublicationWithoutContributors() {
-        var cristinProxyClient = mock(CristinProxyClient.class);
-        var publication = createPublicationWithIdentity(new Identity());
-        var entityDescriptionWithoutContributors =
-            new EntityDescription.Builder().withContributors(null).build();
-        publication.setEntityDescription(entityDescriptionWithoutContributors);
-
-        IdentityUpdater.enrichPublicationCreators(cristinProxyClient, publication);
-    }
-
-    @Test
     public void enrichPublicationCreatorsIgnoresExceptionsAndReturnsUnmodifiedPublication() {
         var identity = new Identity.Builder().withOrcId(ILLEGAL_ORCID).build();
         var publication = createPublicationWithIdentity(identity);
