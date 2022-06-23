@@ -58,7 +58,7 @@ public class CristinProxyClient {
         var proxyUrl = createUrlToCristinProxy(strippedOrcid);
         var request = createRequest(proxyUrl);
         var response = fetchFromUpstream(request);
-        return response.isPresent() ? extractIdentifierFromResponse(response.get()) : Optional.empty();
+        return response.flatMap(this::extractIdentifierFromResponse);
     }
 
     private String stripAndValidateOrcid(String orcid) {
