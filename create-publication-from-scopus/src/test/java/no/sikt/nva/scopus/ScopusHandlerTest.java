@@ -1154,11 +1154,14 @@ class ScopusHandlerTest {
         var actualAffiliationLabels =
             contributor.getAffiliations().stream().map(Organization::getLabels).collect(Collectors.toList());
         var expectedAffiliationLabels =
-            expectedCristinPerson.getAffiliations().stream().map(organization -> organization.getRole().getLabels()).collect(
-                Collectors.toList());
+            expectedCristinPerson.getAffiliations()
+                .stream()
+                .map(organization -> organization.getRole().getLabels())
+                .collect(
+                    Collectors.toList());
         assertThat(actualAffiliationLabels,
-                   containsInAnyOrder(expectedAffiliationLabels.stream().map(Matchers::equalTo).collect(Collectors.toList())));
-
+                   containsInAnyOrder(
+                       expectedAffiliationLabels.stream().map(Matchers::equalTo).collect(Collectors.toList())));
     }
 
     @NotNull

@@ -11,24 +11,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.PersonalnameType;
-import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
-import no.sikt.nva.scopus.conversion.model.cristin.Person;
-import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
 import no.unit.nva.language.LanguageMapper;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Role;
-import nva.commons.core.StringUtils;
 import org.apache.tika.langdetect.OptimaizeLangDetector;
-import org.jetbrains.annotations.NotNull;
 
 public class ContributorExtractor {
 
@@ -156,7 +150,8 @@ public class ContributorExtractor {
         var cristinPerson = cristinConnection.getCristinPersonByCristinId(cristinUri);
         contributors.add(
             cristinPerson
-                .map(person -> generateContributorFromCristin(person, author, correspondencePerson))
+                .map(person -> CristinContributorExtractor.generateContributorFromCristin(person, author,
+                                                                                          correspondencePerson))
                 .orElseGet(() -> generateContributorFromAuthorTp(author, authorGroup, correspondencePerson)));
     }
 
@@ -169,25 +164,6 @@ public class ContributorExtractor {
                                Role.CREATOR,
                                getSequenceNumber(author),
                                isCorrespondingAuthor(author, correspondencePerson));
-    }
-
-    private Contributor generateContributorFromCristin(Person person, AuthorTp authorTp,
-                                                       PersonalnameType correspondencePerson) {
-        return new Contributor(generateContributorIdentityFromCristinPerson(person),
-                               generateOrganizationsFromCristinAffiliations(person.getAffiliations()), Role.CREATOR,
-                               getSequenceNumber(authorTp), isCorrespondingAuthor(authorTp, correspondencePerson));
-    }
-
-    private List<Organization> generateOrganizationsFromCristinAffiliations(Set<Affiliation> affiliations) {
-        return affiliations
-                   .stream()
-                   .map(affiliation ->
-                            new Organization
-                                    .Builder()
-                                .withId(affiliation.getOrganization())
-                                .withLabels(affiliation.getRole().getLabels())
-                                .build())
-                   .collect(Collectors.toList());
     }
 
     private void generateContributorFromCollaborationTp(CollaborationTp collaboration,
@@ -207,31 +183,6 @@ public class ContributorExtractor {
         identity.setName(determineContributorName(authorTp));
         identity.setOrcId(getOrcidAsUriString(authorTp));
         return identity;
-    }
-
-    private Identity generateContributorIdentityFromCristinPerson(Person cristinPerson) {
-        var identity = new Identity();
-        identity.setName(determineContributorName(cristinPerson));
-        identity.setOrcId((cristinPerson
-                               .getIdentifiers()
-                               .stream()
-                               .filter(this::isOrcid)
-                               .findAny().map(TypedValue::getValue)
-                               .orElse(null)));
-        identity.setId(cristinPerson.getId());
-        return identity;
-    }
-
-    private boolean isOrcid(TypedValue identifier) {
-        return identifier.getType().equalsIgnoreCase("orcid");
-    }
-
-    private boolean isFirstName(TypedValue typedValue) {
-        return FIRST_NAME_CRISTIN_FIELD_NAME.equals(typedValue.getType());
-    }
-
-    private boolean isSurname(TypedValue nameType) {
-        return LAST_NAME_CRISTIN_FIELD_NAME.equals(nameType.getType());
     }
 
     private Optional<Organization> generateAffiliation(AuthorGroupTp authorGroup) {
@@ -263,25 +214,6 @@ public class ContributorExtractor {
 
     private String determineContributorName(CollaborationTp collaborationTp) {
         return collaborationTp.getIndexedName();
-    }
-
-    private String determineContributorName(Person person) {
-        return getLastName(person)
-               + NAME_DELIMITER
-               + getFirstName(person);
-    }
-
-    @NotNull
-    private String getFirstName(Person person) {
-        return person.getNames().stream()
-                   .filter(this::isFirstName).findFirst().map(
-                TypedValue::getValue).orElse(StringUtils.EMPTY_STRING);
-    }
-
-    @NotNull
-    private String getLastName(Person person) {
-        return person.getNames().stream().filter(this::isSurname).findFirst()
-                   .map(TypedValue::getValue).orElse(StringUtils.EMPTY_STRING);
     }
 
     private String getOrcidAsUriString(AuthorTp authorTp) {
