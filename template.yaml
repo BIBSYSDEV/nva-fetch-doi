@@ -55,6 +55,12 @@ Parameters:
   PiaRestApi:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: 'piaRest'
+  PiaRestUsername:
+    Type: String
+    Default: "{{resolve:secretsmanager:CristinClientBasicAuth:SecretString:username}}"
+  PiaRestUsernamePassword:
+    Type: String
+    Default: "{{resolve:secretsmanager:CristinClientBasicAuth:SecretString:password}}"
 
 
 Globals:
@@ -278,6 +284,8 @@ Resources:
           EVENTS_BUS: !Ref NvaEventsBusName
           API_HOST: !Ref ApiDomain
           PIA_REST_API: !Ref piaRest
+          PIA_USERNAME: !Ref PiaRestUsername
+          PIA_PASSWORD: !Ref PiaRestUsernamePassword
       Events:
         Scopus:
           Type: S3
