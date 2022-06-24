@@ -39,7 +39,7 @@ public class CristinConnection {
         return Optional.ofNullable(attempt(() -> createRequest(cristinId))
                                        .map(this::getCristinResponse)
                                        .map(this::getBodyFromResponse)
-                                       .map(this::getPiaAuthorResponse)
+                                       .map(this::getCristinPersonResponse)
                                        .orElse(this::logFailureAndReturnNull));
     }
 
@@ -49,8 +49,8 @@ public class CristinConnection {
         return null;
     }
 
-    private Person getPiaAuthorResponse(String json) throws JsonProcessingException {
-        return JsonUtils.dtoObjectMapper.readValue(json, Person.class);
+    private Person getCristinPersonResponse(String json) throws JsonProcessingException {
+        return JsonUtils.singleLineObjectMapper.readValue(json, Person.class);
     }
 
     private String getBodyFromResponse(HttpResponse<String> response) {

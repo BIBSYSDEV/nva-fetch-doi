@@ -46,6 +46,12 @@ public class Affiliation {
 
     @JacocoGenerated
     @Override
+    public int hashCode() {
+        return Objects.hash(getOrganization(), isActive(), getRole());
+    }
+
+    @JacocoGenerated
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -58,11 +64,4 @@ public class Affiliation {
                && Objects.equals(isActive(), that.isActive())
                && Objects.equals(getRole(), that.getRole());
     }
-
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getOrganization(), isActive(), getRole());
-    }
-
 }

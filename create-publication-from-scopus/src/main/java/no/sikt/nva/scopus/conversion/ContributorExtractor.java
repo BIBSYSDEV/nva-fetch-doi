@@ -9,13 +9,16 @@ import static nva.commons.core.StringUtils.isNotBlank;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import no.scopus.generated.AuthorGroupTp;
 import no.scopus.generated.AuthorTp;
 import no.scopus.generated.CollaborationTp;
 import no.scopus.generated.CorrespondenceTp;
 import no.scopus.generated.PersonalnameType;
+import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
 import no.sikt.nva.scopus.conversion.model.cristin.Person;
 import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
 import no.unit.nva.language.LanguageMapper;
@@ -83,13 +86,13 @@ public class ContributorExtractor {
     }
 
     private void replaceExistingContributor(Contributor existingContributor, AuthorGroupTp authorGroupTp) {
-        //TODO: when contributor with cristin id's have been enriched with cristin affiliations, then this step
-        // should be skipped
-        var optionalNewAffiliations = generateAffiliation(authorGroupTp);
-        optionalNewAffiliations.ifPresent(
-            organizations ->
-                createNewContributorWithAdditionalAffiliationsAndSwapItInContributorList(organizations,
-                                                                                         existingContributor));
+        if (Objects.isNull(existingContributor.getIdentity().getId())) {
+            var optionalNewAffiliations = generateAffiliation(authorGroupTp);
+            optionalNewAffiliations.ifPresent(
+                organizations ->
+                    createNewContributorWithAdditionalAffiliationsAndSwapItInContributorList(organizations,
+                                                                                             existingContributor));
+        }
     }
 
     private void createNewContributorWithAdditionalAffiliationsAndSwapItInContributorList(
@@ -170,8 +173,21 @@ public class ContributorExtractor {
 
     private Contributor generateContributorFromCristin(Person person, AuthorTp authorTp,
                                                        PersonalnameType correspondencePerson) {
-        return new Contributor(generateContributorIdentityFromCristinPerson(person), null, Role.CREATOR,
+        return new Contributor(generateContributorIdentityFromCristinPerson(person),
+                               generateOrganizationsFromCristinAffiliations(person.getAffiliations()), Role.CREATOR,
                                getSequenceNumber(authorTp), isCorrespondingAuthor(authorTp, correspondencePerson));
+    }
+
+    private List<Organization> generateOrganizationsFromCristinAffiliations(Set<Affiliation> affiliations) {
+        return affiliations
+                   .stream()
+                   .map(affiliation ->
+                            new Organization
+                                    .Builder()
+                                .withId(affiliation.getOrganization())
+                                .withLabels(affiliation.getRole().getLabels())
+                                .build())
+                   .collect(Collectors.toList());
     }
 
     private void generateContributorFromCollaborationTp(CollaborationTp collaboration,
