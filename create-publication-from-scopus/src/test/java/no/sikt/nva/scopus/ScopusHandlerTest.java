@@ -915,14 +915,11 @@ class ScopusHandlerTest {
         var authors = new ArrayList<List<Author>>();
         var cristinPersons = new ArrayList<Person>();
         piaCristinIdAndAuthors.forEach((cristinId, authorTp) ->
-                                       {
-                                           try {
-                                               generatePiaResponsAndCristinPersons(piaAuthorResponseGenerator, authors,
-                                                                                   cristinPersons, cristinId, authorTp);
-                                           } catch (JsonProcessingException e) {
-                                               throw new RuntimeException(e);
-                                           }
-                                       }
+                                           generatePiaResponseAndCristinPersons(piaAuthorResponseGenerator,
+                                                                                authors,
+                                                                                cristinPersons,
+                                                                                cristinId,
+                                                                                authorTp)
         );
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -1022,12 +1019,16 @@ class ScopusHandlerTest {
         return Arguments.of(List.of(language), languageUri);
     }
 
-    private void generatePiaResponsAndCristinPersons(PiaAuthorResponseGenerator piaAuthorResponseGenerator,
-                                                     ArrayList<List<Author>> authors,
-                                                     ArrayList<Person> cristinPersons, Integer cristinId,
-                                                     AuthorTp authorTp) throws JsonProcessingException {
-        generatePiaResponse(piaAuthorResponseGenerator, authors, cristinId, authorTp);
-        generateCristinPersonsResponse(cristinPersons, cristinId);
+    private void generatePiaResponseAndCristinPersons(PiaAuthorResponseGenerator piaAuthorResponseGenerator,
+                                                      ArrayList<List<Author>> authors,
+                                                      ArrayList<Person> cristinPersons, Integer cristinId,
+                                                      AuthorTp authorTp) {
+        try {
+            generatePiaResponse(piaAuthorResponseGenerator, authors, cristinId, authorTp);
+            generateCristinPersonsResponse(cristinPersons, cristinId);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void generateCristinPersonsResponse(ArrayList<Person> cristinPersons, Integer cristinId)
