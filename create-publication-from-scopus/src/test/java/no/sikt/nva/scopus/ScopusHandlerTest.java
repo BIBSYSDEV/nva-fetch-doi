@@ -3,6 +3,7 @@ package no.sikt.nva.scopus;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static java.util.Objects.nonNull;
@@ -96,12 +97,17 @@ import no.scopus.generated.SourcetypeAtt;
 import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
+import no.sikt.nva.scopus.conversion.ContributorExtractor;
+import no.sikt.nva.scopus.conversion.CristinConnection;
 import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
-import no.sikt.nva.scopus.conversion.model.Author;
+import no.sikt.nva.scopus.conversion.model.cristin.Person;
+import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
+import no.sikt.nva.scopus.conversion.model.pia.Author;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
 import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.sikt.nva.scopus.test.utils.ContentWrapper;
+import no.sikt.nva.scopus.test.utils.CristinPersonGenerator;
 import no.sikt.nva.scopus.test.utils.LanguagesWrapper;
 import no.sikt.nva.scopus.test.utils.PiaAuthorResponseGenerator;
 import no.sikt.nva.scopus.test.utils.ScopusGenerator;
@@ -134,10 +140,12 @@ import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.SingletonCollector;
+import nva.commons.core.StringUtils;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -186,6 +194,7 @@ class ScopusHandlerTest {
     private FakeEventBridgeClient eventBridgeClient;
 
     private PiaConnection piaConnection;
+    private CristinConnection cristinConnection;
     private ScopusGenerator scopusData;
 
     public static Stream<Arguments> providedLanguagesAndExpectedOutput() {
@@ -204,9 +213,14 @@ class ScopusHandlerTest {
         startWiremockServer();
         var httpClient = WiremockHttpClient.create();
         metadataService = new MetadataService(httpClient, serverUriJournal, serverUriPublisher);
-        piaConnection = new PiaConnection(httpClient, httpServer.baseUrl());
+        piaConnection = new PiaConnection(httpClient, httpServer.baseUrl(), httpServer.baseUrl());
+        cristinConnection = new CristinConnection(httpClient);
         eventBridgeClient = new FakeEventBridgeClient();
-        scopusHandler = new ScopusHandler(s3Client, metadataService, eventBridgeClient, piaConnection);
+        scopusHandler = new ScopusHandler(s3Client,
+                                          metadataService,
+                                          eventBridgeClient,
+                                          piaConnection,
+                                          cristinConnection);
         scopusData = new ScopusGenerator();
     }
 
@@ -221,7 +235,11 @@ class ScopusHandlerTest {
         var s3Event = createS3Event(randomString());
         var expectedMessage = randomString();
         s3Client = new FakeS3ClientThrowingException(expectedMessage);
-        scopusHandler = new ScopusHandler(s3Client, metadataService, eventBridgeClient, piaConnection);
+        scopusHandler = new ScopusHandler(s3Client,
+                                          metadataService,
+                                          eventBridgeClient,
+                                          piaConnection,
+                                          cristinConnection);
         var appender = LogUtils.getTestingAppenderForRootLogger();
         assertThrows(RuntimeException.class, () -> scopusHandler.handleRequest(s3Event, CONTEXT));
         assertThat(appender.getMessages(), containsString(expectedMessage));
@@ -885,20 +903,39 @@ class ScopusHandlerTest {
     }
 
     @Test
-    void shouldExtractCristinID() throws IOException {
+    void shouldReplaceContributorIdentityWithCristinData() throws IOException {
         var authorTypes = keepOnlyTheAuthors();
-        var cristinIdAndAuthor = new HashMap<Integer, AuthorTp>();
-        authorTypes.forEach(authorTp -> cristinIdAndAuthor.put(randomInteger(), authorTp));
+        var piaCristinIdAndAuthors = new HashMap<Integer, AuthorTp>();
+        authorTypes.forEach(authorTp -> piaCristinIdAndAuthors.put(randomInteger(), authorTp));
         var piaAuthorResponseGenerator = new PiaAuthorResponseGenerator();
         var authors = new ArrayList<List<Author>>();
-        cristinIdAndAuthor.forEach((cristinId, authorTp) -> authors.add(
-            piaAuthorResponseGenerator.generateAuthors(authorTp.getAuid(), cristinId)));
-        authors.forEach(this::createPiaMock);
+        var cristinPersons = new ArrayList<Person>();
+        piaCristinIdAndAuthors.forEach((cristinId, authorTp) ->
+                                           generatePiaResponsAndCristinPersons(piaAuthorResponseGenerator, authors,
+                                                                               cristinPersons, cristinId, authorTp)
+        );
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
         var actualContributors = createPublicationRequest.getEntityDescription().getContributors();
         actualContributors.stream().filter(contributor -> isAuthor(contributor, authorTypes)).forEach(
-            contributor -> assertThatContributorHasCorrectCristinId(contributor, cristinIdAndAuthor));
+            contributor -> assertThatContributorHasCorrectCristinPersonData(contributor, piaCristinIdAndAuthors,
+                                                                            cristinPersons));
+    }
+
+    @Test
+    void shouldHandleCristinPersonBadRequest() throws IOException {
+        var authorTypes = keepOnlyTheAuthors();
+        var piaCristinIdAndAuthors = new HashMap<Integer, AuthorTp>();
+        authorTypes.forEach(authorTp -> piaCristinIdAndAuthors.put(randomInteger(), authorTp));
+        var piaAuthorResponseGenerator = new PiaAuthorResponseGenerator();
+        var authors = new ArrayList<List<Author>>();
+        mockCristinPersonBadRequest();
+        piaCristinIdAndAuthors.forEach((cristinId, authorTp) ->
+                                           generatePiaResponse(piaAuthorResponseGenerator, authors,
+                                                               cristinId, authorTp)
+        );
+        var s3Event = createNewScopusPublicationEvent();
+        assertDoesNotThrow(() -> scopusHandler.handleRequest(s3Event, CONTEXT));
     }
 
     @Test
@@ -973,6 +1010,32 @@ class ScopusHandlerTest {
             languageUri = BOKMAAL.getLexvoUri();
         }
         return Arguments.of(List.of(language), languageUri);
+    }
+
+    private void generatePiaResponsAndCristinPersons(PiaAuthorResponseGenerator piaAuthorResponseGenerator,
+                                                     ArrayList<List<Author>> authors,
+                                                     ArrayList<Person> cristinPersons, Integer cristinId,
+                                                     AuthorTp authorTp) {
+        generatePiaResponse(piaAuthorResponseGenerator, authors, cristinId, authorTp);
+        generateCristinPersonsResponse(cristinPersons, cristinId);
+    }
+
+    private void generateCristinPersonsResponse(ArrayList<Person> cristinPersons, Integer cristinId) {
+        var cristinPerson =
+            CristinPersonGenerator.generateCristinPerson(
+                UriWrapper.fromUri(httpServer.baseUrl() + "/cristin/person/" + cristinId.toString()).getUri(),
+                randomString(),
+                randomString());
+        cristinPersons.add(cristinPerson);
+        mockCristinPerson(cristinId.toString(), CristinPersonGenerator.convertToJson(cristinPerson));
+    }
+
+    private void generatePiaResponse(PiaAuthorResponseGenerator piaAuthorResponseGenerator,
+                                     ArrayList<List<Author>> authors,
+                                     Integer cristinId, AuthorTp authorTp) {
+        var authorList = piaAuthorResponseGenerator.generateAuthors(authorTp.getAuid(), cristinId);
+        authors.add(authorList);
+        createPiaMock(authorList);
     }
 
     private ContentWrapper createContentWithSupAndInfTags() {
@@ -1054,13 +1117,52 @@ class ScopusHandlerTest {
         return contributor.getSequence() == Integer.parseInt(authorTp.getSeq());
     }
 
-    private void assertThatContributorHasCorrectCristinId(Contributor contributor,
-                                                          HashMap<Integer, AuthorTp> cristinIdAndAuthor) {
+    private void assertThatContributorHasCorrectCristinPersonData(Contributor contributor,
+                                                                  HashMap<Integer, AuthorTp> cristinIdAndAuthor,
+                                                                  List<Person> cristinPersons) {
         var actualCristinId = contributor.getIdentity().getId();
         assertThat(actualCristinId, hasProperty("path", containsString("/cristin/person")));
+        var expectedCristinPerson = getPersonByCristinNumber(cristinPersons, actualCristinId);
         var actualCristinNumber = actualCristinId.getPath().split("/")[3];
+        var expectedName =
+            expectedCristinPerson.map(
+                this::calculateExpectedNameFromCristinPerson).orElse(null);
         var expectedAuthor = cristinIdAndAuthor.get(Integer.parseInt(actualCristinNumber));
         assertThat(contributor.getSequence(), is(equalTo(Integer.parseInt(expectedAuthor.getSeq()))));
+        assertThat(contributor.getIdentity().getName(), is(equalTo(expectedName)));
+    }
+
+    @NotNull
+    private String calculateExpectedNameFromCristinPerson(Person person) {
+        return person.getNames().stream().filter(this::isSurname).findFirst().map(
+            TypedValue::getValue).orElse(StringUtils.EMPTY_STRING) + ", "
+               + person.getNames().stream().filter(this::isFirstName).findFirst().map(
+            TypedValue::getValue).orElse(StringUtils.EMPTY_STRING);
+    }
+
+    private boolean isFirstName(TypedValue typedValue) {
+        return ContributorExtractor.FIRST_NAME_CRISTIN_FIELD_NAME.equals(typedValue.getType());
+    }
+
+    private boolean isSurname(TypedValue nameType) {
+        return ContributorExtractor.LAST_NAME_CRISTIN_FIELD_NAME.equals(nameType.getType());
+    }
+
+    @NotNull
+    private Optional<Person> getPersonByCristinNumber(List<Person> cristinPersons, URI cristinId) {
+        return cristinPersons.stream()
+                   .filter(person -> cristinId.equals(person.getId()))
+                   .findFirst();
+    }
+
+    private void mockCristinPerson(String cristinPersonId, String response) {
+        stubFor(get(urlPathEqualTo("/cristin/person/" + cristinPersonId)).willReturn(
+            aResponse().withBody(response).withStatus(HttpURLConnection.HTTP_OK)));
+    }
+
+    private void mockCristinPersonBadRequest() {
+        stubFor(get(urlMatching("/cristin/person/.*")).willReturn(
+            aResponse().withStatus(HttpURLConnection.HTTP_BAD_REQUEST)));
     }
 
     private void createPiaMock(List<Author> author) {

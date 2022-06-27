@@ -31,6 +31,7 @@ import no.scopus.generated.SupTp;
 import no.scopus.generated.TitletextTp;
 import no.scopus.generated.YesnoAtt;
 import no.sikt.nva.scopus.conversion.ContributorExtractor;
+import no.sikt.nva.scopus.conversion.CristinConnection;
 import no.sikt.nva.scopus.conversion.LanguageExtractor;
 import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.sikt.nva.scopus.conversion.PublicationContextCreator;
@@ -48,11 +49,16 @@ public class ScopusConverter {
     private final DocTp docTp;
     private final MetadataService metadataService;
     private final PiaConnection piaConnection;
+    private final CristinConnection cristinConnection;
 
-    protected ScopusConverter(DocTp docTp, MetadataService metadataService, PiaConnection piaConnection) {
+    protected ScopusConverter(DocTp docTp,
+                              MetadataService metadataService,
+                              PiaConnection piaConnection,
+                              CristinConnection cristinConnection) {
         this.docTp = docTp;
         this.metadataService = metadataService;
         this.piaConnection = piaConnection;
+        this.cristinConnection = cristinConnection;
     }
 
     public CreatePublicationRequest generateCreatePublicationRequest() {
@@ -78,7 +84,7 @@ public class ScopusConverter {
         entityDescription.setMainTitle(extractMainTitle());
         entityDescription.setAbstract(extractMainAbstract());
         entityDescription.setContributors(new ContributorExtractor(
-            extractCorrespondence(), extractAuthorGroup(), piaConnection).generateContributors());
+            extractCorrespondence(), extractAuthorGroup(), piaConnection, cristinConnection).generateContributors());
         entityDescription.setTags(generateTags());
         entityDescription.setDate(extractPublicationDate());
         entityDescription.setLanguage(new LanguageExtractor(extractCitationLanguages()).extractLanguage());

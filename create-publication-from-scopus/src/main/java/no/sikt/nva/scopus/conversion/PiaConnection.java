@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
-import no.sikt.nva.scopus.conversion.model.Author;
+import no.sikt.nva.scopus.conversion.model.pia.Author;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
@@ -43,28 +43,31 @@ public class PiaConnection {
     private final transient String piaAuthorization;
     private final String piaHost;
 
-    public PiaConnection(HttpClient httpClient, String piaHost) {
+    private final String cristinHost;
+
+    public PiaConnection(HttpClient httpClient, String piaHost, String cristinHost) {
         this.httpClient = httpClient;
         this.piaHost = piaHost;
         this.piaAuthorization = createAuthorization();
+        this.cristinHost = cristinHost;
     }
 
     @JacocoGenerated
     public PiaConnection() {
         this(HttpClient.newBuilder().version(HttpClient.Version.HTTP_2).build(),
-             PIA_REST_API);
+             PIA_REST_API, NVA_DOMAIN);
     }
 
     public URI getCristinID(String scopusId) {
         return attempt(() -> getPiaAuthorResponse(scopusId))
-                            .map(this::getCristinNumber)
-                            .map(Optional::orElseThrow)
-                            .map(this::createCristinUriFromCristinNumber)
-                            .orElse(this::logFailureAndReturnNull);
+                   .map(this::getCristinNumber)
+                   .map(Optional::orElseThrow)
+                   .map(this::createCristinUriFromCristinNumber)
+                   .orElse(this::logFailureAndReturnNull);
     }
 
     private URI createCristinUriFromCristinNumber(int cristinNumber) {
-        return UriWrapper.fromUri(NVA_DOMAIN + CRISTIN_PERSON_PATH + cristinNumber)
+        return UriWrapper.fromUri(cristinHost + CRISTIN_PERSON_PATH + cristinNumber)
                    .getUri();
     }
 
@@ -92,11 +95,11 @@ public class PiaConnection {
             () -> getPiaResponse(uri))
                    .map(this::getBodyFromResponse)
                    .orElseThrow(
-                       fail -> logExpectionAndThrowRuntimeError(fail.getException(), COULD_NOT_GET_ERROR_MESSAGE
+                       fail -> logExceptionAndThrowRuntimeError(fail.getException(), COULD_NOT_GET_ERROR_MESSAGE
                                                                                      + scopusId));
     }
 
-    private RuntimeException logExpectionAndThrowRuntimeError(Exception exception, String message) {
+    private RuntimeException logExceptionAndThrowRuntimeError(Exception exception, String message) {
         logger.info(message);
         return exception instanceof RuntimeException
                    ? (RuntimeException) exception

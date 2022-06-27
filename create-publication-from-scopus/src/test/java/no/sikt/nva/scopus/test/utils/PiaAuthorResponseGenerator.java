@@ -7,8 +7,8 @@ import com.google.gson.Gson;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import no.sikt.nva.scopus.conversion.model.Author;
-import no.sikt.nva.scopus.conversion.model.Publication;
+import no.sikt.nva.scopus.conversion.model.pia.Author;
+import no.sikt.nva.scopus.conversion.model.pia.Publication;
 
 public class PiaAuthorResponseGenerator {
 
