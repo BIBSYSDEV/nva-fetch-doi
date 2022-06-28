@@ -84,11 +84,11 @@ public final class CristinContributorExtractor {
     }
 
     private static boolean isFirstName(TypedValue typedValue) {
-        return FIRST_NAME_CRISTIN_FIELD_NAME.equals(typedValue.getType());
+        return nonNull(typedValue) && FIRST_NAME_CRISTIN_FIELD_NAME.equals(typedValue.getType());
     }
 
     private static boolean isSurname(TypedValue nameType) {
-        return LAST_NAME_CRISTIN_FIELD_NAME.equals(nameType.getType());
+        return nonNull(nameType) && LAST_NAME_CRISTIN_FIELD_NAME.equals(nameType.getType());
     }
 
     private static boolean isCorrespondingAuthor(AuthorTp author, PersonalnameType correspondencePerson) {
