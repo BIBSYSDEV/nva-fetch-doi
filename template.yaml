@@ -277,7 +277,7 @@ Resources:
           EVENTS_BUCKET: !Ref NvaEventsBucketName
           EVENTS_BUS: !Ref NvaEventsBusName
           API_HOST: !Ref ApiDomain
-          PIA_REST_API: !Ref piaRest
+          PIA_REST_API: !Ref PiaRestApi
       Events:
         Scopus:
           Type: S3
