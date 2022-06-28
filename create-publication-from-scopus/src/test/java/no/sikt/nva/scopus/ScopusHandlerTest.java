@@ -1141,25 +1141,38 @@ class ScopusHandlerTest {
         var expectedName =
             calculateExpectedNameFromCristinPerson(expectedCristinPerson);
         var expectedAuthor = cristinIdAndAuthor.get(Integer.parseInt(actualCristinNumber));
+
         assertThat(contributor.getSequence(), is(equalTo(Integer.parseInt(expectedAuthor.getSeq()))));
+
         assertThat(contributor.getIdentity().getName(), is(equalTo(expectedName)));
+
         assertThat(contributor.getAffiliations(), hasSize(expectedCristinPerson.getAffiliations().size()));
+
         var actualOrganizationFromAffiliation =
-            contributor.getAffiliations().stream().map(Organization::getId).collect(Collectors.toList());
+            contributor.getAffiliations().stream()
+                .map(Organization::getId)
+                .collect(Collectors.toList());
         var expectedOrganizationFromAffiliation =
-            expectedCristinPerson.getAffiliations().stream().map(Affiliation::getOrganization).collect(
-                Collectors.toList());
+            expectedCristinPerson.getAffiliations().stream()
+                .map(Affiliation::getOrganization)
+                .collect(Collectors.toList());
+
         assertThat(actualOrganizationFromAffiliation,
-                   containsInAnyOrder(expectedOrganizationFromAffiliation.stream().map(Matchers::equalTo).collect(
-                       Collectors.toList())));
+                   containsInAnyOrder(expectedOrganizationFromAffiliation.stream()
+                                          .map(Matchers::equalTo)
+                                          .collect(Collectors.toList())));
+
         var actualAffiliationLabels =
-            contributor.getAffiliations().stream().map(Organization::getLabels).collect(Collectors.toList());
+            contributor.getAffiliations().stream()
+                .map(Organization::getLabels)
+                .collect(Collectors.toList());
         var expectedAffiliationLabels =
             expectedCristinPerson.getAffiliations()
                 .stream()
                 .map(organization -> organization.getRole().getLabels())
                 .collect(
                     Collectors.toList());
+
         assertThat(actualAffiliationLabels,
                    containsInAnyOrder(
                        expectedAffiliationLabels.stream().map(Matchers::equalTo).collect(Collectors.toList())));

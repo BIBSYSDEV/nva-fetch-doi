@@ -17,7 +17,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
-public class CristinContributorExtractor {
+public final class CristinContributorExtractor {
 
     public static final String NAME_DELIMITER = ", ";
     public static final String FIRST_NAME_CRISTIN_FIELD_NAME = "FirstName";
@@ -25,7 +25,7 @@ public class CristinContributorExtractor {
     public static final String ORCID_FIELD_NAME = "orcid";
 
     @JacocoGenerated
-    public CristinContributorExtractor() {
+    private CristinContributorExtractor() {
     }
 
     public static Contributor generateContributorFromCristin(Person person, AuthorTp authorTp,
