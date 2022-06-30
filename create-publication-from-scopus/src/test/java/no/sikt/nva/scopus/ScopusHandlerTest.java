@@ -36,6 +36,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalToObject;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.startsWith;
@@ -59,6 +60,7 @@ import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotificatio
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3EventNotificationRecord;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3ObjectEntity;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.UserIdentityEntity;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
@@ -101,6 +103,7 @@ import no.sikt.nva.scopus.conversion.ContributorExtractor;
 import no.sikt.nva.scopus.conversion.CristinConnection;
 import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
+import no.sikt.nva.scopus.conversion.model.cristin.Affiliation;
 import no.sikt.nva.scopus.conversion.model.cristin.Person;
 import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
 import no.sikt.nva.scopus.conversion.model.pia.Author;
@@ -145,6 +148,7 @@ import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
+import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -911,8 +915,11 @@ class ScopusHandlerTest {
         var authors = new ArrayList<List<Author>>();
         var cristinPersons = new ArrayList<Person>();
         piaCristinIdAndAuthors.forEach((cristinId, authorTp) ->
-                                           generatePiaResponsAndCristinPersons(piaAuthorResponseGenerator, authors,
-                                                                               cristinPersons, cristinId, authorTp)
+                                           generatePiaResponseAndCristinPersons(piaAuthorResponseGenerator,
+                                                                                authors,
+                                                                                cristinPersons,
+                                                                                cristinId,
+                                                                                authorTp)
         );
         var s3Event = createNewScopusPublicationEvent();
         var createPublicationRequest = scopusHandler.handleRequest(s3Event, CONTEXT);
@@ -1012,15 +1019,20 @@ class ScopusHandlerTest {
         return Arguments.of(List.of(language), languageUri);
     }
 
-    private void generatePiaResponsAndCristinPersons(PiaAuthorResponseGenerator piaAuthorResponseGenerator,
-                                                     ArrayList<List<Author>> authors,
-                                                     ArrayList<Person> cristinPersons, Integer cristinId,
-                                                     AuthorTp authorTp) {
-        generatePiaResponse(piaAuthorResponseGenerator, authors, cristinId, authorTp);
-        generateCristinPersonsResponse(cristinPersons, cristinId);
+    private void generatePiaResponseAndCristinPersons(PiaAuthorResponseGenerator piaAuthorResponseGenerator,
+                                                      ArrayList<List<Author>> authors,
+                                                      ArrayList<Person> cristinPersons, Integer cristinId,
+                                                      AuthorTp authorTp) {
+        try {
+            generatePiaResponse(piaAuthorResponseGenerator, authors, cristinId, authorTp);
+            generateCristinPersonsResponse(cristinPersons, cristinId);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    private void generateCristinPersonsResponse(ArrayList<Person> cristinPersons, Integer cristinId) {
+    private void generateCristinPersonsResponse(ArrayList<Person> cristinPersons, Integer cristinId)
+        throws JsonProcessingException {
         var cristinPerson =
             CristinPersonGenerator.generateCristinPerson(
                 UriWrapper.fromUri(httpServer.baseUrl() + "/cristin/person/" + cristinId.toString()).getUri(),
@@ -1122,14 +1134,48 @@ class ScopusHandlerTest {
                                                                   List<Person> cristinPersons) {
         var actualCristinId = contributor.getIdentity().getId();
         assertThat(actualCristinId, hasProperty("path", containsString("/cristin/person")));
-        var expectedCristinPerson = getPersonByCristinNumber(cristinPersons, actualCristinId);
+        var expectedCristinPersonOptional = getPersonByCristinNumber(cristinPersons, actualCristinId);
+        assertThat(expectedCristinPersonOptional.isPresent(), is(true));
+        var expectedCristinPerson = expectedCristinPersonOptional.get();
         var actualCristinNumber = actualCristinId.getPath().split("/")[3];
         var expectedName =
-            expectedCristinPerson.map(
-                this::calculateExpectedNameFromCristinPerson).orElse(null);
+            calculateExpectedNameFromCristinPerson(expectedCristinPerson);
         var expectedAuthor = cristinIdAndAuthor.get(Integer.parseInt(actualCristinNumber));
+
         assertThat(contributor.getSequence(), is(equalTo(Integer.parseInt(expectedAuthor.getSeq()))));
+
         assertThat(contributor.getIdentity().getName(), is(equalTo(expectedName)));
+
+        assertThat(contributor.getAffiliations(), hasSize(expectedCristinPerson.getAffiliations().size()));
+
+        var actualOrganizationFromAffiliation =
+            contributor.getAffiliations().stream()
+                .map(Organization::getId)
+                .collect(Collectors.toList());
+        var expectedOrganizationFromAffiliation =
+            expectedCristinPerson.getAffiliations().stream()
+                .map(Affiliation::getOrganization)
+                .collect(Collectors.toList());
+
+        assertThat(actualOrganizationFromAffiliation,
+                   containsInAnyOrder(expectedOrganizationFromAffiliation.stream()
+                                          .map(Matchers::equalTo)
+                                          .collect(Collectors.toList())));
+
+        var actualAffiliationLabels =
+            contributor.getAffiliations().stream()
+                .map(Organization::getLabels)
+                .collect(Collectors.toList());
+        var expectedAffiliationLabels =
+            expectedCristinPerson.getAffiliations()
+                .stream()
+                .map(organization -> organization.getRole().getLabels())
+                .collect(
+                    Collectors.toList());
+
+        assertThat(actualAffiliationLabels,
+                   containsInAnyOrder(
+                       expectedAffiliationLabels.stream().map(Matchers::equalTo).collect(Collectors.toList())));
     }
 
     @NotNull
