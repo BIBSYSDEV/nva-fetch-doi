@@ -9,6 +9,7 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Role;
 import org.junit.jupiter.api.Test;
 
@@ -19,6 +20,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -126,7 +128,7 @@ class IdentityUpdaterTest {
         return new Publication.Builder()
                 .withIdentifier(new SortableIdentifier(UUID.randomUUID().toString()))
                 .withModifiedDate(Instant.now())
-                .withOwner("owner")
+                .withResourceOwner(randomResourceOwner())
                 .withPublisher(new Organization.Builder()
                         .withId(URI.create("http://example.org/publisher/1"))
                         .build()
@@ -135,5 +137,9 @@ class IdentityUpdaterTest {
                         .withContributors(List.of(contributor))
                         .build())
                 .build();
+    }
+
+    private ResourceOwner randomResourceOwner() {
+        return new ResourceOwner(randomString(),randomUri());
     }
 }

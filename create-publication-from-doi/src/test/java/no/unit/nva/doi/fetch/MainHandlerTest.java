@@ -63,6 +63,7 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.testutils.HandlerRequestBuilder;
@@ -309,8 +310,12 @@ class MainHandlerTest {
             .withStatus(PublicationStatus.DRAFT)
             .withPublisher(new Organization.Builder().withId(URI.create("http://example.org/123")).build())
             .withEntityDescription(new EntityDescription.Builder().withMainTitle("Main title").build())
-            .withOwner("Owner")
+            .withResourceOwner(randomResourceOwner())
             .build();
+    }
+
+    private ResourceOwner randomResourceOwner() {
+        return new ResourceOwner(randomString(),randomUri());
     }
 
     private DoiProxyService mockDoiProxyServiceReceivingSuccessfulResult()
