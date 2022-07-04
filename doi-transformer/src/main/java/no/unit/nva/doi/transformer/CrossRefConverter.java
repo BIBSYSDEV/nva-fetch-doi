@@ -52,6 +52,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Role;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Chapter;
@@ -91,6 +92,7 @@ public class CrossRefConverter extends AbstractConverter {
     private static final Logger logger = LoggerFactory.getLogger(CrossRefConverter.class);
     private static final String DEFAULT_LANGUAGE_ENGLISH = "en";
     public static final String NULL_SERIES_NUMBER = null;
+    private static final URI UNDEFINED_AFFILIATION = null;
 
     public CrossRefConverter() {
         this(new DoiConverter());
@@ -117,7 +119,7 @@ public class CrossRefConverter extends AbstractConverter {
                 .withCreatedDate(extractInstantFromCrossrefDate(document.getCreated()))
                 .withModifiedDate(extractInstantFromCrossrefDate(document.getDeposited()))
                 .withPublishedDate(extractInstantFromCrossrefDate(document.getIssued()))
-                .withOwner(owner)
+                .withResourceOwner(new ResourceOwner(owner,UNDEFINED_AFFILIATION))
                 .withDoi(extractDOI(document)) // Cheating by using URL not DOI ?
                 .withIdentifier(new SortableIdentifier(identifier.toString()))
                 .withPublisher(extractAndCreatePublisher(document))
