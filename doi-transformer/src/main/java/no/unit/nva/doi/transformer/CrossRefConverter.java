@@ -89,9 +89,9 @@ public class CrossRefConverter extends AbstractConverter {
     public static final int FIRST_MONTH_IN_YEAR = 1;
     public static final int FIRST_DAY_IN_MONTH = 1;
     public static final String CANNOT_CREATE_REFERENCE_FOR_PUBLICATION = ", cannot create reference for publication";
+    public static final String NULL_SERIES_NUMBER = null;
     private static final Logger logger = LoggerFactory.getLogger(CrossRefConverter.class);
     private static final String DEFAULT_LANGUAGE_ENGLISH = "en";
-    public static final String NULL_SERIES_NUMBER = null;
     private static final URI UNDEFINED_AFFILIATION = null;
 
     public CrossRefConverter() {
@@ -119,7 +119,7 @@ public class CrossRefConverter extends AbstractConverter {
                 .withCreatedDate(extractInstantFromCrossrefDate(document.getCreated()))
                 .withModifiedDate(extractInstantFromCrossrefDate(document.getDeposited()))
                 .withPublishedDate(extractInstantFromCrossrefDate(document.getIssued()))
-                .withResourceOwner(new ResourceOwner(owner,UNDEFINED_AFFILIATION))
+                .withResourceOwner(new ResourceOwner(owner, UNDEFINED_AFFILIATION))
                 .withDoi(extractDOI(document)) // Cheating by using URL not DOI ?
                 .withIdentifier(new SortableIdentifier(identifier.toString()))
                 .withPublisher(extractAndCreatePublisher(document))
@@ -250,7 +250,7 @@ public class CrossRefConverter extends AbstractConverter {
     }
 
     private PublicationContext extractPublicationContext(CrossRefDocument document)
-            throws UnsupportedDocumentTypeException, InvalidIssnException, InvalidIsbnException {
+        throws UnsupportedDocumentTypeException, InvalidIssnException, InvalidIsbnException {
 
         CrossrefType crossrefType = getByType(document.getType());
         return createContext(document, crossrefType.getPublicationType());
@@ -258,7 +258,7 @@ public class CrossRefConverter extends AbstractConverter {
 
     @JacocoGenerated
     private PublicationContext createContext(CrossRefDocument document, PublicationType publicationType)
-            throws UnsupportedDocumentTypeException, InvalidIssnException, InvalidIsbnException {
+        throws UnsupportedDocumentTypeException, InvalidIssnException, InvalidIsbnException {
         if (publicationType == PublicationType.JOURNAL_CONTENT) {
             return createJournalContext(document);
         } else if (publicationType == PublicationType.BOOK) {
@@ -289,9 +289,9 @@ public class CrossRefConverter extends AbstractConverter {
     private UnconfirmedJournal createJournalContext(CrossRefDocument document) throws InvalidIssnException {
         // TODO actually call the Channel Register API and get the relevant details
         return new UnconfirmedJournal(
-                extractJournalTitle(document),
-                extractPrintIssn(document),
-                extractOnlineIssn(document)
+            extractJournalTitle(document),
+            extractPrintIssn(document),
+            extractOnlineIssn(document)
         );
     }
 
@@ -343,9 +343,9 @@ public class CrossRefConverter extends AbstractConverter {
 
     private Organization extractAndCreatePublisher(CrossRefDocument document) {
         return Optional.ofNullable(document.getPublisher())
-                .filter(nva.commons.core.StringUtils::isNotEmpty)
-                .map(this::getOrganization)
-                .orElse(null);
+            .filter(nva.commons.core.StringUtils::isNotEmpty)
+            .map(this::getOrganization)
+            .orElse(null);
     }
 
     private Organization getOrganization(String publisher) {

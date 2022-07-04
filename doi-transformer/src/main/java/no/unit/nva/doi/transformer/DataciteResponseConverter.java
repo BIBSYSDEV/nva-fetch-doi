@@ -81,7 +81,7 @@ public class DataciteResponseConverter extends AbstractConverter {
             .withCreatedDate(now)
             .withModifiedDate(now)
             .withPublishedDate(extractPublishedDate())
-            .withResourceOwner(new ResourceOwner(owner,UNDEFINED_AFFILIATION))
+            .withResourceOwner(new ResourceOwner(owner, UNDEFINED_AFFILIATION))
             .withPublisher(toPublisher(publisherId))
             .withIdentifier(new SortableIdentifier(identifier.toString()))
             .withStatus(DEFAULT_NEW_PUBLICATION_STATUS)
