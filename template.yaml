@@ -92,7 +92,7 @@ Resources:
             post:
               summary: Fetch data from DOI and return summary
               security:
-                - CognitoUserPool:  ["https://api.nva.unit.no/scopes/backend","https://api.nva.unit.no/scopes/frontend"]
+                - CognitoUserPool:  ["https://api.nva.unit.no/scopes/backend","https://api.nva.unit.no/scopes/frontend", "aws.cognito.signin.user.admin"]
               requestBody:
                 required: true
                 content:
