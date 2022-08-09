@@ -64,7 +64,7 @@ Globals:
     Runtime: java11
     Environment:
       Variables:
-        COGNITO_URI: !Ref CognitoUri
+        COGNITO_HOST: !Ref CognitoUri
   Api:
     Cors:
       AllowMethods: "'POST,OPTIONS'"
