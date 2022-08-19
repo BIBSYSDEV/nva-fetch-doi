@@ -57,10 +57,10 @@ Parameters:
     Default: 'piaRest'
   PiaRestUsername:
     Type: String
-    Default: "{{resolve:secretsmanager:CristinClientBasicAuth:SecretString:username}}"
+    Default: "{{resolve:secretsmanager:PiaRestLoginCredentials:SecretString:PiaRestUser}}"
   PiaRestUsernamePassword:
     Type: String
-    Default: "{{resolve:secretsmanager:CristinClientBasicAuth:SecretString:password}}"
+    Default: "{{resolve:secretsmanager:PiaRestLoginCredentials:SecretString:PiaRestPass}}"
 
 
 Globals:
