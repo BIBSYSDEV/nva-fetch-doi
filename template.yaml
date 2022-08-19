@@ -54,7 +54,7 @@ Parameters:
     Default: '/NVA/Events/EventsBusName'
   PiaRestHost:
     Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: 'PiaRestHost'
+    Default: 'NVA/PiaRestHost'
 
 
 Globals:
