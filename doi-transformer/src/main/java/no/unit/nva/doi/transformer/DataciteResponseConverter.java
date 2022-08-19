@@ -41,6 +41,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.contexttypes.BasicContext;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.exceptions.InvalidIssnException;
@@ -53,6 +54,7 @@ import nva.commons.doi.DoiConverter;
 public class DataciteResponseConverter extends AbstractConverter {
 
     public static final String CREATOR_HAS_NO_NAME_ERROR = "Creator has no name:";
+    private static final URI UNDEFINED_AFFILIATION = null;
 
     public DataciteResponseConverter() {
         this(new DoiConverter());
@@ -79,7 +81,7 @@ public class DataciteResponseConverter extends AbstractConverter {
             .withCreatedDate(now)
             .withModifiedDate(now)
             .withPublishedDate(extractPublishedDate())
-            .withOwner(owner)
+            .withResourceOwner(new ResourceOwner(owner, UNDEFINED_AFFILIATION))
             .withPublisher(toPublisher(publisherId))
             .withIdentifier(new SortableIdentifier(identifier.toString()))
             .withStatus(DEFAULT_NEW_PUBLICATION_STATUS)

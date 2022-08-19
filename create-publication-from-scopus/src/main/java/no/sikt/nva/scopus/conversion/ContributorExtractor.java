@@ -9,6 +9,7 @@ import static nva.commons.core.StringUtils.isNotBlank;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import no.scopus.generated.AuthorGroupTp;
@@ -26,17 +27,21 @@ import org.apache.tika.langdetect.OptimaizeLangDetector;
 public class ContributorExtractor {
 
     public static final String NAME_DELIMITER = ", ";
+    public static final String FIRST_NAME_CRISTIN_FIELD_NAME = "FirstName";
+    public static final String LAST_NAME_CRISTIN_FIELD_NAME = "LastName";
     private final List<CorrespondenceTp> correspondenceTps;
     private final List<AuthorGroupTp> authorGroupTps;
     private final List<Contributor> contributors;
     private final PiaConnection piaConnection;
+    private final CristinConnection cristinConnection;
 
     public ContributorExtractor(List<CorrespondenceTp> correspondenceTps, List<AuthorGroupTp> authorGroupTps,
-                                PiaConnection piaConnection) {
+                                PiaConnection piaConnection, CristinConnection cristinConnection) {
         this.correspondenceTps = correspondenceTps;
         this.authorGroupTps = authorGroupTps;
         this.contributors = new ArrayList<>();
         this.piaConnection = piaConnection;
+        this.cristinConnection = cristinConnection;
     }
 
     public List<Contributor> generateContributors() {
@@ -75,11 +80,13 @@ public class ContributorExtractor {
     }
 
     private void replaceExistingContributor(Contributor existingContributor, AuthorGroupTp authorGroupTp) {
-        var optionalNewAffiliations = generateAffiliation(authorGroupTp);
-        optionalNewAffiliations.ifPresent(
-            organizations ->
-                createNewContributorWithAdditionalAffiliationsAndSwapItInContributorList(organizations,
-                                                                                         existingContributor));
+        if (Objects.isNull(existingContributor.getIdentity().getId())) {
+            var optionalNewAffiliations = generateAffiliation(authorGroupTp);
+            optionalNewAffiliations.ifPresent(
+                organizations ->
+                    createNewContributorWithAdditionalAffiliationsAndSwapItInContributorList(organizations,
+                                                                                             existingContributor));
+        }
     }
 
     private void createNewContributorWithAdditionalAffiliationsAndSwapItInContributorList(
@@ -129,24 +136,34 @@ public class ContributorExtractor {
                                                               AuthorGroupTp authorGroupTp,
                                                               PersonalnameType correspondencePerson) {
         if (authorOrCollaboration instanceof AuthorTp) {
-            generateContributorFromAuthorTp((AuthorTp) authorOrCollaboration, authorGroupTp,
-                                            correspondencePerson);
+            generateContributor((AuthorTp) authorOrCollaboration, authorGroupTp,
+                                correspondencePerson);
         } else {
             generateContributorFromCollaborationTp(
                 (CollaborationTp) authorOrCollaboration, authorGroupTp, correspondencePerson);
         }
     }
 
-    private void generateContributorFromAuthorTp(AuthorTp author, AuthorGroupTp authorGroup,
-                                                 PersonalnameType correspondencePerson) {
+    private void generateContributor(AuthorTp author, AuthorGroupTp authorGroup,
+                                     PersonalnameType correspondencePerson) {
+        var cristinUri = piaConnection.getCristinID(author.getAuid());
+        var cristinPerson = cristinConnection.getCristinPersonByCristinId(cristinUri);
+        contributors.add(
+            cristinPerson
+                .map(person -> CristinContributorExtractor.generateContributorFromCristin(person, author,
+                                                                                          correspondencePerson))
+                .orElseGet(() -> generateContributorFromAuthorTp(author, authorGroup, correspondencePerson)));
+    }
+
+    private Contributor generateContributorFromAuthorTp(AuthorTp author, AuthorGroupTp authorGroup,
+                                                        PersonalnameType correspondencePerson) {
         var identity = generateContributorIdentityFromAuthorTp(author);
         var affiliation = generateAffiliation(authorGroup);
-        var newContributor = new Contributor(identity,
-                                             affiliation.map(List::of).orElse(List.of()),
-                                             Role.CREATOR,
-                                             getSequenceNumber(author),
-                                             isCorrespondingAuthor(author, correspondencePerson));
-        contributors.add(newContributor);
+        return new Contributor(identity,
+                               affiliation.map(List::of).orElse(List.of()),
+                               Role.CREATOR,
+                               getSequenceNumber(author),
+                               isCorrespondingAuthor(author, correspondencePerson));
     }
 
     private void generateContributorFromCollaborationTp(CollaborationTp collaboration,
@@ -165,7 +182,6 @@ public class ContributorExtractor {
         var identity = new Identity();
         identity.setName(determineContributorName(authorTp));
         identity.setOrcId(getOrcidAsUriString(authorTp));
-        identity.setId(piaConnection.getCristinID(authorTp.getAuid()));
         return identity;
     }
 

@@ -70,7 +70,7 @@ Globals:
     Runtime: java11
     Environment:
       Variables:
-        COGNITO_URI: !Ref CognitoUri
+        COGNITO_HOST: !Ref CognitoUri
   Api:
     Cors:
       AllowMethods: "'POST,OPTIONS'"
@@ -98,7 +98,7 @@ Resources:
             post:
               summary: Fetch data from DOI and return summary
               security:
-                - CognitoUserPool:  ["https://api.nva.unit.no/scopes/backend","https://api.nva.unit.no/scopes/frontend"]
+                - CognitoUserPool:  ["https://api.nva.unit.no/scopes/backend","https://api.nva.unit.no/scopes/frontend", "aws.cognito.signin.user.admin"]
               requestBody:
                 required: true
                 content:
@@ -283,9 +283,9 @@ Resources:
           EVENTS_BUCKET: !Ref NvaEventsBucketName
           EVENTS_BUS: !Ref NvaEventsBusName
           API_HOST: !Ref ApiDomain
-          PIA_REST_API: !Ref piaRest
           PIA_USERNAME: !Ref PiaRestUsername
           PIA_PASSWORD: !Ref PiaRestUsernamePassword
+          PIA_REST_API: !Ref PiaRestApi
       Events:
         Scopus:
           Type: S3
