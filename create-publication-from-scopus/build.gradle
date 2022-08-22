@@ -46,7 +46,5 @@ test{
     environment "EVENTS_BUCKET", "NvaEventsBucket"
     environment "EVENTS_BUS", "NvaEventBus"
     environment "PIA_REST_API", "localhost/sentralimport"
-    environment "PIA_USERNAME_KEY", "someUser"
-    environment "PIA_PASSWORD_KEY", "somePassword"
     environment "PIA_SECRETS_NAME", "someSecretName"
 }
