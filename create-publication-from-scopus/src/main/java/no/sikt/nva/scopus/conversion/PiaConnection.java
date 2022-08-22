@@ -36,8 +36,8 @@ public class PiaConnection {
     private static final String AUTHORIZATION = "Authorization";
     private static final String BASIC_AUTHORIZATION = "Basic %s";
     private static final String PIA_REST_API = new Environment().readEnv("PIA_REST_API");
-    public static final String PIA_USERNAME_KEY_NAME = "PIA_PASSWORD_KEY";
-    public static final String PIA_PASSWORD_KEY_NAME = "PIA_USERNAME_KEY";
+    public static final String PIA_USERNAME_KEY_NAME = new Environment().readEnv("PIA_USERNAME_KEY");;
+    public static final String PIA_PASSWORD_KEY_NAME = new Environment().readEnv("PIA_PASSWORD_KEY");;
     public static final String PIA_SECRETS_NAME = new Environment().readEnv("PIA_SECRETS_NAME");
     private static final String NVA_DOMAIN = new Environment().readEnv("API_HOST");
     private static final Logger logger = LoggerFactory.getLogger(PiaConnection.class);
