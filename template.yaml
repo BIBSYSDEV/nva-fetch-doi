@@ -52,9 +52,9 @@ Parameters:
   NvaEventsBusName:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/Events/EventsBusName'
-  PiaRestApi:
+  PiaRestHost:
     Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: 'piaRest'
+    Default: '/NVA/PiaRestHost'
   PiaRestCredentialsTokenName:
     Type: String
     Default: 'PiaRestLoginCredentials'
@@ -286,10 +286,14 @@ Resources:
           EVENTS_BUCKET: !Ref NvaEventsBucketName
           EVENTS_BUS: !Ref NvaEventsBusName
           API_HOST: !Ref ApiDomain
+<<<<<<< HEAD
           PIA_SECRETS_NAME: !Ref PiaRestCredentialsTokenName
           PIA_USERNAME_KEY: !Ref PiaRestUsernameKey
           PIA_PASSWORD_KEY: !Ref PiaRestUsernamePasswordKey
           PIA_REST_API: !Ref PiaRestApi
+=======
+          PIA_REST_API: !Ref PiaRestHost
+>>>>>>> b3f946758479e565ab85f2d461113a110e87ff57
       Events:
         Scopus:
           Type: S3
