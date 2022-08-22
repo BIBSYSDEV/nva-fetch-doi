@@ -11,8 +11,10 @@ dependencies {
     implementation libs.xsd2java.jakarta
     implementation libs.aws.java.sdk2.s3
     implementation libs.aws.java.sdk2.eventbridge
+    implementation libs.aws.sdk2.secrets
 
     implementation libs.nva.s3
+    implementation libs.nva.secrets
     implementation libs.nva.json
     implementation libs.nva.core
     implementation libs.nva.doi
@@ -44,6 +46,7 @@ test{
     environment "EVENTS_BUCKET", "NvaEventsBucket"
     environment "EVENTS_BUS", "NvaEventBus"
     environment "PIA_REST_API", "localhost/sentralimport"
-    environment "PIA_USERNAME", "piaUsername"
-    environment "PIA_PASSWORD", "piaPassword"
+    environment "PIA_USERNAME_KEY", "someUser"
+    environment "PIA_PASSWORD_KEY", "somePassword"
+    environment "PIA_SECRETS_NAME", "someSecretName"
 }

@@ -20,6 +20,7 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.paths.UriWrapper;
+import nva.commons.secrets.SecretsReader;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,8 +36,9 @@ public class PiaConnection {
     private static final String AUTHORIZATION = "Authorization";
     private static final String BASIC_AUTHORIZATION = "Basic %s";
     private static final String PIA_REST_API = new Environment().readEnv("PIA_REST_API");
-    private static final String PIA_USERNAME = new Environment().readEnv("PIA_USERNAME");
-    private static final String PIA_PASSWORD = new Environment().readEnv("PIA_PASSWORD");
+    public static final String PIA_USERNAME_KEY_NAME = "PIA_PASSWORD_KEY";
+    public static final String PIA_PASSWORD_KEY_NAME = "PIA_USERNAME_KEY";
+    public static final String PIA_SECRETS_NAME = new Environment().readEnv("PIA_SECRETS_NAME");
     private static final String NVA_DOMAIN = new Environment().readEnv("API_HOST");
     private static final Logger logger = LoggerFactory.getLogger(PiaConnection.class);
     private final HttpClient httpClient;
@@ -45,17 +47,17 @@ public class PiaConnection {
 
     private final String cristinHost;
 
-    public PiaConnection(HttpClient httpClient, String piaHost, String cristinHost) {
+    public PiaConnection(HttpClient httpClient, String piaHost, String cristinHost, SecretsReader secretsReader) {
         this.httpClient = httpClient;
         this.piaHost = piaHost;
-        this.piaAuthorization = createAuthorization();
+        this.piaAuthorization = createAuthorization(secretsReader);
         this.cristinHost = cristinHost;
     }
 
     @JacocoGenerated
     public PiaConnection() {
         this(HttpClient.newBuilder().version(HttpClient.Version.HTTP_2).build(),
-             PIA_REST_API, NVA_DOMAIN);
+             PIA_REST_API, NVA_DOMAIN, new SecretsReader());
     }
 
     public URI getCristinID(String scopusId) {
@@ -71,8 +73,10 @@ public class PiaConnection {
                    .getUri();
     }
 
-    private String createAuthorization() {
-        String loginPassword = PIA_USERNAME + USERNAME_PASSWORD_DELIMITER + PIA_PASSWORD;
+    private static String createAuthorization(SecretsReader secretsReader) {
+        var piaUserName = secretsReader.fetchSecret(PIA_SECRETS_NAME, PIA_USERNAME_KEY_NAME);
+        var piaPassword= secretsReader.fetchSecret(PIA_SECRETS_NAME, PIA_PASSWORD_KEY_NAME);
+        var loginPassword = piaUserName + USERNAME_PASSWORD_DELIMITER + piaPassword;
         return String.format(BASIC_AUTHORIZATION, Base64.getEncoder().encodeToString(loginPassword.getBytes()));
     }
 

@@ -13,6 +13,9 @@ import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_ELECTRONIC;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_PRINT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.sikt.nva.scopus.conversion.ContributorExtractor.NAME_DELIMITER;
+import static no.sikt.nva.scopus.conversion.PiaConnection.PIA_PASSWORD_KEY_NAME;
+import static no.sikt.nva.scopus.conversion.PiaConnection.PIA_SECRETS_NAME;
+import static no.sikt.nva.scopus.conversion.PiaConnection.PIA_USERNAME_KEY_NAME;
 import static no.sikt.nva.scopus.conversion.PublicationContextCreator.UNSUPPORTED_SOURCE_TYPE;
 import static no.sikt.nva.scopus.test.utils.ScopusGenerator.randomYear;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
@@ -50,7 +53,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.RequestParametersEntity;
@@ -114,6 +119,7 @@ import no.sikt.nva.scopus.test.utils.CristinPersonGenerator;
 import no.sikt.nva.scopus.test.utils.LanguagesWrapper;
 import no.sikt.nva.scopus.test.utils.PiaAuthorResponseGenerator;
 import no.sikt.nva.scopus.test.utils.ScopusGenerator;
+import no.sikt.nva.scopus.test.utils.SecretsMockGenerator;
 import no.sikt.nva.testing.http.WiremockHttpClient;
 import no.unit.nva.doi.models.Doi;
 import no.unit.nva.events.models.EventReference;
@@ -148,6 +154,7 @@ import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
+import nva.commons.secrets.SecretsReader;
 import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
@@ -159,10 +166,14 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.invocation.InvocationOnMock;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
+import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
+import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
 
 class ScopusHandlerTest {
 
@@ -178,6 +189,7 @@ class ScopusHandlerTest {
     public static final String INVALID_ISSN = "096042";
     public static final String VALID_ISSN = "0960-4286";
     public static final String LANGUAGE_ENG = "eng";
+
     private static final String EXPECTED_RESULTS_PATH = "expectedResults";
     private static final String HARDCODED_EXPECTED_KEYWORD_1 = "<sup>64</sup>Cu";
     private static final String HARDCODED_EXPECTED_KEYWORD_2 = "excretion";
@@ -194,12 +206,11 @@ class ScopusHandlerTest {
     private URI serverUriJournal;
     private URI serverUriPublisher;
     private MetadataService metadataService;
-
     private FakeEventBridgeClient eventBridgeClient;
-
     private PiaConnection piaConnection;
     private CristinConnection cristinConnection;
     private ScopusGenerator scopusData;
+    private SecretsReader secretsReader;
 
     public static Stream<Arguments> providedLanguagesAndExpectedOutput() {
         return Stream.concat(LanguageConstants.ALL_LANGUAGES.stream().map(ScopusHandlerTest::createArguments),
@@ -212,12 +223,13 @@ class ScopusHandlerTest {
 
     @BeforeEach
     public void init() {
+        secretsReader = SecretsMockGenerator.createSecretsReaderMock();
         s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, "ignoredValue");
         startWiremockServer();
         var httpClient = WiremockHttpClient.create();
         metadataService = new MetadataService(httpClient, serverUriJournal, serverUriPublisher);
-        piaConnection = new PiaConnection(httpClient, httpServer.baseUrl(), httpServer.baseUrl());
+        piaConnection = new PiaConnection(httpClient, httpServer.baseUrl(), httpServer.baseUrl(), secretsReader);
         cristinConnection = new CristinConnection(httpClient);
         eventBridgeClient = new FakeEventBridgeClient();
         scopusHandler = new ScopusHandler(s3Client,

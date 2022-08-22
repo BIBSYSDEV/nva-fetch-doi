@@ -55,12 +55,15 @@ Parameters:
   PiaRestApi:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: 'piaRest'
-  PiaRestUsername:
+  PiaRestCredentialsTokenName:
     Type: String
-    Default: "{{resolve:secretsmanager:PiaRestLoginCredentials:SecretString:PiaRestUser}}"
-  PiaRestUsernamePassword:
+    Default: 'PiaRestLoginCredentials'
+  PiaRestUsernameKey:
     Type: String
-    Default: "{{resolve:secretsmanager:PiaRestLoginCredentials:SecretString:PiaRestPass}}"
+    Default: "PiaRestUser"
+  PiaRestUsernamePasswordKey:
+    Type: String
+    Default: "PiaRestPass"
 
 
 Globals:
@@ -283,8 +286,9 @@ Resources:
           EVENTS_BUCKET: !Ref NvaEventsBucketName
           EVENTS_BUS: !Ref NvaEventsBusName
           API_HOST: !Ref ApiDomain
-          PIA_USERNAME: !Ref PiaRestUsername
-          PIA_PASSWORD: !Ref PiaRestUsernamePassword
+          PIA_SECRETS_NAME: !Ref PiaRestCredentialsTokenName
+          PIA_USERNAME_KEY: !Ref PiaRestUsernameKey
+          PIA_PASSWORD_KEY: !Ref PiaRestUsernamePasswordKey
           PIA_REST_API: !Ref PiaRestApi
       Events:
         Scopus:
