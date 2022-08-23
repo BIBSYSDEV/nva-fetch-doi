@@ -24,7 +24,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -38,7 +37,7 @@ class IdentityUpdaterTest {
     public static final String SAMPLE_IDENTITY_IDENTIFIER = "https://api.dev.nva.aws.unit.no/cristin/person/123456";
 
     @Test
-    public void enrichPublicationCreatorsUpdatesPublicationWithIdentifierWhenCreatorHavingOrcidAndNoIdentifier() {
+    public void shouldUpdatePublicationWithIdentifierWhenEnrichingPublicationAndCreatorHasOrcid() {
         var identity = createIdentityWithOrcid();
         var cristinProxyClient = mock(CristinProxyClient.class);
         var sampleIdentifier = URI.create(SAMPLE_IDENTITY_IDENTIFIER);
@@ -55,44 +54,44 @@ class IdentityUpdaterTest {
     }
 
     @Test
-    public void enrichPublicationCreatorsDoesNotAlterPublicationWithoutOrcid() {
+    public void shouldNotAlterPublicationWhenEnrichingPublicationCreatorsWithoutOrcid() {
         var cristinProxyClient = mock(CristinProxyClient.class);
         var publication = createPublicationWithIdentity(new Identity());
         var updatedPublication = IdentityUpdater.enrichPublicationCreators(cristinProxyClient, publication);
 
         assertNotNull(publication);
         assertNotNull(updatedPublication);
-        assertEquals(publication, updatedPublication);
+        assertThat(updatedPublication, equalTo(publication));
     }
 
     @Test
-    public void enrichPublicationCreatorsIgnoresExceptionsAndReturnsUnmodifiedPublication() {
+    public void shouldIgnoreExceptionsAndReturnUnmodifiedPublicationWhenEnrichPublicationCreatorsThrowsException() {
         var identity = new Identity.Builder().withOrcId(ILLEGAL_ORCID).build();
         var publication = createPublicationWithIdentity(identity);
         var cristinProxyClient = mock(CristinProxyClient.class);
         doThrow(new RuntimeException()).when(cristinProxyClient).lookupIdentifierFromOrcid(any());
         var updatedPublication = IdentityUpdater.enrichPublicationCreators(cristinProxyClient, publication);
 
-        assertEquals(publication, updatedPublication);
+        assertThat(updatedPublication, equalTo(publication));
     }
 
     @Test
-    public void enrichPublicationCreatorsDoesNotUpdateIdentifierWhenAlreadyExists() {
+    public void shouldNotUpdateIdentifierWhenIdentifierAlreadyExistsWhenEnrichingPublicationCreators() {
         var identity = new Identity.Builder().withId(randomUri()).withOrcId(SAMPLE_ORCID).build();
         var publication = createPublicationWithIdentity(identity);
         var cristinProxyClient = mock(CristinProxyClient.class);
         var updatedPublication = IdentityUpdater.enrichPublicationCreators(cristinProxyClient, publication);
 
-        assertEquals(publication, updatedPublication);
+        assertThat(updatedPublication, equalTo(publication));
     }
 
     @Test
-    public void enrichPublicationCreatorsDoesNotAlterPublicationOnMissingIdentity() {
+    public void shouldNotAlterPublicationWhenMissingIdentityCallingEnrichPublicationCreators() {
         var publication = createPublicationWithIdentity(null);
         var cristinProxyClient = mock(CristinProxyClient.class);
         var updatedPublication = IdentityUpdater.enrichPublicationCreators(cristinProxyClient, publication);
 
-        assertEquals(publication, updatedPublication);
+        assertThat(updatedPublication, equalTo(publication));
     }
 
     private List<URI> getIdentifiers(Publication publication) {
