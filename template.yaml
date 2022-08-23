@@ -52,9 +52,9 @@ Parameters:
   NvaEventsBusName:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/Events/EventsBusName'
-  PiaRestApi:
+  PiaRestHost:
     Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: 'piaRest'
+    Default: '/NVA/PiaRestHost'
 
 
 Globals:
@@ -64,7 +64,7 @@ Globals:
     Runtime: java11
     Environment:
       Variables:
-        COGNITO_URI: !Ref CognitoUri
+        COGNITO_HOST: !Ref CognitoUri
   Api:
     Cors:
       AllowMethods: "'POST,OPTIONS'"
@@ -92,7 +92,7 @@ Resources:
             post:
               summary: Fetch data from DOI and return summary
               security:
-                - CognitoUserPool:  ["https://api.nva.unit.no/scopes/backend","https://api.nva.unit.no/scopes/frontend"]
+                - CognitoUserPool:  ["https://api.nva.unit.no/scopes/backend","https://api.nva.unit.no/scopes/frontend", "aws.cognito.signin.user.admin"]
               requestBody:
                 required: true
                 content:
@@ -276,7 +276,7 @@ Resources:
           EVENTS_BUCKET: !Ref NvaEventsBucketName
           EVENTS_BUS: !Ref NvaEventsBusName
           API_HOST: !Ref ApiDomain
-          PIA_REST_API: !Ref PiaRestApi
+          PIA_REST_API: !Ref PiaRestHost
       Events:
         Scopus:
           Type: S3
