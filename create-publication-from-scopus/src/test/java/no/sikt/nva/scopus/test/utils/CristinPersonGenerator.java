@@ -19,7 +19,7 @@ import nva.commons.core.paths.UriWrapper;
 
 public class CristinPersonGenerator {
 
-    private final static int MAX_NUMBER_OF_AFFILIATIONS = 10;
+    private static final int MAX_NUMBER_OF_AFFILIATIONS = 10;
 
     public static Person generateCristinPerson(URI cristinId, String firstname, String surname) {
         var names = Set.of(new TypedValue("FirstName", firstname), new TypedValue("LastName", surname));

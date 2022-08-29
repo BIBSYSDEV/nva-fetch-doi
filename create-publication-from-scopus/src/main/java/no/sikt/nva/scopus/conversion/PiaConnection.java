@@ -71,6 +71,7 @@ public class PiaConnection {
                    .orElse(this::logFailureAndReturnNull);
     }
 
+    @JacocoGenerated
     private static HttpClient getDefaultHttpClient() {
         return HttpClient.newBuilder().version(HttpClient.Version.HTTP_2).build();
     }
