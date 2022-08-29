@@ -57,7 +57,7 @@ Parameters:
     Default: '/NVA/PiaRestHost'
   PiaRestCredentialsTokenName:
     Type: String
-    Default: 'PiaRestLogon'
+    Default: 'PiaRestCredentials'
   PiaRestUsernameKey:
     Type: String
     Default: "PiaRestUser"
