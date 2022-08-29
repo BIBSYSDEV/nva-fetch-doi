@@ -13,6 +13,11 @@ import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_ELECTRONIC;
 import static no.sikt.nva.scopus.ScopusConstants.ISSN_TYPE_PRINT;
 import static no.sikt.nva.scopus.ScopusConstants.ORCID_DOMAIN_URL;
 import static no.sikt.nva.scopus.conversion.ContributorExtractor.NAME_DELIMITER;
+import static no.sikt.nva.scopus.conversion.PiaConnection.API_HOST_ENV_KEY;
+import static no.sikt.nva.scopus.conversion.PiaConnection.PIA_PASSWORD_KEY;
+import static no.sikt.nva.scopus.conversion.PiaConnection.PIA_REST_API_ENV_KEY;
+import static no.sikt.nva.scopus.conversion.PiaConnection.PIA_SECRETS_NAME_ENV_KEY;
+import static no.sikt.nva.scopus.conversion.PiaConnection.PIA_USERNAME_KEY;
 import static no.sikt.nva.scopus.conversion.PublicationContextCreator.UNSUPPORTED_SOURCE_TYPE;
 import static no.sikt.nva.scopus.test.utils.ScopusGenerator.randomYear;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
@@ -51,6 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.RequestParametersEntity;
@@ -142,12 +148,15 @@ import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import no.unit.nva.stubs.FakeS3Client;
+import no.unit.nva.stubs.FakeSecretsManagerClient;
+import nva.commons.core.Environment;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.StringUtils;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
+import nva.commons.secrets.SecretsReader;
 import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
@@ -178,6 +187,7 @@ class ScopusHandlerTest {
     public static final String INVALID_ISSN = "096042";
     public static final String VALID_ISSN = "0960-4286";
     public static final String LANGUAGE_ENG = "eng";
+
     private static final String EXPECTED_RESULTS_PATH = "expectedResults";
     private static final String HARDCODED_EXPECTED_KEYWORD_1 = "<sup>64</sup>Cu";
     private static final String HARDCODED_EXPECTED_KEYWORD_2 = "excretion";
@@ -187,6 +197,9 @@ class ScopusHandlerTest {
     private static final String PUBLICATION_MONTH_FIELD_NAME = "month";
     private static final String PUBLICATION_YEAR_FIELD_NAME = "year";
     private static final String FILENAME_EXPECTED_ABSTRACT_IN_0000469852 = "expectedAbstract.txt";
+    private static final String PIA_SECRET_NAME = "someSecretName";
+    private static final String PIA_USERNAME_SECRET_KEY = "someUserNameKey";
+    private static final String PIA_PASSWRORD_SECRET_KEY = "somePasswordNameKey";
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
     private ScopusHandler scopusHandler;
@@ -194,12 +207,11 @@ class ScopusHandlerTest {
     private URI serverUriJournal;
     private URI serverUriPublisher;
     private MetadataService metadataService;
-
     private FakeEventBridgeClient eventBridgeClient;
-
     private PiaConnection piaConnection;
     private CristinConnection cristinConnection;
     private ScopusGenerator scopusData;
+    private SecretsReader secretsReader;
 
     public static Stream<Arguments> providedLanguagesAndExpectedOutput() {
         return Stream.concat(LanguageConstants.ALL_LANGUAGES.stream().map(ScopusHandlerTest::createArguments),
@@ -212,12 +224,17 @@ class ScopusHandlerTest {
 
     @BeforeEach
     public void init() {
+        var fakeSecretsManagerClient = new FakeSecretsManagerClient();
+        secretsReader = new SecretsReader(fakeSecretsManagerClient);
+        fakeSecretsManagerClient.putSecret(PIA_SECRET_NAME, PIA_USERNAME_SECRET_KEY, randomString());
+        fakeSecretsManagerClient.putSecret(PIA_SECRET_NAME, PIA_PASSWRORD_SECRET_KEY, randomString());
         s3Client = new FakeS3Client();
         s3Driver = new S3Driver(s3Client, "ignoredValue");
         startWiremockServer();
         var httpClient = WiremockHttpClient.create();
         metadataService = new MetadataService(httpClient, serverUriJournal, serverUriPublisher);
-        piaConnection = new PiaConnection(httpClient, httpServer.baseUrl(), httpServer.baseUrl());
+        var piaEnvironment = createPiaConnectionEnvironment();
+        piaConnection = new PiaConnection(httpClient, secretsReader, piaEnvironment);
         cristinConnection = new CristinConnection(httpClient);
         eventBridgeClient = new FakeEventBridgeClient();
         scopusHandler = new ScopusHandler(s3Client,
@@ -1017,6 +1034,16 @@ class ScopusHandlerTest {
             languageUri = BOKMAAL.getLexvoUri();
         }
         return Arguments.of(List.of(language), languageUri);
+    }
+
+    private Environment createPiaConnectionEnvironment() {
+        var environment = mock(Environment.class);
+        when(environment.readEnv(PIA_REST_API_ENV_KEY)).thenReturn(httpServer.baseUrl());
+        when(environment.readEnv(API_HOST_ENV_KEY)).thenReturn(httpServer.baseUrl());
+        when(environment.readEnv(PIA_USERNAME_KEY)).thenReturn(PIA_USERNAME_SECRET_KEY);
+        when(environment.readEnv(PIA_PASSWORD_KEY)).thenReturn(PIA_USERNAME_SECRET_KEY);
+        when(environment.readEnv(PIA_SECRETS_NAME_ENV_KEY)).thenReturn(PIA_SECRET_NAME);
+        return environment;
     }
 
     private void generatePiaResponseAndCristinPersons(PiaAuthorResponseGenerator piaAuthorResponseGenerator,

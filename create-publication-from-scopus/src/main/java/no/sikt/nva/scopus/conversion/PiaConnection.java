@@ -20,6 +20,7 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.paths.UriWrapper;
+import nva.commons.secrets.SecretsReader;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,33 +30,37 @@ public class PiaConnection {
     public static final String CRISTIN_PERSON_PATH = "/cristin/person/";
     public static final String ERROR_MESSAGE_EXTRACT_CRISTINID_ERROR = "Could not extract cristin id";
     public static final int FALSE_IN_PIA_INTEGER = 0;
+    public static final String PIA_REST_API_ENV_KEY = "PIA_REST_API";
+    public static final String API_HOST_ENV_KEY = "API_HOST";
+    public static final String PIA_USERNAME_KEY = "PIA_USERNAME_KEY";
+    public static final String PIA_PASSWORD_KEY = "PIA_PASSWORD_KEY";
+    public static final String PIA_SECRETS_NAME_ENV_KEY = "PIA_SECRETS_NAME";
     private static final String PIA_RESPONSE_ERROR = "Pia responded with status code";
     private static final String COULD_NOT_GET_ERROR_MESSAGE = "Could not get response from Pia for scopus id ";
     private static final String USERNAME_PASSWORD_DELIMITER = ":";
     private static final String AUTHORIZATION = "Authorization";
     private static final String BASIC_AUTHORIZATION = "Basic %s";
-    private static final String PIA_REST_API = new Environment().readEnv("PIA_REST_API");
-    private static final String PIA_USERNAME = new Environment().readEnv("PIA_USERNAME");
-    private static final String PIA_PASSWORD = new Environment().readEnv("PIA_PASSWORD");
-    private static final String NVA_DOMAIN = new Environment().readEnv("API_HOST");
     private static final Logger logger = LoggerFactory.getLogger(PiaConnection.class);
     private final HttpClient httpClient;
     private final transient String piaAuthorization;
     private final String piaHost;
 
-    private final String cristinHost;
+    private final String cristinProxyHost;
 
-    public PiaConnection(HttpClient httpClient, String piaHost, String cristinHost) {
+    public PiaConnection(HttpClient httpClient,
+                         SecretsReader secretsReader,
+                         Environment environment) {
         this.httpClient = httpClient;
-        this.piaHost = piaHost;
-        this.piaAuthorization = createAuthorization();
-        this.cristinHost = cristinHost;
+        this.piaHost = environment.readEnv(PIA_REST_API_ENV_KEY);
+        this.piaAuthorization = createAuthorization(secretsReader, environment);
+        this.cristinProxyHost = environment.readEnv(API_HOST_ENV_KEY);
     }
 
     @JacocoGenerated
     public PiaConnection() {
-        this(HttpClient.newBuilder().version(HttpClient.Version.HTTP_2).build(),
-             PIA_REST_API, NVA_DOMAIN);
+        this(getDefaultHttpClient(),
+             new SecretsReader(),
+             new Environment());
     }
 
     public URI getCristinID(String scopusId) {
@@ -66,14 +71,25 @@ public class PiaConnection {
                    .orElse(this::logFailureAndReturnNull);
     }
 
-    private URI createCristinUriFromCristinNumber(int cristinNumber) {
-        return UriWrapper.fromUri(cristinHost + CRISTIN_PERSON_PATH + cristinNumber)
-                   .getUri();
+    @JacocoGenerated
+    private static HttpClient getDefaultHttpClient() {
+        return HttpClient.newBuilder().version(HttpClient.Version.HTTP_2).build();
     }
 
-    private String createAuthorization() {
-        String loginPassword = PIA_USERNAME + USERNAME_PASSWORD_DELIMITER + PIA_PASSWORD;
+    private static String createAuthorization(SecretsReader secretsReader, Environment environment) {
+        var piaUsernameKeyName = environment.readEnv(PIA_USERNAME_KEY);
+        var piaPasswordKeyName = environment.readEnv(PIA_PASSWORD_KEY);
+        var piaSecretsName = environment.readEnv(PIA_SECRETS_NAME_ENV_KEY);
+
+        var piaUserName = secretsReader.fetchSecret(piaSecretsName, piaUsernameKeyName);
+        var piaPassword = secretsReader.fetchSecret(piaSecretsName, piaPasswordKeyName);
+        var loginPassword = piaUserName + USERNAME_PASSWORD_DELIMITER + piaPassword;
         return String.format(BASIC_AUTHORIZATION, Base64.getEncoder().encodeToString(loginPassword.getBytes()));
+    }
+
+    private URI createCristinUriFromCristinNumber(int cristinNumber) {
+        return UriWrapper.fromUri(cristinProxyHost + CRISTIN_PERSON_PATH + cristinNumber)
+                   .getUri();
     }
 
     private HttpRequest createRequest(URI uri) {

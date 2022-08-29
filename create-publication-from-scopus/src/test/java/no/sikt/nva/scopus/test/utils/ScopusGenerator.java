@@ -101,8 +101,10 @@ public final class ScopusGenerator {
     private final List<AffiliationTp> affiliations;
     private final ContentWrapper contentWithSupAndInf;
     private final LanguagesWrapper languages;
+    private boolean shouldReturnAuthorTyp;
 
     public ScopusGenerator() {
+        this.shouldReturnAuthorTyp = true;
         this.doi = randomDoi();
         this.languages = createRandomLanguages();
         this.minimumSequenceNumber = 1;
@@ -114,6 +116,7 @@ public final class ScopusGenerator {
     }
 
     private ScopusGenerator(AbstractsTp abstractsTp) {
+        this.shouldReturnAuthorTyp = true;
         this.languages = createRandomLanguages();
         this.doi = randomDoi();
         this.sourcetypeAtt = SourcetypeAtt.J;
@@ -125,6 +128,7 @@ public final class ScopusGenerator {
     }
 
     private ScopusGenerator(URI doi) {
+        this.shouldReturnAuthorTyp = true;
         this.languages = createRandomLanguages();
         this.doi = doi;
         this.minimumSequenceNumber = 1;
@@ -136,6 +140,7 @@ public final class ScopusGenerator {
     }
 
     private ScopusGenerator(SourcetypeAtt sourcetypeAtt) {
+        this.shouldReturnAuthorTyp = true;
         this.languages = createRandomLanguages();
         this.sourcetypeAtt = sourcetypeAtt;
         this.minimumSequenceNumber = 1;
@@ -147,6 +152,7 @@ public final class ScopusGenerator {
     }
 
     private ScopusGenerator(CitationtypeAtt citationtypeAtt) {
+        this.shouldReturnAuthorTyp = true;
         this.languages = createRandomLanguages();
         this.doi = randomDoi();
         this.citationtypeAtt = citationtypeAtt;
@@ -158,6 +164,7 @@ public final class ScopusGenerator {
     }
 
     private ScopusGenerator(List<AffiliationTp> affiliations) {
+        this.shouldReturnAuthorTyp = true;
         this.languages = createRandomLanguages();
         this.doi = randomDoi();
         this.sourcetypeAtt = SourcetypeAtt.J;
@@ -168,6 +175,7 @@ public final class ScopusGenerator {
     }
 
     private ScopusGenerator(ContentWrapper contentWithSupAndInf) {
+        this.shouldReturnAuthorTyp = true;
         this.languages = createRandomLanguages();
         this.contentWithSupAndInf = contentWithSupAndInf;
         this.doi = randomDoi();
@@ -178,6 +186,7 @@ public final class ScopusGenerator {
     }
 
     private ScopusGenerator(LanguagesWrapper languages) {
+        this.shouldReturnAuthorTyp = true;
         this.languages = languages;
         this.contentWithSupAndInf = packRandomSerializablesWithSupAndInf();
         this.doi = randomDoi();
@@ -369,7 +378,7 @@ public final class ScopusGenerator {
 
     private List<?> randomAuthorOrCollaborations() {
         final int maxNumbersOfAuthors = 50;
-        return IntStream.range(0, randomInteger(maxNumbersOfAuthors) + 1)
+        return IntStream.range(0, randomInteger(maxNumbersOfAuthors) + 2)
             .boxed()
             .map(index -> randomAuthorOrCollaboration())
             .collect(Collectors.toList());
@@ -435,8 +444,10 @@ public final class ScopusGenerator {
     }
 
     private Object randomAuthorOrCollaboration() {
-        var shouldReturnAuthorTyp = randomBoolean();
-        return shouldReturnAuthorTyp ? randomAuthorTp() : randomCollaborationTp();
+        shouldReturnAuthorTyp = !shouldReturnAuthorTyp;
+        return shouldReturnAuthorTyp
+                   ? randomAuthorTp()
+                   : randomCollaborationTp();
     }
 
     private String generateSequenceNumber() {

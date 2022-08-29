@@ -55,6 +55,15 @@ Parameters:
   PiaRestHost:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/PiaRestHost'
+  PiaRestCredentialsTokenName:
+    Type: String
+    Default: 'PiaRestCredentials'
+  PiaRestUsernameKey:
+    Type: String
+    Default: "PiaRestUser"
+  PiaRestUsernamePasswordKey:
+    Type: String
+    Default: "PiaRestPass"
 
 
 Globals:
@@ -276,6 +285,9 @@ Resources:
           EVENTS_BUCKET: !Ref NvaEventsBucketName
           EVENTS_BUS: !Ref NvaEventsBusName
           API_HOST: !Ref ApiDomain
+          PIA_SECRETS_NAME: !Ref PiaRestCredentialsTokenName
+          PIA_USERNAME_KEY: !Ref PiaRestUsernameKey
+          PIA_PASSWORD_KEY: !Ref PiaRestUsernamePasswordKey
           PIA_REST_API: !Ref PiaRestHost
       Events:
         Scopus:
