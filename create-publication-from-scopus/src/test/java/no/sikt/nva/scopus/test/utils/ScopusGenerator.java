@@ -371,7 +371,7 @@ public final class ScopusGenerator {
         final int maxNumbersOfAuthors = 50;
         return IntStream.range(0, randomInteger(maxNumbersOfAuthors) + 1)
             .boxed()
-            .map(index -> randomAuthorOrCollaboration())
+            .map(this::randomAuthorOrCollaboration)
             .collect(Collectors.toList());
     }
 
@@ -434,9 +434,10 @@ public final class ScopusGenerator {
         return authorsAndCollaborations.subList(min, numbersOfAuthorOrCollaborations);
     }
 
-    private Object randomAuthorOrCollaboration() {
+    private Object randomAuthorOrCollaboration(int index) {
+        var minimumOneAuthorTp = 1;
         var shouldReturnAuthorTyp = randomBoolean();
-        return shouldReturnAuthorTyp ? randomAuthorTp() : randomCollaborationTp();
+        return shouldReturnAuthorTyp || minimumOneAuthorTp == index ? randomAuthorTp() : randomCollaborationTp();
     }
 
     private String generateSequenceNumber() {
