@@ -20,7 +20,7 @@ import nva.commons.core.ioutils.IoUtils;
 import nva.commons.doi.DoiConverter;
 import org.junit.jupiter.api.Test;
 
-public class DoiTransformServiceTest {
+class DoiTransformServiceTest {
 
     public static final String OWNER = "owner";
     public static final URI CUSTOMER_ID = URI.create("http://example.org/publisher/123");
@@ -31,7 +31,7 @@ public class DoiTransformServiceTest {
     private static final Path CROSSREF_WITH_XML_ASTRACT_JSON_PATH = Path.of("crossrefWithAbstract.json");
 
     @Test
-    public void transFormPublicationReturnsPublicationOnValidCrossrefBody()
+    void transFormPublicationReturnsPublicationOnValidCrossrefBody()
             throws URISyntaxException, InvalidIssnException,
             JsonProcessingException, InvalidIsbnException, UnsupportedDocumentTypeException {
         DoiTransformService doiTransformService = getDoiTransformService();
@@ -41,11 +41,11 @@ public class DoiTransformServiceTest {
             CUSTOMER_ID);
 
         assertNotNull(publication);
-        assertEquals(publication.getOwner(), OWNER);
+        assertEquals(OWNER, publication.getResourceOwner().getOwner());
     }
 
     @Test
-    public void transFormBookPublicationReturnsPublicationOnValidCrossrefBody()
+    void transFormBookPublicationReturnsPublicationOnValidCrossrefBody()
             throws URISyntaxException, InvalidIssnException,
             JsonProcessingException, InvalidIsbnException, UnsupportedDocumentTypeException {
         DoiTransformService doiTransformService = getDoiTransformService();
@@ -55,11 +55,11 @@ public class DoiTransformServiceTest {
                 CUSTOMER_ID);
 
         assertNotNull(publication);
-        assertEquals(publication.getOwner(), OWNER);
+        assertEquals(OWNER, publication.getResourceOwner().getOwner());
     }
 
     @Test
-    public void transformPublicationWithXmlAbstractReturnsPublicationWithoutXml() throws URISyntaxException,
+    void transformPublicationWithXmlAbstractReturnsPublicationWithoutXml() throws URISyntaxException,
             InvalidIssnException, JsonProcessingException, InvalidIsbnException, UnsupportedDocumentTypeException {
         DoiTransformService doiTransformService = getDoiTransformService();
         String crossRefBody = IoUtils.stringFromResources(CROSSREF_WITH_XML_ASTRACT_JSON_PATH);
@@ -70,7 +70,7 @@ public class DoiTransformServiceTest {
     }
 
     @Test
-    public void transFormPublicationReturnsPublicationOnValidDataciteBody() throws URISyntaxException,
+    void transFormPublicationReturnsPublicationOnValidDataciteBody() throws URISyntaxException,
             InvalidIssnException, JsonProcessingException, InvalidIsbnException, UnsupportedDocumentTypeException {
         DoiTransformService doiTransformService = getDoiTransformService();
         String crossrefBody = IoUtils.stringFromResources(DATACITE_JSON_PATH);
@@ -79,11 +79,11 @@ public class DoiTransformServiceTest {
             CUSTOMER_ID);
 
         assertNotNull(publication);
-        assertEquals(publication.getOwner(), OWNER);
+        assertEquals(OWNER, publication.getResourceOwner().getOwner());
     }
 
     @Test
-    public void transFormPublicationReturnsSequentialEnumeratedContributorsAndIgnoringTextualSequence()
+    void transFormPublicationReturnsSequentialEnumeratedContributorsAndIgnoringTextualSequence()
             throws URISyntaxException, InvalidIssnException,
             JsonProcessingException, InvalidIsbnException, UnsupportedDocumentTypeException {
         DoiTransformService doiTransformService = getDoiTransformService();
