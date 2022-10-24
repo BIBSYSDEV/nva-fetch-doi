@@ -13,10 +13,6 @@ plugins {
 
 group = 'com.github.bibsysdev'
 
-tasks.withType(JavaCompile) {
-    options.release = 11
-}
-
 repositories {
     mavenCentral()
     maven { url "https://jitpack.io" }
