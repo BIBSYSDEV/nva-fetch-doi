@@ -15,10 +15,10 @@ class CreatePublicationRequestTest {
 
     @Test
     void shouldRoundTripToJsonWithoutInformationLoss() {
-        CreatePublicationRequest orignalRequest = sampleRequest();
-        var json = orignalRequest.toJsonString();
+        CreatePublicationRequest originalRequest = sampleRequest();
+        var json = originalRequest.toJsonString();
         var fromJson = CreatePublicationRequest.fromJson(json);
-        assertThat(fromJson, is(equalTo(orignalRequest)));
+        assertThat(fromJson, is(equalTo(originalRequest)));
     }
 
     private CreatePublicationRequest sampleRequest() {
@@ -28,7 +28,7 @@ class CreatePublicationRequestTest {
         request.setContext(randomJsonNode());
         request.setEntityDescription(sample.getEntityDescription());
         request.setProjects(sample.getProjects());
-        request.setFileSet(sample.getFileSet());
+        request.setAssociatedArtifacts(sample.getAssociatedArtifacts());
         request.setSubjects(sample.getSubjects());
         assertThat(request, doesNotHaveEmptyValues());
         return request;

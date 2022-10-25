@@ -42,7 +42,6 @@ import no.unit.nva.doi.transformer.utils.IssnCleaner;
 import no.unit.nva.doi.transformer.utils.PublicationType;
 import no.unit.nva.doi.transformer.utils.StringUtils;
 import no.unit.nva.doi.transformer.utils.TextLang;
-import no.unit.nva.file.model.FileSet;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -54,6 +53,7 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Role;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.PublicationContext;
@@ -127,7 +127,7 @@ public class CrossRefConverter extends AbstractConverter {
                 .withIndexedDate(extractInstantFromCrossrefDate(document.getIndexed()))
                 .withLink(extractFulltextLinkAsUri(document))
                 .withProjects(createProjects())
-                .withFileSet(createFileSet())
+                .withAssociatedArtifacts(createAssociatedArtifactList())
                 .withEntityDescription(new EntityDescription.Builder()
                                            .withContributors(toContributors(document))
                                            .withDate(extractIssuedDate(document))
@@ -545,8 +545,8 @@ public class CrossRefConverter extends AbstractConverter {
         return null;
     }
 
-    private FileSet createFileSet() {
-        return null;
+    private AssociatedArtifactList createAssociatedArtifactList() {
+        return new AssociatedArtifactList(Collections.emptyList());
     }
 
     private List<ResearchProject> createProjects() {
