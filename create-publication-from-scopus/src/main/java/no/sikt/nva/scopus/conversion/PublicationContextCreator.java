@@ -212,9 +212,8 @@ public class PublicationContextCreator {
 
     private Optional<PublishingHouse> fetchConfirmedPublisherFromPublicationChannels() {
         var publisherName = findPublisherName();
-        Optional<String> publisherID = Optional.ofNullable(metadataService
-                .fetchPublisherIdFromPublicationChannel(publisherName));
-        return publisherID.map(id -> new Publisher(UriWrapper.fromUri(id).getUri()));
+        var publisherID = Optional.ofNullable(metadataService.fetchPublisherIdFromPublicationChannel(publisherName));
+        return publisherID.map(Publisher::new);
     }
 
     private UnconfirmedPublisher createUnconfirmedPublisher() {

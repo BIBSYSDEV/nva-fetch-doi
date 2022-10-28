@@ -153,7 +153,7 @@ public class MetadataServiceTest {
         var actualId = metadataService.fetchJournalIdFromPublicationChannel(
                 expectedJournalName, null, null, Integer.valueOf(expectedYear))
                 .orElseThrow();
-        assertThat(actualId, is(expectedJournalUri.toString()));
+        assertThat(actualId, is(expectedJournalUri));
     }
 
     @Test
@@ -163,7 +163,7 @@ public class MetadataServiceTest {
         var expectedPublisherUri = mockedPublicationChannelsReturnsUri(queryUri);
         var metadataService = new MetadataService(httpClient, serverUriJournal, serverUriPublisher);
         var actualPublisherUri = metadataService.fetchPublisherIdFromPublicationChannel(expectedPublisherName);
-        assertThat(actualPublisherUri, is(expectedPublisherUri.toString()));
+        assertThat(actualPublisherUri, is(expectedPublisherUri));
     }
 
     @ParameterizedTest(name = "#{index} - {0}")
