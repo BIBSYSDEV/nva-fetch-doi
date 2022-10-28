@@ -50,7 +50,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class MetadataService {
-
+    
     public static final ValueFactory valueFactory = SimpleValueFactory.getInstance();
     public static final String API_HOST = new Environment().readEnv("API_HOST");
     private static final String EMPTY_BASE_URI = "";
@@ -71,11 +71,11 @@ public class MetadataService {
     private final Repository db = new SailRepository(new MemoryStore());
     private final URI publicationChannelsHostUri;
     private final URI publicationChannelsHostUriPublisher;
-
+    
     public MetadataService() {
         this(getDefaultHttpClient(), defaultPublicationChannelsHostUri(), defaultPublicationChannelsHostUriPublisher());
     }
-
+    
     /**
      * Deprecated constructor.
      *
@@ -86,7 +86,7 @@ public class MetadataService {
     public MetadataService(HttpClient httpClient) {
         this(httpClient, defaultPublicationChannelsHostUri(), defaultPublicationChannelsHostUriPublisher());
     }
-
+    
     public MetadataService(HttpClient httpClient, URI publicationChannelsHostUri,
                            URI publicationChannelsHostUriPublisher) {
         this.translatorService = new TranslatorService();
@@ -94,7 +94,7 @@ public class MetadataService {
         this.publicationChannelsHostUri = publicationChannelsHostUri;
         this.publicationChannelsHostUriPublisher = publicationChannelsHostUriPublisher;
     }
-
+    
     /**
      * Construct a CreatePublicationRequest for metadata extracted from a supplied URI.
      *
@@ -111,36 +111,36 @@ public class MetadataService {
             throw new RuntimeException(e);
         }
     }
-
-    public Optional<String> fetchJournalIdFromPublicationChannel(String name,
-                                                                 String electronicIssn,
-                                                                 String printedIssn,
-                                                                 int year) {
+    
+    public Optional<URI> fetchJournalIdFromPublicationChannel(String name,
+                                                              String electronicIssn,
+                                                              String printedIssn,
+                                                              int year) {
         return Stream
-            .of(electronicIssn, printedIssn, name)
-            .map(queryTerm -> fetchPublicationIdentifierFromPublicationChannels(queryTerm, year))
-            .flatMap(Optional::stream)
-            .findFirst();
+                   .of(electronicIssn, printedIssn, name)
+                   .map(queryTerm -> fetchPublicationIdentifierFromPublicationChannels(queryTerm, year))
+                   .flatMap(Optional::stream)
+                   .findFirst();
     }
-
+    
     public static URI defaultPublicationChannelsHostUri() {
         return UriWrapper.fromHost(API_HOST).addChild("publication-channels").addChild("journal").getUri();
     }
-
+    
     public static URI defaultPublicationChannelsHostUriPublisher() {
         return UriWrapper.fromHost(API_HOST).addChild("publication-channels").addChild("publisher").getUri();
     }
-
+    
     private static HttpClient getDefaultHttpClient() {
         return HttpClient.newBuilder()
-            .followRedirects(HttpClient.Redirect.NEVER)
-            .build();
+                   .followRedirects(HttpClient.Redirect.NEVER)
+                   .build();
     }
-
+    
     private ByteArrayInputStream loadExtractedData() {
         return new ByteArrayInputStream(translatorService.getOutputStream().toByteArray());
     }
-
+    
     private Model getMetadata(URI uri) throws ExtractionException, IOException, URISyntaxException,
                                               InterruptedException {
         translatorService.loadMetadataFromUri(uri);
@@ -153,7 +153,7 @@ public class MetadataService {
             db.shutDown();
         }
     }
-
+    
     @SuppressWarnings("PMD.CloseResource")
     private Model normalizeStatements(RepositoryResult<Statement> statements) throws IOException, InterruptedException {
         Model model = new TreeModel();
@@ -162,7 +162,7 @@ public class MetadataService {
         }
         return model;
     }
-
+    
     private void extractKnownProperties(Model model, Statement statement) throws IOException, InterruptedException {
         OntologyProperty ontologyProperty = getMappedOntologyProperty(statement);
         Value value = extractValue(ontologyProperty, statement.getObject());
@@ -171,11 +171,11 @@ public class MetadataService {
             model.add(statement.getSubject(), mappedProperty.getIri(), value);
         }
     }
-
+    
     private OntologyProperty mapToSpecificProperty(OntologyProperty ontologyProperty, Value value) {
         return value.toString().startsWith(DOI_PREFIX) ? Bibo.DOI : ontologyProperty;
     }
-
+    
     private Value extractValue(OntologyProperty ontologyProperty, Value object) throws IOException,
                                                                                        InterruptedException {
         if (isPotentialDoiProperty(ontologyProperty) && isDoiString(object)) {
@@ -184,17 +184,17 @@ public class MetadataService {
             return object;
         }
     }
-
+    
     private boolean isPotentialDoiProperty(OntologyProperty ontologyProperty) {
         return Bibo.DOI.equals(ontologyProperty) || DcTerms.IDENTIFIER.equals(ontologyProperty);
     }
-
+    
     private OntologyProperty getMappedOntologyProperty(Statement statement) {
         String property = statement.getPredicate().getLocalName();
         Optional<Citation> citationValue = Citation.getTagByString(property);
         Optional<DcTerms> dcTermsValue = DcTerms.getTermByValue(property);
         Optional<RawMetaTag> rawMetaTag = RawMetaTag.getTagByString(property);
-
+        
         OntologyProperty ontologyProperty = null;
         if (citationValue.isPresent()) {
             ontologyProperty = citationValue.get().getMapping();
@@ -205,102 +205,103 @@ public class MetadataService {
         }
         return ontologyProperty;
     }
-
+    
     private IRI extractDoi(String value) throws IOException, InterruptedException {
         Optional<String> doiString = isShortDoi(value) ? fetchDoiUriFromShortDoi(value)
                                          : Optional.of(DOI_PREFIX + value.substring(value.indexOf(DOI_FIRST_PART)));
         return doiString.map(valueFactory::createIRI).orElse(null);
     }
-
+    
     private Optional<String> fetchDoiUriFromShortDoi(String value) throws IOException, InterruptedException {
         String uri = value.startsWith(HTTPS) ? value : value.replace(HTTP, HTTPS);
         HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(uri))
-            .method(HEAD, HttpRequest.BodyPublishers.noBody())
-            .build();
+                                  .uri(URI.create(uri))
+                                  .method(HEAD, HttpRequest.BodyPublishers.noBody())
+                                  .build();
         HttpResponse<Void> response = httpClient.send(request, HttpResponse.BodyHandlers.discarding());
         return response.statusCode() == MOVED_PERMANENTLY ? response.headers().firstValue(LOCATION) : Optional.empty();
     }
-
+    
     private boolean isDoiString(Value object) {
         String value = object.stringValue();
         return value.toLowerCase(Locale.ROOT).matches(DOI_DISPLAY_REGEX) || isShortDoi(value);
     }
-
+    
     private boolean isShortDoi(String value) {
         return value.matches(SHORT_DOI_REGEX);
     }
-
-    private Optional<String> fetchPublicationIdentifierFromPublicationChannels(
+    
+    private Optional<URI> fetchPublicationIdentifierFromPublicationChannels(
         String publicationQueryTerm, int year) {
         return Optional.ofNullable(publicationQueryTerm)
-            .flatMap(queryTerm -> queryPublicationChannelForJournal(queryTerm, year));
+                   .flatMap(queryTerm -> queryPublicationChannelForJournal(queryTerm, year));
     }
-
-    private Optional<String> queryPublicationChannelForJournal(String term, int year) {
+    
+    private Optional<URI> queryPublicationChannelForJournal(String term, int year) {
         return attempt(() -> sendQueryToPublicationChannelsProxy(term, year))
-            .map(this::parseResponseFromPublicationChannelsProxy)
-            .toOptional()
-            .flatMap(Function.identity());
+                   .map(this::parseResponseFromPublicationChannelsProxy)
+                   .toOptional()
+                   .flatMap(Function.identity());
     }
-
-    private Optional<String> queryPublicationChannelForPublisher(String term) {
+    
+    private Optional<URI> queryPublicationChannelForPublisher(String term) {
         return attempt(() -> sendQueryToPublicationChannelsProxy(term))
-            .map(this::parseResponseFromPublicationChannelsProxy)
-            .toOptional()
-            .flatMap(Function.identity());
+                   .map(this::parseResponseFromPublicationChannelsProxy)
+                   .toOptional()
+                   .flatMap(Function.identity());
     }
-
-    private Optional<String> parseResponseFromPublicationChannelsProxy(HttpResponse<String> response) {
+    
+    private Optional<URI> parseResponseFromPublicationChannelsProxy(HttpResponse<String> response) {
         if (HttpURLConnection.HTTP_OK == response.statusCode()) {
             return getIdOfFirstElement(response);
         }
         return Optional.empty();
     }
-
-    private Optional<String> getIdOfFirstElement(HttpResponse<String> response) {
+    
+    private Optional<URI> getIdOfFirstElement(HttpResponse<String> response) {
         return attempt(() -> Json.readTree(response.body()))
-            .map(ArrayNode.class::cast)
-            .map(array -> array.get(0))
-            .map(ObjectNode.class::cast)
-            .map(node -> node.get("id"))
-            .map(JsonNode::textValue)
-            .toOptional();
+                   .map(ArrayNode.class::cast)
+                   .map(array -> array.get(0))
+                   .map(ObjectNode.class::cast)
+                   .map(node -> node.get("id"))
+                   .map(JsonNode::textValue)
+                   .map(URI::create)
+                   .toOptional();
     }
-
+    
     private HttpResponse<String> sendQueryToPublicationChannelsProxy(String term, int year)
         throws IOException, InterruptedException {
         var searchTerm = URLEncoder.encode(term, StandardCharsets.UTF_8.toString());
         var uri = UriWrapper.fromUri(publicationChannelsHostUri)
-            .addQueryParameter(QUERY_PARAM_QUERY, searchTerm)
-            .addQueryParameter(QUERY_PARAM_YEAR, Integer.toString(year))
-            .getUri();
-
+                      .addQueryParameter(QUERY_PARAM_QUERY, searchTerm)
+                      .addQueryParameter(QUERY_PARAM_YEAR, Integer.toString(year))
+                      .getUri();
+        
         var request = HttpRequest.newBuilder()
-            .uri(uri)
-            .headers(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, MediaTypes.APPLICATION_JSON_LD.toString())
-            .GET()
-            .build();
-
+                          .uri(uri)
+                          .headers(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, MediaTypes.APPLICATION_JSON_LD.toString())
+                          .GET()
+                          .build();
+        
         return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
     }
-
+    
     private HttpResponse<String> sendQueryToPublicationChannelsProxy(String term)
         throws IOException, InterruptedException {
         var searchTerm = URLEncoder.encode(term, StandardCharsets.UTF_8.toString());
         var uri = UriWrapper.fromUri(publicationChannelsHostUriPublisher)
-            .addQueryParameter(QUERY_PARAM_QUERY, searchTerm)
-            .getUri();
-
+                      .addQueryParameter(QUERY_PARAM_QUERY, searchTerm)
+                      .getUri();
+        
         var request = HttpRequest.newBuilder()
-            .uri(uri)
-            .headers(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, MediaTypes.APPLICATION_JSON_LD.toString())
-            .GET()
-            .build();
-
+                          .uri(uri)
+                          .headers(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, MediaTypes.APPLICATION_JSON_LD.toString())
+                          .GET()
+                          .build();
+        
         return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
     }
-
+    
     /**
      * Fetches publisherId as URI from publication-channels by publisherName only with exact single match or returns
      * null.
@@ -308,10 +309,10 @@ public class MetadataService {
      * @param publisherName the name of the publisher
      * @return jsonString representing the publisher
      */
-    public String fetchPublisherIdFromPublicationChannel(String publisherName) {
+    public URI fetchPublisherIdFromPublicationChannel(String publisherName) {
         return Optional.ofNullable(publisherName)
-            .flatMap(queryTerm -> queryPublicationChannelForPublisher(queryTerm))
-            .stream()
-            .collect(SingletonCollector.collectOrElse(null));
+                   .flatMap(this::queryPublicationChannelForPublisher)
+                   .stream()
+                   .collect(SingletonCollector.collectOrElse(null));
     }
 }
