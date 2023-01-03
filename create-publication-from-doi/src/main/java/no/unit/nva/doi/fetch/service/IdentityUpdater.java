@@ -65,8 +65,9 @@ public final class IdentityUpdater {
         contributors.forEach(contributor -> {
             var identity = contributor.getIdentity();
 
-            Optional.ofNullable(identity.getOrcId())
-                    .ifPresent(value -> identity.setId(orcidPersonUris.get(value)));
+            if (nonNull(identity.getOrcId())) {
+                identity.setId(orcidPersonUris.get(identity.getOrcId()));
+            }
         });
     }
 
