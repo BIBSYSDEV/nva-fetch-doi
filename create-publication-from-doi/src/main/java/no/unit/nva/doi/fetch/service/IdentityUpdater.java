@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -55,20 +56,21 @@ public final class IdentityUpdater {
     }
 
     private static void updateContributors(CristinProxyClient cristinProxyClient, List<Contributor> contributors) {
+        var orcids = contributors.stream().map(Contributor::getIdentity)
+                .filter(IdentityUpdater::hasNoIdentifierButCanPossiblyBeFetchedUsingOrcid)
+                .map(Identity::getOrcId)
+                .collect(Collectors.toList());
+        var orcidPersonUris = cristinProxyClient.lookupIdentifiersFromOrcid(orcids);
+
         contributors.forEach(contributor -> {
             var identity = contributor.getIdentity();
-            if (hasNoIdentifierButCanPossiblyBeFetchedUsingOrcid(identity)) {
-                updateIdentifierIfFoundFromOrcid(cristinProxyClient, identity);
-            }
+
+            Optional.ofNullable(identity.getOrcId())
+                    .ifPresent(value -> identity.setId(orcidPersonUris.get(value)));
         });
     }
 
     private static boolean hasNoIdentifierButCanPossiblyBeFetchedUsingOrcid(Identity identity) {
         return nonNull(identity) && isNull(identity.getId()) && nonNull(identity.getOrcId());
-    }
-
-    private static void updateIdentifierIfFoundFromOrcid(CristinProxyClient cristinProxyClient, Identity identity) {
-        var identifier = cristinProxyClient.lookupIdentifierFromOrcid(identity.getOrcId());
-        identifier.ifPresent(identity::setId);
     }
 }

@@ -1,5 +1,6 @@
 package no.unit.nva.doi.transformer.utils;
 
+import static java.net.http.HttpResponse.BodyHandlers.ofString;
 import static java.util.Objects.isNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -8,10 +9,14 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import no.sikt.nva.doi.fetch.jsonconfig.Json;
@@ -33,6 +38,7 @@ public class CristinProxyClient {
     private static final int TIMEOUT_DURATION = 30;
     private static final String LOGGING_MESSAGE_FETCH_FAILED = "Upstream returned error with status {} when calling {}";
     private static final String IDENTIFIER_JSON_POINTER = "/id";
+    private static final String ORCID_JON_POINTER = "/orcid";
 
     private final HttpClient httpClient;
     private final String apiHost;
@@ -61,6 +67,39 @@ public class CristinProxyClient {
         return response.flatMap(this::extractIdentifierFromResponse);
     }
 
+    public Map<String, URI> lookupIdentifiersFromOrcid(List<String> orcids) {
+        return orcids.stream().map(this::stripAndValidateOrcid)
+                .map(this::createUrlToCristinProxy)
+                .map(this::createRequest)
+                .map(request -> httpClient.sendAsync(request, ofString()))
+                .map(CompletableFuture::join)
+                .map(this::extractOrcidLookupResponse)
+                .collect(Collectors.toMap(OrcidLookupResponse::getOrcid, OrcidLookupResponse::getUri));
+    }
+
+    private OrcidLookupResponse extractOrcidLookupResponse(HttpResponse<String> response) {
+        return new OrcidLookupResponse(extractOrcidStringFromResponse(response),
+                extractPersonUriFromResponse(response));
+    }
+
+    private static URI extractPersonUriFromResponse(HttpResponse<String> response) {
+        return attempt(() -> Json.readTree(response.body())).toOptional()
+                .map(node -> node.at(IDENTIFIER_JSON_POINTER))
+                .map(JsonNode::textValue)
+                .map(URI::create)
+                .orElse(null);
+    }
+
+    private static String extractOrcidStringFromResponse(HttpResponse<String> response) {
+        return attempt(() -> Json.readTree(response.body())).toOptional()
+                .map(node -> node.at(ORCID_JON_POINTER))
+                .map(JsonNode::textValue)
+                .map(URI::create)
+                .map(UriWrapper::fromUri)
+                .map(UriWrapper::getLastPathElement)
+                .orElse(null);
+    }
+
     private String stripAndValidateOrcid(String orcid) {
         var strippedOrcid = attempt(() -> UriWrapper.fromUri(orcid).getLastPathElement()).orElse(fail -> orcid);
         if (isNull(strippedOrcid) || !ORCID_PATTERN.matcher(strippedOrcid).matches()) {
@@ -82,7 +121,7 @@ public class CristinProxyClient {
     }
 
     protected Optional<String> fetchFromUpstream(HttpRequest request) {
-        var response = attempt(() -> httpClient.sendAsync(request, BodyHandlers.ofString()).get())
+        var response = attempt(() -> httpClient.sendAsync(request, ofString()).get())
                            .orElseThrow();
         if (responseIsSuccessful(response)) {
             return Optional.ofNullable(response.body());
