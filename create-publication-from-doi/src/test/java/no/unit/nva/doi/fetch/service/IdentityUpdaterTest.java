@@ -1,6 +1,7 @@
 package no.unit.nva.doi.fetch.service;
 
 import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
 import no.unit.nva.doi.transformer.utils.CristinProxyClient;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -41,7 +42,7 @@ class IdentityUpdaterTest {
         var identity = createIdentityWithOrcid();
         var cristinProxyClient = mock(CristinProxyClient.class);
         var sampleIdentifier = URI.create(SAMPLE_IDENTITY_IDENTIFIER);
-        when(cristinProxyClient.lookupIdentifierFromOrcid(any())).thenReturn(Optional.of(sampleIdentifier));
+        when(cristinProxyClient.lookupIdentifiersFromOrcid(any())).thenReturn(Map.of(identity.getOrcId(), sampleIdentifier));
         var publication = createPublicationWithIdentity(identity);
         var intialIdentifiers = getIdentifiers(publication);
 
