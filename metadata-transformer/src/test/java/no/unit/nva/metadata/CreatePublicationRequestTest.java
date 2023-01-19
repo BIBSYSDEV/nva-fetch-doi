@@ -30,6 +30,7 @@ class CreatePublicationRequestTest {
         request.setProjects(sample.getProjects());
         request.setAssociatedArtifacts(sample.getAssociatedArtifacts());
         request.setSubjects(sample.getSubjects());
+        request.setFundings(sample.getFundings());
         assertThat(request, doesNotHaveEmptyValues());
         return request;
     }

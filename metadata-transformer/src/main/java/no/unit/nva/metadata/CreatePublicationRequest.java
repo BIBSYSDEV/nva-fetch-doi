@@ -15,6 +15,7 @@ import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Funding;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import nva.commons.core.JacocoGenerated;
@@ -28,6 +29,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
     private List<ResearchProject> projects;
     private List<URI> subjects;
     private Set<AdditionalIdentifier> additionalIdentifiers;
+    private List<Funding> fundings;
 
     @JacocoGenerated
     public static CreatePublicationRequest fromJson(String json) {
@@ -71,6 +73,16 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
     }
 
     @Override
+    public List<Funding> getFundings() {
+        return fundings;
+    }
+
+    @Override
+    public void setFundings(List<Funding> fundings) {
+        this.fundings = fundings;
+    }
+
+    @Override
     @JacocoGenerated
     public AssociatedArtifactList getAssociatedArtifacts() {
         return associatedArtifacts;
@@ -108,7 +120,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
     @Override
     public int hashCode() {
         return Objects.hash(getEntityDescription(), getAssociatedArtifacts(), getContext(), getProjects(),
-                            getSubjects(), getAdditionalIdentifiers());
+                            getSubjects(), getFundings(), getAdditionalIdentifiers());
     }
 
     @JacocoGenerated
@@ -126,6 +138,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
                && Objects.equals(getContext(), that.getContext())
                && Objects.equals(getProjects(), that.getProjects())
                && Objects.equals(getSubjects(), that.getSubjects())
+               && Objects.equals(getFundings(), that.getFundings())
                && Objects.equals(getAdditionalIdentifiers(), that.getAdditionalIdentifiers());
     }
 }
