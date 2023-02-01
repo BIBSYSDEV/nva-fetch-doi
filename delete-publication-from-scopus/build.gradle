@@ -18,11 +18,6 @@ dependencies {
     implementation libs.bundles.logging
     testImplementation libs.nva.testutils
 
-    testImplementation(libs.zalando.problem) {
-        compileOnly(libs.apiGuardian) {
-            because 'Dependency has maven scope provided'
-        }
-    }
 }
 
 

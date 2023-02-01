@@ -36,10 +36,10 @@ import no.sikt.nva.scopus.conversion.LanguageExtractor;
 import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.sikt.nva.scopus.conversion.PublicationContextCreator;
 import no.sikt.nva.scopus.conversion.PublicationInstanceCreator;
-import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import nva.commons.core.paths.UriWrapper;
@@ -51,9 +51,7 @@ public class ScopusConverter {
     private final PiaConnection piaConnection;
     private final CristinConnection cristinConnection;
 
-    protected ScopusConverter(DocTp docTp,
-                              MetadataService metadataService,
-                              PiaConnection piaConnection,
+    protected ScopusConverter(DocTp docTp, MetadataService metadataService, PiaConnection piaConnection,
                               CristinConnection cristinConnection) {
         this.docTp = docTp;
         this.metadataService = metadataService;
@@ -61,17 +59,47 @@ public class ScopusConverter {
         this.cristinConnection = cristinConnection;
     }
 
-    public CreatePublicationRequest generateCreatePublicationRequest() {
-        CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
-        createPublicationRequest.setAdditionalIdentifiers(generateAdditionalIdentifiers());
-        createPublicationRequest.setEntityDescription(generateEntityDescription());
-        return createPublicationRequest;
+    public static String extractContentString(Object content) {
+        if (content instanceof String) {
+            return ((String) content).trim();
+        } else if (content instanceof JAXBElement) {
+            return extractContentString(((JAXBElement<?>) content).getValue());
+        } else if (content instanceof SupTp) {
+            return extractContentString(((SupTp) content).getContent());
+        } else if (content instanceof InfTp) {
+            return extractContentString(((InfTp) content).getContent());
+        } else {
+            return ((ArrayList<?>) content).stream()
+                       .map(ScopusConverter::extractContentString)
+                       .collect(Collectors.joining());
+        }
+    }
+
+    public static String extractContentAndPreserveXmlSupAndInfTags(Object content) {
+        if (content instanceof String) {
+            return ((String) content).trim();
+        } else if (content instanceof JAXBElement) {
+            return extractContentAndPreserveXmlSupAndInfTags(((JAXBElement<?>) content).getValue());
+        } else if (content instanceof SupTp) {
+            return SUP_START + extractContentAndPreserveXmlSupAndInfTags(((SupTp) content).getContent()) + SUP_END;
+        } else if (content instanceof InfTp) {
+            return INF_START + extractContentAndPreserveXmlSupAndInfTags(((InfTp) content).getContent()) + INF_END;
+        } else {
+            return ((ArrayList<?>) content).stream()
+                       .map(ScopusConverter::extractContentAndPreserveXmlSupAndInfTags)
+                       .collect(Collectors.joining());
+        }
+    }
+
+    public Publication generatePublication() {
+        return new Publication.Builder()
+                   .withAdditionalIdentifiers(generateAdditionalIdentifiers())
+                   .withEntityDescription(generateEntityDescription())
+                   .build();
     }
 
     private Optional<AuthorKeywordsTp> extractAuthorKeyWords() {
-        return Optional.ofNullable(extractHead())
-            .map(HeadTp::getCitationInfo)
-            .map(CitationInfoTp::getAuthorKeywords);
+        return Optional.ofNullable(extractHead()).map(HeadTp::getCitationInfo).map(CitationInfoTp::getAuthorKeywords);
     }
 
     private HeadTp extractHead() {
@@ -83,8 +111,9 @@ public class ScopusConverter {
         entityDescription.setReference(generateReference());
         entityDescription.setMainTitle(extractMainTitle());
         entityDescription.setAbstract(extractMainAbstract());
-        entityDescription.setContributors(new ContributorExtractor(
-            extractCorrespondence(), extractAuthorGroup(), piaConnection, cristinConnection).generateContributors());
+        entityDescription.setContributors(
+            new ContributorExtractor(extractCorrespondence(), extractAuthorGroup(), piaConnection,
+                                     cristinConnection).generateContributors());
         entityDescription.setTags(generateTags());
         entityDescription.setDate(extractPublicationDate());
         entityDescription.setLanguage(new LanguageExtractor(extractCitationLanguages()).extractLanguage());
@@ -92,21 +121,15 @@ public class ScopusConverter {
     }
 
     private List<CitationLanguageTp> extractCitationLanguages() {
-        return docTp
-            .getItem()
-            .getItem()
-            .getBibrecord()
-            .getHead()
-            .getCitationInfo()
-            .getCitationLanguage();
+        return docTp.getItem().getItem().getBibrecord().getHead().getCitationInfo().getCitationLanguage();
     }
 
     private PublicationDate extractPublicationDate() {
         var publicationDate = getDateSortTp();
         return new PublicationDate.Builder().withDay(publicationDate.getDay())
-            .withMonth(publicationDate.getMonth())
-            .withYear(publicationDate.getYear())
-            .build();
+                   .withMonth(publicationDate.getMonth())
+                   .withYear(publicationDate.getYear())
+                   .build();
     }
 
     /*
@@ -131,24 +154,19 @@ public class ScopusConverter {
     }
 
     private String extractAbstractString(AbstractTp abstractTp) {
-        return
-            abstractTp
-                .getPara()
-                .stream()
-                .map(para -> extractContentAndPreserveXmlSupAndInfTags(para.getContent()))
-                .collect(Collectors.joining());
+        return abstractTp.getPara()
+                   .stream()
+                   .map(para -> extractContentAndPreserveXmlSupAndInfTags(para.getContent()))
+                   .collect(Collectors.joining());
     }
 
     private Optional<AbstractTp> getMainAbstract() {
-        return nonNull(getAbstracts())
-                   ? getAbstracts().stream().filter(this::isOriginalAbstract).findFirst()
+        return nonNull(getAbstracts()) ? getAbstracts().stream().filter(this::isOriginalAbstract).findFirst()
                    : Optional.empty();
     }
 
     private List<AbstractTp> getAbstracts() {
-        return nonNull(extractHead().getAbstracts())
-                   ? extractHead().getAbstracts().getAbstract()
-                   : null;
+        return nonNull(extractHead().getAbstracts()) ? extractHead().getAbstracts().getAbstract() : null;
     }
 
     private boolean isOriginalAbstract(AbstractTp abstractTp) {
@@ -156,63 +174,25 @@ public class ScopusConverter {
     }
 
     private List<String> generateTags() {
-        return extractAuthorKeyWords()
-            .map(this::extractKeywordsAsStrings)
-            .orElse(emptyList());
+        return extractAuthorKeyWords().map(this::extractKeywordsAsStrings).orElse(emptyList());
     }
 
     private List<String> extractKeywordsAsStrings(AuthorKeywordsTp authorKeywordsTp) {
-        return authorKeywordsTp
-            .getAuthorKeyword()
-            .stream()
-            .map(this::extractConcatenatedKeywordString)
-            .collect(Collectors.toList());
+        return authorKeywordsTp.getAuthorKeyword()
+                   .stream()
+                   .map(this::extractConcatenatedKeywordString)
+                   .collect(Collectors.toList());
     }
 
     private String extractConcatenatedKeywordString(AuthorKeywordTp keyword) {
-        return keyword
-            .getContent()
-            .stream()
-            .map(ScopusConverter::extractContentAndPreserveXmlSupAndInfTags)
-            .collect(Collectors.joining());
-    }
-
-    public static String extractContentString(Object content) {
-        if (content instanceof String) {
-            return ((String) content).trim();
-        } else if (content instanceof JAXBElement) {
-            return extractContentString(((JAXBElement<?>) content).getValue());
-        } else if (content instanceof SupTp) {
-            return extractContentString(((SupTp) content).getContent());
-        } else if (content instanceof InfTp) {
-            return extractContentString(((InfTp) content).getContent());
-        } else {
-            return ((ArrayList<?>) content).stream()
-                .map(ScopusConverter::extractContentString)
-                .collect(Collectors.joining());
-        }
-    }
-
-    public static String extractContentAndPreserveXmlSupAndInfTags(Object content) {
-        if (content instanceof String) {
-            return ((String) content).trim();
-        } else if (content instanceof JAXBElement) {
-            return extractContentAndPreserveXmlSupAndInfTags(((JAXBElement<?>) content).getValue());
-        } else if (content instanceof SupTp) {
-            return SUP_START + extractContentAndPreserveXmlSupAndInfTags(((SupTp) content).getContent()) + SUP_END;
-        } else if (content instanceof InfTp) {
-            return INF_START + extractContentAndPreserveXmlSupAndInfTags(((InfTp) content).getContent()) + INF_END;
-        } else {
-            return ((ArrayList<?>) content).stream()
-                .map(ScopusConverter::extractContentAndPreserveXmlSupAndInfTags)
-                .collect(Collectors.joining());
-        }
+        return keyword.getContent()
+                   .stream()
+                   .map(ScopusConverter::extractContentAndPreserveXmlSupAndInfTags)
+                   .collect(Collectors.joining());
     }
 
     private String extractMainTitle() {
-        return getMainTitleTextTp()
-            .map(this::extractMainTitleContent)
-            .orElse(null);
+        return getMainTitleTextTp().map(this::extractMainTitleContent).orElse(null);
     }
 
     private String extractMainTitleContent(TitletextTp titletextTp) {
@@ -222,23 +202,20 @@ public class ScopusConverter {
     private Reference generateReference() {
         Reference reference = new Reference();
         reference.setPublicationContext(new PublicationContextCreator(metadataService, docTp).getPublicationContext());
-        reference.setPublicationInstance(new PublicationInstanceCreator(docTp, reference.getPublicationContext())
-                .getPublicationInstance());
+        reference.setPublicationInstance(
+            new PublicationInstanceCreator(docTp, reference.getPublicationContext()).getPublicationInstance());
         reference.setDoi(extractDOI());
         return reference;
     }
 
     private URI extractDOI() {
-        return nonNull(docTp.getMeta().getDoi())
-                   ? UriWrapper.fromUri(DOI_OPEN_URL_FORMAT).addChild(docTp.getMeta().getDoi()).getUri()
-                   : null;
+        return nonNull(docTp.getMeta().getDoi()) ? UriWrapper.fromUri(DOI_OPEN_URL_FORMAT)
+                                                       .addChild(docTp.getMeta().getDoi())
+                                                       .getUri() : null;
     }
 
     private Optional<TitletextTp> getMainTitleTextTp() {
-        return getTitleText()
-            .stream()
-            .filter(this::isTitleOriginal)
-            .findFirst();
+        return getTitleText().stream().filter(this::isTitleOriginal).findFirst();
     }
 
     private boolean isTitleOriginal(TitletextTp titletextTp) {
