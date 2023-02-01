@@ -5,6 +5,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.xml.bind.JAXB;
 import java.io.StringReader;
 import java.net.URI;
@@ -13,9 +14,9 @@ import no.scopus.generated.DocTp;
 import no.sikt.nva.scopus.conversion.CristinConnection;
 import no.sikt.nva.scopus.conversion.PiaConnection;
 import no.unit.nva.events.models.EventReference;
-import no.unit.nva.metadata.CreatePublicationRequest;
-import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.metadata.service.MetadataService;
+import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.Publication;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -28,17 +29,16 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationRequest> {
+public class ScopusHandler implements RequestHandler<S3Event, Publication> {
 
     public static final int SINGLE_EXPECTED_RECORD = 0;
     public static final String S3_URI_TEMPLATE = "s3://%s/%s";
+    public static final String EVENT_TOPIC_IS_SET_IN_EVENT_BODY = "ReferToEventTopic";
     private static final Logger logger = LoggerFactory.getLogger(ScopusHandler.class);
     private static final String SCOPUS_EVENTS_FOLDER = "scopus/create";
     //TODO: move to config class.
     private static final String EVENTS_BUCKET = new Environment().readEnv("EVENTS_BUCKET");
     private static final String EVENT_BUS = new Environment().readEnv("EVENTS_BUS");
-    public static final String EVENT_TOPIC_IS_SET_IN_EVENT_BODY = "ReferToEventTopic";
-
     private final S3Client s3Client;
     private final MetadataService metadataService;
     private final EventBridgeClient eventBridgeClient;
@@ -47,12 +47,8 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
 
     @JacocoGenerated
     public ScopusHandler() {
-        this(
-            S3Driver.defaultS3Client().build(),
-            defaultMetadataService(),
-            defaultEventBridgeClient(),
-            defaultPiaConnection(),
-            defaultCristinConnection());
+        this(S3Driver.defaultS3Client().build(), defaultMetadataService(), defaultEventBridgeClient(),
+             defaultPiaConnection(), defaultCristinConnection());
     }
 
     public ScopusHandler(S3Client s3Client, MetadataService metadataService, EventBridgeClient eventBridgeClient,
@@ -65,10 +61,10 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
     }
 
     @Override
-    public CreatePublicationRequest handleRequest(S3Event event, Context context) {
-        var request = createPublicationRequest(event);
-        emitEventToEventBridge(context, request);
-        return request;
+    public Publication handleRequest(S3Event event, Context context) {
+        var publication = createPublication(event);
+        emitEventToEventBridge(context, publication);
+        return publication;
     }
 
     @JacocoGenerated
@@ -92,16 +88,16 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
         return new CristinConnection();
     }
 
-    private void emitEventToEventBridge(Context context, CreatePublicationRequest request) {
-        var fileLocation = writeRequestToS3(request);
+    private void emitEventToEventBridge(Context context, Publication publication) {
+        var fileLocation = writePublicationToS3(publication);
         var eventToEmit = new NewScopusEntryEvent(fileLocation);
         eventBridgeClient.putEvents(createPutEventRequest(eventToEmit, context));
     }
 
-    private URI writeRequestToS3(CreatePublicationRequest request) {
+    private URI writePublicationToS3(Publication publication) {
         var s3Writer = new S3Driver(s3Client, EVENTS_BUCKET);
-        return attempt(() -> constructPathForEventBody(request))
-                   .map(path -> s3Writer.insertFile(path, request.toJsonString()))
+        return attempt(() -> constructPathForEventBody(publication))
+                   .map(path -> s3Writer.insertFile(path, new ObjectMapper().writeValueAsString(publication)))
                    .orElseThrow();
     }
 
@@ -117,19 +113,18 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
         return PutEventsRequest.builder().entries(entry).build();
     }
 
-    private CreatePublicationRequest createPublicationRequest(S3Event event) {
-        return attempt(() -> readFile(event))
-                   .map(this::parseXmlFile)
-                   .map(this::generateCreatePublicationRequest)
+    private Publication createPublication(S3Event event) {
+        return attempt(() -> readFile(event)).map(this::parseXmlFile)
+                   .map(this::generatePublication)
                    .orElseThrow(fail -> logErrorAndThrowException(fail.getException()));
     }
 
-    private UnixPath constructPathForEventBody(CreatePublicationRequest request) {
-        return UnixPath.of(SCOPUS_EVENTS_FOLDER, extractOneOfPossiblyManyScopusIdentifiers(request));
+    private UnixPath constructPathForEventBody(Publication publication) {
+        return UnixPath.of(SCOPUS_EVENTS_FOLDER, extractOneOfPossiblyManyScopusIdentifiers(publication));
     }
 
-    private String extractOneOfPossiblyManyScopusIdentifiers(CreatePublicationRequest request) {
-        return request.getAdditionalIdentifiers()
+    private String extractOneOfPossiblyManyScopusIdentifiers(Publication publication) {
+        return publication.getAdditionalIdentifiers()
                    .stream()
                    .filter(identifier -> ADDITIONAL_IDENTIFIERS_SCOPUS_ID_SOURCE_NAME.equals(identifier.getSource()))
                    .map(AdditionalIdentifier::getValue)
@@ -139,18 +134,16 @@ public class ScopusHandler implements RequestHandler<S3Event, CreatePublicationR
 
     private RuntimeException logErrorAndThrowException(Exception exception) {
         logger.error(exception.getMessage());
-        return exception instanceof RuntimeException
-                   ? (RuntimeException) exception
-                   : new RuntimeException(exception);
+        return exception instanceof RuntimeException ? (RuntimeException) exception : new RuntimeException(exception);
     }
 
     private DocTp parseXmlFile(String file) {
         return JAXB.unmarshal(new StringReader(file), DocTp.class);
     }
 
-    private CreatePublicationRequest generateCreatePublicationRequest(DocTp docTp) {
+    private Publication generatePublication(DocTp docTp) {
         var scopusConverter = new ScopusConverter(docTp, metadataService, piaConnection, cristinConnection);
-        return scopusConverter.generateCreatePublicationRequest();
+        return scopusConverter.generatePublication();
     }
 
     private String readFile(S3Event event) {
