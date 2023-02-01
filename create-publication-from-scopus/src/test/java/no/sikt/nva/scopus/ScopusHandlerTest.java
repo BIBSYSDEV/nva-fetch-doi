@@ -225,7 +225,7 @@ class ScopusHandlerTest {
     @BeforeEach
     public void init() {
         var fakeSecretsManagerClient = new FakeSecretsManagerClient();
-        SecretsReader secretsReader = new SecretsReader(fakeSecretsManagerClient);
+        var secretsReader = new SecretsReader(fakeSecretsManagerClient);
         fakeSecretsManagerClient.putSecret(PIA_SECRET_NAME, PIA_USERNAME_SECRET_KEY, randomString());
         fakeSecretsManagerClient.putSecret(PIA_SECRET_NAME, PIA_PASSWRORD_SECRET_KEY, randomString());
         s3Client = new FakeS3Client();
