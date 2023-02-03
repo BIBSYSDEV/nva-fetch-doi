@@ -32,14 +32,6 @@ Parameters:
   CrossrefPlusApiTokenKey:
     Type: String
     Default: token
-  ScopusZipBucketName:
-    Type: String
-    Default: "scopus-zip-files"
-    Description: Name of bucket for incoming zip-files to be unzipped (containing scopus xml-files)
-  ScopusXmlBucketName:
-    Type: String
-    Default: "scopus-xml-files"
-    Description: Name of bucket for unzipped scopus xml files
   NvaEventsBucketName:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/Events/EventsBucketName'
@@ -52,19 +44,6 @@ Parameters:
   NvaEventsBusName:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/Events/EventsBusName'
-  PiaRestHost:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: '/NVA/PiaRestHost'
-  PiaRestCredentialsTokenName:
-    Type: String
-    Default: 'PiaRestCredentials'
-  PiaRestUsernameKey:
-    Type: String
-    Default: "PiaRestUser"
-  PiaRestUsernamePasswordKey:
-    Type: String
-    Default: "PiaRestPass"
-
 
 Globals:
   Function:
@@ -219,27 +198,6 @@ Resources:
             Method: post
             RestApiId: !Ref NvaFetchDoiFunctionApi
 
-  NvaScopusDeleteFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: delete-publication-from-scopus
-      Handler: no.sikt.nva.scopus.ScopusDeleteHandler::handleRequest
-      Role: !GetAtt ScopusHandlersRole.Arn
-      Environment:
-        Variables:
-          EVENTS_BUS: !Ref NvaEventsBusName
-      Events:
-        Scopus:
-          Type: S3
-          Properties:
-            Bucket: !Ref ScopusXmlBucket
-            Events: 's3:ObjectCreated:*'
-            Filter:
-              S3Key:
-                Rules:
-                  - Name: suffix
-                    Value: '.txt'
-
   NvaFetchDoiFunctionScalableTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
     Properties:
@@ -270,36 +228,6 @@ Resources:
       DomainName: !Join [ '.', [ 'api', !Ref CustomDomain ] ]
       RestApiId: !Ref NvaFetchDoiFunctionApi
       Stage: !Ref NvaFetchDoiFunctionApi.Stage
-
-
-#============Event based functions====================================================================================#
-  NvaScopusFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: create-publication-from-scopus
-      Handler: no.sikt.nva.scopus.ScopusHandler::handleRequest
-      Role: !GetAtt ScopusHandlersRole.Arn
-      ReservedConcurrentExecutions: 5 # Throttled to slow down create publication requests from scopus files
-      Environment:
-        Variables:
-          EVENTS_BUCKET: !Ref NvaEventsBucketName
-          EVENTS_BUS: !Ref NvaEventsBusName
-          API_HOST: !Ref ApiDomain
-          PIA_SECRETS_NAME: !Ref PiaRestCredentialsTokenName
-          PIA_USERNAME_KEY: !Ref PiaRestUsernameKey
-          PIA_PASSWORD_KEY: !Ref PiaRestUsernamePasswordKey
-          PIA_REST_API: !Ref PiaRestHost
-      Events:
-        Scopus:
-          Type: S3
-          Properties:
-            Bucket: !Ref ScopusXmlBucket
-            Events: 's3:ObjectCreated:*'
-            Filter:
-              S3Key:
-                Rules:
-                  - Name: suffix
-                    Value: '.xml'
 
 
   #============================ Deploy API ============================================================================#
@@ -367,17 +295,6 @@ Resources:
       Timestamp: '${BUILD_TIMESTAMP}'
       AuthorizerArn: !Ref CognitoAuthorizerArn
 
-  ScopusHandlersRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: sts:AssumeRole
-
   DefaultLambdaPermissions:
     Type: AWS::IAM::Policy
     Properties:
@@ -394,22 +311,6 @@ Resources:
               - logs:PutLogEvents
               - lambda:InvokeFunction
             Resource: "*"
-
-  ScopusBucketsAccessPolicy:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: !Sub ScopusBucketsAccessPolicy-${AWS::StackName}
-      Roles:
-        - !Ref ScopusHandlersRole
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Action:
-              - 's3:*'
-            Resource:
-              - !Sub '${ScopusXmlBucket.Arn}/*'
-              - !Sub '${ScopusZipBucket.Arn}/*'
 
   SendEventsToNvaPolicy:
     Type: AWS::IAM::Policy
@@ -430,66 +331,3 @@ Resources:
               - events:PutEvents
             Resource:
               - !Ref NvaEventsBusArn
-
-  ScopusUnzipperFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: index.lambda_handler
-      Runtime: python3.8
-      Environment:
-        Variables:
-          XML_BUCKET_NAME: !Ref ScopusXmlBucket
-      PackageType: Zip
-      InlineCode: |
-        import boto3, zipfile, os
-        from io import BytesIO
-        def lambda_handler(event, context):
-            xml_bucket = os.environ['XML_BUCKET_NAME']
-            zip_bucket = event['Records'][0]['s3']['bucket']['name']
-            zip_file = event['Records'][0]['s3']['object']['key']
-            client = boto3.client('s3')
-            resource = boto3.resource('s3')
-            zip_object = resource.Object(bucket_name=zip_bucket, key=zip_file)
-            buffer = BytesIO(zip_object.get()['Body'].read())
-            z = zipfile.ZipFile(buffer)
-            for fname in z.namelist():
-                client.put_object(
-                    Body=z.open(fname).read(),
-                    Bucket=zip_bucket if fname.endswith('.zip') else xml_bucket,
-                    Key=f'unzipped/{fname}' if fname.endswith('.zip') else fname
-                )
-      Role: !GetAtt ScopusHandlersRole.Arn
-      Events:
-        UnzipEvent:
-          Type: S3
-          Properties:
-            Bucket: !Ref ScopusZipBucket
-            Events: s3:ObjectCreated:*
-            Filter:
-              S3Key:
-                Rules:
-                  - Name: suffix
-                    Value: '.zip'
-
-  ScopusZipBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      AccessControl: Private
-      BucketName: !Sub "${ScopusZipBucketName}-${AWS::AccountId}"
-      LifecycleConfiguration:
-        Rules:
-          - Id: DeleteContentAfter3Days
-            Status: Enabled
-            ExpirationInDays: 3
-            Prefix: 'unzipped'
-
-  ScopusXmlBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      AccessControl: Private
-      BucketName: !Sub "${ScopusXmlBucketName}-${AWS::AccountId}"
-      LifecycleConfiguration:
-        Rules:
-          - Id: DeleteContentAfter3Days
-            Status: Enabled
-            ExpirationInDays: 3
