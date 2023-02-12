@@ -8,10 +8,10 @@ import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
-import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.pages.Pages;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,7 +63,7 @@ public final class DocumentTypeExtractor {
     private static void generateInstanceAndContextForJournal(String issn, Reference reference)
             throws InvalidIssnException {
         if (isNull(reference.getPublicationInstance()) && isNull(reference.getPublicationContext())) {
-            JournalArticle instanceType = new JournalArticle();
+            var instanceType = new AcademicArticle(null, null, null, null);
             UnconfirmedJournal contextType = new UnconfirmedJournal(null, null, issn);
             reference.setPublicationInstance(instanceType);
             reference.setPublicationContext(contextType);
@@ -78,7 +78,7 @@ public final class DocumentTypeExtractor {
             List<String> isbnList = nonNull(existingIsbns) ? new ArrayList<>(existingIsbns) : new ArrayList<>();
             reference.setPublicationContext(addNonPreexistingIsbn(isbn, (Book) context, isbnList));
         } else {
-            BookMonograph instanceType = new BookMonograph.Builder().build();
+            BookMonograph instanceType = new AcademicMonograph(null);
             Book contextType = new Book(null, null, null, List.of(isbn));
             reference.setPublicationInstance(instanceType);
             reference.setPublicationContext(contextType);

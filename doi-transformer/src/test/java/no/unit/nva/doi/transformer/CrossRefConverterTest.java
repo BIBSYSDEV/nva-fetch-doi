@@ -62,8 +62,10 @@ import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.contexttypes.UnconfirmedSeries;
+import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
+import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.MonographPages;
@@ -631,7 +633,7 @@ public class CrossRefConverterTest extends ConversionTest {
     void toPublicationSetsPublicationInstanceWhenInputCrossrefDocumentIsBookChapter() {
         assertThat(toPublication(sampleBookChapter())
                        .getEntityDescription().getReference().getPublicationInstance().getClass(),
-                   is(equalTo(ChapterArticle.class)));
+                   is(equalTo(AcademicChapter.class)));
     }
 
     @Test
@@ -676,7 +678,7 @@ public class CrossRefConverterTest extends ConversionTest {
         CrossRefDocument sampleBook = sampleBook();
         sampleBook.setEditor(null);
         assertThat(toPublication(sampleBook).getEntityDescription().getReference().getPublicationInstance().getClass(),
-                   is(equalTo(BookMonograph.class)));
+                   is(equalTo(AcademicMonograph.class)));
     }
 
     @Test

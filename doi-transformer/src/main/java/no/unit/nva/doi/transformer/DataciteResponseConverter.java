@@ -1,21 +1,5 @@
 package no.unit.nva.doi.transformer;
 
-import static java.util.Objects.nonNull;
-import static java.util.function.Predicate.not;
-import static nva.commons.core.attempt.Try.attempt;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.time.Instant;
-import java.util.AbstractMap.SimpleEntry;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
-
 import no.sikt.nva.doi.fetch.jsonconfig.Json;
 import no.unit.nva.doi.transformer.exception.MalformedContributorException;
 import no.unit.nva.doi.transformer.language.SimpleLanguageDetector;
@@ -46,10 +30,27 @@ import no.unit.nva.model.contexttypes.BasicContext;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.StringUtils;
 import nva.commons.doi.DoiConverter;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.time.Instant;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import static java.util.Objects.nonNull;
+import static java.util.function.Predicate.not;
+import static nva.commons.core.attempt.Try.attempt;
 
 public class DataciteResponseConverter extends AbstractConverter {
 
@@ -133,15 +134,9 @@ public class DataciteResponseConverter extends AbstractConverter {
         PublicationInstance<?> publicationInstance = null;
         if (PublicationType.JOURNAL_CONTENT.equals(extractPublicationType(dataciteResponse))) {
             DataciteContainer container = dataciteResponse.getContainer();
-            String issue = Optional.ofNullable(container.getIssue()).orElse(null);
-            String volume = Optional.ofNullable(container.getVolume()).orElse(null);
-            publicationInstance = new JournalArticle.Builder()
-                .withArticleNumber(null)
-                .withIssue(issue)
-                .withPages(extractPages(container))
-                .withVolume(volume)
-                .withPeerReviewed(true)
-                .build();
+            String issue = container.getIssue();
+            String volume = container.getVolume();
+            publicationInstance = new AcademicArticle(extractPages(container), volume, issue, null);
         }
         return publicationInstance;
     }

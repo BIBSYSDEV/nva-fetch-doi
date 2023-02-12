@@ -63,12 +63,13 @@ import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.book.AcademicMonograph;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
-import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
+import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
+import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.MonographPages;
-import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
@@ -232,14 +233,8 @@ public class CrossRefConverter extends AbstractConverter {
         }
     }
 
-    private Pages extractPages(CrossRefDocument document) {
-        return isMonograph(document)
-                   ? extractMonographPages(document)
-                   : StringUtils.parsePage(document.getPage());
-    }
-
-    private boolean isMonograph(CrossRefDocument document) {
-        return getByType(document.getType()).equals(BOOK);
+    private Range extractRangePages(CrossRefDocument document) {
+        return StringUtils.parsePage(document.getPage());
     }
 
     private MonographPages extractMonographPages(CrossRefDocument document) {
@@ -293,10 +288,6 @@ public class CrossRefConverter extends AbstractConverter {
             extractPrintIssn(document),
             extractOnlineIssn(document)
         );
-    }
-
-    private boolean hasReviews(CrossRefDocument document) {
-        return nonNull(document.getReview());
     }
 
     private List<String> extractIsbnList(CrossRefDocument document) {
@@ -393,32 +384,19 @@ public class CrossRefConverter extends AbstractConverter {
     }
 
     private BookAnthology createBookAnthology(CrossRefDocument document) {
-        return new BookAnthology.Builder()
-            .withPeerReviewed(hasReviews(document)) // Same as in BasicContext
-            .withPages((MonographPages) extractPages(document))
-            .build();
+        return new BookAnthology(extractMonographPages(document));
     }
 
     private BookMonograph createBookMonograph(CrossRefDocument document) {
-        return new BookMonograph.Builder()
-            .withPeerReviewed(hasReviews(document)) // Same as in BasicContext
-            .withPages((MonographPages) extractPages(document))
-            .build();
+        return new AcademicMonograph(extractMonographPages(document));
     }
 
-    private ChapterArticle createChapterArticle(CrossRefDocument document) {
-        return new ChapterArticle.Builder()
-            .withPages((Range) extractPages(document))
-            .withPeerReviewed(hasReviews(document)) // Same as in BasicContext
-            .build();
+    private AcademicChapter createChapterArticle(CrossRefDocument document) {
+        return new AcademicChapter(extractRangePages(document));
     }
 
     private JournalArticle createJournalArticle(CrossRefDocument document) {
-        return new JournalArticle.Builder()
-            .withVolume(document.getVolume())
-            .withIssue(document.getIssue())
-            .withPages((Range) extractPages(document))
-            .build();
+        return new AcademicArticle(extractRangePages(document), document.getVolume(), document.getIssue(), null);
     }
 
     private String extractJournalTitle(CrossRefDocument document) {
