@@ -15,9 +15,9 @@ import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Funding;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.funding.Funding;
 import nva.commons.core.JacocoGenerated;
 
 public class CreatePublicationRequest implements WithMetadata, WithAssociatedArtifact, WithContext, JsonSerializable {
