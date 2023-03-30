@@ -29,6 +29,8 @@ import no.unit.nva.doi.transformer.utils.CristinProxyClient;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -92,16 +94,16 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         URI apiUrl = urlToPublicationProxy();
         validate(input);
 
-        var owner = requestInfo.getNvaUsername();
+        var owner = requestInfo.getUserName();
         var customerId = requestInfo.getCurrentCustomer();
         var authHeader = requestInfo.getAuthHeader();
 
         var inputUri = input.getDoiUrl();
         return attempt(() -> newCreatePublicationRequest(owner, customerId, inputUri))
-            .map(createPublicationRequest -> tryCreatePublication(authHeader, apiUrl, createPublicationRequest))
-            .map(response -> Json.convertValue(response, JsonNode.class))
-            .map(publicationConverter::toSummary)
-            .orElseThrow(fail -> handleError(fail.getException()));
+                   .map(createPublicationRequest -> tryCreatePublication(authHeader, apiUrl, createPublicationRequest))
+                   .map(response -> Json.convertValue(response, JsonNode.class))
+                   .map(publicationConverter::toSummary)
+                   .orElseThrow(fail -> handleError(fail.getException()));
     }
 
     @Override
@@ -136,6 +138,9 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
             logger.info("URL is NOT a DOI, falling back to web metadata scraping");
             request = getPublicationFromOtherUrl(url);
         }
+
+        request.getEntityDescription().setMetadataSource(URI.create(url.toString()));
+
         return request;
     }
 
@@ -146,7 +151,18 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
     private CreatePublicationRequest getPublicationFromOtherUrl(URL url)
         throws URISyntaxException, MetadataNotFoundException {
         return metadataService.generateCreatePublicationRequest(url.toURI())
-            .orElseThrow(() -> new MetadataNotFoundException(NO_METADATA_FOUND_FOR + url));
+                   .map(request -> saveSourceAsLinkInAssociatedArtifacts(request, url))
+                   .orElseThrow(() -> new MetadataNotFoundException(NO_METADATA_FOUND_FOR + url));
+    }
+
+    private CreatePublicationRequest saveSourceAsLinkInAssociatedArtifacts(CreatePublicationRequest request, URL url) {
+        request.setAssociatedArtifacts(associatedArtifactsWithLinkToMetadataSource(url));
+        return request;
+    }
+
+    private AssociatedArtifactList associatedArtifactsWithLinkToMetadataSource(URL url) {
+        var associatedArtifact = new AssociatedLink(URI.create(url.toString()), null, null);
+        return new AssociatedArtifactList(associatedArtifact);
     }
 
     private CreatePublicationRequest getPublicationFromDoi(String owner, URI customerId, URL doi)
@@ -160,7 +176,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     private URI urlToPublicationProxy() {
         return attempt(() -> UriWrapper.fromHost(publicationApiHost).getUri())
-            .orElseThrow(failure -> new IllegalStateException(failure.getException()));
+                   .orElseThrow(failure -> new IllegalStateException(failure.getException()));
     }
 
     private void validate(RequestBody input) throws MalformedRequestException {

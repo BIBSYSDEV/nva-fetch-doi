@@ -30,6 +30,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
     private List<URI> subjects;
     private Set<AdditionalIdentifier> additionalIdentifiers;
     private List<Funding> fundings;
+    private String rightsHolder;
 
     @JacocoGenerated
     public static CreatePublicationRequest fromJson(String json) {
@@ -82,6 +83,18 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
         this.fundings = fundings;
     }
 
+    @JacocoGenerated
+    @Override
+    public String getRightsHolder() {
+        return rightsHolder;
+    }
+
+    @JacocoGenerated
+    @Override
+    public void setRightsHolder(String rightsHolder) {
+        this.rightsHolder = rightsHolder;
+    }
+
     @Override
     @JacocoGenerated
     public AssociatedArtifactList getAssociatedArtifacts() {
@@ -118,18 +131,11 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
 
     @JacocoGenerated
     @Override
-    public int hashCode() {
-        return Objects.hash(getEntityDescription(), getAssociatedArtifacts(), getContext(), getProjects(),
-                            getSubjects(), getFundings(), getAdditionalIdentifiers());
-    }
-
-    @JacocoGenerated
-    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof CreatePublicationRequest)) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
         CreatePublicationRequest that = (CreatePublicationRequest) o;
@@ -138,7 +144,36 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
                && Objects.equals(getContext(), that.getContext())
                && Objects.equals(getProjects(), that.getProjects())
                && Objects.equals(getSubjects(), that.getSubjects())
+               && Objects.equals(getAdditionalIdentifiers(), that.getAdditionalIdentifiers())
                && Objects.equals(getFundings(), that.getFundings())
-               && Objects.equals(getAdditionalIdentifiers(), that.getAdditionalIdentifiers());
+               && Objects.equals(getRightsHolder(), that.getRightsHolder());
+    }
+
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(getEntityDescription(),
+                            getAssociatedArtifacts(),
+                            getContext(),
+                            getProjects(),
+                            getSubjects(),
+                            getAdditionalIdentifiers(),
+                            getFundings(),
+                            getRightsHolder());
+    }
+
+    @JacocoGenerated
+    @Override
+    public String toString() {
+        return "CreatePublicationRequest{" +
+               "entityDescription=" + entityDescription +
+               ", associatedArtifacts=" + associatedArtifacts +
+               ", context=" + context +
+               ", projects=" + projects +
+               ", subjects=" + subjects +
+               ", additionalIdentifiers=" + additionalIdentifiers +
+               ", fundings=" + fundings +
+               ", rightsHolder='" + rightsHolder + '\'' +
+               '}';
     }
 }
