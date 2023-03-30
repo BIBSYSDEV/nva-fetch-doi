@@ -165,15 +165,6 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
     @JacocoGenerated
     @Override
     public String toString() {
-        return "CreatePublicationRequest{" +
-               "entityDescription=" + entityDescription +
-               ", associatedArtifacts=" + associatedArtifacts +
-               ", context=" + context +
-               ", projects=" + projects +
-               ", subjects=" + subjects +
-               ", additionalIdentifiers=" + additionalIdentifiers +
-               ", fundings=" + fundings +
-               ", rightsHolder='" + rightsHolder + '\'' +
-               '}';
+        return this.toJsonString();
     }
 }
