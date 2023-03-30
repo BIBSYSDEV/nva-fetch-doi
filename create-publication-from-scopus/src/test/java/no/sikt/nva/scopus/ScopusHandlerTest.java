@@ -225,7 +225,6 @@ class ScopusHandlerTest {
     @BeforeEach
     public void init() {
         var fakeSecretsManagerClient = new FakeSecretsManagerClient();
-        var secretsReader = new SecretsReader(fakeSecretsManagerClient);
         fakeSecretsManagerClient.putSecret(PIA_SECRET_NAME, PIA_USERNAME_SECRET_KEY, randomString());
         fakeSecretsManagerClient.putSecret(PIA_SECRET_NAME, PIA_PASSWRORD_SECRET_KEY, randomString());
         s3Client = new FakeS3Client();
@@ -234,6 +233,7 @@ class ScopusHandlerTest {
         var httpClient = WiremockHttpClient.create();
         metadataService = new MetadataService(httpClient, serverUriJournal, serverUriPublisher);
         var piaEnvironment = createPiaConnectionEnvironment();
+        var secretsReader = new SecretsReader(fakeSecretsManagerClient);
         piaConnection = new PiaConnection(httpClient, secretsReader, piaEnvironment);
         cristinConnection = new CristinConnection(httpClient);
         eventBridgeClient = new FakeEventBridgeClient();

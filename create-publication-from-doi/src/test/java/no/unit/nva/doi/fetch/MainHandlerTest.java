@@ -6,6 +6,9 @@ import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_OK;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
 import static no.unit.nva.doi.fetch.RestApiConfig.restServiceObjectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -19,7 +22,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.CognitoIdentity;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -64,6 +70,8 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
+import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.testutils.HandlerRequestBuilder;
@@ -81,18 +89,23 @@ import org.zalando.problem.Status;
 class MainHandlerTest {
 
     public static final String VALID_DOI = "https://doi.org/10.1109/5.771073";
+    public static final String VALID_NON_DOI = "http://example.org/metadata";
     public static final String ALL_ORIGINS = "*";
     public static final String INVALID_HOST_STRING = "https://\\.)_";
+    private static final String MAIN_TITLE = "Main title";
     private static final String SOME_ERROR_MESSAGE = "SomeErrorMessage";
     private Environment environment;
     private Context context;
     private ByteArrayOutputStream output;
+    private PublicationPersistenceService publicationPersistenceService;
 
     @BeforeEach
     public void setUp() {
         environment = mock(Environment.class);
         context = getMockContext();
         output = new ByteArrayOutputStream();
+        publicationPersistenceService = mock(PublicationPersistenceService.class);
+
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALL_ORIGINS);
         when(environment.readEnv(MainHandler.PUBLICATION_API_HOST_ENV)).thenReturn("localhost");
     }
@@ -109,6 +122,13 @@ class MainHandlerTest {
         assertThat(gatewayResponse.getHeaders(), hasKey(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
         Summary summary = gatewayResponse.getBodyObject(Summary.class);
         assertNotNull(summary.getIdentifier());
+
+        var isDoi = true;
+        CreatePublicationRequest expectedCreateRequest = expectedCreatePublicationRequest(isDoi,
+                                                                                          URI.create(VALID_DOI));
+
+        verify(publicationPersistenceService, times(1))
+            .createPublication(eq(expectedCreateRequest), any(), any());
     }
 
     @Test
@@ -123,6 +143,13 @@ class MainHandlerTest {
         assertThat(gatewayResponse.getHeaders(), hasKey(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
         Summary summary = gatewayResponse.getBodyObject(Summary.class);
         assertNotNull(summary.getIdentifier());
+
+        var isDoi = false;
+        CreatePublicationRequest expectedCreateRequest = expectedCreatePublicationRequest(isDoi,
+                                                                                          URI.create(VALID_NON_DOI));
+
+        verify(publicationPersistenceService, times(1))
+            .createPublication(eq(expectedCreateRequest), any(), any());
     }
 
     @Test
@@ -236,10 +263,42 @@ class MainHandlerTest {
         assertThat(getProblemDetail(gatewayResponse), containsString(PublicationPersistenceService.WARNING_MESSAGE));
     }
 
+    private CreatePublicationRequest expectedCreatePublicationRequest(boolean isDoi, URI metadataSource) {
+        var expectedCreateRequest = new CreatePublicationRequest();
+        expectedCreateRequest.setEntityDescription(expectedEntityDescription(isDoi, metadataSource));
+        if (isDoi) { // deserialization causes all collections to be empty:
+            expectedCreateRequest.setAdditionalIdentifiers(emptySet());
+            expectedCreateRequest.setFundings(emptyList());
+            expectedCreateRequest.setProjects(emptyList());
+            expectedCreateRequest.setSubjects(emptyList());
+        }
+        expectedCreateRequest.setAssociatedArtifacts(
+            isDoi ? new AssociatedArtifactList() : artifactsWithLink(metadataSource));
+
+        return expectedCreateRequest;
+    }
+
+    private AssociatedArtifactList artifactsWithLink(URI metadataSource) {
+        return new AssociatedArtifactList(new AssociatedLink(metadataSource, null, null));
+    }
+
+    private EntityDescription expectedEntityDescription(boolean isDoi, URI metadataSource) {
+        var builder = new EntityDescription.Builder()
+                          .withMainTitle(MAIN_TITLE)
+                          .withMetadataSource(metadataSource);
+
+        if (isDoi) { // deserialization causes all collections to be empty:
+            builder.withTags(emptyList())
+                .withContributors(emptyList())
+                .withAlternativeTitles(emptyMap())
+                .withAlternativeAbstracts(emptyMap());
+        }
+        return builder.build();
+    }
+
     private MainHandler handlerReceivingEmptyResponse(PublicationConverter publicationConverter) {
         DoiTransformService doiTransformService = mock(DoiTransformService.class);
         DoiProxyService doiProxyService = mock(DoiProxyService.class);
-        PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
         CristinProxyClient cristinProxyClient = mock(CristinProxyClient.class);
         MetadataService metadataService = mock(MetadataService.class);
         when(metadataService.generateCreatePublicationRequest(any())).thenReturn(Optional.empty());
@@ -265,7 +324,6 @@ class MainHandlerTest {
         PublicationConverter publicationConverter = mockPublicationConverter();
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
-        PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
         CristinProxyClient cristinProxyClient = mock(CristinProxyClient.class);
         MetadataService metadataService = mockMetadataServiceReturningSuccessfulResult();
 
@@ -290,13 +348,18 @@ class MainHandlerTest {
     }
 
     private MetadataService mockMetadataServiceReturningSuccessfulResult() {
-        MetadataService service = mock(MetadataService.class);
 
         EntityDescription entityDescription = new EntityDescription();
-        entityDescription.setMainTitle("Main title");
+        entityDescription.setMainTitle(MAIN_TITLE);
+        entityDescription.setAlternativeAbstracts(emptyMap());
+        entityDescription.setAlternativeTitles(emptyMap());
+        entityDescription.setContributors(emptyList());
+        entityDescription.setTags(emptyList());
+
         CreatePublicationRequest request = new CreatePublicationRequest();
         request.setEntityDescription(entityDescription);
 
+        MetadataService service = mock(MetadataService.class);
         when(service.generateCreatePublicationRequest(any()))
             .thenReturn(Optional.of(request));
         return service;
@@ -304,18 +367,18 @@ class MainHandlerTest {
 
     private Publication getPublication() {
         return new Publication.Builder()
-            .withIdentifier(new SortableIdentifier(UUID.randomUUID().toString()))
-            .withCreatedDate(Instant.now())
-            .withModifiedDate(Instant.now())
-            .withStatus(PublicationStatus.DRAFT)
-            .withPublisher(new Organization.Builder().withId(URI.create("http://example.org/123")).build())
-            .withEntityDescription(new EntityDescription.Builder().withMainTitle("Main title").build())
-            .withResourceOwner(randomResourceOwner())
-            .build();
+                   .withIdentifier(new SortableIdentifier(UUID.randomUUID().toString()))
+                   .withCreatedDate(Instant.now())
+                   .withModifiedDate(Instant.now())
+                   .withStatus(PublicationStatus.DRAFT)
+                   .withPublisher(new Organization.Builder().withId(URI.create("http://example.org/123")).build())
+                   .withEntityDescription(new EntityDescription.Builder().withMainTitle(MAIN_TITLE).build())
+                   .withResourceOwner(randomResourceOwner())
+                   .build();
     }
 
     private ResourceOwner randomResourceOwner() {
-        return new ResourceOwner(randomString(),randomUri());
+        return new ResourceOwner(randomString(), randomUri());
     }
 
     private DoiProxyService mockDoiProxyServiceReceivingSuccessfulResult()
@@ -332,9 +395,9 @@ class MainHandlerTest {
 
     private Summary createSummary() {
         return new Summary.Builder().withIdentifier(SortableIdentifier.next())
-            .withTitle("Title on publication")
-            .withCreatorName("Name, Creator")
-            .withDate(new PublicationDate.Builder().withYear("2020").build()).build();
+                   .withTitle("Title on publication")
+                   .withCreatorName("Name, Creator")
+                   .withDate(new PublicationDate.Builder().withYear("2020").build()).build();
     }
 
     private PublicationPersistenceService mockResourcePersistenceServiceReceivingFailedResult()
@@ -374,11 +437,11 @@ class MainHandlerTest {
         requestHeaders.putAll(TestHeaders.getRequestHeaders());
 
         return new HandlerRequestBuilder<RequestBody>(restServiceObjectMapper)
-            .withBody(requestBody)
-            .withHeaders(requestHeaders)
-            .withNvaUsername(randomString())
-            .withCustomerId(randomUri())
-            .build();
+                   .withBody(requestBody)
+                   .withHeaders(requestHeaders)
+                   .withUserName(randomString())
+                   .withCurrentCustomer(randomUri())
+                   .build();
     }
 
     private InputStream createSampleRequest() throws MalformedURLException, JsonProcessingException {
@@ -386,7 +449,7 @@ class MainHandlerTest {
     }
 
     private InputStream nonDoiUrlInputStream() throws MalformedURLException, JsonProcessingException {
-        return createSampleRequest(new URL("http://example.org/metadata"));
+        return createSampleRequest(new URL(VALID_NON_DOI));
     }
 
     private InputStream malformedInputStream() throws JsonProcessingException {
@@ -396,10 +459,10 @@ class MainHandlerTest {
         requestHeaders.putAll(TestHeaders.getRequestHeaders());
 
         return new HandlerRequestBuilder<RequestBody>(restServiceObjectMapper)
-            .withHeaders(requestHeaders)
-            .withNvaUsername(randomString())
-            .withCustomerId(randomUri())
-            .build();
+                   .withHeaders(requestHeaders)
+                   .withUserName(randomString())
+                   .withCurrentCustomer(randomUri())
+                   .build();
     }
 
     private ByteArrayOutputStream outputStream() {
@@ -417,7 +480,7 @@ class MainHandlerTest {
     private <T> GatewayResponse<T> parseGatewayResponse(String output, Class<T> responseObjectClass)
         throws JsonProcessingException {
         JavaType typeRef = restServiceObjectMapper.getTypeFactory()
-            .constructParametricType(GatewayResponse.class, responseObjectClass);
+                               .constructParametricType(GatewayResponse.class, responseObjectClass);
         return restServiceObjectMapper.readValue(output, typeRef);
     }
 

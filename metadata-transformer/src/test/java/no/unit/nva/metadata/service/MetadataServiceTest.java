@@ -151,7 +151,7 @@ public class MetadataServiceTest {
         var expectedJournalUri = mockedPublicationChannelsReturnsUri(queryUri);
         var metadataService = new MetadataService(httpClient, serverUriJournal, serverUriPublisher);
         var actualId = metadataService.fetchJournalIdFromPublicationChannel(
-                expectedJournalName, null, null, Integer.valueOf(expectedYear))
+                expectedJournalName, null, null, expectedYear)
                 .orElseThrow();
         assertThat(actualId, is(expectedJournalUri));
     }
@@ -184,7 +184,7 @@ public class MetadataServiceTest {
     }
 
     @Test
-    void getCreatePublicationRequestAddsTagsWhenTagsArePresent() throws IOException {
+    void getCreatePublicationRequestAddsTagsWhenTagsArePresent() {
         List<MetaTagPair> metaTags = List.of(new MetaTagPair("dcterms.coverage", "Coverage"),
                                              new MetaTagPair("dcterms.temporal", "Temporal"),
                                              new MetaTagPair("dcterms.spatial", "Spatial"),
@@ -214,7 +214,7 @@ public class MetadataServiceTest {
     }
 
     @Test
-    void getCreatePublicationReturnsMostCompletePublicationDateWhenMultipleCandidatesArePresent() throws IOException {
+    void getCreatePublicationReturnsMostCompletePublicationDateWhenMultipleCandidatesArePresent() {
 
         List<MetaTagPair> metaDates = List.of(new MetaTagPair(DC_DATE, YEAR_ONLY),
                                               new MetaTagPair(DC_DATE, FULL_DATE));
@@ -227,8 +227,7 @@ public class MetadataServiceTest {
 
     @ParameterizedTest(name = "Bad date {0} is ignored in preference for valid date")
     @ValueSource(strings = {"", "20111-02-01", "2011-033-11", "2010-01-011", "20100101", "First of Sept. 2010"})
-    void getCreatePublicationReturnsValidDateWhenValidAndInvalidCandidatesAreAvailable(String nonsense)
-        throws IOException {
+    void getCreatePublicationReturnsValidDateWhenValidAndInvalidCandidatesAreAvailable(String nonsense) {
         List<MetaTagPair> metaDates = List.of(new MetaTagPair(DC_DATE, VALID_DATE),
                                               new MetaTagPair(DC_DATE, nonsense));
 
@@ -312,7 +311,7 @@ public class MetadataServiceTest {
     }
 
     @Test
-    void getCreatePublicationRequestReturnsSingleHttpsDoiWhenInputContainsManyValidDois() throws IOException {
+    void getCreatePublicationRequestReturnsSingleHttpsDoiWhenInputContainsManyValidDois() {
         List<MetaTagPair> doimetaTagPairs = List.of(
             new MetaTagPair(DC_IDENTIFIER, "https://doi.org/10.1109/5.771073"),
             new MetaTagPair(DC_IDENTIFIER, "http://doi.org/10.1109/5.771073"),
@@ -337,8 +336,7 @@ public class MetadataServiceTest {
 
     @ParameterizedTest
     @ArgumentsSource(ContributorArgumentsProvider.class)
-    void getCreatePublicationRequestReturnsContributorWhenInputIsValidContributor(List<MetaTagPair> tags)
-        throws IOException {
+    void getCreatePublicationRequestReturnsContributorWhenInputIsValidContributor(List<MetaTagPair> tags) {
         CreatePublicationRequest request = getCreatePublicationRequest(tags);
         Object[] expected = tags.stream()
             .filter(this::isNameProperty)
@@ -353,7 +351,7 @@ public class MetadataServiceTest {
     }
 
     @Test
-    void getCreatePublicationRequestReturnsTitleWhenInputContainsOnlyHtmlHeadTitle() throws IOException {
+    void getCreatePublicationRequestReturnsTitleWhenInputContainsOnlyHtmlHeadTitle() {
         CreatePublicationRequest request = getCreatePublicationRequest(FAKE_TITLE);
         String actual = request.getEntityDescription().getMainTitle();
         assertThat(actual, equalTo(FAKE_TITLE));
@@ -374,8 +372,7 @@ public class MetadataServiceTest {
     void getCreatePublicationRequestReturnsLongestTitleWhenInputContainsMultipleTitles(String first,
                                                                                        String second,
                                                                                        String third,
-                                                                                       String expected)
-        throws IOException {
+                                                                                       String expected) {
         String shortAuthorName = createAuthorShorterThanShortestTitle(first, second, third);
         List<MetaTagPair> metaTags = List.of(new MetaTagPair(DC_TITLE, first), new MetaTagPair(CITATION_TITLE, second),
 
@@ -397,8 +394,7 @@ public class MetadataServiceTest {
     void getCreatePublicationRequestReturnsTypeWhenInputIndicatesType(String metaTagName,
                                                                       String isxnImplyingContentType,
                                                                       Class<?> expectedContext,
-                                                                      Class<?> expectedInstance)
-        throws IOException {
+                                                                      Class<?> expectedInstance) {
         CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(List.of(
             new MetaTagPair(CITATION_DOI, "10.0000/aaaa"),
             new MetaTagPair(metaTagName, isxnImplyingContentType)));
@@ -416,7 +412,7 @@ public class MetadataServiceTest {
 
     @DisplayName("getCreatePublicationRequest consumes multiple ISBNs adding distinct, converting ISBN-10 to ISBN-13")
     @Test
-    void getCreatePublicationRequestReturnsMultipleIsbnsWhenMultipleIsbnsArePresent() throws IOException {
+    void getCreatePublicationRequestReturnsMultipleIsbnsWhenMultipleIsbnsArePresent() {
         CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(List.of(
             new MetaTagPair(Citation.ISBN.getMetaTagName(), FIRST_ISBN_ISBN10_VARIANT),
             new MetaTagPair(Citation.ISBN.getMetaTagName(), SECOND_ISBN_ISBN10_VARIANT),
@@ -432,7 +428,7 @@ public class MetadataServiceTest {
     }
 
     @Test
-    void getCreatePublicationRequestReturnsSingleIssnWhenMultipleCandidatesArePresent() throws IOException {
+    void getCreatePublicationRequestReturnsSingleIssnWhenMultipleCandidatesArePresent() {
         CreatePublicationRequest createPublicationRequest = getCreatePublicationRequest(List.of(
             new MetaTagPair(Citation.ISSN.getMetaTagName(), ONLINE_ISSN),
             new MetaTagPair(Citation.ISSN.getMetaTagName(), PRINT_ISSN),
@@ -459,8 +455,7 @@ public class MetadataServiceTest {
     @ParameterizedTest(name = "Non-literals are filtered for {0}")
     @ValueSource(strings = {"dc.abstract", "dc.description", "dc.creator", "citation_isbn", "citation_issn",
         "dc.language", "dc.subject", "dc.title"})
-    void getCreatePublicationRequestReturnsOptionalEmptyWhenExpectedInputIsStringButInputIsUri(String property)
-        throws IOException {
+    void getCreatePublicationRequestReturnsOptionalEmptyWhenExpectedInputIsStringButInputIsUri(String property) {
         Optional<CreatePublicationRequest> createPublicationRequest =
             getCreatePublicationRequestResponseWithRdfSource(property, "https://example.org/pool-tables");
         assertTrue(createPublicationRequest.isEmpty());
@@ -606,16 +601,15 @@ public class MetadataServiceTest {
                || CITATION_AUTHOR.equals(tagPair.getName());
     }
 
-    private CreatePublicationRequest getCreatePublicationRequest(String title) throws IOException {
+    private CreatePublicationRequest getCreatePublicationRequest(String title) {
         return getCreatePublicationRequest(title, emptyList());
     }
 
-    private CreatePublicationRequest getCreatePublicationRequest(List<MetaTagPair> tagPairs) throws IOException {
+    private CreatePublicationRequest getCreatePublicationRequest(List<MetaTagPair> tagPairs) {
         return getCreatePublicationRequest(null, tagPairs);
     }
 
-    private CreatePublicationRequest getCreatePublicationRequest(String htmlTitle, List<MetaTagPair> metaTags)
-        throws IOException {
+    private CreatePublicationRequest getCreatePublicationRequest(String htmlTitle, List<MetaTagPair> metaTags) {
         String html = createHtml(htmlTitle, metaTags);
         URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, html);
         MetadataService metadataService = new MetadataService();
@@ -658,8 +652,7 @@ public class MetadataServiceTest {
     }
 
     private Optional<CreatePublicationRequest> getCreatePublicationRequestResponseWithRdfSource(String property,
-                                                                                                String resource)
-        throws IOException {
+                                                                                                String resource) {
         URI uri = prepareWebServerAndReturnUriToMetadata(ARTICLE_HTML, createRdfaHtml(property, resource));
         MetadataService metadataService = new MetadataService();
         return metadataService.generateCreatePublicationRequest(uri);

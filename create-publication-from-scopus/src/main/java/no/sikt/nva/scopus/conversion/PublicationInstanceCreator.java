@@ -1,6 +1,12 @@
 package no.sikt.nva.scopus.conversion;
 
+import static java.util.Collections.emptyList;
+import static no.scopus.generated.CitationtypeAtt.AR;
+import static no.scopus.generated.CitationtypeAtt.CP;
+import static no.scopus.generated.CitationtypeAtt.SH;
 import jakarta.xml.bind.JAXBElement;
+import java.util.Optional;
+import java.util.stream.Stream;
 import no.scopus.generated.CitationTypeTp;
 import no.scopus.generated.CitationtypeAtt;
 import no.scopus.generated.DocTp;
@@ -10,8 +16,6 @@ import no.scopus.generated.VolissTp;
 import no.scopus.generated.VolisspagTp;
 import no.sikt.nva.scopus.ScopusConstants;
 import no.sikt.nva.scopus.exception.UnsupportedCitationTypeException;
-import no.unit.nva.model.contexttypes.BookSeries;
-import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
@@ -26,14 +30,6 @@ import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
-
-import java.util.Optional;
-import java.util.stream.Stream;
-
-import static java.util.Collections.emptyList;
-import static no.scopus.generated.CitationtypeAtt.AR;
-import static no.scopus.generated.CitationtypeAtt.CP;
-import static no.scopus.generated.CitationtypeAtt.SH;
 
 public class PublicationInstanceCreator {
 
@@ -74,7 +70,7 @@ public class PublicationInstanceCreator {
             case CP:
                 if (isJournal()) {
                     return Optional.of(generateJournalArticle(CP));
-                } else if (isChapter()) {
+                } else {
                     return Optional.of(generateChapterArticle());
                 }
             case ED:
@@ -203,10 +199,6 @@ public class PublicationInstanceCreator {
 
     private boolean isJournal() {
         return publicationContext instanceof Journal || publicationContext instanceof UnconfirmedJournal;
-    }
-
-    private boolean isChapter() {
-        return publicationContext instanceof Chapter || publicationContext instanceof BookSeries;
     }
 
     private Optional<CitationtypeAtt> getCitationTypeCode() {

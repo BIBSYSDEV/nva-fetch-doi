@@ -13,6 +13,8 @@ import org.junit.jupiter.api.Test;
 
 class CreatePublicationRequestTest {
 
+    private static final String RIGHTS_HOLDER = "My imagined rights holder";
+
     @Test
     void shouldRoundTripToJsonWithoutInformationLoss() {
         CreatePublicationRequest originalRequest = sampleRequest();
@@ -31,6 +33,7 @@ class CreatePublicationRequestTest {
         request.setAssociatedArtifacts(sample.getAssociatedArtifacts());
         request.setSubjects(sample.getSubjects());
         request.setFundings(sample.getFundings());
+        request.setRightsHolder(RIGHTS_HOLDER);
         assertThat(request, doesNotHaveEmptyValues());
         return request;
     }

@@ -50,13 +50,18 @@ public final class WiremockHttpClient {
             }
 
             @Override
-            public void checkServerTrusted(X509Certificate[] chain, String authType, Socket socket)
+            public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine engine)
                 throws CertificateException {
 
             }
 
             @Override
-            public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine engine)
+            public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+
+            }
+
+            @Override
+            public void checkServerTrusted(X509Certificate[] chain, String authType, Socket socket)
                 throws CertificateException {
 
             }
@@ -64,11 +69,6 @@ public final class WiremockHttpClient {
             @Override
             public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine engine)
                 throws CertificateException {
-
-            }
-
-            @Override
-            public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
 
             }
 

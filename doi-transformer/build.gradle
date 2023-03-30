@@ -2,11 +2,12 @@ dependencies {
     implementation project(":fetch-doi-commons")
 
     implementation (libs.nva.datamodel) {
-        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
+//        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
 
     implementation project(":json-config")
     implementation libs.nva.core
+    implementation libs.nva.json
     implementation libs.nva.identifiers
     implementation libs.nva.apigateway
     implementation libs.nva.doi
