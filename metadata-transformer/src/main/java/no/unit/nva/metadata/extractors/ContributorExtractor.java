@@ -4,11 +4,11 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.NameType;
-import no.unit.nva.model.Role;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 
 import static java.util.Objects.isNull;
 import static nva.commons.core.attempt.Try.attempt;
@@ -45,7 +45,7 @@ public final class ContributorExtractor {
 
     private static Contributor createContributorWithoutCorrespondingAuthorInfo(ExtractionPair extractionPair) {
         return attempt(() -> new Contributor.Builder()
-                .withRole(Role.CREATOR)
+                .withRole(new RoleType(Role.CREATOR))
                 .withIdentity(extractIdentity(extractionPair.getStatementLiteral()))
                 .build()).orElseThrow();
     }

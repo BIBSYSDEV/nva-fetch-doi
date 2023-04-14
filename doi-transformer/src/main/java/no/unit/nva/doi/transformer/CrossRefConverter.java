@@ -52,7 +52,6 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.Role;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Chapter;
@@ -71,6 +70,8 @@ import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Range;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.exceptions.ExceptionUtils;
@@ -149,19 +150,19 @@ public class CrossRefConverter extends AbstractConverter {
     protected List<Contributor> toContributors(CrossRefDocument document) {
 
         List<Contributor> contributors = new ArrayList<>();
-        contributors.addAll(toContributorsWithRole(document.getAuthor(), Role.CREATOR));
-        contributors.addAll(toContributorsWithRole(document.getEditor(), Role.EDITOR));
+        contributors.addAll(toContributorsWithRole(document.getAuthor(), new RoleType(Role.CREATOR)));
+        contributors.addAll(toContributorsWithRole(document.getEditor(), new RoleType(Role.EDITOR)));
         return contributors;
     }
 
-    protected List<Contributor> toContributorsWithRole(List<CrossrefContributor> crossrefContributors, Role role) {
+    protected List<Contributor> toContributorsWithRole(List<CrossrefContributor> crossrefContributors, RoleType role) {
         List<CrossrefContributor> contributorsWithName = removeContributorsWithoutNames(crossrefContributors);
         return convertCrossRefContributorsToNvaContributors(contributorsWithName, role);
     }
 
     private List<Contributor> convertCrossRefContributorsToNvaContributors(
         List<CrossrefContributor> crossrefContributors,
-        Role role) {
+        RoleType role) {
         List<Contributor> nvaContributors = new ArrayList<>();
         for (int index = 0; index < crossrefContributors.size(); index++) {
             int authorSequence = index + 1;
@@ -484,7 +485,7 @@ public class CrossRefConverter extends AbstractConverter {
      * @param registrationSequence sequence in case where the Author object does not contain a valid sequence entry
      * @return an Optional Contributor object if the transformation succeeds.
      */
-    private Contributor toContributorWithRole(CrossrefContributor contributor, Role role, int registrationSequence) {
+    private Contributor toContributorWithRole(CrossrefContributor contributor, RoleType role, int registrationSequence) {
         Identity identity = new Identity.Builder()
             .withName(toName(contributor.getGivenName(), contributor.getFamilyName()))
             .withOrcId(contributor.getOrcid())
