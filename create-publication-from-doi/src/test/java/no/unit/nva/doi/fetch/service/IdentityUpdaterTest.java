@@ -10,7 +10,8 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.Role;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
@@ -121,7 +122,7 @@ class IdentityUpdaterTest {
 
     private Publication createPublicationWithIdentity(Identity identity) {
         var contributor = new Contributor.Builder()
-                .withRole(Role.CREATOR)
+                .withRole(new RoleType(Role.CREATOR))
                 .withIdentity(identity)
                 .build();
         return new Publication.Builder()

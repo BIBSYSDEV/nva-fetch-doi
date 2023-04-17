@@ -12,7 +12,8 @@ import no.sikt.nva.scopus.conversion.model.cristin.TypedValue;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
-import no.unit.nva.model.Role;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -31,7 +32,8 @@ public final class CristinContributorExtractor {
     public static Contributor generateContributorFromCristin(Person person, AuthorTp authorTp,
                                                              PersonalnameType correspondencePerson) {
         return new Contributor(generateContributorIdentityFromCristinPerson(person),
-                               generateOrganizationsFromCristinAffiliations(person.getAffiliations()), Role.CREATOR,
+                               generateOrganizationsFromCristinAffiliations(person.getAffiliations()),
+                               new RoleType(Role.CREATOR),
                                getSequenceNumber(authorTp), isCorrespondingAuthor(authorTp, correspondencePerson));
     }
 

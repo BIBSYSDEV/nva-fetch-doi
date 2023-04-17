@@ -21,7 +21,8 @@ import no.unit.nva.language.LanguageMapper;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
-import no.unit.nva.model.Role;
+import no.unit.nva.model.role.Role;
+import no.unit.nva.model.role.RoleType;
 import org.apache.tika.langdetect.OptimaizeLangDetector;
 
 public class ContributorExtractor {
@@ -161,7 +162,7 @@ public class ContributorExtractor {
         var affiliation = generateAffiliation(authorGroup);
         return new Contributor(identity,
                                affiliation.map(List::of).orElse(List.of()),
-                               Role.CREATOR,
+                               new RoleType(Role.CREATOR),
                                getSequenceNumber(author),
                                isCorrespondingAuthor(author, correspondencePerson));
     }

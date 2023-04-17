@@ -56,7 +56,6 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.Role;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
@@ -71,6 +70,7 @@ import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
+import no.unit.nva.model.role.Role;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.doi.DoiConverter;
 import nva.commons.logutils.LogUtils;
@@ -735,7 +735,7 @@ public class CrossRefConverterTest extends ConversionTest {
     }
 
     private boolean isEditor(Contributor contributor) {
-        return Role.EDITOR.equals(contributor.getRole());
+        return Role.EDITOR.equals(contributor.getRole().getType());
     }
 
     private void assertRequiredValuesAreConverted(Publication actualPublication) {
