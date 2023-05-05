@@ -10,6 +10,7 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
 import org.junit.jupiter.api.Test;
@@ -140,6 +141,6 @@ class IdentityUpdaterTest {
     }
 
     private ResourceOwner randomResourceOwner() {
-        return new ResourceOwner(randomString(),randomUri());
+        return new ResourceOwner(new Username(randomString()), randomUri());
     }
 }

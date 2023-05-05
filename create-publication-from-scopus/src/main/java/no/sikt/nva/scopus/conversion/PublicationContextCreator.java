@@ -1,12 +1,10 @@
 package no.sikt.nva.scopus.conversion;
 
 import static nva.commons.core.attempt.Try.attempt;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 import no.scopus.generated.BibrecordTp;
 import no.scopus.generated.CitationInfoTp;
 import no.scopus.generated.CitationtypeAtt;
@@ -23,9 +21,9 @@ import no.scopus.generated.SourcetypeAtt;
 import no.sikt.nva.scopus.ScopusConstants;
 import no.sikt.nva.scopus.exception.UnsupportedSrcTypeException;
 import no.unit.nva.metadata.service.MetadataService;
+import no.unit.nva.model.contexttypes.Anthology;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.BookSeries;
-import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Periodical;
 import no.unit.nva.model.contexttypes.PublicationContext;
@@ -59,7 +57,7 @@ public class PublicationContextCreator {
             return createJournal();
         }
         if (isChapter()) {
-            return createChapter();
+            return createAnthology();
         }
         if (isBook()) {
             return createBook();
@@ -72,7 +70,7 @@ public class PublicationContextCreator {
         }
         if (isConferenceProceeding()) {
             if (hasIsbn() && hasNoIssn()) {
-                return createChapter();
+                return createAnthology();
             } else {
                 return createJournal();
             }
@@ -187,9 +185,9 @@ public class PublicationContextCreator {
                 -> new Report(bookSeries, seriesTitle, seriesNumber, publishingHouse, isbnList)).orElseThrow();
     }
 
-    public Chapter createChapter() {
-        // TODO: We do not have access to partOf URI for chapter yet -> set a dummy URI
-        return attempt(() -> new Chapter.Builder().withPartOf(ScopusConstants.DUMMY_URI).build()).orElseThrow();
+    public Anthology createAnthology() {
+        // TODO: We do not have access to id URI for anthology yet -> set a dummy URI
+        return attempt(() -> new Anthology.Builder().withId(ScopusConstants.DUMMY_URI).build()).orElseThrow();
     }
 
     private PublishingHouse createPublisher() {
