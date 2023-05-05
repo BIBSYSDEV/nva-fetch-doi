@@ -1,0 +1,69 @@
+openapi: 3.0.0
+info:
+  title: NVA Fetch DOI
+  version: '1.0'
+paths:
+  /:
+    post:
+      summary: Fetch data from DOI and return summary
+      security:
+        - CognitoUserPool:  ["https://api.nva.unit.no/scopes/backend","https://api.nva.unit.no/scopes/frontend", "aws.cognito.signin.user.admin"]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DoiLookup'
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchDoiFunction.Arn}:live/invocations
+        responses: {}
+        httpMethod: POST
+        type: AWS_PROXY
+        passthroughBehavior: WHEN_NO_MATCH
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Summary'
+components:
+  securitySchemes:
+    CognitoUserPool:
+      type: apiKey
+      name: Authorization
+      in: header
+      x-amazon-apigateway-authtype: cognito_user_pools
+      x-amazon-apigateway-authorizer:
+        type: cognito_user_pools
+        providerARNs:
+          - !Ref CognitoAuthorizerArn
+  schemas:
+    DoiLookup:
+      type: object
+      properties:
+        doiUrl:
+          type: string
+      required:
+        - doiUrl
+    Summary:
+      type: object
+      properties:
+        identifier:
+          type: string
+        title:
+          type: string
+        creatorName:
+          type: string
+        date:
+          type: object
+          properties:
+            year:
+              type: string
+            month:
+              type: string
+            day:
+              type: string
+      required:
+        - identifier
+        - title
