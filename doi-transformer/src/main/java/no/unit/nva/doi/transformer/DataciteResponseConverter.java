@@ -26,6 +26,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import no.unit.nva.model.contexttypes.BasicContext;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.exceptions.InvalidIssnException;
@@ -82,7 +83,7 @@ public class DataciteResponseConverter extends AbstractConverter {
             .withCreatedDate(now)
             .withModifiedDate(now)
             .withPublishedDate(extractPublishedDate())
-            .withResourceOwner(new ResourceOwner(owner, UNDEFINED_AFFILIATION))
+            .withResourceOwner(new ResourceOwner(new Username(owner), UNDEFINED_AFFILIATION))
             .withPublisher(toPublisher(publisherId))
             .withIdentifier(new SortableIdentifier(identifier.toString()))
             .withStatus(DEFAULT_NEW_PUBLICATION_STATUS)
@@ -93,7 +94,7 @@ public class DataciteResponseConverter extends AbstractConverter {
             .withEntityDescription(
                 new EntityDescription.Builder()
                     .withContributors(toContributors(dataciteResponse.getCreators()))
-                    .withDate(toDate(dataciteResponse.getPublicationYear()))
+                    .withPublicationDate(toDate(dataciteResponse.getPublicationYear()))
                     .withMainTitle(extractMainTitle(dataciteResponse))
                     .withAbstract(extractAbstract())
                     .withAlternativeTitles(extractAlternativeTitles(dataciteResponse))

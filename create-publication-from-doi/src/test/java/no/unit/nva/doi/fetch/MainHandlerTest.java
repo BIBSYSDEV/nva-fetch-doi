@@ -70,6 +70,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
@@ -378,7 +379,7 @@ class MainHandlerTest {
     }
 
     private ResourceOwner randomResourceOwner() {
-        return new ResourceOwner(randomString(), randomUri());
+        return new ResourceOwner(new Username(randomString()), randomUri());
     }
 
     private DoiProxyService mockDoiProxyServiceReceivingSuccessfulResult()

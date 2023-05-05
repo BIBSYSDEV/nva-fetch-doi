@@ -115,7 +115,7 @@ public class ScopusConverter {
             new ContributorExtractor(extractCorrespondence(), extractAuthorGroup(), piaConnection,
                                      cristinConnection).generateContributors());
         entityDescription.setTags(generateTags());
-        entityDescription.setDate(extractPublicationDate());
+        entityDescription.setPublicationDate(extractPublicationDate());
         entityDescription.setLanguage(new LanguageExtractor(extractCitationLanguages()).extractLanguage());
         return entityDescription;
     }

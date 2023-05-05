@@ -680,7 +680,7 @@ public class MetadataServiceTest {
 
     private CreatePublicationRequest getCreatePublicationRequestWithDateOnly(String date) {
         EntityDescription entityDescription = new EntityDescription.Builder()
-            .withDate(createPublicationDate(date))
+            .withPublicationDate(createPublicationDate(date))
             .build();
         CreatePublicationRequest expectedRequest = new CreatePublicationRequest();
         expectedRequest.setEntityDescription(entityDescription);

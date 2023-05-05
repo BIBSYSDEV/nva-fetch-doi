@@ -41,7 +41,7 @@ class DoiTransformServiceTest {
             CUSTOMER_ID);
 
         assertNotNull(publication);
-        assertEquals(OWNER, publication.getResourceOwner().getOwner());
+        assertEquals(OWNER, publication.getResourceOwner().getOwner().getValue());
     }
 
     @Test
@@ -55,7 +55,7 @@ class DoiTransformServiceTest {
                 CUSTOMER_ID);
 
         assertNotNull(publication);
-        assertEquals(OWNER, publication.getResourceOwner().getOwner());
+        assertEquals(OWNER, publication.getResourceOwner().getOwner().getValue());
     }
 
     @Test
@@ -65,8 +65,8 @@ class DoiTransformServiceTest {
         String crossRefBody = IoUtils.stringFromResources(CROSSREF_WITH_XML_ASTRACT_JSON_PATH);
         Publication publication = doiTransformService.transformPublication(crossRefBody, CROSSREF_STRING, OWNER,
                 CUSTOMER_ID);
-        String abstrakt = publication.getEntityDescription().getAbstract();
-        assertFalse(abstrakt.contains("<"));
+        String publicationAbstract = publication.getEntityDescription().getAbstract();
+        assertFalse(publicationAbstract.contains("<"));
     }
 
     @Test
@@ -79,7 +79,7 @@ class DoiTransformServiceTest {
             CUSTOMER_ID);
 
         assertNotNull(publication);
-        assertEquals(OWNER, publication.getResourceOwner().getOwner());
+        assertEquals(OWNER, publication.getResourceOwner().getOwner().getValue());
     }
 
     @Test
