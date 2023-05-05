@@ -38,7 +38,7 @@ components:
       x-amazon-apigateway-authorizer:
         type: cognito_user_pools
         providerARNs:
-          - !Ref CognitoAuthorizerArn
+          - Ref: CognitoAuthorizerArn
   schemas:
     DoiLookup:
       type: object
