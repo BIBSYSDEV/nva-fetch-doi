@@ -1,16 +1,19 @@
 plugins {
-    id 'nva-fetch-doi.java-library-conventions'
+    id 'nva.fetch.doi.rootplugin'
 }
 
-group 'no.unit.nva'
+//workaround for jacoco-merge to work
+allprojects{
+    apply plugin: 'nva.fetch.doi.java-conventions'
+}
+
+tasks.withType(JavaCompile) {
+    options.release = 17
+}
 
 wrapper{
     distributionType = Wrapper.DistributionType.ALL
     gradleVersion = '8.2.1'
-}
-
-allprojects {
-    apply plugin: 'nva-fetch-doi.java-library-conventions'
 }
 
 configurations {
