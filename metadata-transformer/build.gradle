@@ -25,6 +25,7 @@ dependencies {
     testImplementation libs.nva.logutils
     testCompileClasspath libs.jackson.databind
 
+    testImplementation libs.bundles.testing
     testImplementation libs.nva.datamodeltestutils
     testImplementation libs.wiremock
     testImplementation libs.j2html

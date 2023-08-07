@@ -12,5 +12,6 @@ dependencies {
 
     implementation libs.bundles.problem
 
+    testImplementation libs.bundles.testing
     runtimeOnly libs.aws.lambda.java.core
 }

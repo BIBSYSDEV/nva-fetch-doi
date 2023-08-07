@@ -28,7 +28,7 @@ dependencies {
     runtimeOnly group: 'com.github.bibsysdev', name: 'identifiers', version: '1.27.2'
 
 
-    testImplementation libs.nva.testutils
+    testImplementation libs.bundles.testing
 
     testImplementation project(":fetch-doi-testing")
     testImplementation libs.nva.testutils

@@ -18,6 +18,7 @@ dependencies {
     implementation libs.bundles.logging
     implementation libs.guava
     implementation(libs.bundles.problem)
+    testImplementation libs.bundles.testing
 }
 
 test{

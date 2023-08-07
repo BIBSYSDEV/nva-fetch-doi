@@ -3,11 +3,10 @@ plugins {
 }
 
 group 'no.unit.nva'
-version '1.0-SNAPSHOT'
 
 wrapper{
     distributionType = Wrapper.DistributionType.ALL
-    gradleVersion ='7.1.1'
+    gradleVersion = '8.2.1'
 }
 
 allprojects {
@@ -16,9 +15,5 @@ allprojects {
 
 configurations {
     xsd2java
-}
-
-build {
-    dependsOn jacocoRootReport
 }
 
