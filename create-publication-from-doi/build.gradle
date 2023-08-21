@@ -1,11 +1,7 @@
 
 dependencies {
     implementation project(":fetch-doi-commons")
-    implementation project(":doi-transformer") {
-        compileOnly(libs.jakarta) {
-            because 'PMD'
-        }
-    }
+    implementation project(":doi-transformer")
     implementation project(":doi-proxy")
     implementation project(":metadata-transformer")
     implementation project(":json-config")
@@ -18,6 +14,7 @@ dependencies {
     implementation libs.bundles.logging
     implementation libs.guava
     implementation(libs.bundles.problem)
+    testImplementation libs.bundles.testing
 }
 
 test{

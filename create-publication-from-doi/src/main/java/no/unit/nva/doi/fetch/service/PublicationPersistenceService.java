@@ -1,7 +1,7 @@
 package no.unit.nva.doi.fetch.service;
 
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
-import static javax.ws.rs.core.HttpHeaders.AUTHORIZATION;
+import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import com.google.common.net.MediaType;
 import java.io.IOException;
 import java.net.URI;

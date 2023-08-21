@@ -1,7 +1,5 @@
 dependencies {
-    api (libs.nva.datamodel) {
-        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
-    }
+    implementation libs.nva.datamodel
     implementation project(":metadata-transformer")
     implementation project(":json-config")
     implementation libs.aws.java.sdk2.s3
@@ -17,6 +15,7 @@ dependencies {
     implementation libs.aws.lambda.events
     implementation libs.bundles.logging
     testImplementation libs.nva.testutils
+    testImplementation libs.bundles.testing
 
 }
 

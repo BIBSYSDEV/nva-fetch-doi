@@ -1,4 +1,4 @@
-apply plugin: 'nva-fetch-doi.java-library-conventions'
+apply plugin: 'nva.fetch.doi.java-conventions'
 
 dependencies{
     implementation libs.nva.json

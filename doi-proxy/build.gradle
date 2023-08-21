@@ -14,5 +14,6 @@ dependencies {
     implementation libs.bundles.jackson
 
     testImplementation libs.nva.logutils
+    testImplementation libs.bundles.testing
 
 }
