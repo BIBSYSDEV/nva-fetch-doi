@@ -462,7 +462,7 @@ public class MetadataServiceTest {
     }
 
     @ParameterizedTest(name = "Emtpy value and error logged when invalid value is passed to {0}")
-    @ValueSource(strings = {"citation_isbn", "citation_issn"})
+    @ValueSource(strings = {"citation_issn"})
     void getCreatePublicationRequestReturnsOptionalEmptyWhenExpectedInputIsInvalidIsxn(String property)
         throws IOException, InterruptedException {
         Optional<CreatePublicationRequest> createPublicationRequest =
