@@ -461,12 +461,11 @@ public class MetadataServiceTest {
         assertTrue(createPublicationRequest.isEmpty());
     }
 
-    @ParameterizedTest(name = "Emtpy value and error logged when invalid value is passed to {0}")
-    @ValueSource(strings = {"citation_issn"})
-    void getCreatePublicationRequestReturnsOptionalEmptyWhenExpectedInputIsInvalidIsxn(String property)
+    @Test()
+    void getCreatePublicationRequestReturnsOptionalEmptyWhenExpectedInputIsInvalidIsxn()
         throws IOException, InterruptedException {
         Optional<CreatePublicationRequest> createPublicationRequest =
-            getCreatePublicationRequestResponse(property, INVALID_ISXN);
+            getCreatePublicationRequestResponse("citation_issn", INVALID_ISXN);
         assertTrue(createPublicationRequest.isEmpty());
         assertThat(logger.getMessages(), containsString("Could not extract type metadata from statement "));
     }
