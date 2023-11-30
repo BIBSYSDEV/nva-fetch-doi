@@ -12,6 +12,7 @@ public enum CrossrefType {
     JOURNAL_ARTICLE("journal-article", PublicationType.JOURNAL_CONTENT),
     BOOK("book", PublicationType.BOOK),
     BOOK_CHAPTER("book-chapter", PublicationType.BOOK_CHAPTER),
+    EDITED_BOOK("edited-book", PublicationType.EDITED_BOOK),
     NON_EXISTING_TYPE(null, null);
 
     private final String type;

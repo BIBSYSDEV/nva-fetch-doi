@@ -616,6 +616,12 @@ public class CrossRefConverterTest extends ConversionTest {
     }
 
     @Test
+    @DisplayName("toPublication handles all interesting and required fields in CrossrefDocument for edited-book")
+    void toPublicationHandlesAllInterestingAndRequiredFieldsInCrossrefDocumentForEditedBook() {
+        assertRequiredValuesAreConverted(toPublication(sampleEditedBook()));
+    }
+
+    @Test
     @DisplayName("toPublication handles all interesting and required fields in CrossrefDocument for book-chapter")
     void toPublicationHandlesAllInterestingAndRequiredFieldsInCrossrefDocumentForBookChapter() {
         assertRequiredValuesAreConverted(toPublication(sampleBookChapter()));
@@ -661,6 +667,15 @@ public class CrossRefConverterTest extends ConversionTest {
         assertThat(contributors.size(), is(equalTo(size)));
         List<Contributor> editors = contributors.stream().filter(this::isEditor).collect(Collectors.toList());
         assertThat(editors.size(), is(equalTo(sampleBook.getEditor().size())));
+    }
+
+    @Test
+    @DisplayName("toPublication sets publicationInstance to BookAnthology for edited book")
+    void toPublicationSetsPublicationInstanceToBookAnthologyWhenEditedBook() {
+
+        CrossRefDocument sampleEditedBook = sampleEditedBook();
+        assertThat(toPublication(sampleEditedBook).getEntityDescription().getReference().getPublicationInstance().getClass(),
+                   is(equalTo(BookAnthology.class)));
     }
 
     @Test
@@ -786,6 +801,12 @@ public class CrossRefConverterTest extends ConversionTest {
         return document;
     }
 
+    private CrossRefDocument sampleEditedBook() {
+        CrossRefDocument document = sampleCrossRefDocumentWithBasicMetadata();
+        setPublicationTypeEditedBook(document);
+        return document;
+    }
+
     private CrossRefDocument sampleBookChapter() {
         CrossRefDocument document = sampleCrossRefDocumentWithBasicMetadata();
         setPublicationTypeBookChapter(document);
@@ -817,6 +838,10 @@ public class CrossRefConverterTest extends ConversionTest {
 
     private void setPublicationTypeBook(CrossRefDocument document) {
         document.setType(CrossrefType.BOOK.getType());
+    }
+
+    private void setPublicationTypeEditedBook(CrossRefDocument document) {
+        document.setType(CrossrefType.EDITED_BOOK.getType());
     }
 
     private void setPublicationTypeBookChapter(CrossRefDocument document) {

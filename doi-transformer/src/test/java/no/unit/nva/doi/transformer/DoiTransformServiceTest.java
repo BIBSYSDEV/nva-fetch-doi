@@ -29,6 +29,7 @@ class DoiTransformServiceTest {
     public static final Path CROSSREF_SEQUENCE_SAMPLE_JSON_PATH = Path.of("crossref_sample_creator_sequence.json");
     public static final Path DATACITE_JSON_PATH = Path.of("datacite_response.json");
     private static final Path CROSSREF_WITH_XML_ASTRACT_JSON_PATH = Path.of("crossrefWithAbstract.json");
+    public static final Path CROSSREF_EDIT_BOOK_JSON_PATH = Path.of("crossref_sample_edited_book.json");
 
     @Test
     void transFormPublicationReturnsPublicationOnValidCrossrefBody()
@@ -53,6 +54,20 @@ class DoiTransformServiceTest {
 
         Publication publication = doiTransformService.transformPublication(crossrefBody, CROSSREF_STRING, OWNER,
                 CUSTOMER_ID);
+
+        assertNotNull(publication);
+        assertEquals(OWNER, publication.getResourceOwner().getOwner().getValue());
+    }
+
+    @Test
+    void transFormEditBookPublicationReturnsPublicationOnValidCrossrefBody()
+        throws URISyntaxException, InvalidIssnException,
+               JsonProcessingException, InvalidIsbnException, UnsupportedDocumentTypeException {
+        DoiTransformService doiTransformService = getDoiTransformService();
+        String crossrefBody = IoUtils.stringFromResources(CROSSREF_EDIT_BOOK_JSON_PATH);
+
+        Publication publication = doiTransformService.transformPublication(crossrefBody, CROSSREF_STRING, OWNER,
+                                                                           CUSTOMER_ID);
 
         assertNotNull(publication);
         assertEquals(OWNER, publication.getResourceOwner().getOwner().getValue());
