@@ -674,8 +674,13 @@ public class CrossRefConverterTest extends ConversionTest {
     void toPublicationSetsPublicationInstanceToBookAnthologyWhenEditedBook() {
 
         CrossRefDocument sampleEditedBook = sampleEditedBook();
-        assertThat(toPublication(sampleEditedBook).getEntityDescription().getReference().getPublicationInstance().getClass(),
-                   is(equalTo(BookAnthology.class)));
+        var publicationInstanceClass = toPublication(sampleEditedBook)
+            .getEntityDescription()
+            .getReference()
+            .getPublicationInstance()
+            .getClass();
+
+        assertThat(publicationInstanceClass, is(equalTo(BookAnthology.class)));
     }
 
     @Test
