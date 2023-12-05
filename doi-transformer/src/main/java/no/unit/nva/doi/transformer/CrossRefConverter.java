@@ -9,6 +9,7 @@ import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.MONTH
 import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.YEAR_INDEX;
 import static no.unit.nva.doi.transformer.utils.CrossrefType.BOOK;
 import static no.unit.nva.doi.transformer.utils.CrossrefType.BOOK_CHAPTER;
+import static no.unit.nva.doi.transformer.utils.CrossrefType.EDITED_BOOK;
 import static no.unit.nva.doi.transformer.utils.CrossrefType.JOURNAL_ARTICLE;
 import static no.unit.nva.doi.transformer.utils.CrossrefType.getByType;
 import static nva.commons.core.StringUtils.isNotEmpty;
@@ -262,6 +263,8 @@ public class CrossRefConverter extends AbstractConverter {
             return createBookContext(document);
         } else if (publicationType == PublicationType.BOOK_CHAPTER) {
             return createAnthologyContext();
+        } else if (publicationType == PublicationType.EDITED_BOOK) {
+            return createBookContext(document);
         } else {
             throw new UnsupportedDocumentTypeException(String.format(UNRECOGNIZED_TYPE_MESSAGE, document.getType()));
         }
@@ -377,6 +380,8 @@ public class CrossRefConverter extends AbstractConverter {
             }
         } else if (byType == BOOK_CHAPTER) {
             return createChapterArticle(document);
+        } else if (byType == EDITED_BOOK) {
+            return createBookAnthology(document);
         }
         throw new UnsupportedDocumentTypeException(String.format(UNRECOGNIZED_TYPE_MESSAGE, document.getType()));
     }

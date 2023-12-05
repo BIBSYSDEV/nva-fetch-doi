@@ -1,0 +1,164 @@
+{
+  "status": "ok",
+  "message-type": "work",
+  "message-version": "1.0.0",
+  "message": {
+    "indexed": {
+      "date-parts": [
+        [
+          2023,
+          11,
+          13
+        ]
+      ],
+      "date-time": "2023-11-13T13:56:41Z",
+      "timestamp": 1699883801233
+    },
+    "reference-count": 0,
+    "publisher": "The MIT Press",
+    "isbn-type": [
+      {
+        "value": "9780262376013",
+        "type": "electronic"
+      }
+    ],
+    "license": [
+      {
+        "start": {
+          "date-parts": [
+            [
+              2023,
+              8,
+              22
+            ]
+          ],
+          "date-time": "2023-08-22T00:00:00Z",
+          "timestamp": 1692662400000
+        },
+        "content-version": "unspecified",
+        "delay-in-days": 0,
+        "URL": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+      }
+    ],
+    "content-domain": {
+      "domain": [],
+      "crossmark-restriction": false
+    },
+    "short-container-title": [],
+    "published-print": {
+      "date-parts": [
+        [
+          2023,
+          8,
+          22
+        ]
+      ]
+    },
+    "abstract": "<jats:p>A unique exploration of teleonomy\u2014also known as \u201cevolved purposiveness\u201d\u2014as a major influence in evolution by a broad range of specialists in biology and the philosophy of science.<\/jats:p>\n               <jats:p>The evolved purposiveness of living systems, termed \u201cteleonomy\u201d by chronobiologist Colin Pittendrigh, has been both a major outcome and causal factor in the history of life on Earth. Many theorists have appreciated this over the years, going back to Lamarck and even Darwin in the nineteenth century. In the mid-twentieth century, however, the complex, dynamic process of evolution was simplified into the one-way, bottom-up, single gene-centered paradigm widely known as the modern synthesis. In Evolution \u201cOn Purpose,\u201d edited by Peter A. Corning, Stuart A. Kauffman, Denis Noble, James A. Shapiro, Richard I. Vane-Wright, and Addy Pross, some twenty theorists attempt to modify this reductive approach by exploring in depth the different ways in which living systems have themselves shaped the course of evolution.<\/jats:p>\n               <jats:p>Evolution \u201cOn Purpose\u201d puts forward a more inclusive theoretical synthesis that goes far beyond the underlying principles and assumptions of the modern synthesis to accommodate work since the 1950s in molecular genetics, developmental biology, epigenetic inheritance, genomics, multilevel selection, niche construction, physiology, behavior, biosemiotics, chemical reaction theory, and other fields. In the view of the authors, active biological processes are responsible for the direction and the rate of evolution. Essays in this collection grapple with topics from the two-way \u201cread-write\u201d genome to cognition and decision-making in plants to the niche-construction activities of many organisms to the self-making evolution of humankind. As this collection compellingly shows, and as bacterial geneticist James Shapiro emphasizes, \u201cThe capacity of living organisms to alter their own heredity is undeniable.\u201d<\/jats:p>",
+    "DOI": "10.7551/mitpress/14642.001.0001",
+    "type": "edited-book",
+    "created": {
+      "date-parts": [
+        [
+          2023,
+          6,
+          29
+        ]
+      ],
+      "date-time": "2023-06-29T21:11:56Z",
+      "timestamp": 1688073116000
+    },
+    "source": "Crossref",
+    "is-referenced-by-count": 5,
+    "title": [
+      "Evolution \"On Purpose\""
+    ],
+    "prefix": "10.7551",
+    "member": "281",
+    "container-title": [],
+    "original-title": [],
+    "deposited": {
+      "date-parts": [
+        [
+          2023,
+          8,
+          22
+        ]
+      ],
+      "date-time": "2023-08-22T18:54:43Z",
+      "timestamp": 1692730483000
+    },
+    "score": 1,
+    "resource": {
+      "primary": {
+        "URL": "https://direct.mit.edu/books/book/5634/Evolution-On-Purpose-Teleonomy-in-Living-Systems"
+      }
+    },
+    "subtitle": [
+      "Teleonomy in Living Systems"
+    ],
+    "editor": [
+      {
+        "given": "Peter A.",
+        "family": "Corning",
+        "sequence": "first",
+        "affiliation": []
+      },
+      {
+        "given": "Stuart A.",
+        "family": "Kauffman",
+        "sequence": "additional",
+        "affiliation": []
+      },
+      {
+        "given": "Denis",
+        "family": "Noble",
+        "sequence": "additional",
+        "affiliation": []
+      },
+      {
+        "given": "James A.",
+        "family": "Shapiro",
+        "sequence": "additional",
+        "affiliation": []
+      },
+      {
+        "given": "Richard I.",
+        "family": "Vane-Wright",
+        "sequence": "additional",
+        "affiliation": []
+      },
+      {
+        "given": "Addy",
+        "family": "Pross",
+        "sequence": "additional",
+        "affiliation": []
+      }
+    ],
+    "short-title": [],
+    "issued": {
+      "date-parts": [
+        [
+          2023,
+          8,
+          22
+        ]
+      ]
+    },
+    "ISBN": [
+      "9780262376013"
+    ],
+    "references-count": 0,
+    "URL": "http://dx.doi.org/10.7551/mitpress/14642.001.0001",
+    "relation": {},
+    "published": {
+      "date-parts": [
+        [
+          2023,
+          8,
+          22
+        ]
+      ]
+    }
+  }
+}
