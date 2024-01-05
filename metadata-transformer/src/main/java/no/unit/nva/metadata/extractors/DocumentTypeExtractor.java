@@ -79,17 +79,20 @@ public final class DocumentTypeExtractor {
             reference.setPublicationContext(addNonPreexistingIsbn(isbn, (Book) context, isbnList));
         } else {
             BookMonograph instanceType = new AcademicMonograph(null);
-            Book contextType = new Book(null, null, null, List.of(isbn));
+            Book contextType = new Book(null, null, null, List.of(isbn), null);
             reference.setPublicationInstance(instanceType);
             reference.setPublicationContext(contextType);
         }
     }
 
-    private static Book addNonPreexistingIsbn(String isbn, Book context, List<String> isbnList) throws
-            InvalidIsbnException {
+    private static Book addNonPreexistingIsbn(String isbn, Book context, List<String> isbnList) {
         if (!isbnList.contains(isbn)) {
             isbnList.add(isbn);
-            return new Book(context.getSeries(), context.getSeriesNumber(), context.getPublisher(), isbnList);
+            return new Book(context.getSeries(),
+                            context.getSeriesNumber(),
+                            context.getPublisher(),
+                            isbnList,
+                            null);
         }
         return context;
     }

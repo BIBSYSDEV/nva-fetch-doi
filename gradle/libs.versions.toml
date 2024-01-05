@@ -1,11 +1,11 @@
 [versions]
-nva = { strictly = "1.35.0" }
+nva = { strictly = "1.36.9" }
 jacksonVersion = { strictly = "2.15.2" }
 jakartaVersion = { strictly = "2.1.6" }
 awsSdk2Version = { strictly = "2.20.141" }
 awsLambdaEvents = { strictly = '3.11.2' }
 awsLambdaCore = { strictly = '1.2.2' }
-nvaDatamodelVersion = { strictly = "0.20.62" }
+nvaDatamodelVersion = { strictly = "0.20.74" }
 jerseyVersion = { strictly = "2.41" }
 rdf4jVersion = { strictly = "4.3.8" }
 problemVersion = { strictly = "0.27.1" }
@@ -19,7 +19,7 @@ apiGuardian = { strictly = "1.1.2" }
 hamcrest = { strictly = '2.2' }
 junit5 = { strictly = '5.10.0' }
 mockito = { strictly = '5.3.1' }
-log4j = { strictly = '2.18.0' }
+log4j = { strictly = '2.22.0' }
 slf4j = { strictly = '2.0.9' }
 nvaLanguage = { strictly = '1.0' }
 guava = { prefer = '32.1.2-jre' }
@@ -94,7 +94,7 @@ xsd2java-jakarta = { group = 'jakarta.xml.bind', name = 'jakarta.xml.bind-api', 
 
 log4j-core = { group = 'org.apache.logging.log4j', name = 'log4j-core', version.ref = 'log4j' }
 log4j-api = { group = 'org.apache.logging.log4j', name = 'log4j-api', version.ref = 'log4j' }
-log4j-slf4j18-impl = { group = 'org.apache.logging.log4j', name = 'log4j-slf4j18-impl', version.ref = 'log4j' }
+log4j-slf4j-impl = { group = 'org.apache.logging.log4j', name = 'log4j-slf4j2-impl', version.ref = 'log4j' }
 slf4j-api = { group = 'org.slf4j', name = 'slf4j-api', version.ref = 'slf4j' }
 aws-lambda-log4j2 = { group = 'com.amazonaws', name = 'aws-lambda-java-log4j2', version.ref = 'awslog4j2'}
 
@@ -106,5 +106,5 @@ testing = ["mockito-core", "hamcrest-base", "hamcrest-core", "junit-jupiter-engi
     "junit-jupiter-api", "junit-vintage-engine", "nva-testutils", "nva-logutils", "wiremock"]
 problem = ["zalando-jackson-datatype-problem", "zalando-problem"]
 xsd2java = ["xsd2java-xjc", "xsd2java-impl", "xsd2java-api", "xsd2java-activation", "xsd2java-jakarta"]
-logging = ['log4j-core', 'log4j-api', 'log4j-slf4j18-impl', 'slf4j-api', 'aws-lambda-log4j2']
+logging = ['log4j-core', 'log4j-api', 'log4j-slf4j-impl', 'slf4j-api', 'aws-lambda-log4j2']
 jackson = ['jackson-core', 'jackson-databind', 'jackson-datatype-jdk8', 'jackson-annotations', 'jackson-datatype-jsr310', 'zalando-jackson-datatype-problem']

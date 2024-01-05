@@ -270,7 +270,7 @@ public class CrossRefConverter extends AbstractConverter {
         }
     }
 
-    private Book createBookContext(CrossRefDocument document) throws InvalidIsbnException, InvalidIssnException {
+    private Book createBookContext(CrossRefDocument document) throws InvalidIssnException {
         return new Book(
             new UnconfirmedSeries(
                 extractSeriesTitle(document),
@@ -278,7 +278,8 @@ public class CrossRefConverter extends AbstractConverter {
                 extractOnlineIssn(document)),
             NULL_SERIES_NUMBER,
             new UnconfirmedPublisher(extractPublisherName(document)),
-            extractIsbnList(document)
+            extractIsbnList(document),
+            null
         );
     }
 
