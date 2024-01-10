@@ -45,6 +45,7 @@ import no.unit.nva.doi.transformer.utils.StringUtils;
 import no.unit.nva.doi.transformer.utils.TextLang;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
@@ -53,6 +54,7 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.UnconfirmedOrganization;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.contexttypes.Anthology;
@@ -95,7 +97,6 @@ public class CrossRefConverter extends AbstractConverter {
     public static final String CANNOT_CREATE_REFERENCE_FOR_PUBLICATION = ", cannot create reference for publication";
     public static final String NULL_SERIES_NUMBER = null;
     private static final Logger logger = LoggerFactory.getLogger(CrossRefConverter.class);
-    private static final String DEFAULT_LANGUAGE_ENGLISH = "en";
     private static final URI UNDEFINED_AFFILIATION = null;
 
     public CrossRefConverter() {
@@ -126,7 +127,7 @@ public class CrossRefConverter extends AbstractConverter {
                        .withResourceOwner(new ResourceOwner(new Username(owner), UNDEFINED_AFFILIATION))
                        .withDoi(extractDOI(document)) // Cheating by using URL not DOI ?
                        .withIdentifier(new SortableIdentifier(identifier.toString()))
-                       .withPublisher(extractAndCreatePublisher(document))
+                       .withPublisher(new Organization())
                        .withStatus(DEFAULT_NEW_PUBLICATION_STATUS)
                        .withIndexedDate(extractInstantFromCrossrefDate(document.getIndexed()))
                        .withLink(extractFulltextLinkAsUri(document))
@@ -338,17 +339,6 @@ public class CrossRefConverter extends AbstractConverter {
         return document.getPublisher();
     }
 
-    private Organization extractAndCreatePublisher(CrossRefDocument document) {
-        return Optional.ofNullable(document.getPublisher())
-                   .filter(nva.commons.core.StringUtils::isNotEmpty)
-                   .map(this::getOrganization)
-                   .orElse(null);
-    }
-
-    private Organization getOrganization(String publisher) {
-        return new Organization.Builder().withLabels(Map.of("name", publisher)).build();
-    }
-
     private String extractPrintIssn(CrossRefDocument document) {
         return IssnCleaner.clean(filterIssnsByType(document, Isxn.IsxnType.PRINT));
     }
@@ -511,18 +501,15 @@ public class CrossRefConverter extends AbstractConverter {
                    .orElseThrow();
     }
 
-    private List<Organization> getAffiliations(List<CrossrefAffiliation> crossrefAffiliations) {
+    private List<Corporation> getAffiliations(List<CrossrefAffiliation> crossrefAffiliations) {
         return crossrefAffiliations.stream()
                    .map(CrossrefAffiliation::getName)
                    .map(this::createOrganization)
                    .collect(Collectors.toList());
     }
 
-    private Organization createOrganization(String name) {
-        Organization organization = new Organization();
-        Map<String, String> labels = Map.of(DEFAULT_LANGUAGE_ENGLISH, name);
-        organization.setLabels(labels);
-        return organization;
+    private Corporation createOrganization(String name) {
+        return new UnconfirmedOrganization(name);
     }
 
     private List<String> extractSubject(CrossRefDocument document) {

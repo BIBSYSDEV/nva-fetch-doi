@@ -52,8 +52,8 @@ import no.unit.nva.doi.transformer.model.crossrefmodel.Link;
 import no.unit.nva.doi.transformer.utils.CrossrefType;
 import no.unit.nva.doi.transformer.utils.IssnCleaner;
 import no.unit.nva.model.Contributor;
+import no.unit.nva.model.Corporation;
 import no.unit.nva.model.Identity;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.contexttypes.Anthology;
@@ -507,7 +507,7 @@ public class CrossRefConverterTest extends ConversionTest {
         CrossRefDocument sampleJournalArticle = sampleJournalArticle();
         setAuthorWithAffiliation(sampleJournalArticle);
         List<Contributor> contributors = toPublication(sampleJournalArticle).getEntityDescription().getContributors();
-        List<Organization> organisations = getOrganisations(contributors);
+        List<Corporation> organisations = getOrganisations(contributors);
         assertFalse(organisations.isEmpty());
     }
 
@@ -517,7 +517,7 @@ public class CrossRefConverterTest extends ConversionTest {
         CrossRefDocument sampleJournalArticle = sampleJournalArticle();
         setAuthorWithMultipleAffiliations(sampleJournalArticle);
         List<Contributor> contributors = toPublication(sampleJournalArticle).getEntityDescription().getContributors();
-        List<Organization> organisations = getOrganisations(contributors);
+        List<Corporation> organisations = getOrganisations(contributors);
         assertTrue(organisations.size() > 1);
     }
 
@@ -525,7 +525,7 @@ public class CrossRefConverterTest extends ConversionTest {
     @DisplayName("toPublication sets affiliation to empty list when author has no affiliation")
     void toPublicationSetsAffiliationToEmptyListWhenAuthorHasNoAffiliatio() {
         List<Contributor> contributors = toPublication(sampleJournalArticle()).getEntityDescription().getContributors();
-        List<Organization> organisations = getOrganisations(contributors);
+        List<Corporation> organisations = getOrganisations(contributors);
         assertTrue(organisations.isEmpty());
     }
 
@@ -760,7 +760,6 @@ public class CrossRefConverterTest extends ConversionTest {
     }
 
     private void assertRequiredValuesAreConverted(Publication actualPublication) {
-        assertTrue(actualPublication.getPublisher().getLabels().containsValue(SAMPLE_PUBLISHER));
         assertThat(actualPublication.getEntityDescription().getMainTitle(), is(equalTo(SAMPLE_DOCUMENT_TITLE)));
         assertThat(actualPublication.getDoi(), is(equalTo(SOME_DOI_AS_URL)));
         assertThat(actualPublication.getLink(), is(equalTo(URI.create(SAMPLE_LINK))));
@@ -967,7 +966,7 @@ public class CrossRefConverterTest extends ConversionTest {
                                         .getPublicationContext();
     }
 
-    private List<Organization> getOrganisations(List<Contributor> contributors) {
+    private List<Corporation> getOrganisations(List<Contributor> contributors) {
         return contributors.stream()
                    .map(Contributor::getAffiliations)
                    .filter(Objects::nonNull)

@@ -1,5 +1,20 @@
 package no.unit.nva.doi.transformer;
 
+import static java.util.Objects.nonNull;
+import static java.util.function.Predicate.not;
+import static nva.commons.core.attempt.Try.attempt;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.time.Instant;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import no.sikt.nva.doi.fetch.jsonconfig.Json;
 import no.unit.nva.doi.transformer.exception.MalformedContributorException;
 import no.unit.nva.doi.transformer.language.SimpleLanguageDetector;
@@ -18,10 +33,10 @@ import no.unit.nva.doi.transformer.utils.PublicationType;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Contributor.Builder;
+import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.NameType;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
@@ -35,23 +50,6 @@ import no.unit.nva.model.instancetypes.journal.AcademicArticle;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.StringUtils;
 import nva.commons.doi.DoiConverter;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.time.Instant;
-import java.util.AbstractMap.SimpleEntry;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
-
-import static java.util.Objects.nonNull;
-import static java.util.function.Predicate.not;
-import static nva.commons.core.attempt.Try.attempt;
 
 public class DataciteResponseConverter extends AbstractConverter {
 
@@ -282,7 +280,7 @@ public class DataciteResponseConverter extends AbstractConverter {
                && StringUtils.isBlank(dataciteCreator.getGivenName());
     }
 
-    protected List<Organization> toAffiliations() {
+    protected List<Corporation> toAffiliations() {
         return Collections.emptyList();
     }
 }
