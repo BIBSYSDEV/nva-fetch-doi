@@ -5,7 +5,7 @@ jakartaVersion = { strictly = "2.1.6" }
 awsSdk2Version = { strictly = "2.20.141" }
 awsLambdaEvents = { strictly = '3.11.2' }
 awsLambdaCore = { strictly = '1.2.2' }
-nvaDatamodelVersion = { strictly = "0.20.76" }
+nvaDatamodelVersion = { strictly = "0.20.77" }
 jerseyVersion = { strictly = "2.41" }
 rdf4jVersion = { strictly = "4.3.8" }
 problemVersion = { strictly = "0.27.1" }
