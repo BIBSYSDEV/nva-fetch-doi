@@ -48,7 +48,6 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Corporation;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
@@ -127,7 +126,6 @@ public class CrossRefConverter extends AbstractConverter {
                        .withResourceOwner(new ResourceOwner(new Username(owner), UNDEFINED_AFFILIATION))
                        .withDoi(extractDOI(document)) // Cheating by using URL not DOI ?
                        .withIdentifier(new SortableIdentifier(identifier.toString()))
-                       .withPublisher(new Organization())
                        .withStatus(DEFAULT_NEW_PUBLICATION_STATUS)
                        .withIndexedDate(extractInstantFromCrossrefDate(document.getIndexed()))
                        .withLink(extractFulltextLinkAsUri(document))
