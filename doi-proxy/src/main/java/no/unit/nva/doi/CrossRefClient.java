@@ -16,6 +16,7 @@ import javax.ws.rs.core.MediaType;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
+import nva.commons.core.useragent.UserAgent;
 import nva.commons.secrets.ErrorReadingSecretException;
 import nva.commons.secrets.SecretsReader;
 import org.slf4j.Logger;
@@ -30,8 +31,7 @@ public class CrossRefClient {
     public static final String COULD_NOT_FIND_ENTRY_WITH_DOI = "Could not find entry with DOI:";
     public static final String UNKNOWN_ERROR_MESSAGE = "Something went wrong. StatusCode:";
     public static final String FETCH_ERROR = "CrossRefClient failed while trying to fetch:";
-    public static final String CROSSREF_USER_AGENT =
-        "nva-fetch-doi/1.0 (https://github.com/BIBSYSDEV/nva-fetch-doi; mailto:support@unit.no)";
+    public static final String CROSSREF_USER_AGENT = getUserAgent();
     public static final String ADDING_TOKEN_IN_HEADER =
         "CrossRef Api PLUS token is present, adding token in header";
     public static final String CROSSREFPLUSAPITOKEN_NAME_ENV = "CROSSREFPLUSAPITOKEN_NAME";
@@ -113,6 +113,17 @@ public class CrossRefClient {
                           String.format(CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE, getCrossRefApiPlusToken()));
 
         return builder.build();
+    }
+
+    private static String getUserAgent() {
+        var environment = new Environment();
+        var apiHost = environment.readEnv("API_HOST");
+        return UserAgent.newBuilder().client(CrossRefClient.class)
+                .environment(apiHost)
+                .repository(URI.create("https://github.com/BIBSYSDEV/nva-fetch-doi"))
+                .email("support@sikt.no")
+                .version("1.0")
+                .build().toString();
     }
 
     private String getFromWeb(HttpRequest request)
