@@ -1,29 +1,29 @@
 [versions]
-nva = { strictly = "1.37.3" }
+nva = { strictly = "1.38.2" }
 jacksonVersion = { strictly = "2.16.1" }
 jakartaVersion = { strictly = "2.1.6" }
-awsSdk2Version = { strictly = "2.23.12" }
-awsLambdaEvents = { strictly = '3.11.2' }
+awsSdk2Version = { strictly = "2.24.12" }
+awsLambdaEvents = { strictly = '3.11.4' }
 awsLambdaCore = { strictly = '1.2.3' }
 nvaDatamodelVersion = { strictly = "0.21.6" }
 jerseyVersion = { strictly = "2.41" }
-rdf4jVersion = { strictly = "4.3.8" }
+rdf4jVersion = { strictly = "4.3.9" }
 problemVersion = { strictly = "0.27.1" }
 any23core = { strictly = "2.7" }
 icu4j = { strictly = "69.1" }
 commonsValidator = { strictly = "1.8.0" }
 apacheHttpClient = { strictly = "4.5.14" }
-wiremock = { strictly = "3.0.2" }
+wiremock = { strictly = "3.4.1" }
 j2html = { strictly = "1.4.0" }
 apiGuardian = { strictly = "1.1.2" }
 hamcrest = { strictly = '2.2' }
 junit5 = { strictly = '5.10.0' }
 mockito = { strictly = '5.3.1' }
-log4j = { strictly = '2.22.1' }
-slf4j = { strictly = '2.0.11' }
+log4j = { strictly = '2.23.0' }
+slf4j = { prefer = '2.0.11' }
 nvaLanguage = { strictly = '1.0' }
 guava = { prefer = '32.1.2-jre' }
-awslog4j2 = { strictly = '1.5.1' }
+awslog4j2 = { strictly = '1.6.0' }
 
 [libraries]
 nva-s3 = { group = "com.github.bibsysdev", name = "s3", version.ref = "nva" }
