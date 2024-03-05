@@ -17,3 +17,7 @@ dependencies {
     testImplementation libs.bundles.testing
 
 }
+
+test {
+    environment "API_HOST": "api.example.org"
+}
