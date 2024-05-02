@@ -18,6 +18,7 @@ public final class IdentityUpdater {
 
     public static final String PROBLEM_UPDATING_IDENTITY_MESSAGE = "Problem updating Identity, ignoring and moving on";
     private static final Logger logger = LoggerFactory.getLogger(IdentityUpdater.class);
+    public static final int MAX_CONTRIBUTORS_TO_LOOKUP = 10;
 
     private IdentityUpdater() {
     }
@@ -57,8 +58,9 @@ public final class IdentityUpdater {
 
     private static void updateContributors(CristinProxyClient cristinProxyClient, Publication publication,
                                            List<Contributor> contributors) {
-        var contributorsWithOnlyOrcid = contributors.stream().filter(IdentityUpdater::hasOcidButNotIdentifier).toList();
-        if (contributorsWithOnlyOrcid.size() > 10) {
+        var contributorsWithOnlyOrcid = contributors.stream()
+                                            .filter(IdentityUpdater::hasOrcidButNotIdentifier).toList();
+        if (contributorsWithOnlyOrcid.size() > MAX_CONTRIBUTORS_TO_LOOKUP) {
             logger.warn("Skipper updateContributors as too many without known cristin-identifier "
                         + publication.getIdentifier());
             return;
@@ -69,7 +71,7 @@ public final class IdentityUpdater {
         );
     }
 
-    private static boolean hasOcidButNotIdentifier(Contributor contributor) {
+    private static boolean hasOrcidButNotIdentifier(Contributor contributor) {
         var identity = contributor.getIdentity();
         return nonNull(identity) && isNull(identity.getId()) && nonNull(identity.getOrcId());
     }

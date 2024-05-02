@@ -102,16 +102,16 @@ class IdentityUpdaterTest {
     }
 
     @Test
-    public void shouldNotEnrichContributorsWhenMoreThan10AreMissingCristinIdentifier() {
-        var identies = Collections.nCopies(11, 1).stream().map(i -> createIdentityWithOrcid()).toList();
-        var publication = createPublicationWithIdentites(identies);
+    public void shouldNotEnrichContributorsWhenMoreThanTenUnverifiedContributorsExist() {
+        var identities = Collections.nCopies(11, 1).stream().map(i -> createIdentityWithOrcid()).toList();
+        var publication = createPublicationWithIdentites(identities);
         var cristinProxyClient = mock(CristinProxyClient.class);
         var sampleIdentifier = URI.create(SAMPLE_IDENTITY_IDENTIFIER);
         when(cristinProxyClient.lookupIdentifierFromOrcid(any())).thenReturn(Optional.of(sampleIdentifier));
 
         var updatedPublication = IdentityUpdater.enrichPublicationCreators(cristinProxyClient, publication);
 
-        assertThat(identies, Every.everyItem(HasPropertyWithValue.hasProperty("id", equalTo(null))));
+        assertThat(identities, Every.everyItem(HasPropertyWithValue.hasProperty("id", equalTo(null))));
         assertThat(updatedPublication, equalTo(publication));
     }
 
