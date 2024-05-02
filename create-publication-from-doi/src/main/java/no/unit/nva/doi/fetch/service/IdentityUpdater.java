@@ -35,6 +35,7 @@ public final class IdentityUpdater {
 
         var possibleContributors = extractPossibleContributors(publication);
         possibleContributors.ifPresent(contributors -> tryUpdatingContributorsOrLogError(cristinProxyClient,
+                                                                                         publication,
                                                                                          contributors));
         return publication;
     }
@@ -46,24 +47,30 @@ public final class IdentityUpdater {
     }
 
     private static void tryUpdatingContributorsOrLogError(CristinProxyClient cristinProxyClient,
-                                                          List<Contributor> contributors) {
+                                                          Publication publication, List<Contributor> contributors) {
         try {
-            updateContributors(cristinProxyClient, contributors);
+            updateContributors(cristinProxyClient, publication, contributors);
         } catch (Exception e) {
             logger.info(PROBLEM_UPDATING_IDENTITY_MESSAGE, e);
         }
     }
 
-    private static void updateContributors(CristinProxyClient cristinProxyClient, List<Contributor> contributors) {
-        contributors.forEach(contributor -> {
-            var identity = contributor.getIdentity();
-            if (hasNoIdentifierButCanPossiblyBeFetchedUsingOrcid(identity)) {
-                updateIdentifierIfFoundFromOrcid(cristinProxyClient, identity);
-            }
-        });
+    private static void updateContributors(CristinProxyClient cristinProxyClient, Publication publication,
+                                           List<Contributor> contributors) {
+        var contributorsWithOnlyOrcid = contributors.stream().filter(IdentityUpdater::hasOcidButNotIdentifier).toList();
+        if (contributorsWithOnlyOrcid.size() > 10) {
+            logger.warn("Skipper updateContributors as too many without known cristin-identifier "
+                        + publication.getIdentifier());
+            return;
+        }
+
+        contributorsWithOnlyOrcid
+            .forEach(contributor -> updateIdentifierIfFoundFromOrcid(cristinProxyClient, contributor.getIdentity())
+        );
     }
 
-    private static boolean hasNoIdentifierButCanPossiblyBeFetchedUsingOrcid(Identity identity) {
+    private static boolean hasOcidButNotIdentifier(Contributor contributor) {
+        var identity = contributor.getIdentity();
         return nonNull(identity) && isNull(identity.getId()) && nonNull(identity.getOrcId());
     }
 
