@@ -18,6 +18,7 @@ public final class IdentityUpdater {
 
     public static final String PROBLEM_UPDATING_IDENTITY_MESSAGE = "Problem updating Identity, ignoring and moving on";
     private static final Logger logger = LoggerFactory.getLogger(IdentityUpdater.class);
+    public static final int MAX_CONTRIBUTORS_TO_LOOKUP = 10;
 
     private IdentityUpdater() {
     }
@@ -35,6 +36,7 @@ public final class IdentityUpdater {
 
         var possibleContributors = extractPossibleContributors(publication);
         possibleContributors.ifPresent(contributors -> tryUpdatingContributorsOrLogError(cristinProxyClient,
+                                                                                         publication,
                                                                                          contributors));
         return publication;
     }
@@ -46,24 +48,31 @@ public final class IdentityUpdater {
     }
 
     private static void tryUpdatingContributorsOrLogError(CristinProxyClient cristinProxyClient,
-                                                          List<Contributor> contributors) {
+                                                          Publication publication, List<Contributor> contributors) {
         try {
-            updateContributors(cristinProxyClient, contributors);
+            updateContributors(cristinProxyClient, publication, contributors);
         } catch (Exception e) {
             logger.info(PROBLEM_UPDATING_IDENTITY_MESSAGE, e);
         }
     }
 
-    private static void updateContributors(CristinProxyClient cristinProxyClient, List<Contributor> contributors) {
-        contributors.forEach(contributor -> {
-            var identity = contributor.getIdentity();
-            if (hasNoIdentifierButCanPossiblyBeFetchedUsingOrcid(identity)) {
-                updateIdentifierIfFoundFromOrcid(cristinProxyClient, identity);
-            }
-        });
+    private static void updateContributors(CristinProxyClient cristinProxyClient, Publication publication,
+                                           List<Contributor> contributors) {
+        var contributorsWithOnlyOrcid = contributors.stream()
+                                            .filter(IdentityUpdater::hasOrcidButNotIdentifier).toList();
+        if (contributorsWithOnlyOrcid.size() > MAX_CONTRIBUTORS_TO_LOOKUP) {
+            logger.warn("Skipper updateContributors as too many without known cristin-identifier "
+                        + publication.getIdentifier());
+            return;
+        }
+
+        contributorsWithOnlyOrcid
+            .forEach(contributor -> updateIdentifierIfFoundFromOrcid(cristinProxyClient, contributor.getIdentity())
+        );
     }
 
-    private static boolean hasNoIdentifierButCanPossiblyBeFetchedUsingOrcid(Identity identity) {
+    private static boolean hasOrcidButNotIdentifier(Contributor contributor) {
+        var identity = contributor.getIdentity();
         return nonNull(identity) && isNull(identity.getId()) && nonNull(identity.getOrcId());
     }
 

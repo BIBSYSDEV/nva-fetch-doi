@@ -13,6 +13,8 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
 import no.unit.nva.model.role.Role;
 import no.unit.nva.model.role.RoleType;
+import org.hamcrest.beans.HasPropertyWithValue;
+import org.hamcrest.core.Every;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
@@ -22,12 +24,15 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static net.bytebuddy.matcher.ElementMatchers.is;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -89,10 +94,24 @@ class IdentityUpdaterTest {
 
     @Test
     public void shouldNotAlterPublicationWhenMissingIdentityCallingEnrichPublicationCreators() {
-        var publication = createPublicationWithIdentity(null);
+        var publication = createPublicationWithIdentites(List.of());
         var cristinProxyClient = mock(CristinProxyClient.class);
         var updatedPublication = IdentityUpdater.enrichPublicationCreators(cristinProxyClient, publication);
 
+        assertThat(updatedPublication, equalTo(publication));
+    }
+
+    @Test
+    public void shouldNotEnrichContributorsWhenMoreThanTenUnverifiedContributorsExist() {
+        var identities = Collections.nCopies(11, 1).stream().map(i -> createIdentityWithOrcid()).toList();
+        var publication = createPublicationWithIdentites(identities);
+        var cristinProxyClient = mock(CristinProxyClient.class);
+        var sampleIdentifier = URI.create(SAMPLE_IDENTITY_IDENTIFIER);
+        when(cristinProxyClient.lookupIdentifierFromOrcid(any())).thenReturn(Optional.of(sampleIdentifier));
+
+        var updatedPublication = IdentityUpdater.enrichPublicationCreators(cristinProxyClient, publication);
+
+        assertThat(identities, Every.everyItem(HasPropertyWithValue.hasProperty("id", equalTo(null))));
         assertThat(updatedPublication, equalTo(publication));
     }
 
@@ -122,22 +141,28 @@ class IdentityUpdaterTest {
 
 
     private Publication createPublicationWithIdentity(Identity identity) {
-        var contributor = new Contributor.Builder()
-                .withRole(new RoleType(Role.CREATOR))
-                .withIdentity(identity)
-                .build();
+        return createPublicationWithIdentites(List.of(identity));
+    }
+
+    private Publication createPublicationWithIdentites(List<Identity> identites) {
+        var contributors = identites.stream().map(identity -> new Contributor.Builder()
+                                                                  .withRole(new RoleType(Role.CREATOR))
+                                                                  .withIdentity(identity)
+                                                                  .build())
+                               .toList();
+
         return new Publication.Builder()
-                .withIdentifier(new SortableIdentifier(UUID.randomUUID().toString()))
-                .withModifiedDate(Instant.now())
-                .withResourceOwner(randomResourceOwner())
-                .withPublisher(new Organization.Builder()
-                        .withId(URI.create("http://example.org/publisher/1"))
-                        .build()
-                )
-                .withEntityDescription(new EntityDescription.Builder()
-                        .withContributors(List.of(contributor))
-                        .build())
-                .build();
+                   .withIdentifier(new SortableIdentifier(UUID.randomUUID().toString()))
+                   .withModifiedDate(Instant.now())
+                   .withResourceOwner(randomResourceOwner())
+                   .withPublisher(new Organization.Builder()
+                                      .withId(URI.create("http://example.org/publisher/1"))
+                                      .build()
+                   )
+                   .withEntityDescription(new EntityDescription.Builder()
+                                              .withContributors(contributors)
+                                              .build())
+                   .build();
     }
 
     private ResourceOwner randomResourceOwner() {
