@@ -28,6 +28,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Summary'
+  /prewview/:
+    post:
+      summary: Previews data from DOI, create publication and return a request which can be sent to publication-api
+      security:
+        - CognitoUserPool:  ["https://api.nva.unit.no/scopes/backend","https://api.nva.unit.no/scopes/frontend", "aws.cognito.signin.user.admin"]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DoiLookup'
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PreviewDoiFunction.Arn}:live/invocations
+        responses: {}
+        httpMethod: POST
+        type: AWS_PROXY
+        passthroughBehavior: WHEN_NO_MATCH
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
 components:
   securitySchemes:
     CognitoUserPool:

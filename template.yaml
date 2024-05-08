@@ -134,6 +134,34 @@ Resources:
             Method: post
             RestApiId: !Ref NvaFetchDoiFunctionApi
 
+  PreviewDoiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-from-doi
+      Handler: no.unit.nva.doi.fetch.PreviewDoiHandler::handleRequest
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: AllAtOnce
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: 1
+      Role: !GetAtt NvaFetchDoiFunctionRole.Arn
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          PUBLICATION_API_HOST: !Ref ApiDomain
+          CROSSREFPLUSAPITOKEN_NAME: !Ref CrossrefPlusApiTokenName
+          CROSSREFPLUSAPITOKEN_KEY:  !Ref CrossrefPlusApiTokenKey
+          API_HOST: !Ref ApiDomain
+          ID_NAMESPACE: !Sub 'https://api.${CustomDomain}/${CustomDomainBasePath}'
+      Events:
+        NvaDoi:
+          Type: Api
+          Properties:
+            Path: /
+            Method: post
+            RestApiId: !Ref NvaFetchDoiFunctionApi
+
+
   NvaFetchDoiFunctionScalableTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
     Properties:

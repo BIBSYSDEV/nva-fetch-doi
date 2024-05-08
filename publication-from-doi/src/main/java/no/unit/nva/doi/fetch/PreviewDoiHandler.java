@@ -82,7 +82,7 @@ public class PreviewDoiHandler extends ApiGatewayHandler<RequestBody, CreatePubl
 
         var inputUri = input.getDoiUrl();
         return attempt(() -> this.fetchDoiService.newCreatePublicationRequest(owner, customerId, inputUri))
-                   .orElseThrow(fail -> handleError(fail.getException()));
+                   .orElseThrow(exception -> new RuntimeException(exception.getException()));
     }
 
     @Override
@@ -93,10 +93,6 @@ public class PreviewDoiHandler extends ApiGatewayHandler<RequestBody, CreatePubl
     @JacocoGenerated
     private static MetadataService getMetadataService() {
         return new MetadataService();
-    }
-
-    private ApiGatewayException handleError(Exception exception) {
-        throw new RuntimeException(exception);
     }
 
     private void validate(RequestBody input) throws MalformedRequestException {
