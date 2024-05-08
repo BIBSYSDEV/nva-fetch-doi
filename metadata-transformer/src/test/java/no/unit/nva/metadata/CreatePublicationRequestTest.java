@@ -9,13 +9,14 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import com.fasterxml.jackson.databind.JsonNode;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.testing.PublicationGenerator;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 class CreatePublicationRequestTest {
 
     private static final String RIGHTS_HOLDER = "My imagined rights holder";
 
-    @Test
+    @Test //TODO: Fix Unstable test
     void shouldRoundTripToJsonWithoutInformationLoss() {
         CreatePublicationRequest originalRequest = sampleRequest();
         var json = originalRequest.toJsonString();

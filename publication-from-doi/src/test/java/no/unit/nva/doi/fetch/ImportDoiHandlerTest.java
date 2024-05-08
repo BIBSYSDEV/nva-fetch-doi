@@ -8,7 +8,6 @@ import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.emptySet;
 import static no.unit.nva.doi.fetch.RestApiConfig.restServiceObjectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -71,8 +70,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.Username;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.AssociatedLink;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.testutils.HandlerRequestBuilder;
@@ -87,14 +84,8 @@ import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
 import org.zalando.problem.Status;
 
-class ImportDoiHandlerTest {
+class ImportDoiHandlerTest extends DoiHandlerTestUtils {
 
-    public static final String VALID_DOI = "https://doi.org/10.1109/5.771073";
-    public static final String VALID_NON_DOI = "http://example.org/metadata";
-    public static final String ALL_ORIGINS = "*";
-    public static final String INVALID_HOST_STRING = "https://\\.)_";
-    private static final String MAIN_TITLE = "Main title";
-    private static final String SOME_ERROR_MESSAGE = "SomeErrorMessage";
     private Environment environment;
     private Context context;
     private ByteArrayOutputStream output;
@@ -114,7 +105,7 @@ class ImportDoiHandlerTest {
     @Test
     public void testOkResponse()
         throws Exception {
-        ImportDoiHandler importDoiHandler = createMainHandler(environment);
+        ImportDoiHandler importDoiHandler = this.createImportHandler(environment);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         importDoiHandler.handleRequest(createSampleRequest(), output, context);
         GatewayResponse<Summary> gatewayResponse = parseSuccessResponse(output.toString());
@@ -135,7 +126,7 @@ class ImportDoiHandlerTest {
     @Test
     public void handleRequestReturnsSummaryWithIdentifierWhenUrlIsValidNonDoi()
         throws Exception {
-        ImportDoiHandler importDoiHandler = createMainHandler(environment);
+        ImportDoiHandler importDoiHandler = this.createImportHandler(environment);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         importDoiHandler.handleRequest(nonDoiUrlInputStream(), output, context);
         GatewayResponse<Summary> gatewayResponse = parseSuccessResponse(output.toString());
@@ -171,7 +162,7 @@ class ImportDoiHandlerTest {
 
         var logger = LogUtils.getTestingAppenderForRootLogger();
         Environment environmentWithInvalidHost = createEnvironmentWithInvalidHost();
-        ImportDoiHandler importDoiHandler = createMainHandler(environmentWithInvalidHost);
+        ImportDoiHandler importDoiHandler = this.createImportHandler(environmentWithInvalidHost);
 
         importDoiHandler.handleRequest(createSampleRequest(), output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
@@ -264,38 +255,6 @@ class ImportDoiHandlerTest {
         assertThat(getProblemDetail(gatewayResponse), containsString(PublicationPersistenceService.WARNING_MESSAGE));
     }
 
-    private CreatePublicationRequest expectedCreatePublicationRequest(boolean isDoi, URI metadataSource) {
-        var expectedCreateRequest = new CreatePublicationRequest();
-        expectedCreateRequest.setEntityDescription(expectedEntityDescription(isDoi, metadataSource));
-        if (isDoi) { // deserialization causes all collections to be empty:
-            expectedCreateRequest.setAdditionalIdentifiers(emptySet());
-            expectedCreateRequest.setFundings(emptyList());
-            expectedCreateRequest.setProjects(emptyList());
-            expectedCreateRequest.setSubjects(emptyList());
-        }
-        expectedCreateRequest.setAssociatedArtifacts(
-            isDoi ? new AssociatedArtifactList() : artifactsWithLink(metadataSource));
-
-        return expectedCreateRequest;
-    }
-
-    private AssociatedArtifactList artifactsWithLink(URI metadataSource) {
-        return new AssociatedArtifactList(new AssociatedLink(metadataSource, null, null));
-    }
-
-    private EntityDescription expectedEntityDescription(boolean isDoi, URI metadataSource) {
-        var builder = new EntityDescription.Builder()
-                          .withMainTitle(MAIN_TITLE)
-                          .withMetadataSource(metadataSource);
-
-        if (isDoi) { // deserialization causes all collections to be empty:
-            builder.withTags(emptyList())
-                .withContributors(emptyList())
-                .withAlternativeTitles(emptyMap())
-                .withAlternativeAbstracts(emptyMap());
-        }
-        return builder.build();
-    }
 
     private ImportDoiHandler handlerReceivingEmptyResponse(PublicationConverter publicationConverter) {
         DoiTransformService doiTransformService = mock(DoiTransformService.class);
@@ -309,17 +268,13 @@ class ImportDoiHandlerTest {
                                     environment);
     }
 
-    private String getProblemDetail(GatewayResponse<Problem> gatewayResponse) throws JsonProcessingException {
-        return gatewayResponse.getBodyObject(Problem.class).getDetail();
-    }
-
     private DoiProxyService mockDoiProxyReceivingFailedResult() {
         DataciteClient dataciteClient = mock(DataciteClient.class);
         CrossRefClient crossRefClient = mock(CrossRefClient.class);
         return new DoiProxyService(crossRefClient, dataciteClient);
     }
 
-    private ImportDoiHandler createMainHandler(Environment environment)
+    private ImportDoiHandler createImportHandler(Environment environment)
         throws URISyntaxException, IOException, InvalidIssnException,
                MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
         PublicationConverter publicationConverter = mockPublicationConverter();
@@ -339,60 +294,6 @@ class ImportDoiHandlerTest {
         return publicationConverter;
     }
 
-    private DoiTransformService mockDoiTransformServiceReturningSuccessfulResult()
-        throws URISyntaxException, IOException, InvalidIssnException,
-               InvalidIsbnException, UnsupportedDocumentTypeException {
-        DoiTransformService service = mock(DoiTransformService.class);
-        when(service.transformPublication(anyString(), anyString(), anyString(), any()))
-            .thenReturn(getPublication());
-        return service;
-    }
-
-    private MetadataService mockMetadataServiceReturningSuccessfulResult() {
-
-        EntityDescription entityDescription = new EntityDescription();
-        entityDescription.setMainTitle(MAIN_TITLE);
-        entityDescription.setAlternativeAbstracts(emptyMap());
-        entityDescription.setAlternativeTitles(emptyMap());
-        entityDescription.setContributors(emptyList());
-        entityDescription.setTags(emptyList());
-
-        CreatePublicationRequest request = new CreatePublicationRequest();
-        request.setEntityDescription(entityDescription);
-
-        MetadataService service = mock(MetadataService.class);
-        when(service.generateCreatePublicationRequest(any()))
-            .thenReturn(Optional.of(request));
-        return service;
-    }
-
-    private Publication getPublication() {
-        return new Publication.Builder()
-                   .withIdentifier(new SortableIdentifier(UUID.randomUUID().toString()))
-                   .withCreatedDate(Instant.now())
-                   .withModifiedDate(Instant.now())
-                   .withStatus(PublicationStatus.DRAFT)
-                   .withPublisher(new Organization.Builder().withId(URI.create("http://example.org/123")).build())
-                   .withEntityDescription(new EntityDescription.Builder().withMainTitle(MAIN_TITLE).build())
-                   .withResourceOwner(randomResourceOwner())
-                   .build();
-    }
-
-    private ResourceOwner randomResourceOwner() {
-        return new ResourceOwner(new Username(randomString()), randomUri());
-    }
-
-    private DoiProxyService mockDoiProxyServiceReceivingSuccessfulResult()
-        throws MetadataNotFoundException, IOException, URISyntaxException {
-        DoiProxyService doiProxyService = mock(DoiProxyService.class);
-        when(doiProxyService.lookupDoiMetadata(anyString(), any())).thenReturn(metadataAndContentLocation());
-        return doiProxyService;
-    }
-
-    private MetadataAndContentLocation metadataAndContentLocation() throws JsonProcessingException {
-        return new MetadataAndContentLocation("datacite",
-                                              restServiceObjectMapper.writeValueAsString(getPublication()));
-    }
 
     private Summary createSummary() {
         return new Summary.Builder().withIdentifier(SortableIdentifier.next())
@@ -421,51 +322,6 @@ class ImportDoiHandlerTest {
         return response;
     }
 
-    private Context getMockContext() {
-        Context context = mock(Context.class);
-        CognitoIdentity cognitoIdentity = mock(CognitoIdentity.class);
-        when(context.getIdentity()).thenReturn(cognitoIdentity);
-        when(cognitoIdentity.getIdentityPoolId()).thenReturn("junit");
-        return context;
-    }
-
-    private InputStream createSampleRequest(URL url) throws JsonProcessingException {
-
-        RequestBody requestBody = createSampleRequestBody(url);
-
-        Map<String, String> requestHeaders = new HashMap<>();
-        requestHeaders.put(AUTHORIZATION, "some api key");
-        requestHeaders.putAll(TestHeaders.getRequestHeaders());
-
-        return new HandlerRequestBuilder<RequestBody>(restServiceObjectMapper)
-                   .withBody(requestBody)
-                   .withHeaders(requestHeaders)
-                   .withUserName(randomString())
-                   .withCurrentCustomer(randomUri())
-                   .build();
-    }
-
-    private InputStream createSampleRequest() throws MalformedURLException, JsonProcessingException {
-        return createSampleRequest(new URL(VALID_DOI));
-    }
-
-    private InputStream nonDoiUrlInputStream() throws MalformedURLException, JsonProcessingException {
-        return createSampleRequest(new URL(VALID_NON_DOI));
-    }
-
-    private InputStream malformedInputStream() throws JsonProcessingException {
-
-        Map<String, String> requestHeaders = new HashMap<>();
-        requestHeaders.put(AUTHORIZATION, "some api key");
-        requestHeaders.putAll(TestHeaders.getRequestHeaders());
-
-        return new HandlerRequestBuilder<RequestBody>(restServiceObjectMapper)
-                   .withHeaders(requestHeaders)
-                   .withUserName(randomString())
-                   .withCurrentCustomer(randomUri())
-                   .build();
-    }
-
     private ByteArrayOutputStream outputStream() {
         return new ByteArrayOutputStream();
     }
@@ -474,27 +330,4 @@ class ImportDoiHandlerTest {
         return parseGatewayResponse(output, Summary.class);
     }
 
-    private GatewayResponse<Problem> parseFailureResponse(OutputStream output) throws JsonProcessingException {
-        return parseGatewayResponse(output.toString(), Problem.class);
-    }
-
-    private <T> GatewayResponse<T> parseGatewayResponse(String output, Class<T> responseObjectClass)
-        throws JsonProcessingException {
-        JavaType typeRef = restServiceObjectMapper.getTypeFactory()
-                               .constructParametricType(GatewayResponse.class, responseObjectClass);
-        return restServiceObjectMapper.readValue(output, typeRef);
-    }
-
-    private RequestBody createSampleRequestBody(URL url) {
-        RequestBody requestBody = new RequestBody();
-        requestBody.setDoiUrl(url);
-        return requestBody;
-    }
-
-    private Environment createEnvironmentWithInvalidHost() {
-        Environment environment = mock(Environment.class);
-        when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALL_ORIGINS);
-        when(environment.readEnv(ImportDoiHandler.PUBLICATION_API_HOST_ENV)).thenReturn(INVALID_HOST_STRING);
-        return environment;
-    }
 }
