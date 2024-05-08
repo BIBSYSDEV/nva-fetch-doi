@@ -100,6 +100,19 @@ class PreviewDoiHandlerTest extends DoiHandlerTestUtils {
     }
 
     @Test
+    public void shouldReturnNotFoundWhenDoiProxyThrows() throws Exception {
+
+        var handler = createHandlerWithFailingDoiProxy(environment);
+
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        handler.handleRequest(createSampleRequest(), output, context);
+        GatewayResponse<Problem> gatewayResponse = parseFailureResponse(output);
+        assertEquals(HTTP_INTERNAL_ERROR, gatewayResponse.getStatusCode());
+        assertThat(getProblemDetail(gatewayResponse), containsString(
+            MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS));
+    }
+
+    @Test
     public void shouldReturnMalformedRequestExceptionWhenInputIsNull() throws Exception {
 
         PreviewDoiHandler importDoiHandler = createHandler(environment);

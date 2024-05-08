@@ -95,17 +95,9 @@ public class PreviewDoiHandler extends ApiGatewayHandler<RequestBody, CreatePubl
         return new MetadataService();
     }
 
-    @JacocoGenerated
     private ApiGatewayException handleError(Exception exception) {
-        if (exception instanceof ApiGatewayException) {
-            return (ApiGatewayException) exception;
-        }
-        if (exception instanceof RuntimeException) {
-            throw (RuntimeException) exception;
-        }
         throw new RuntimeException(exception);
     }
-
 
     private void validate(RequestBody input) throws MalformedRequestException {
         if (isNull(input) || isNull(input.getDoiUrl())) {

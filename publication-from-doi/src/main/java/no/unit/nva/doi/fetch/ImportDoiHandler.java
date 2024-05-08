@@ -111,6 +111,7 @@ public class ImportDoiHandler extends ApiGatewayHandler<RequestBody, Summary> {
         return new MetadataService();
     }
 
+    @JacocoGenerated
     private ApiGatewayException handleError(Exception exception) {
         if (exception instanceof ApiGatewayException) {
             return (ApiGatewayException) exception;
