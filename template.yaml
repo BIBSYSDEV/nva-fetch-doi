@@ -110,7 +110,7 @@ Resources:
   ImportDoiFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: create-publication-from-doi
+      CodeUri: publication-from-doi
       Handler: no.unit.nva.doi.fetch.ImportDoiHandler::handleRequest
       AutoPublishAlias: live
       DeploymentPreference:
