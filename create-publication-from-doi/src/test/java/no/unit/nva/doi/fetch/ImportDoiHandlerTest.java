@@ -87,7 +87,7 @@ import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
 import org.zalando.problem.Status;
 
-class MainHandlerTest {
+class ImportDoiHandlerTest {
 
     public static final String VALID_DOI = "https://doi.org/10.1109/5.771073";
     public static final String VALID_NON_DOI = "http://example.org/metadata";
@@ -108,15 +108,15 @@ class MainHandlerTest {
         publicationPersistenceService = mock(PublicationPersistenceService.class);
 
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALL_ORIGINS);
-        when(environment.readEnv(MainHandler.PUBLICATION_API_HOST_ENV)).thenReturn("localhost");
+        when(environment.readEnv(ImportDoiHandler.PUBLICATION_API_HOST_ENV)).thenReturn("localhost");
     }
 
     @Test
     public void testOkResponse()
         throws Exception {
-        MainHandler mainHandler = createMainHandler(environment);
+        ImportDoiHandler importDoiHandler = createMainHandler(environment);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        mainHandler.handleRequest(createSampleRequest(), output, context);
+        importDoiHandler.handleRequest(createSampleRequest(), output, context);
         GatewayResponse<Summary> gatewayResponse = parseSuccessResponse(output.toString());
         assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
@@ -135,9 +135,9 @@ class MainHandlerTest {
     @Test
     public void handleRequestReturnsSummaryWithIdentifierWhenUrlIsValidNonDoi()
         throws Exception {
-        MainHandler mainHandler = createMainHandler(environment);
+        ImportDoiHandler importDoiHandler = createMainHandler(environment);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        mainHandler.handleRequest(nonDoiUrlInputStream(), output, context);
+        importDoiHandler.handleRequest(nonDoiUrlInputStream(), output, context);
         GatewayResponse<Summary> gatewayResponse = parseSuccessResponse(output.toString());
         assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
@@ -157,11 +157,11 @@ class MainHandlerTest {
     public void testBadGatewayResponseWhenUrlIsInvalidNonDoi() throws Exception {
         PublicationConverter publicationConverter = mock(PublicationConverter.class);
 
-        MainHandler mainHandler = handlerReceivingEmptyResponse(publicationConverter);
-        mainHandler.handleRequest(nonDoiUrlInputStream(), output, context);
+        ImportDoiHandler importDoiHandler = handlerReceivingEmptyResponse(publicationConverter);
+        importDoiHandler.handleRequest(nonDoiUrlInputStream(), output, context);
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse(output);
         assertEquals(HTTP_BAD_GATEWAY, gatewayResponse.getStatusCode());
-        assertThat(getProblemDetail(gatewayResponse), containsString(MainHandler.NO_METADATA_FOUND_FOR));
+        assertThat(getProblemDetail(gatewayResponse), containsString(ImportDoiHandler.NO_METADATA_FOUND_FOR));
     }
 
     @Test
@@ -171,9 +171,9 @@ class MainHandlerTest {
 
         var logger = LogUtils.getTestingAppenderForRootLogger();
         Environment environmentWithInvalidHost = createEnvironmentWithInvalidHost();
-        MainHandler mainHandler = createMainHandler(environmentWithInvalidHost);
+        ImportDoiHandler importDoiHandler = createMainHandler(environmentWithInvalidHost);
 
-        mainHandler.handleRequest(createSampleRequest(), output, context);
+        importDoiHandler.handleRequest(createSampleRequest(), output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_INTERNAL_ERROR)));
         assertThat(logger.getMessages(), containsString("Missing host for creating URI"));
@@ -187,14 +187,14 @@ class MainHandlerTest {
         PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
         CristinProxyClient cristinProxyClient = mock(CristinProxyClient.class);
         MetadataService metadataService = mock(MetadataService.class);
-        MainHandler mainHandler = new MainHandler(publicationConverter, doiTransformService,
-                                                  doiProxyService, publicationPersistenceService, cristinProxyClient,
-                                                  metadataService, environment);
+        ImportDoiHandler importDoiHandler = new ImportDoiHandler(publicationConverter, doiTransformService,
+                                                                 doiProxyService, publicationPersistenceService, cristinProxyClient,
+                                                                 metadataService, environment);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        mainHandler.handleRequest(malformedInputStream(), output, context);
+        importDoiHandler.handleRequest(malformedInputStream(), output, context);
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse(output);
         assertEquals(HTTP_BAD_REQUEST, gatewayResponse.getStatusCode());
-        assertThat(getProblemDetail(gatewayResponse), containsString(MainHandler.NULL_DOI_URL_ERROR));
+        assertThat(getProblemDetail(gatewayResponse), containsString(ImportDoiHandler.NULL_DOI_URL_ERROR));
     }
 
     @Test
@@ -207,11 +207,11 @@ class MainHandlerTest {
         CristinProxyClient cristinProxyClient = mock(CristinProxyClient.class);
         MetadataService metadataService = mock(MetadataService.class);
 
-        MainHandler mainHandler = new MainHandler(publicationConverter, doiTransformService,
-                                                  doiProxyService, publicationPersistenceService, cristinProxyClient,
-                                                  metadataService, environment);
+        ImportDoiHandler importDoiHandler = new ImportDoiHandler(publicationConverter, doiTransformService,
+                                                                 doiProxyService, publicationPersistenceService, cristinProxyClient,
+                                                                 metadataService, environment);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        mainHandler.handleRequest(createSampleRequest(), output, context);
+        importDoiHandler.handleRequest(createSampleRequest(), output, context);
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse(output);
         assertEquals(HTTP_INTERNAL_ERROR, gatewayResponse.getStatusCode());
         assertThat(getProblemDetail(gatewayResponse), containsString(
@@ -230,9 +230,9 @@ class MainHandlerTest {
         CristinProxyClient cristinProxyClient = mock(CristinProxyClient.class);
         MetadataService metadataService = mock(MetadataService.class);
 
-        MainHandler handler = new MainHandler(publicationConverter, doiTransformService, doiProxyService,
-                                              publicationPersistenceService, cristinProxyClient, metadataService,
-                                              environment);
+        ImportDoiHandler handler = new ImportDoiHandler(publicationConverter, doiTransformService, doiProxyService,
+                                                        publicationPersistenceService, cristinProxyClient, metadataService,
+                                                        environment);
         ByteArrayOutputStream outputStream = outputStream();
         handler.handleRequest(createSampleRequest(), outputStream, context);
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse(outputStream);
@@ -254,9 +254,9 @@ class MainHandlerTest {
         PublicationPersistenceService publicationPersistenceService =
             mockResourcePersistenceServiceReceivingFailedResult();
 
-        MainHandler handler = new MainHandler(publicationConverter, doiTransformService, doiProxyService,
-                                              publicationPersistenceService, cristinProxyClient, metadataService,
-                                              environment);
+        ImportDoiHandler handler = new ImportDoiHandler(publicationConverter, doiTransformService, doiProxyService,
+                                                        publicationPersistenceService, cristinProxyClient, metadataService,
+                                                        environment);
         ByteArrayOutputStream outputStream = outputStream();
         handler.handleRequest(createSampleRequest(), outputStream, context);
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse(outputStream);
@@ -297,16 +297,16 @@ class MainHandlerTest {
         return builder.build();
     }
 
-    private MainHandler handlerReceivingEmptyResponse(PublicationConverter publicationConverter) {
+    private ImportDoiHandler handlerReceivingEmptyResponse(PublicationConverter publicationConverter) {
         DoiTransformService doiTransformService = mock(DoiTransformService.class);
         DoiProxyService doiProxyService = mock(DoiProxyService.class);
         CristinProxyClient cristinProxyClient = mock(CristinProxyClient.class);
         MetadataService metadataService = mock(MetadataService.class);
         when(metadataService.generateCreatePublicationRequest(any())).thenReturn(Optional.empty());
 
-        return new MainHandler(publicationConverter, doiTransformService,
-                               doiProxyService, publicationPersistenceService, cristinProxyClient, metadataService,
-                               environment);
+        return new ImportDoiHandler(publicationConverter, doiTransformService,
+                                    doiProxyService, publicationPersistenceService, cristinProxyClient, metadataService,
+                                    environment);
     }
 
     private String getProblemDetail(GatewayResponse<Problem> gatewayResponse) throws JsonProcessingException {
@@ -319,7 +319,7 @@ class MainHandlerTest {
         return new DoiProxyService(crossRefClient, dataciteClient);
     }
 
-    private MainHandler createMainHandler(Environment environment)
+    private ImportDoiHandler createMainHandler(Environment environment)
         throws URISyntaxException, IOException, InvalidIssnException,
                MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
         PublicationConverter publicationConverter = mockPublicationConverter();
@@ -328,9 +328,9 @@ class MainHandlerTest {
         CristinProxyClient cristinProxyClient = mock(CristinProxyClient.class);
         MetadataService metadataService = mockMetadataServiceReturningSuccessfulResult();
 
-        return new MainHandler(publicationConverter, doiTransformService,
-                               doiProxyService, publicationPersistenceService, cristinProxyClient, metadataService,
-                               environment);
+        return new ImportDoiHandler(publicationConverter, doiTransformService,
+                                    doiProxyService, publicationPersistenceService, cristinProxyClient, metadataService,
+                                    environment);
     }
 
     private PublicationConverter mockPublicationConverter() {
@@ -494,7 +494,7 @@ class MainHandlerTest {
     private Environment createEnvironmentWithInvalidHost() {
         Environment environment = mock(Environment.class);
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALL_ORIGINS);
-        when(environment.readEnv(MainHandler.PUBLICATION_API_HOST_ENV)).thenReturn(INVALID_HOST_STRING);
+        when(environment.readEnv(ImportDoiHandler.PUBLICATION_API_HOST_ENV)).thenReturn(INVALID_HOST_STRING);
         return environment;
     }
 }

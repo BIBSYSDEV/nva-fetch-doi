@@ -42,12 +42,12 @@ import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
+public class ImportDoiHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     public static final String PUBLICATION_API_HOST_ENV = "PUBLICATION_API_HOST";
     public static final String NULL_DOI_URL_ERROR = "doiUrl can not be null";
     public static final String NO_METADATA_FOUND_FOR = "No metadata found for: ";
-    private static final Logger logger = LoggerFactory.getLogger(MainHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(ImportDoiHandler.class);
     private final transient PublicationConverter publicationConverter;
     private final transient DoiTransformService doiTransformService;
     private final transient DoiProxyService doiProxyService;
@@ -58,24 +58,24 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     @SuppressWarnings("unused")
     @JacocoGenerated
-    public MainHandler() {
+    public ImportDoiHandler() {
         this(new Environment());
     }
 
     @JacocoGenerated
-    public MainHandler(Environment environment) {
+    public ImportDoiHandler(Environment environment) {
         this(new PublicationConverter(), new DoiTransformService(),
              new DoiProxyService(environment), new PublicationPersistenceService(), new CristinProxyClient(),
              getMetadataService(), environment);
     }
 
-    public MainHandler(PublicationConverter publicationConverter,
-                       DoiTransformService doiTransformService,
-                       DoiProxyService doiProxyService,
-                       PublicationPersistenceService publicationPersistenceService,
-                       CristinProxyClient cristinProxyClient,
-                       MetadataService metadataService,
-                       Environment environment) {
+    public ImportDoiHandler(PublicationConverter publicationConverter,
+                            DoiTransformService doiTransformService,
+                            DoiProxyService doiProxyService,
+                            PublicationPersistenceService publicationPersistenceService,
+                            CristinProxyClient cristinProxyClient,
+                            MetadataService metadataService,
+                            Environment environment) {
         super(RequestBody.class, environment);
         this.publicationConverter = publicationConverter;
         this.doiTransformService = doiTransformService;
