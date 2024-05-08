@@ -15,7 +15,6 @@ import com.amazonaws.services.lambda.runtime.CognitoIdentity;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -23,10 +22,6 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.http.HttpResponse.BodyHandler;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,12 +31,8 @@ import no.unit.nva.doi.DoiProxyService;
 import no.unit.nva.doi.MetadataAndContentLocation;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
 import no.unit.nva.doi.fetch.exceptions.UnsupportedDocumentTypeException;
-import no.unit.nva.doi.fetch.model.PublicationDate;
 import no.unit.nva.doi.fetch.model.RequestBody;
-import no.unit.nva.doi.fetch.model.Summary;
-import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
 import no.unit.nva.doi.transformer.DoiTransformService;
-import no.unit.nva.doi.transformer.utils.CristinProxyClient;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
@@ -61,7 +52,6 @@ import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.core.Environment;
 import org.zalando.problem.Problem;
-import org.zalando.problem.Status;
 
 public class DoiHandlerTestUtils {
 
@@ -159,25 +149,6 @@ public class DoiHandlerTestUtils {
     private MetadataAndContentLocation metadataAndContentLocation() throws JsonProcessingException {
         return new MetadataAndContentLocation("datacite",
                                               restServiceObjectMapper.writeValueAsString(getPublication()));
-    }
-    private PublicationPersistenceService mockResourcePersistenceServiceReceivingFailedResult()
-        throws IOException, InterruptedException {
-        return new PublicationPersistenceService(mockHttpClientReceivingFailure());
-    }
-
-    @SuppressWarnings("unchecked")
-    private HttpClient mockHttpClientReceivingFailure() throws IOException, InterruptedException {
-        HttpClient client = mock(HttpClient.class);
-        HttpResponse<Object> failedResponse = mockFailedHttpResponse();
-        when(client.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(failedResponse);
-        return client;
-    }
-
-    @SuppressWarnings("unchecked")
-    private HttpResponse<Object> mockFailedHttpResponse() {
-        HttpResponse<Object> response = mock(HttpResponse.class);
-        when(response.statusCode()).thenReturn(Status.BAD_REQUEST.getStatusCode());
-        return response;
     }
 
     Context getMockContext() {
