@@ -1,4 +1,4 @@
-package no.unit.nva.doi.fetch;
+package no.unit.nva.doi.fetch.service;
 
 import static java.util.Objects.isNull;
 import static no.unit.nva.doi.fetch.RestApiConfig.restServiceObjectMapper;
@@ -15,6 +15,7 @@ import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.doi.DataciteContentType;
 import no.unit.nva.doi.DoiProxyService;
 import no.unit.nva.doi.MetadataAndContentLocation;
+import no.unit.nva.doi.fetch.DoiValidator;
 import no.unit.nva.doi.fetch.exceptions.CreatePublicationException;
 import no.unit.nva.doi.fetch.exceptions.MalformedRequestException;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
@@ -42,91 +43,26 @@ import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
+public class FetchDoiService {
 
-    public static final String PUBLICATION_API_HOST_ENV = "PUBLICATION_API_HOST";
-    public static final String NULL_DOI_URL_ERROR = "doiUrl can not be null";
-    public static final String NO_METADATA_FOUND_FOR = "No metadata found for: ";
-    private static final Logger logger = LoggerFactory.getLogger(MainHandler.class);
-    private final transient PublicationConverter publicationConverter;
+    public static final String NO_METADATA_FOUND = "No metadata found for imported uri";
+    private static final Logger logger = LoggerFactory.getLogger(FetchDoiService.class);
     private final transient DoiTransformService doiTransformService;
     private final transient DoiProxyService doiProxyService;
-    private final transient PublicationPersistenceService publicationPersistenceService;
     private final transient CristinProxyClient cristinProxyClient;
-    private final transient String publicationApiHost;
     private final transient MetadataService metadataService;
 
-    @SuppressWarnings("unused")
-    @JacocoGenerated
-    public MainHandler() {
-        this(new Environment());
-    }
-
-    @JacocoGenerated
-    public MainHandler(Environment environment) {
-        this(new PublicationConverter(), new DoiTransformService(),
-             new DoiProxyService(environment), new PublicationPersistenceService(), new CristinProxyClient(),
-             getMetadataService(), environment);
-    }
-
-    public MainHandler(PublicationConverter publicationConverter,
-                       DoiTransformService doiTransformService,
-                       DoiProxyService doiProxyService,
-                       PublicationPersistenceService publicationPersistenceService,
-                       CristinProxyClient cristinProxyClient,
-                       MetadataService metadataService,
-                       Environment environment) {
-        super(RequestBody.class, environment);
-        this.publicationConverter = publicationConverter;
+    public FetchDoiService(DoiTransformService doiTransformService,
+                            DoiProxyService doiProxyService,
+                            CristinProxyClient cristinProxyClient,
+                            MetadataService metadataService) {
         this.doiTransformService = doiTransformService;
         this.doiProxyService = doiProxyService;
-        this.publicationPersistenceService = publicationPersistenceService;
         this.cristinProxyClient = cristinProxyClient;
         this.metadataService = metadataService;
-
-        this.publicationApiHost = environment.readEnv(PUBLICATION_API_HOST_ENV);
     }
 
-    @Override
-    protected Summary processInput(RequestBody input, RequestInfo requestInfo, Context context)
-        throws ApiGatewayException {
-
-        URI apiUrl = urlToPublicationProxy();
-        validate(input);
-
-        var owner = requestInfo.getUserName();
-        var customerId = requestInfo.getCurrentCustomer();
-        var authHeader = requestInfo.getAuthHeader();
-
-        var inputUri = input.getDoiUrl();
-        return attempt(() -> newCreatePublicationRequest(owner, customerId, inputUri))
-                   .map(createPublicationRequest -> tryCreatePublication(authHeader, apiUrl, createPublicationRequest))
-                   .map(response -> Json.convertValue(response, JsonNode.class))
-                   .map(publicationConverter::toSummary)
-                   .orElseThrow(fail -> handleError(fail.getException()));
-    }
-
-    @Override
-    protected Integer getSuccessStatusCode(RequestBody input, Summary output) {
-        return HttpURLConnection.HTTP_OK;
-    }
-
-    @JacocoGenerated
-    private static MetadataService getMetadataService() {
-        return new MetadataService();
-    }
-
-    private ApiGatewayException handleError(Exception exception) {
-        if (exception instanceof ApiGatewayException) {
-            return (ApiGatewayException) exception;
-        }
-        if (exception instanceof RuntimeException) {
-            throw (RuntimeException) exception;
-        }
-        throw new RuntimeException(exception);
-    }
-
-    private CreatePublicationRequest newCreatePublicationRequest(String owner, URI customerId, URL url)
+    public CreatePublicationRequest newCreatePublicationRequest(String owner, URI customerId, URL url)
         throws URISyntaxException, IOException, InvalidIssnException,
                MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
         CreatePublicationRequest request;
@@ -152,7 +88,7 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         throws URISyntaxException, MetadataNotFoundException {
         return metadataService.generateCreatePublicationRequest(url.toURI())
                    .map(request -> saveSourceAsLinkInAssociatedArtifacts(request, url))
-                   .orElseThrow(() -> new MetadataNotFoundException(NO_METADATA_FOUND_FOR + url));
+                   .orElseThrow(() -> new MetadataNotFoundException(NO_METADATA_FOUND));
     }
 
     private CreatePublicationRequest saveSourceAsLinkInAssociatedArtifacts(CreatePublicationRequest request, URL url) {
@@ -174,17 +110,6 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
         return restServiceObjectMapper.convertValue(publication, CreatePublicationRequest.class);
     }
 
-    private URI urlToPublicationProxy() {
-        return attempt(() -> UriWrapper.fromHost(publicationApiHost).getUri())
-                   .orElseThrow(failure -> new IllegalStateException(failure.getException()));
-    }
-
-    private void validate(RequestBody input) throws MalformedRequestException {
-        if (isNull(input) || isNull(input.getDoiUrl())) {
-            throw new MalformedRequestException(NULL_DOI_URL_ERROR);
-        }
-    }
-
     private Publication getPublicationMetadataFromDoi(URL doiUrl,
                                                       String owner, URI customerId)
         throws URISyntaxException, IOException, InvalidIssnException,
@@ -198,13 +123,4 @@ public class MainHandler extends ApiGatewayHandler<RequestBody, Summary> {
             metadataAndContentLocation.getContentHeader(), owner, customerId);
     }
 
-    private PublicationResponse tryCreatePublication(String authorization, URI apiUrl, CreatePublicationRequest request)
-        throws InterruptedException, IOException, CreatePublicationException {
-        return createPublication(authorization, apiUrl, request);
-    }
-
-    private PublicationResponse createPublication(String authorization, URI apiUrl, CreatePublicationRequest request)
-        throws InterruptedException, CreatePublicationException, IOException {
-        return publicationPersistenceService.createPublication(request, apiUrl, authorization);
-    }
 }
