@@ -63,6 +63,8 @@ class ImportDoiHandlerTest extends DoiHandlerTestUtils {
     private Context context;
     private ByteArrayOutputStream output;
     private PublicationPersistenceService publicationPersistenceService;
+    public static final String NO_METADATA_FOUND = "No metadata found for imported uri";
+
 
     @BeforeEach
     public void setUp() {
@@ -125,7 +127,7 @@ class ImportDoiHandlerTest extends DoiHandlerTestUtils {
         importDoiHandler.handleRequest(nonDoiUrlInputStream(), output, context);
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse(output);
         assertEquals(HTTP_BAD_GATEWAY, gatewayResponse.getStatusCode());
-        assertThat(getProblemDetail(gatewayResponse), containsString(ImportDoiHandler.NO_METADATA_FOUND_FOR));
+        assertThat(getProblemDetail(gatewayResponse), containsString(NO_METADATA_FOUND));
     }
 
     @Test

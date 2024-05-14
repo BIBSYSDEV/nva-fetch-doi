@@ -157,7 +157,7 @@ Resources:
         NvaDoi:
           Type: Api
           Properties:
-            Path: /
+            Path: /preview
             Method: post
             RestApiId: !Ref NvaFetchDoiFunctionApi
 

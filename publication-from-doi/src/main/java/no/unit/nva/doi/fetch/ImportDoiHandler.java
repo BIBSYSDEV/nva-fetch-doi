@@ -32,7 +32,6 @@ public class ImportDoiHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     public static final String PUBLICATION_API_HOST_ENV = "PUBLICATION_API_HOST";
     public static final String NULL_DOI_URL_ERROR = "doiUrl can not be null";
-    public static final String NO_METADATA_FOUND_FOR = "No metadata found for: ";
     private final transient PublicationConverter publicationConverter;
     private final transient PublicationPersistenceService publicationPersistenceService;
     private final transient String publicationApiHost;
@@ -71,7 +70,7 @@ public class ImportDoiHandler extends ApiGatewayHandler<RequestBody, Summary> {
     protected Summary processInput(RequestBody input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
 
-        URI apiUrl = urlToPublicationProxy();
+        var apiUrl = urlToPublicationProxy();
         validate(input);
 
         var owner = requestInfo.getUserName();

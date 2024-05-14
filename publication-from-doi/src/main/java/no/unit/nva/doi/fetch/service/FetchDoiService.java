@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
 
 public class FetchDoiService {
 
-    public static final String NO_METADATA_FOUND_FOR = "No metadata found for: ";
+    public static final String NO_METADATA_FOUND = "No metadata found for imported uri";
     private static final Logger logger = LoggerFactory.getLogger(FetchDoiService.class);
     private final transient DoiTransformService doiTransformService;
     private final transient DoiProxyService doiProxyService;
@@ -88,7 +88,7 @@ public class FetchDoiService {
         throws URISyntaxException, MetadataNotFoundException {
         return metadataService.generateCreatePublicationRequest(url.toURI())
                    .map(request -> saveSourceAsLinkInAssociatedArtifacts(request, url))
-                   .orElseThrow(() -> new MetadataNotFoundException(NO_METADATA_FOUND_FOR + url));
+                   .orElseThrow(() -> new MetadataNotFoundException(NO_METADATA_FOUND));
     }
 
     private CreatePublicationRequest saveSourceAsLinkInAssociatedArtifacts(CreatePublicationRequest request, URL url) {

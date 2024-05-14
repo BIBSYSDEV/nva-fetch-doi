@@ -28,7 +28,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Summary'
-  /prewview/:
+  /preview/:
     post:
       summary: Previews data from DOI, create publication and return a request which can be sent to publication-api
       security:
