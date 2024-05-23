@@ -75,7 +75,7 @@ components:
         - doiUrl
     CreatePublicationRequest:
       type: object
-      description: Input of create-publiction endpoint. Contains the publication to be created
+      description: Input of create-publication endpoint. Contains the publication to be created
       properties:
         entityDescription:
           type: object
