@@ -52,7 +52,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/CreatePublicationRequest'
 
 components:
   securitySchemes:
@@ -73,6 +73,18 @@ components:
           type: string
       required:
         - doiUrl
+    CreatePublicationRequest:
+      type: object
+      description: Input of create-publication endpoint. Contains the publication to be created
+      properties:
+        entityDescription:
+          type: object
+          properties:
+            mainTitle:
+              type: string
+          additionalProperties: true
+      additionalProperties: true
+
     Summary:
       type: object
       properties:
