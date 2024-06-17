@@ -4,6 +4,8 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -15,6 +17,7 @@ import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
 import no.unit.nva.model.funding.Funding;
@@ -31,6 +34,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
     private Set<AdditionalIdentifier> additionalIdentifiers;
     private List<Funding> fundings;
     private String rightsHolder;
+    private List<ImportDetail> importDetails;
 
     @JacocoGenerated
     public static CreatePublicationRequest fromJson(String json) {
@@ -95,6 +99,18 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
         this.rightsHolder = rightsHolder;
     }
 
+    @JacocoGenerated
+    @Override
+    public List<ImportDetail> getImportDetails() {
+        return importDetails;
+    }
+
+    @JacocoGenerated
+    @Override
+    public void setImportDetails(Collection<ImportDetail> importDetails) {
+        this.importDetails = new ArrayList<>(importDetails);
+    }
+
     @Override
     @JacocoGenerated
     public AssociatedArtifactList getAssociatedArtifacts() {
@@ -146,7 +162,8 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
                && Objects.equals(getSubjects(), that.getSubjects())
                && Objects.equals(getAdditionalIdentifiers(), that.getAdditionalIdentifiers())
                && Objects.equals(getFundings(), that.getFundings())
-               && Objects.equals(getRightsHolder(), that.getRightsHolder());
+               && Objects.equals(getRightsHolder(), that.getRightsHolder())
+               && Objects.equals(getImportDetails(), that.getImportDetails());
     }
 
     @JacocoGenerated
@@ -159,7 +176,8 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
                             getSubjects(),
                             getAdditionalIdentifiers(),
                             getFundings(),
-                            getRightsHolder());
+                            getRightsHolder(),
+                            getImportDetails());
     }
 
     @JacocoGenerated
