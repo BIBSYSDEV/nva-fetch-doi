@@ -1,6 +1,7 @@
 package no.unit.nva.metadata;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.testutils.RandomDataGenerator.randomDoi;
 import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
 import static nva.commons.core.attempt.Try.attempt;
@@ -8,6 +9,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.List;
+import java.util.Set;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Reference;
@@ -20,6 +23,7 @@ import org.junit.jupiter.api.Test;
 class CreatePublicationRequestTest {
 
     private static final String RIGHTS_HOLDER = "My imagined rights holder";
+    private static final Set<String> FIELDS_TO_IGNORE = Set.of("importDetails");
 
     @Test
     void shouldRoundTripToJsonWithoutInformationLoss() {
@@ -42,7 +46,7 @@ class CreatePublicationRequestTest {
         request.setSubjects(sample.getSubjects());
         request.setFundings(sample.getFundings());
         request.setRightsHolder(RIGHTS_HOLDER);
-        assertThat(request, doesNotHaveEmptyValues());
+        assertThat(request, doesNotHaveEmptyValuesIgnoringFields(FIELDS_TO_IGNORE));
         return request;
     }
 

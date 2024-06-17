@@ -71,6 +71,7 @@ public class DoiHandlerTestUtils {
             expectedCreateRequest.setFundings(emptyList());
             expectedCreateRequest.setProjects(emptyList());
             expectedCreateRequest.setSubjects(emptyList());
+            expectedCreateRequest.setImportDetails(emptyList());
         }
         expectedCreateRequest.setAssociatedArtifacts(
             isDoi ? new AssociatedArtifactList() : artifactsWithLink(metadataSource));
