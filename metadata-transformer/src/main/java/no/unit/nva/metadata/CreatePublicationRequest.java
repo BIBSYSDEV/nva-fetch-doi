@@ -15,7 +15,7 @@ import no.unit.nva.WithContext;
 import no.unit.nva.WithMetadata;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.AdditionalIdentifierBase;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.ImportDetail;
 import no.unit.nva.model.ResearchProject;
@@ -31,7 +31,7 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
     private JsonNode context;
     private List<ResearchProject> projects;
     private List<URI> subjects;
-    private Set<AdditionalIdentifier> additionalIdentifiers;
+    private Set<AdditionalIdentifierBase> additionalIdentifiers;
     private List<Funding> fundings;
     private String rightsHolder;
     private List<ImportDetail> importDetails;
@@ -136,12 +136,12 @@ public class CreatePublicationRequest implements WithMetadata, WithAssociatedArt
     }
 
     @JacocoGenerated
-    public Set<AdditionalIdentifier> getAdditionalIdentifiers() {
+    public Set<AdditionalIdentifierBase> getAdditionalIdentifiers() {
         return additionalIdentifiers;
     }
 
     @JacocoGenerated
-    public void setAdditionalIdentifiers(Set<AdditionalIdentifier> additionalIdentifiers) {
+    public void setAdditionalIdentifiers(Set<AdditionalIdentifierBase> additionalIdentifiers) {
         this.additionalIdentifiers = additionalIdentifiers;
     }
 
