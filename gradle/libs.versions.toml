@@ -5,7 +5,6 @@ jakartaVersion = { strictly = "2.1.6" }
 awsSdk2Version = { strictly = "2.24.12" }
 awsLambdaEvents = { strictly = '3.11.4' }
 awsLambdaCore = { strictly = '1.2.3' }
-nvaDatamodelVersion = { strictly = '0.23.0' }
 jerseyVersion = { strictly = "2.41" }
 rdf4jVersion = { strictly = "4.3.9" }
 problemVersion = { strictly = "0.27.1" }
@@ -36,8 +35,6 @@ nva-identifiers = { group = "com.github.bibsysdev", name = "identifiers", versio
 nva-doi = { group = "com.github.bibsysdev", name = "doi", version.ref = "nva" }
 nva-events = { group = "com.github.bibsysdev", name = "eventhandlers", version.ref = "nva" }
 nva-testutils = { group = "com.github.bibsysdev", name = "nvatestutils", version.ref = "nva" }
-nva-datamodel = { group = "com.github.bibsysdev", name = "nva-datamodel-java", version.ref = "nvaDatamodelVersion" }
-nva-datamodeltestutils = { group = 'com.github.bibsysdev', name = 'nva-datamodel-testutils', version.ref = 'nvaDatamodelVersion' }
 nva-language = { group = 'com.github.bibsysdev', name = 'nva-language', version.ref = "nvaLanguage" }
 
 jackson-core = { group = "com.fasterxml.jackson.core", name = "jackson-core", version.ref = "jacksonVersion" }

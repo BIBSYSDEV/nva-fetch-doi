@@ -21,15 +21,12 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import no.unit.nva.doi.DoiProxyService;
+import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
-import no.unit.nva.doi.fetch.exceptions.UnsupportedDocumentTypeException;
-import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
 import no.unit.nva.doi.transformer.DoiTransformService;
 import no.unit.nva.doi.transformer.utils.CristinProxyClient;
-import no.unit.nva.metadata.CreatePublicationRequest;
+import no.unit.nva.doi.transformer.utils.InvalidIssnException;
 import no.unit.nva.metadata.service.MetadataService;
-import no.unit.nva.model.exceptions.InvalidIsbnException;
-import no.unit.nva.model.exceptions.InvalidIssnException;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.core.Environment;
@@ -42,15 +39,11 @@ class PreviewDoiHandlerTest extends DoiHandlerTestUtils {
 
     private Environment environment;
     private Context context;
-    private ByteArrayOutputStream output;
-    private PublicationPersistenceService publicationPersistenceService;
 
     @BeforeEach
     public void setUp() {
         environment = mock(Environment.class);
         context = getMockContext();
-        output = new ByteArrayOutputStream();
-        publicationPersistenceService = mock(PublicationPersistenceService.class);
 
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALL_ORIGINS);
         when(environment.readEnv(ImportDoiHandler.PUBLICATION_API_HOST_ENV)).thenReturn("localhost");
@@ -61,8 +54,10 @@ class PreviewDoiHandlerTest extends DoiHandlerTestUtils {
         throws Exception {
         PreviewDoiHandler importDoiHandler = createHandler(environment);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
+
         importDoiHandler.handleRequest(createSampleRequest(), output, context);
-        GatewayResponse<CreatePublicationRequest> gatewayResponse = parseSuccessResponse(output.toString());
+
+        var gatewayResponse = parseSuccessResponse(output.toString());
         assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
@@ -117,8 +112,7 @@ class PreviewDoiHandlerTest extends DoiHandlerTestUtils {
     }
 
     PreviewDoiHandler createHandler(Environment environment)
-        throws URISyntaxException, IOException, InvalidIssnException,
-               MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
+        throws URISyntaxException, IOException, InvalidIssnException, MetadataNotFoundException {
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
         CristinProxyClient cristinProxyClient = mock(CristinProxyClient.class);
@@ -128,8 +122,7 @@ class PreviewDoiHandlerTest extends DoiHandlerTestUtils {
     }
 
     PreviewDoiHandler createHandlerWithFailingDoiProxy(Environment environment)
-        throws URISyntaxException, IOException, InvalidIssnException,
-               MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
+        throws URISyntaxException, IOException, InvalidIssnException, MetadataNotFoundException {
         DoiProxyService doiProxyService = mock(DoiProxyService.class);
         when(doiProxyService.lookupDoiMetadata(anyString(), any())).thenThrow(new IOException(""));
 

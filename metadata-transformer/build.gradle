@@ -1,6 +1,7 @@
 dependencies {
 
     implementation project(":json-config")
+    implementation project(":fetch-doi-commons")
 
     implementation(libs.bundles.any23) {
         exclude group: 'org.yaml', module: 'snakeyaml'
@@ -11,21 +12,19 @@ dependencies {
     implementation(libs.bundles.rdf4j)
     implementation libs.nva.core
     implementation libs.nva.json
-    implementation(libs.nva.datamodel) {
-        exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
-    }
 
     implementation libs.bundles.jackson
 
     implementation libs.nva.apigateway
     implementation libs.bundles.logging
 
+    implementation libs.commons.validator
+
     testImplementation project(":fetch-doi-testing")
     testImplementation libs.nva.logutils
     testCompileClasspath libs.jackson.databind
 
     testImplementation libs.bundles.testing
-    testImplementation libs.nva.datamodeltestutils
     testImplementation libs.wiremock
     testImplementation libs.j2html
 }

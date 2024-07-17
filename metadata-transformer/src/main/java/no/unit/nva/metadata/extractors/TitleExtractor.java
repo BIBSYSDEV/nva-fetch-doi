@@ -1,8 +1,7 @@
 package no.unit.nva.metadata.extractors;
 
-import no.unit.nva.model.EntityDescription;
-
 import java.util.function.Function;
+import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
 
 public final class TitleExtractor {
 

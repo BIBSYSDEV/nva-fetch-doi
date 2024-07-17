@@ -1,8 +1,8 @@
 package no.unit.nva.metadata.extractors;
 
+import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
 import no.unit.nva.metadata.type.Bibo;
 import no.unit.nva.metadata.type.DcTerms;
-import no.unit.nva.model.EntityDescription;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Literal;
 import org.eclipse.rdf4j.model.Statement;

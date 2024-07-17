@@ -1,15 +1,14 @@
 package no.unit.nva.metadata.service.testdata;
 
+import java.util.stream.Stream;
+import no.unit.nva.doi.fetch.commons.publication.model.contexttypes.Book;
+import no.unit.nva.doi.fetch.commons.publication.model.contexttypes.UnconfirmedJournal;
+import no.unit.nva.doi.fetch.commons.publication.model.instancetypes.AcademicArticle;
+import no.unit.nva.doi.fetch.commons.publication.model.instancetypes.AcademicMonograph;
 import no.unit.nva.metadata.type.Citation;
-import no.unit.nva.model.contexttypes.Book;
-import no.unit.nva.model.contexttypes.UnconfirmedJournal;
-import no.unit.nva.model.instancetypes.book.BookMonograph;
-import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
-
-import java.util.stream.Stream;
 
 public class TypeInformationArgumentsProvider implements ArgumentsProvider {
 
@@ -23,13 +22,13 @@ public class TypeInformationArgumentsProvider implements ArgumentsProvider {
                         Citation.ISBN.getMetaTagName(),
                         VALID_ISBN_INDICATING_BOOK,
                         Book.class,
-                        BookMonograph.class
+                        AcademicMonograph.class
                 ),
                 Arguments.of(
                         Citation.ISSN.getMetaTagName(),
                         VALID_ISSN_INDICATING_JOURNAL,
                         UnconfirmedJournal.class,
-                        JournalArticle.class
+                        AcademicArticle.class
                 )
         );
     }

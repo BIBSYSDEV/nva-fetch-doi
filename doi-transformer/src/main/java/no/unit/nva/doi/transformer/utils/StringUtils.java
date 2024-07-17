@@ -1,7 +1,6 @@
 package no.unit.nva.doi.transformer.utils;
 
 import static java.util.Objects.isNull;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
@@ -14,7 +13,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import no.unit.nva.model.pages.Range;
+import no.unit.nva.doi.fetch.commons.publication.model.Range;
 import nva.commons.core.JacocoGenerated;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -126,7 +125,7 @@ public final class StringUtils {
                 end = array[0];
             }
         }
-        return new Range.Builder().withBegin(start).withEnd(end).build();
+        return new Range(start, end);
     }
 
     @JacocoGenerated

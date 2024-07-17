@@ -1,6 +1,5 @@
 package no.unit.nva.doi.transformer;
 
-import static java.time.Instant.now;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -17,15 +16,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import no.sikt.nva.doi.fetch.jsonconfig.Json;
+import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
 import no.unit.nva.doi.transformer.language.LanguageMapper;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteAffiliation;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteCreator;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteResponse;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteRights;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.exceptions.InvalidIssnException;
+import no.unit.nva.doi.transformer.utils.InvalidIssnException;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.doi.DoiConverter;
 import org.junit.jupiter.api.Assertions;
@@ -36,10 +34,6 @@ public class DataciteResponseConverterTest {
 
     public static final String ENTRY_WITH_ALTERNATIVE_TITLE = "datacite_many_titles.json";
     public static final Path SAMPLE_DATACITE_RESPOSNE = Path.of("datacite_response.json");
-    private static final UUID SOME_ID = UUID.randomUUID();
-    private static final String SOME_OWNER = "SomeOwner";
-    private static final URI SOME_URI = URI.create("SomeUri");
-
 
     @Test
     void defaultConstructorExists() {
@@ -48,10 +42,9 @@ public class DataciteResponseConverterTest {
 
     @DisplayName("DataciteResponseConverter::toPublication returns valid JSON when input is valid")
     @Test
-    public void toPublicationReturnsValidJsonWhenInputIsValid() throws IOException, URISyntaxException,
-                                                                       InvalidIssnException {
+    public void toPublicationReturnsValidJsonWhenInputIsValid() throws IOException, InvalidIssnException {
         DataciteResponse dataciteResponse = sampleDataciteResponse();
-        Publication publication = toPublication(dataciteResponse);
+        CreatePublicationRequest publication = toPublication(dataciteResponse);
         String json = Json.writeValueAsString(publication);
         assertNotNull(json);
     }
@@ -61,7 +54,8 @@ public class DataciteResponseConverterTest {
                  + "many titles")
     public void publicationContainsAlternativeTitlesWithNonNullLanguageTagsWhenDatataciteDocumentHasManyTitles()
         throws IOException, URISyntaxException, InvalidIssnException {
-        Publication publication = readPublicationWithMultipleTitles();
+
+        CreatePublicationRequest publication = readPublicationWithMultipleTitles();
         Map<String, String> alternativeTitles = publication.getEntityDescription().getAlternativeTitles();
         Collection<String> languageTags = alternativeTitles.values();
         languageTags.forEach(Assertions::assertNotNull);
@@ -72,7 +66,7 @@ public class DataciteResponseConverterTest {
                  + " has many titles")
     public void publicationDoesNotContainMainTitleInAlternativeTItleWhenDataciteDocHasManyTitles()
         throws IOException, URISyntaxException, InvalidIssnException {
-        Publication publication = readPublicationWithMultipleTitles();
+        CreatePublicationRequest publication = readPublicationWithMultipleTitles();
         String mainTitle = publication.getEntityDescription().getMainTitle();
         Set<String> altTitles = publication.getEntityDescription().getAlternativeTitles().keySet();
         assertFalse(altTitles.contains(mainTitle));
@@ -83,11 +77,11 @@ public class DataciteResponseConverterTest {
                  + " many titles")
     public void publicationContainsAlternativeTitlesWithValidLanguageURisWhenDataciteDocHasManyTitles()
         throws IOException, URISyntaxException, InvalidIssnException {
-        Publication publication = readPublicationWithMultipleTitles();
+        CreatePublicationRequest publication = readPublicationWithMultipleTitles();
         Map<String, String> alternativeTitles = publication.getEntityDescription().getAlternativeTitles();
         Collection<String> languageTags = alternativeTitles.values();
         languageTags.forEach(Assertions::assertNotNull);
-        List<URI> languageUris = languageTags.stream().map(URI::create).collect(Collectors.toList());
+        List<URI> languageUris = languageTags.stream().map(URI::create).toList();
         List<URI> validUris = new ArrayList<>(LanguageMapper.languageUris());
         // for some reason hamcrest containsInAnyOrder does not want to work
         assertTrue(validUris.containsAll(languageUris));
@@ -101,7 +95,7 @@ public class DataciteResponseConverterTest {
         List<DataciteCreator> newContributors = new ArrayList<>(dataciteSample.getCreators());
         newContributors.add(getDataciteCreator());
         dataciteSample.setCreators(newContributors);
-        Publication publication = toPublication(dataciteSample);
+        CreatePublicationRequest publication = toPublication(dataciteSample);
         int actualNumberOfContributors = publication.getEntityDescription().getContributors().size();
         assertThat(actualNumberOfContributors, is(equalTo(expectedNumberOfContributors)));
     }
@@ -116,11 +110,9 @@ public class DataciteResponseConverterTest {
         assertTrue(hasOpenAccessRights);
     }
 
-    private Publication toPublication(DataciteResponse dataciteResponse)
-        throws URISyntaxException, InvalidIssnException {
+    private CreatePublicationRequest toPublication(DataciteResponse dataciteResponse) throws InvalidIssnException {
         DataciteResponseConverter converter = new DataciteResponseConverter(new DoiConverter(uri -> true));
-        return converter.toPublication(dataciteResponse, now(), UUID.randomUUID(), "junit",
-                                       URI.create("http://example.org/123"));
+        return converter.toPublication(dataciteResponse);
     }
 
     private DataciteResponse sampleDataciteResponse() throws IOException {
@@ -128,13 +120,12 @@ public class DataciteResponseConverterTest {
                               DataciteResponse.class);
     }
 
-    private Publication readPublicationWithMultipleTitles() throws IOException, URISyntaxException,
+    private CreatePublicationRequest readPublicationWithMultipleTitles() throws IOException, URISyntaxException,
                                                                    InvalidIssnException {
         String input = IoUtils.stringFromResources(Path.of(ENTRY_WITH_ALTERNATIVE_TITLE));
         DataciteResponseConverter converter = new DataciteResponseConverter(new DoiConverter(uri -> true));
         DataciteResponse response = Json.readValue(input, DataciteResponse.class);
-        return converter.toPublication(response, now(), SOME_ID,
-                                       SOME_OWNER, SOME_URI);
+        return converter.toPublication(response);
     }
 
     private DataciteCreator getDataciteCreator() {

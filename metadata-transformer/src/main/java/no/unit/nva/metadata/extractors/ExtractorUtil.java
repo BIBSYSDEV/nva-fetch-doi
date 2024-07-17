@@ -1,9 +1,8 @@
 package no.unit.nva.metadata.extractors;
 
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Reference;
-
 import static java.util.Objects.nonNull;
+import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
+import no.unit.nva.doi.fetch.commons.publication.model.Reference;
 
 public final class ExtractorUtil {
 

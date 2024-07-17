@@ -1,11 +1,10 @@
 package no.unit.nva.metadata.extractors;
 
-import no.unit.nva.metadata.type.DcTerms;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.PublicationDate;
-import org.eclipse.rdf4j.model.Statement;
-
 import java.util.function.Function;
+import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
+import no.unit.nva.doi.fetch.commons.publication.model.PublicationDate;
+import no.unit.nva.metadata.type.DcTerms;
+import org.eclipse.rdf4j.model.Statement;
 
 public final class DateExtractor {
     public static final String DATE_SEPARATOR = "-";
@@ -41,15 +40,9 @@ public final class DateExtractor {
         String[] dateParts = date.split(DATE_SEPARATOR);
         int dateKind = dateParts.length;
 
-        PublicationDate.Builder publicationDateBuilder = new PublicationDate.Builder()
-                .withYear(dateParts[YEAR_PART]);
-
-        if (dateKind > YEAR_ONLY) {
-            publicationDateBuilder.withMonth(dateParts[MONTH_PART]);
-        }
-        if (dateKind == FULL_DATE) {
-            publicationDateBuilder.withDay(dateParts[DAY_PART]);
-        }
-        return publicationDateBuilder.build();
+        var year = dateParts[YEAR_PART];
+        var month = (dateKind > YEAR_ONLY) ? dateParts[MONTH_PART] : null;
+        var day = (dateKind == FULL_DATE) ? dateParts[DAY_PART] : null;
+        return new PublicationDate(year, month, day);
     }
 }

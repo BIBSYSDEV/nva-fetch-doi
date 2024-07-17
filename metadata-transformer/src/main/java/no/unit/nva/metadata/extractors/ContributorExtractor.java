@@ -1,17 +1,14 @@
 package no.unit.nva.metadata.extractors;
 
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Identity;
-import no.unit.nva.model.NameType;
+import static java.util.Objects.isNull;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
-import no.unit.nva.model.role.Role;
-import no.unit.nva.model.role.RoleType;
-
-import static java.util.Objects.isNull;
-import static nva.commons.core.attempt.Try.attempt;
+import no.unit.nva.doi.fetch.commons.publication.model.Contributor;
+import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
+import no.unit.nva.doi.fetch.commons.publication.model.Identity;
+import no.unit.nva.doi.fetch.commons.publication.model.Role;
 
 public final class ContributorExtractor {
 
@@ -44,16 +41,14 @@ public final class ContributorExtractor {
     }
 
     private static Contributor createContributorWithoutCorrespondingAuthorInfo(ExtractionPair extractionPair) {
-        return attempt(() -> new Contributor.Builder()
-                .withRole(new RoleType(Role.CREATOR))
-                .withIdentity(extractIdentity(extractionPair.getStatementLiteral()))
-                .build()).orElseThrow();
+        var role = new Role("Creator");
+        var identity = extractIdentity(extractionPair.getStatementLiteral());
+
+        return new Contributor(role, identity, Collections.emptyList(), null);
     }
 
     private static Identity extractIdentity(String name) {
-        return new Identity.Builder()
-                .withName(name)
-                .withNameType(NameType.PERSONAL)
-                .build();
+        var nameType = "Personal";
+        return new Identity(null, name, nameType, null);
     }
 }

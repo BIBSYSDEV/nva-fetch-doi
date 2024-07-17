@@ -3,7 +3,6 @@ package no.unit.nva.doi.fetch;
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.emptySet;
 import static no.unit.nva.doi.fetch.RestApiConfig.restServiceObjectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -22,30 +21,22 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.time.Instant;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import no.unit.nva.doi.DoiProxyService;
 import no.unit.nva.doi.MetadataAndContentLocation;
+import no.unit.nva.doi.fetch.commons.publication.model.AssociatedArtifact;
+import no.unit.nva.doi.fetch.commons.publication.model.AssociatedLink;
+import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
+import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
-import no.unit.nva.doi.fetch.exceptions.UnsupportedDocumentTypeException;
 import no.unit.nva.doi.fetch.model.RequestBody;
 import no.unit.nva.doi.transformer.DoiTransformService;
-import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.metadata.CreatePublicationRequest;
+import no.unit.nva.doi.transformer.utils.InvalidIssnException;
 import no.unit.nva.metadata.service.MetadataService;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.Username;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.AssociatedLink;
-import no.unit.nva.model.exceptions.InvalidIsbnException;
-import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.TestHeaders;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -66,21 +57,21 @@ public class DoiHandlerTestUtils {
     CreatePublicationRequest expectedCreatePublicationRequest(boolean isDoi, URI metadataSource) {
         var expectedCreateRequest = new CreatePublicationRequest();
         expectedCreateRequest.setEntityDescription(expectedEntityDescription(isDoi, metadataSource));
-        if (isDoi) { // deserialization causes all collections to be empty:
-            expectedCreateRequest.setAdditionalIdentifiers(emptySet());
-            expectedCreateRequest.setFundings(emptyList());
-            expectedCreateRequest.setProjects(emptyList());
-            expectedCreateRequest.setSubjects(emptyList());
-            expectedCreateRequest.setImportDetails(emptyList());
-        }
+//        if (isDoi) { // deserialization causes all collections to be empty:
+//            expectedCreateRequest.setAdditionalIdentifiers(emptySet());
+//            expectedCreateRequest.setFundings(emptyList());
+//            expectedCreateRequest.setProjects(emptyList());
+//            expectedCreateRequest.setSubjects(emptyList());
+//            expectedCreateRequest.setImportDetails(emptyList());
+//        }
         expectedCreateRequest.setAssociatedArtifacts(
-            isDoi ? new AssociatedArtifactList() : artifactsWithLink(metadataSource));
+            isDoi ? Collections.emptyList() : artifactsWithLink(metadataSource));
 
         return expectedCreateRequest;
     }
 
-    private AssociatedArtifactList artifactsWithLink(URI metadataSource) {
-        return new AssociatedArtifactList(new AssociatedLink(metadataSource, null, null));
+    private List<AssociatedArtifact> artifactsWithLink(URI metadataSource) {
+        return List.of(new AssociatedLink(metadataSource));
     }
 
     private EntityDescription expectedEntityDescription(boolean isDoi, URI metadataSource) {
@@ -98,10 +89,9 @@ public class DoiHandlerTestUtils {
     }
 
     DoiTransformService mockDoiTransformServiceReturningSuccessfulResult()
-        throws URISyntaxException, IOException, InvalidIssnException,
-               InvalidIsbnException, UnsupportedDocumentTypeException {
+        throws IOException, InvalidIssnException {
         DoiTransformService service = mock(DoiTransformService.class);
-        when(service.transformPublication(anyString(), anyString(), anyString(), any()))
+        when(service.transformPublication(anyString(), anyString()))
             .thenReturn(getPublication());
         return service;
     }
@@ -124,20 +114,10 @@ public class DoiHandlerTestUtils {
         return service;
     }
 
-    private Publication getPublication() {
-        return new Publication.Builder()
-                   .withIdentifier(new SortableIdentifier(UUID.randomUUID().toString()))
-                   .withCreatedDate(Instant.now())
-                   .withModifiedDate(Instant.now())
-                   .withStatus(PublicationStatus.DRAFT)
-                   .withPublisher(new Organization.Builder().withId(URI.create("http://example.org/123")).build())
+    private CreatePublicationRequest getPublication() {
+        return new CreatePublicationRequest.Builder()
                    .withEntityDescription(new EntityDescription.Builder().withMainTitle(MAIN_TITLE).build())
-                   .withResourceOwner(randomResourceOwner())
                    .build();
-    }
-
-    private ResourceOwner randomResourceOwner() {
-        return new ResourceOwner(new Username(randomString()), randomUri());
     }
 
     DoiProxyService mockDoiProxyServiceReceivingSuccessfulResult()

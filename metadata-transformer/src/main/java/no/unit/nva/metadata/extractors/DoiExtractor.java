@@ -1,10 +1,8 @@
 package no.unit.nva.metadata.extractors;
 
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Reference;
-
 import java.net.URI;
 import java.util.function.Function;
+import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
 
 public final class DoiExtractor {
     public static final Function<ExtractionPair, EntityDescription> apply = DoiExtractor::extract;
@@ -21,8 +19,8 @@ public final class DoiExtractor {
     }
 
     private static void addDoi(ExtractionPair extractionPair) {
-        EntityDescription entityDescription = extractionPair.getEntityDescription();
-        Reference reference = ExtractorUtil.getReference(entityDescription);
+        var entityDescription = extractionPair.getEntityDescription();
+        var reference = ExtractorUtil.getReference(entityDescription);
         reference.setDoi(URI.create(extractionPair.getStatementLiteral()));
         entityDescription.setReference(reference);
     }

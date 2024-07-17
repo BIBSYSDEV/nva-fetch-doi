@@ -1,10 +1,7 @@
 package no.unit.nva.doi.transformer.model.crossrefmodel;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import nva.commons.core.JacocoGenerated;
-
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -14,6 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
+import nva.commons.core.JacocoGenerated;
 
 /**
  * Parses dates in the following (JSON) format.
@@ -122,35 +120,4 @@ public class CrossrefDate {
                 .map(d -> LocalDateTime.parse(this.dateTime, formatter))
                 .map(LocalDateTime::getYear);
     }
-
-    /**
-     * Converts crossrefDate to Instant if timestamp or needed dateparts are present.
-     * @return Instant of time given in either timestamp or dateparts[0]
-     */
-    public Instant toInstant() {
-        if (isaTimestamp()) {
-            return Instant.ofEpochMilli(getTimestamp());
-        } else if (isaCompleteDate()) {
-            return createInstant();
-        } else {
-            return null;
-        }
-    }
-
-    private boolean isaTimestamp() {
-        return getTimestamp() != 0;
-    }
-
-    private Instant createInstant() {
-        LocalDate date = LocalDate.of(
-                dateParts[FROM_DATE_INDEX_IN_DATE_ARRAY][YEAR_INDEX],
-                dateParts[FROM_DATE_INDEX_IN_DATE_ARRAY][MONTH_INDEX],
-                dateParts[FROM_DATE_INDEX_IN_DATE_ARRAY][DAY_INDEX]);
-        return date.atStartOfDay(ZoneId.systemDefault()).toInstant();
-    }
-
-    private boolean isaCompleteDate() {
-        return dateParts.length > 0 && dateParts[FROM_DATE_INDEX_IN_DATE_ARRAY].length > 2;
-    }
-
 }

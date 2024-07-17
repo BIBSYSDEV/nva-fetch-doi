@@ -1,6 +1,6 @@
 package no.unit.nva.metadata.extractors;
 
-import no.unit.nva.model.EntityDescription;
+import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
 import org.eclipse.rdf4j.model.Statement;
 
 import java.util.HashSet;
