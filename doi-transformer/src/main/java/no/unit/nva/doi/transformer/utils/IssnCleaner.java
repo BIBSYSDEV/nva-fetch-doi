@@ -1,13 +1,8 @@
 package no.unit.nva.doi.transformer.utils;
 
-
-
-import no.unit.nva.model.contexttypes.utils.IssnUtil;
-import no.unit.nva.model.exceptions.InvalidIssnException;
+import static java.util.Objects.isNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static java.util.Objects.isNull;
 
 
 public final class IssnCleaner {

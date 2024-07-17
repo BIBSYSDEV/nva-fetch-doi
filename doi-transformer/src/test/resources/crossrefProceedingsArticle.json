@@ -1,0 +1,292 @@
+{
+  "indexed": {
+    "date-parts": [
+      [
+        2023,
+        1,
+        10
+      ]
+    ],
+    "date-time": "2023-01-10T05:56:00Z",
+    "timestamp": 1673330160405
+  },
+  "publisher-location": "New York, NY, USA",
+  "reference-count": 6,
+  "publisher": "ACM",
+  "license": [
+    {
+      "start": {
+        "date-parts": [
+          [
+            2019,
+            7,
+            2
+          ]
+        ],
+        "date-time": "2019-07-02T00:00:00Z",
+        "timestamp": 1562025600000
+      },
+      "content-version": "vor",
+      "delay-in-days": 0,
+      "URL": "http://www.acm.org/publications/policies/copyright_policy#Background"
+    }
+  ],
+  "content-domain": {
+    "domain": [
+      "dl.acm.org"
+    ],
+    "crossmark-restriction": true
+  },
+  "short-container-title": [],
+  "published-print": {
+    "date-parts": [
+      [
+        2019,
+        7,
+        2
+      ]
+    ]
+  },
+  "DOI": "10.1145/3304221.3325530",
+  "type": "proceedings-article",
+  "created": {
+    "date-parts": [
+      [
+        2019,
+        7,
+        19
+      ]
+    ],
+    "date-time": "2019-07-19T17:44:24Z",
+    "timestamp": 1563558264000
+  },
+  "update-policy": "http://dx.doi.org/10.1145/crossmark-policy",
+  "source": "Crossref",
+  "is-referenced-by-count": 1,
+  "title": [
+    "1.5 Degrees of Separation"
+  ],
+  "prefix": "10.1145",
+  "author": [
+    {
+      "given": "Ian",
+      "family": "Pollock",
+      "sequence": "first",
+      "affiliation": [
+        {
+          "name": "California State University East Bay, Hayward, CA, USA"
+        }
+      ]
+    },
+    {
+      "given": "Bedour",
+      "family": "Alshaigy",
+      "sequence": "additional",
+      "affiliation": [
+        {
+          "name": "Oxford Brookes University, Oxford, United Kingdom"
+        }
+      ]
+    },
+    {
+      "given": "Andrew",
+      "family": "Bradley",
+      "sequence": "additional",
+      "affiliation": [
+        {
+          "name": "Oxford Brookes University, Oxford, United Kingdom"
+        }
+      ]
+    },
+    {
+      "given": "Birgit R.",
+      "family": "Krogstie",
+      "sequence": "additional",
+      "affiliation": [
+        {
+          "name": "Norwegian University of Science and Technology, Trondheim, Norway"
+        }
+      ]
+    },
+    {
+      "given": "Viraj",
+      "family": "Kumar",
+      "sequence": "additional",
+      "affiliation": [
+        {
+          "name": "Indian Institute of Science, Bengaluru, India"
+        }
+      ]
+    },
+    {
+      "given": "Linda",
+      "family": "Ott",
+      "sequence": "additional",
+      "affiliation": [
+        {
+          "name": "Michigan Technological University, Houghton, MI, USA"
+        }
+      ]
+    },
+    {
+      "given": "Anne-Kathrin",
+      "family": "Peters",
+      "sequence": "additional",
+      "affiliation": [
+        {
+          "name": "Uppsala University, Uppsala, Sweden"
+        }
+      ]
+    },
+    {
+      "given": "Charles",
+      "family": "Riedesel",
+      "sequence": "additional",
+      "affiliation": [
+        {
+          "name": "University of Nebraska - Lincoln, Lincoln, NE, USA"
+        }
+      ]
+    },
+    {
+      "given": "Charles",
+      "family": "Wallace",
+      "sequence": "additional",
+      "affiliation": [
+        {
+          "name": "Michigan Technological University, Houghton, MI, USA"
+        }
+      ]
+    }
+  ],
+  "member": "320",
+  "published-online": {
+    "date-parts": [
+      [
+        2019,
+        7,
+        2
+      ]
+    ]
+  },
+  "reference": [
+    {
+      "key": "e_1_3_2_1_1_1",
+      "volume-title": "The global e-waste monitor 2017: Quantities, flows and resources",
+      "author": "Balde Cornelis P",
+      "unstructured": "Cornelis P Balde , Vanessa Forti , Vanessa Gray , Ruediger Kuehr , and Paul Stegmann . 2017. The global e-waste monitor 2017: Quantities, flows and resources . United Nations University, International Telecommunication Union, and International Solid Waste Association . Cornelis P Balde, Vanessa Forti, Vanessa Gray, Ruediger Kuehr, and Paul Stegmann. 2017. The global e-waste monitor 2017: Quantities, flows and resources. United Nations University, International Telecommunication Union, and International Solid Waste Association."
+    },
+    {
+      "key": "e_1_3_2_1_3_1",
+      "volume-title": "No. Retrieved",
+      "author": "Chen Brian X.",
+      "year": "2017",
+      "unstructured": "Brian X. Chen . 2017 . A New Phone Comes Out. Yours Slows Down. A Conspiracy ? No. Retrieved January 24, 2019 from https://www.nytimes.com/2017/11/15/technology/personaltech/new-iphones-slow-tech-myth.html Brian X. Chen. 2017. A New Phone Comes Out. Yours Slows Down. A Conspiracy? No. Retrieved January 24, 2019 from https://www.nytimes.com/2017/11/15/technology/personaltech/new-iphones-slow-tech-myth.html"
+    },
+    {
+      "key": "e_1_3_2_1_4_1",
+      "volume-title": "Retrieved",
+      "author": "PLATE Consortium",
+      "year": "2019",
+      "unstructured": "PLATE Consortium . 2019 . Product Lifetime and the Environment . Retrieved January 24, 2019 from https://www.plateconference.org/ PLATE Consortium. 2019. Product Lifetime and the Environment. Retrieved January 24, 2019 from https://www.plateconference.org/"
+    },
+    {
+      "key": "e_1_3_2_1_5_1",
+      "volume-title": "Retrieved",
+      "author": "IPCC.",
+      "year": "2018",
+      "unstructured": "IPCC. 2018 . Special Report Global Warming of 1.5 C . Retrieved January 26, 2019 from https://www.ipcc.ch/sr15/ IPCC. 2018. Special Report Global Warming of 1.5 C. Retrieved January 26, 2019 from https://www.ipcc.ch/sr15/"
+    },
+    {
+      "key": "e_1_3_2_1_6_1",
+      "doi-asserted-by": "publisher",
+      "DOI": "10.1145/1709424.1709459"
+    },
+    {
+      "key": "e_1_3_2_1_7_1",
+      "volume-title": "Retrieved",
+      "author": "University of Minnesota.",
+      "year": "2012",
+      "unstructured": "University of Minnesota. 2012 . Expeditions in Computing: Understanding Climate Change. A Data Driven Approach . Retrieved January 20, 2019 from http://climatechange.cs.umn.edu/highlights.php University of Minnesota. 2012. Expeditions in Computing: Understanding Climate Change. A Data Driven Approach. Retrieved January 20, 2019 from http://climatechange.cs.umn.edu/highlights.php"
+    }
+  ],
+  "event": {
+    "name": "ITiCSE '19: Innovation and Technology in Computer Science Education",
+    "location": "Aberdeen Scotland Uk",
+    "acronym": "ITiCSE '19",
+    "sponsor": [
+      "SIGCSE ACM Special Interest Group on Computer Science Education"
+    ]
+  },
+  "container-title": [
+    "Proceedings of the 2019 ACM Conference on Innovation and Technology in Computer Science Education"
+  ],
+  "original-title": [],
+  "link": [
+    {
+      "URL": "https://dl.acm.org/doi/pdf/10.1145/3304221.3325530",
+      "content-type": "unspecified",
+      "content-version": "vor",
+      "intended-application": "similarity-checking"
+    }
+  ],
+  "deposited": {
+    "date-parts": [
+      [
+        2023,
+        1,
+        10
+      ]
+    ],
+    "date-time": "2023-01-10T01:57:54Z",
+    "timestamp": 1673315874000
+  },
+  "score": 1,
+  "resource": {
+    "primary": {
+      "URL": "https://dl.acm.org/doi/10.1145/3304221.3325530"
+    }
+  },
+  "subtitle": [
+    "Computer Science Education in the Age of the Anthropocene"
+  ],
+  "short-title": [],
+  "issued": {
+    "date-parts": [
+      [
+        2019,
+        7,
+        2
+      ]
+    ]
+  },
+  "references-count": 6,
+  "alternative-id": [
+    "10.1145/3304221.3325530",
+    "10.1145/3304221"
+  ],
+  "URL": "http://dx.doi.org/10.1145/3304221.3325530",
+  "relation": {},
+  "subject": [],
+  "published": {
+    "date-parts": [
+      [
+        2019,
+        7,
+        2
+      ]
+    ]
+  },
+  "assertion": [
+    {
+      "value": "2019-07-02",
+      "order": 2,
+      "name": "published",
+      "label": "Published",
+      "group": {
+        "name": "publication_history",
+        "label": "Publication History"
+      }
+    }
+  ]
+}

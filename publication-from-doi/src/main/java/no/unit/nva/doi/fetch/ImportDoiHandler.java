@@ -8,8 +8,9 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import no.sikt.nva.doi.fetch.jsonconfig.Json;
-import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.doi.DoiProxyService;
+import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
+import no.unit.nva.doi.fetch.commons.publication.model.PublicationResponse;
 import no.unit.nva.doi.fetch.exceptions.CreatePublicationException;
 import no.unit.nva.doi.fetch.exceptions.MalformedRequestException;
 import no.unit.nva.doi.fetch.model.RequestBody;
@@ -19,7 +20,6 @@ import no.unit.nva.doi.fetch.service.PublicationConverter;
 import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
 import no.unit.nva.doi.transformer.DoiTransformService;
 import no.unit.nva.doi.transformer.utils.CristinProxyClient;
-import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -35,7 +35,7 @@ public class ImportDoiHandler extends ApiGatewayHandler<RequestBody, Summary> {
     private final transient PublicationConverter publicationConverter;
     private final transient PublicationPersistenceService publicationPersistenceService;
     private final transient String publicationApiHost;
-    private FetchDoiService fetchDoiService;
+    private final FetchDoiService fetchDoiService;
 
     @SuppressWarnings("unused")
     @JacocoGenerated
@@ -73,12 +73,10 @@ public class ImportDoiHandler extends ApiGatewayHandler<RequestBody, Summary> {
         var apiUrl = urlToPublicationProxy();
         validate(input);
 
-        var owner = requestInfo.getUserName();
-        var customerId = requestInfo.getCurrentCustomer();
         var authHeader = requestInfo.getAuthHeader();
 
         var inputUri = input.getDoiUrl();
-        return attempt(() -> this.fetchDoiService.newCreatePublicationRequest(owner, customerId, inputUri))
+        return attempt(() -> this.fetchDoiService.newCreatePublicationRequest(inputUri))
                    .map(createPublicationRequest -> tryCreatePublication(authHeader, apiUrl, createPublicationRequest))
                    .map(response -> Json.convertValue(response, JsonNode.class))
                    .map(publicationConverter::toSummary)

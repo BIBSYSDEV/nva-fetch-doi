@@ -1,11 +1,11 @@
 package no.unit.nva.doi.fetch.service;
 
 import java.util.List;
+import no.unit.nva.doi.fetch.commons.publication.model.Contributor;
+import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
+import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
+import no.unit.nva.doi.fetch.commons.publication.model.Identity;
 import no.unit.nva.doi.transformer.utils.CristinProxyClient;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Identity;
-import no.unit.nva.model.Publication;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,8 +31,8 @@ public final class IdentityUpdater {
      * @return an updated publication with identifiers added to identities or the original if unchanged or exception
      *             occurs for some reason
      */
-    public static Publication enrichPublicationCreators(CristinProxyClient cristinProxyClient,
-                                                        Publication publication) {
+    public static CreatePublicationRequest enrichPublicationCreators(CristinProxyClient cristinProxyClient,
+                                                                     CreatePublicationRequest publication) {
 
         var possibleContributors = extractPossibleContributors(publication);
         possibleContributors.ifPresent(contributors -> tryUpdatingContributorsOrLogError(cristinProxyClient,
@@ -41,14 +41,15 @@ public final class IdentityUpdater {
         return publication;
     }
 
-    private static Optional<List<Contributor>> extractPossibleContributors(Publication publication) {
+    private static Optional<List<Contributor>> extractPossibleContributors(CreatePublicationRequest publication) {
         return Optional.ofNullable(publication)
-                   .map(Publication::getEntityDescription)
+                   .map(CreatePublicationRequest::getEntityDescription)
                    .map(EntityDescription::getContributors);
     }
 
     private static void tryUpdatingContributorsOrLogError(CristinProxyClient cristinProxyClient,
-                                                          Publication publication, List<Contributor> contributors) {
+                                                          CreatePublicationRequest publication,
+                                                          List<Contributor> contributors) {
         try {
             updateContributors(cristinProxyClient, publication, contributors);
         } catch (Exception e) {
@@ -56,23 +57,23 @@ public final class IdentityUpdater {
         }
     }
 
-    private static void updateContributors(CristinProxyClient cristinProxyClient, Publication publication,
+    private static void updateContributors(CristinProxyClient cristinProxyClient, CreatePublicationRequest publication,
                                            List<Contributor> contributors) {
         var contributorsWithOnlyOrcid = contributors.stream()
                                             .filter(IdentityUpdater::hasOrcidButNotIdentifier).toList();
         if (contributorsWithOnlyOrcid.size() > MAX_CONTRIBUTORS_TO_LOOKUP) {
-            logger.warn("Skipper updateContributors as too many without known cristin-identifier "
-                        + publication.getIdentifier());
+            logger.warn("Skipping updateContributors as too many without known cristin-identifier: {}",
+                        publication.getEntityDescription().getMetadataSource());
             return;
         }
 
         contributorsWithOnlyOrcid
-            .forEach(contributor -> updateIdentifierIfFoundFromOrcid(cristinProxyClient, contributor.getIdentity())
+            .forEach(contributor -> updateIdentifierIfFoundFromOrcid(cristinProxyClient, contributor.identity())
         );
     }
 
     private static boolean hasOrcidButNotIdentifier(Contributor contributor) {
-        var identity = contributor.getIdentity();
+        var identity = contributor.identity();
         return nonNull(identity) && isNull(identity.getId()) && nonNull(identity.getOrcId());
     }
 

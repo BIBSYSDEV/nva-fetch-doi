@@ -12,10 +12,8 @@ import static no.unit.nva.doi.transformer.utils.CrossrefType.BOOK_CHAPTER;
 import static no.unit.nva.doi.transformer.utils.CrossrefType.EDITED_BOOK;
 import static no.unit.nva.doi.transformer.utils.CrossrefType.JOURNAL_ARTICLE;
 import static no.unit.nva.doi.transformer.utils.CrossrefType.getByType;
-import static nva.commons.core.StringUtils.isNotEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -26,8 +24,29 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
+import no.unit.nva.doi.fetch.commons.publication.model.Agent;
+import no.unit.nva.doi.fetch.commons.publication.model.Contributor;
+import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
+import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
+import no.unit.nva.doi.fetch.commons.publication.model.Identity;
+import no.unit.nva.doi.fetch.commons.publication.model.MonographPages;
+import no.unit.nva.doi.fetch.commons.publication.model.PublicationContext;
+import no.unit.nva.doi.fetch.commons.publication.model.PublicationDate;
+import no.unit.nva.doi.fetch.commons.publication.model.PublicationInstance;
+import no.unit.nva.doi.fetch.commons.publication.model.Range;
+import no.unit.nva.doi.fetch.commons.publication.model.Reference;
+import no.unit.nva.doi.fetch.commons.publication.model.Role;
+import no.unit.nva.doi.fetch.commons.publication.model.UnconfirmedOrganization;
+import no.unit.nva.doi.fetch.commons.publication.model.UnconfirmedPublisher;
+import no.unit.nva.doi.fetch.commons.publication.model.contexttypes.Anthology;
+import no.unit.nva.doi.fetch.commons.publication.model.contexttypes.Book;
+import no.unit.nva.doi.fetch.commons.publication.model.contexttypes.UnconfirmedJournal;
+import no.unit.nva.doi.fetch.commons.publication.model.contexttypes.UnconfirmedSeries;
+import no.unit.nva.doi.fetch.commons.publication.model.instancetypes.AcademicArticle;
+import no.unit.nva.doi.fetch.commons.publication.model.instancetypes.AcademicChapter;
+import no.unit.nva.doi.fetch.commons.publication.model.instancetypes.AcademicMonograph;
+import no.unit.nva.doi.fetch.commons.publication.model.instancetypes.BookAnthology;
 import no.unit.nva.doi.fetch.exceptions.UnsupportedDocumentTypeException;
 import no.unit.nva.doi.transformer.language.LanguageMapper;
 import no.unit.nva.doi.transformer.language.SimpleLanguageDetector;
@@ -36,48 +55,13 @@ import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefAffiliation;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefContributor;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate;
 import no.unit.nva.doi.transformer.model.crossrefmodel.Isxn;
-import no.unit.nva.doi.transformer.model.crossrefmodel.Link;
 import no.unit.nva.doi.transformer.utils.CrossrefType;
 import no.unit.nva.doi.transformer.utils.IsbnCleaner;
 import no.unit.nva.doi.transformer.utils.IssnCleaner;
 import no.unit.nva.doi.transformer.utils.PublicationType;
 import no.unit.nva.doi.transformer.utils.StringUtils;
 import no.unit.nva.doi.transformer.utils.TextLang;
-import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.Corporation;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Identity;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.Reference;
-import no.unit.nva.model.ResearchProject;
-import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.UnconfirmedOrganization;
-import no.unit.nva.model.Username;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.contexttypes.Anthology;
-import no.unit.nva.model.contexttypes.Book;
-import no.unit.nva.model.contexttypes.PublicationContext;
-import no.unit.nva.model.contexttypes.UnconfirmedJournal;
-import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
-import no.unit.nva.model.contexttypes.UnconfirmedSeries;
-import no.unit.nva.model.exceptions.InvalidIsbnException;
-import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.book.AcademicMonograph;
-import no.unit.nva.model.instancetypes.book.BookAnthology;
-import no.unit.nva.model.instancetypes.book.BookMonograph;
-import no.unit.nva.model.instancetypes.chapter.AcademicChapter;
-import no.unit.nva.model.instancetypes.journal.AcademicArticle;
-import no.unit.nva.model.instancetypes.journal.JournalArticle;
-import no.unit.nva.model.pages.MonographPages;
-import no.unit.nva.model.pages.Range;
-import no.unit.nva.model.role.Role;
-import no.unit.nva.model.role.RoleType;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.attempt.Failure;
-import nva.commons.core.exceptions.ExceptionUtils;
 import nva.commons.doi.DoiConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,7 +80,6 @@ public class CrossRefConverter extends AbstractConverter {
     public static final String CANNOT_CREATE_REFERENCE_FOR_PUBLICATION = ", cannot create reference for publication";
     public static final String NULL_SERIES_NUMBER = null;
     private static final Logger logger = LoggerFactory.getLogger(CrossRefConverter.class);
-    private static final URI UNDEFINED_AFFILIATION = null;
 
     public CrossRefConverter() {
         this(new DoiConverter());
@@ -106,39 +89,29 @@ public class CrossRefConverter extends AbstractConverter {
         super(new SimpleLanguageDetector(), doiConverter);
     }
 
-    /**
-     * Creates a publication.
-     *
-     * @param document   a Java representation of a CrossRef document.
-     * @param owner      the owning institution.
-     * @param identifier the publication identifier.
-     * @return an internal representation of the publication.
-     */
-    public Publication toPublication(CrossRefDocument document,
-                                     String owner,
-                                     UUID identifier) {
+    public CreatePublicationRequest toPublication(CrossRefDocument document) {
 
         if (document != null && hasTitle(document)) {
-            return new Publication.Builder()
-                       .withCreatedDate(extractInstantFromCrossrefDate(document.getCreated()))
-                       .withModifiedDate(extractInstantFromCrossrefDate(document.getDeposited()))
-                       .withPublishedDate(extractInstantFromCrossrefDate(document.getIssued()))
-                       .withResourceOwner(new ResourceOwner(new Username(owner), UNDEFINED_AFFILIATION))
-                       .withDoi(extractDOI(document)) // Cheating by using URL not DOI ?
-                       .withIdentifier(new SortableIdentifier(identifier.toString()))
-                       .withStatus(DEFAULT_NEW_PUBLICATION_STATUS)
-                       .withIndexedDate(extractInstantFromCrossrefDate(document.getIndexed()))
-                       .withLink(extractFulltextLinkAsUri(document))
-                       .withProjects(createProjects())
-                       .withAssociatedArtifacts(createAssociatedArtifactList())
+            return new CreatePublicationRequest.Builder()
+                       //.withCreatedDate(extractInstantFromCrossrefDate(document.getCreated()))
+                       //.withModifiedDate(extractInstantFromCrossrefDate(document.getDeposited()))
+                       //.withPublishedDate(extractInstantFromCrossrefDate(document.getIssued()))
+                       //.withResourceOwner(new ResourceOwner(new Username(owner), UNDEFINED_AFFILIATION))
+                       //.withDoi(extractDOI(document)) // Cheating by using URL not DOI ?
+                       //.withIdentifier(new SortableIdentifier(identifier.toString()))
+                       //.withStatus(DEFAULT_NEW_PUBLICATION_STATUS)
+                       //.withIndexedDate(extractInstantFromCrossrefDate(document.getIndexed()))
+                       //.withLink(extractFulltextLinkAsUri(document))
+                       //.withProjects(createProjects())
+                       //.withAssociatedArtifacts(createAssociatedArtifactList())
                        .withEntityDescription(new EntityDescription.Builder()
                                                   .withContributors(toContributors(document))
                                                   .withPublicationDate(extractIssuedDate(document))
                                                   .withMainTitle(extractTitle(document))
                                                   .withAlternativeTitles(extractAlternativeTitles(document))
-                                                  .withAbstract(extractAbstract(document))
+                                                  .withMainAbstract(extractAbstract(document))
                                                   .withLanguage(extractLanguage(document))
-                                                  .withNpiSubjectHeading(extractNpiSubjectHeading())
+                                                  //.withNpiSubjectHeading(extractNpiSubjectHeading())
                                                   .withTags(extractSubject(document))
                                                   .withReference(extractReference(document))
                                                   .withMetadataSource(extractMetadataSource(document))
@@ -151,19 +124,19 @@ public class CrossRefConverter extends AbstractConverter {
     protected List<Contributor> toContributors(CrossRefDocument document) {
 
         List<Contributor> contributors = new ArrayList<>();
-        contributors.addAll(toContributorsWithRole(document.getAuthor(), new RoleType(Role.CREATOR)));
-        contributors.addAll(toContributorsWithRole(document.getEditor(), new RoleType(Role.EDITOR)));
+        contributors.addAll(toContributorsWithRole(document.getAuthor(), new Role("Creator")));
+        contributors.addAll(toContributorsWithRole(document.getEditor(), new Role("Editor")));
         return contributors;
     }
 
-    protected List<Contributor> toContributorsWithRole(List<CrossrefContributor> crossrefContributors, RoleType role) {
+    protected List<Contributor> toContributorsWithRole(List<CrossrefContributor> crossrefContributors, Role role) {
         List<CrossrefContributor> contributorsWithName = removeContributorsWithoutNames(crossrefContributors);
         return convertCrossRefContributorsToNvaContributors(contributorsWithName, role);
     }
 
     private List<Contributor> convertCrossRefContributorsToNvaContributors(
         List<CrossrefContributor> crossrefContributors,
-        RoleType role) {
+        Role role) {
         List<Contributor> nvaContributors = new ArrayList<>();
         for (int index = 0; index < crossrefContributors.size(); index++) {
             int authorSequence = index + 1;
@@ -186,11 +159,6 @@ public class CrossRefConverter extends AbstractConverter {
     private boolean hasName(CrossrefContributor crossrefContributor) {
         return nva.commons.core.StringUtils.isNotBlank(crossrefContributor.getFamilyName())
                || nva.commons.core.StringUtils.isNotBlank(crossrefContributor.getGivenName());
-    }
-
-    private URI extractDOI(CrossRefDocument document) {
-        final String urlString = document.getUrl();
-        return isNotEmpty(urlString) ? URI.create(urlString) : null;
     }
 
     private URI extractMetadataSource(CrossRefDocument document) {
@@ -218,16 +186,13 @@ public class CrossRefConverter extends AbstractConverter {
 
     private Reference extractReference(CrossRefDocument document) {
         try {
-            PublicationInstance<?> instance = extractPublicationInstance(document);
+            PublicationInstance instance = extractPublicationInstance(document);
             PublicationContext context = extractPublicationContext(document);
             return new Reference.Builder()
                        .withDoi(doiConverter.toUri(document.getDoi()))
-                       .withPublishingContext(context)
+                       .withPublicationContext(context)
                        .withPublicationInstance(instance)
                        .build();
-        } catch (InvalidIssnException | InvalidIsbnException e) {
-            // The exceptions are logged elsewhere
-            return null;
         } catch (UnsupportedDocumentTypeException e) {
             logger.error(String.format(UNRECOGNIZED_TYPE_MESSAGE + CANNOT_CREATE_REFERENCE_FOR_PUBLICATION,
                                        document.getType()));
@@ -242,12 +207,12 @@ public class CrossRefConverter extends AbstractConverter {
     private MonographPages extractMonographPages(CrossRefDocument document) {
         String pages = document.getPage();
         return isNull(pages)
-                   ? new MonographPages.Builder().build()
-                   : new MonographPages.Builder().withPages(pages).build();
+                   ? new MonographPages(null)
+                   : new MonographPages(pages);
     }
 
     private PublicationContext extractPublicationContext(CrossRefDocument document)
-        throws UnsupportedDocumentTypeException, InvalidIssnException, InvalidIsbnException {
+        throws UnsupportedDocumentTypeException {
 
         CrossrefType crossrefType = getByType(document.getType());
         return createContext(document, crossrefType.getPublicationType());
@@ -255,7 +220,7 @@ public class CrossRefConverter extends AbstractConverter {
 
     @JacocoGenerated
     private PublicationContext createContext(CrossRefDocument document, PublicationType publicationType)
-        throws UnsupportedDocumentTypeException, InvalidIssnException, InvalidIsbnException {
+        throws UnsupportedDocumentTypeException {
         if (publicationType == PublicationType.JOURNAL_CONTENT) {
             return createJournalContext(document);
         } else if (publicationType == PublicationType.BOOK) {
@@ -269,7 +234,7 @@ public class CrossRefConverter extends AbstractConverter {
         }
     }
 
-    private Book createBookContext(CrossRefDocument document) throws InvalidIssnException {
+    private Book createBookContext(CrossRefDocument document) {
         return new Book(
             new UnconfirmedSeries(
                 extractSeriesTitle(document),
@@ -277,16 +242,15 @@ public class CrossRefConverter extends AbstractConverter {
                 extractOnlineIssn(document)),
             NULL_SERIES_NUMBER,
             new UnconfirmedPublisher(extractPublisherName(document)),
-            extractIsbnList(document),
-            null
+            extractIsbnList(document)
         );
     }
 
     private Anthology createAnthologyContext() {
-        return new Anthology();
+        return new Anthology(null);
     }
 
-    private UnconfirmedJournal createJournalContext(CrossRefDocument document) throws InvalidIssnException {
+    private UnconfirmedJournal createJournalContext(CrossRefDocument document) {
         // TODO actually call the Channel Register API and get the relevant details
         return new UnconfirmedJournal(
             extractJournalTitle(document),
@@ -356,20 +320,20 @@ public class CrossRefConverter extends AbstractConverter {
                    .orElse(null);
     }
 
-    private PublicationInstance<?> extractPublicationInstance(CrossRefDocument document)
+    private PublicationInstance extractPublicationInstance(CrossRefDocument document)
         throws UnsupportedDocumentTypeException {
         CrossrefType byType = getByType(document.getType());
-        if (byType == JOURNAL_ARTICLE) {
-            return createJournalArticle(document);
-        } else if (byType == BOOK) {
+        if (JOURNAL_ARTICLE.equals(byType)) {
+            return academicArticle(document);
+        } else if (BOOK.equals(byType)) {
             if (hasEditor(document)) {
                 return createBookAnthology(document);
             } else {
                 return createBookMonograph(document);
             }
-        } else if (byType == BOOK_CHAPTER) {
+        } else if (BOOK_CHAPTER.equals(byType)) {
             return createChapterArticle(document);
-        } else if (byType == EDITED_BOOK) {
+        } else if (EDITED_BOOK.equals(byType)) {
             return createBookAnthology(document);
         }
         throw new UnsupportedDocumentTypeException(String.format(UNRECOGNIZED_TYPE_MESSAGE, document.getType()));
@@ -383,16 +347,17 @@ public class CrossRefConverter extends AbstractConverter {
         return new BookAnthology(extractMonographPages(document));
     }
 
-    private BookMonograph createBookMonograph(CrossRefDocument document) {
-        return new AcademicMonograph(extractMonographPages(document));
+    private AcademicMonograph createBookMonograph(CrossRefDocument document) {
+        return new AcademicMonograph("AcademicMonograph", extractMonographPages(document));
     }
 
     private AcademicChapter createChapterArticle(CrossRefDocument document) {
-        return new AcademicChapter(extractRangePages(document));
+        return new AcademicChapter("AcademicChapter", extractRangePages(document));
     }
 
-    private JournalArticle createJournalArticle(CrossRefDocument document) {
-        return new AcademicArticle(extractRangePages(document), document.getVolume(), document.getIssue(), null);
+    private AcademicArticle academicArticle(CrossRefDocument document) {
+        return new AcademicArticle("AcademicArticle",
+                                   extractRangePages(document), document.getVolume(), document.getIssue());
     }
 
     private String extractJournalTitle(CrossRefDocument document) {
@@ -461,15 +426,8 @@ public class CrossRefConverter extends AbstractConverter {
         final int year = fromDatePart[YEAR_INDEX];
         final int month = fromDatePart.length > MONTH_INDEX ? fromDatePart[MONTH_INDEX] : FIRST_MONTH_IN_YEAR;
         final int day = fromDatePart.length > DAY_INDEX ? fromDatePart[DAY_INDEX] : FIRST_DAY_IN_MONTH;
-        return new PublicationDate.Builder()
-                   .withYear(String.valueOf(year))
-                   .withMonth(String.valueOf(month))
-                   .withDay(String.valueOf(day))
-                   .build();
-    }
 
-    private Instant extractInstantFromCrossrefDate(CrossrefDate crossrefDate) {
-        return nonNull(crossrefDate) ? crossrefDate.toInstant() : null;
+        return new PublicationDate(String.valueOf(year), String.valueOf(month), String.valueOf(day));
     }
 
     /**
@@ -481,12 +439,11 @@ public class CrossRefConverter extends AbstractConverter {
      * @return an Optional Contributor object if the transformation succeeds.
      */
     private Contributor toContributorWithRole(CrossrefContributor contributor,
-                                              RoleType role,
+                                              Role role,
                                               int registrationSequence) {
-        Identity identity = new Identity.Builder()
-                                .withName(toName(contributor.getGivenName(), contributor.getFamilyName()))
-                                .withOrcId(contributor.getOrcid())
-                                .build();
+        var identity = new Identity(null, toName(contributor.getGivenName(), contributor.getFamilyName()),
+                                    "Personal",
+                                    contributor.getOrcid());
         final Contributor.Builder contributorBuilder = new Contributor.Builder();
         if (nonNull(contributor.getAffiliation())) {
             contributorBuilder.withAffiliations(getAffiliations(contributor.getAffiliation()));
@@ -499,54 +456,18 @@ public class CrossRefConverter extends AbstractConverter {
                    .orElseThrow();
     }
 
-    private List<Corporation> getAffiliations(List<CrossrefAffiliation> crossrefAffiliations) {
+    private List<Agent> getAffiliations(List<CrossrefAffiliation> crossrefAffiliations) {
         return crossrefAffiliations.stream()
                    .map(CrossrefAffiliation::getName)
                    .map(this::createOrganization)
                    .collect(Collectors.toList());
     }
 
-    private Corporation createOrganization(String name) {
+    private Agent createOrganization(String name) {
         return new UnconfirmedOrganization(name);
     }
 
     private List<String> extractSubject(CrossRefDocument document) {
         return Optional.ofNullable(document.getSubject()).orElse(Collections.emptyList());
-    }
-
-    private String extractNpiSubjectHeading() {
-        return null;
-    }
-
-    private AssociatedArtifactList createAssociatedArtifactList() {
-        return new AssociatedArtifactList(Collections.emptyList());
-    }
-
-    private List<ResearchProject> createProjects() {
-        return Collections.emptyList();
-    }
-
-    private URI extractFulltextLinkAsUri(CrossRefDocument document) {
-        return extractFirstLinkToSourceDocument(document.getLink()).orElse(null);
-    }
-
-    private Optional<URI> extractFirstLinkToSourceDocument(List<Link> links) {
-        return hasLink(links) ? getFirstLinkAsUri(links) : Optional.empty();
-    }
-
-    private Optional<URI> getFirstLinkAsUri(List<Link> links) {
-        return links.stream()
-                   .findFirst()
-                   .map(Link::getUrl)
-                   .map(attempt(URI::create))
-                   .flatMap(attempt -> attempt.toOptional(this::handleMalformedUriException));
-    }
-
-    private void handleMalformedUriException(Failure<URI> fail) {
-        logger.warn(ExceptionUtils.stackTraceInSingleLine(fail.getException()));
-    }
-
-    private boolean hasLink(List<Link> links) {
-        return nonNull(links) && !links.isEmpty();
     }
 }

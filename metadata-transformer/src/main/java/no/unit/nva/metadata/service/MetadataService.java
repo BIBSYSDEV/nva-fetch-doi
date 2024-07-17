@@ -21,7 +21,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import no.sikt.nva.doi.fetch.jsonconfig.Json;
-import no.unit.nva.metadata.CreatePublicationRequest;
+import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
 import no.unit.nva.metadata.MetadataConverter;
 import no.unit.nva.metadata.type.Bibo;
 import no.unit.nva.metadata.type.Citation;
@@ -271,7 +271,7 @@ public class MetadataService {
     
     private HttpResponse<String> sendQueryToPublicationChannelsProxy(String term, int year)
         throws IOException, InterruptedException {
-        var searchTerm = URLEncoder.encode(term, StandardCharsets.UTF_8.toString());
+        var searchTerm = URLEncoder.encode(term, StandardCharsets.UTF_8);
         var uri = UriWrapper.fromUri(publicationChannelsHostUri)
                       .addQueryParameter(QUERY_PARAM_QUERY, searchTerm)
                       .addQueryParameter(QUERY_PARAM_YEAR, Integer.toString(year))
@@ -288,7 +288,7 @@ public class MetadataService {
     
     private HttpResponse<String> sendQueryToPublicationChannelsProxy(String term)
         throws IOException, InterruptedException {
-        var searchTerm = URLEncoder.encode(term, StandardCharsets.UTF_8.toString());
+        var searchTerm = URLEncoder.encode(term, StandardCharsets.UTF_8);
         var uri = UriWrapper.fromUri(publicationChannelsHostUriPublisher)
                       .addQueryParameter(QUERY_PARAM_QUERY, searchTerm)
                       .getUri();

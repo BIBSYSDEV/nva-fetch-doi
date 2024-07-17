@@ -1,12 +1,10 @@
 package no.unit.nva.metadata.extractors;
 
-import no.unit.nva.model.EntityDescription;
-
+import static java.util.Objects.nonNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-
-import static java.util.Objects.nonNull;
+import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
 
 public final class TagExtractor {
     public static final Function<ExtractionPair, EntityDescription> apply = TagExtractor::extract;

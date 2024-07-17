@@ -5,25 +5,16 @@ import static no.unit.nva.doi.transformer.MetadataLocation.DATACITE_STRING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.stream.IntStream;
-
-import no.unit.nva.doi.fetch.exceptions.UnsupportedDocumentTypeException;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.exceptions.InvalidIsbnException;
-import no.unit.nva.model.exceptions.InvalidIssnException;
+import no.unit.nva.doi.transformer.utils.InvalidIssnException;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.doi.DoiConverter;
 import org.junit.jupiter.api.Test;
 
 class DoiTransformServiceTest {
 
-    public static final String OWNER = "owner";
-    public static final URI CUSTOMER_ID = URI.create("http://example.org/publisher/123");
     public static final Path CROSSREF_JSON_PATH = Path.of("crossref.json");
     public static final Path CROSSREF_BOOK_JSON_PATH = Path.of("crossref_sample_book.json");
     public static final Path CROSSREF_SEQUENCE_SAMPLE_JSON_PATH = Path.of("crossref_sample_creator_sequence.json");
@@ -33,88 +24,84 @@ class DoiTransformServiceTest {
 
     @Test
     void transFormPublicationReturnsPublicationOnValidCrossrefBody()
-            throws URISyntaxException, InvalidIssnException,
-            JsonProcessingException, InvalidIsbnException, UnsupportedDocumentTypeException {
+        throws JsonProcessingException, InvalidIssnException {
         DoiTransformService doiTransformService = getDoiTransformService();
         String crossrefBody = IoUtils.stringFromResources(CROSSREF_JSON_PATH);
 
-        Publication publication = doiTransformService.transformPublication(crossrefBody, CROSSREF_STRING, OWNER,
-            CUSTOMER_ID);
+        var publication = doiTransformService.transformPublication(crossrefBody, CROSSREF_STRING);
 
         assertNotNull(publication);
-        assertEquals(OWNER, publication.getResourceOwner().getOwner().getValue());
+        // TODO: assertEquals(OWNER, publication.getResourceOwner().getOwner().getValue());
     }
 
     @Test
     void transFormBookPublicationReturnsPublicationOnValidCrossrefBody()
-            throws URISyntaxException, InvalidIssnException,
-            JsonProcessingException, InvalidIsbnException, UnsupportedDocumentTypeException {
+        throws InvalidIssnException, JsonProcessingException {
+
         DoiTransformService doiTransformService = getDoiTransformService();
         String crossrefBody = IoUtils.stringFromResources(CROSSREF_BOOK_JSON_PATH);
 
-        Publication publication = doiTransformService.transformPublication(crossrefBody, CROSSREF_STRING, OWNER,
-                CUSTOMER_ID);
+        var publication = doiTransformService.transformPublication(crossrefBody, CROSSREF_STRING);
 
         assertNotNull(publication);
-        assertEquals(OWNER, publication.getResourceOwner().getOwner().getValue());
+        // TODO: assertEquals(OWNER, publication.getResourceOwner().getOwner().getValue());
     }
 
     @Test
     void transFormEditBookPublicationReturnsPublicationOnValidCrossrefBody()
-        throws URISyntaxException, InvalidIssnException,
-               JsonProcessingException, InvalidIsbnException, UnsupportedDocumentTypeException {
+        throws InvalidIssnException, JsonProcessingException {
         DoiTransformService doiTransformService = getDoiTransformService();
         String crossrefBody = IoUtils.stringFromResources(CROSSREF_EDIT_BOOK_JSON_PATH);
 
-        Publication publication = doiTransformService.transformPublication(crossrefBody, CROSSREF_STRING, OWNER,
-                                                                           CUSTOMER_ID);
+        var publication = doiTransformService.transformPublication(crossrefBody, CROSSREF_STRING);
 
         assertNotNull(publication);
-        assertEquals(OWNER, publication.getResourceOwner().getOwner().getValue());
+        // TODO: assertEquals(OWNER, publication.getResourceOwner().getOwner().getValue());
     }
 
     @Test
-    void transformPublicationWithXmlAbstractReturnsPublicationWithoutXml() throws URISyntaxException,
-            InvalidIssnException, JsonProcessingException, InvalidIsbnException, UnsupportedDocumentTypeException {
+    void transformPublicationWithXmlAbstractReturnsPublicationWithoutXml()
+        throws InvalidIssnException, JsonProcessingException {
+
         DoiTransformService doiTransformService = getDoiTransformService();
         String crossRefBody = IoUtils.stringFromResources(CROSSREF_WITH_XML_ASTRACT_JSON_PATH);
-        Publication publication = doiTransformService.transformPublication(crossRefBody, CROSSREF_STRING, OWNER,
-                CUSTOMER_ID);
-        String publicationAbstract = publication.getEntityDescription().getAbstract();
+
+        var publication = doiTransformService.transformPublication(crossRefBody, CROSSREF_STRING);
+
+        String publicationAbstract = publication.getEntityDescription().getMainAbstract();
         assertFalse(publicationAbstract.contains("<"));
     }
 
     @Test
-    void transFormPublicationReturnsPublicationOnValidDataciteBody() throws URISyntaxException,
-            InvalidIssnException, JsonProcessingException, InvalidIsbnException, UnsupportedDocumentTypeException {
+    void transFormPublicationReturnsPublicationOnValidDataciteBody()
+        throws InvalidIssnException, JsonProcessingException {
+
         DoiTransformService doiTransformService = getDoiTransformService();
         String crossrefBody = IoUtils.stringFromResources(DATACITE_JSON_PATH);
 
-        Publication publication = doiTransformService.transformPublication(crossrefBody, DATACITE_STRING, OWNER,
-            CUSTOMER_ID);
+        var publication = doiTransformService.transformPublication(crossrefBody, DATACITE_STRING);
 
         assertNotNull(publication);
-        assertEquals(OWNER, publication.getResourceOwner().getOwner().getValue());
+        // TODO: assertEquals(OWNER, publication.getResourceOwner().getOwner().getValue());
     }
 
     @Test
     void transFormPublicationReturnsSequentialEnumeratedContributorsAndIgnoringTextualSequence()
-            throws URISyntaxException, InvalidIssnException,
-            JsonProcessingException, InvalidIsbnException, UnsupportedDocumentTypeException {
+        throws InvalidIssnException, JsonProcessingException {
+
         DoiTransformService doiTransformService = getDoiTransformService();
         String crossrefBody = IoUtils.stringFromResources(CROSSREF_SEQUENCE_SAMPLE_JSON_PATH);
-        Publication publication = doiTransformService.transformPublication(crossrefBody, CROSSREF_STRING, OWNER,
-                CUSTOMER_ID);
+        var publication = doiTransformService.transformPublication(crossrefBody, CROSSREF_STRING);
 
         var contributors = publication.getEntityDescription().getContributors();
         assertNotNull(contributors);
         IntStream.range(0, contributors.size())
-                .forEachOrdered(i -> assertEquals(i + 1, contributors.get(i).getSequence()));
+            .forEachOrdered(i -> assertEquals(i + 1, contributors.get(i).sequence()));
     }
 
     private DoiTransformService getDoiTransformService() {
         DoiConverter doiConverter = new DoiConverter(uri -> true);
         return new DoiTransformService(new DataciteResponseConverter(doiConverter),
-                new CrossRefConverter(doiConverter));
+                                       new CrossRefConverter(doiConverter));
     }
 }

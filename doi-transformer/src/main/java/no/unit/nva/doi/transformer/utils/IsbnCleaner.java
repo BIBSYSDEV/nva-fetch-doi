@@ -1,6 +1,5 @@
 package no.unit.nva.doi.transformer.utils;
 
-import no.unit.nva.model.exceptions.InvalidIsbnException;
 import org.apache.commons.validator.routines.ISBNValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +17,7 @@ public final class IsbnCleaner {
     public static final String EMPTY_STRING = "";
 
     private static final Logger logger = LoggerFactory.getLogger(IsbnCleaner.class);
-    public static final String ERROR_WHEN_TRYING_TO_CLEAN_ISSN = "Error when trying to clean ISBN: ";
+    public static final String ERROR_WHEN_TRYING_TO_CLEAN_ISSN = "Error when trying to clean ISBN: {}";
 
     private IsbnCleaner() {
     }
@@ -36,7 +35,7 @@ public final class IsbnCleaner {
         try {
             return checkIsbn(isbnCandidate);
         } catch (InvalidIsbnException e) {
-            logger.warn(ERROR_WHEN_TRYING_TO_CLEAN_ISSN + e.getMessage());
+            logger.warn(ERROR_WHEN_TRYING_TO_CLEAN_ISSN, e.getMessage());
             return null;
         }
     }

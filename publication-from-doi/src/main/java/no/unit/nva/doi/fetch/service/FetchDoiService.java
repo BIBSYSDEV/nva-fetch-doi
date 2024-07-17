@@ -1,45 +1,24 @@
 package no.unit.nva.doi.fetch.service;
 
-import static java.util.Objects.isNull;
 import static no.unit.nva.doi.fetch.RestApiConfig.restServiceObjectMapper;
-import static nva.commons.core.attempt.Try.attempt;
-import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import no.sikt.nva.doi.fetch.jsonconfig.Json;
-import no.unit.nva.api.PublicationResponse;
+import java.util.List;
 import no.unit.nva.doi.DataciteContentType;
 import no.unit.nva.doi.DoiProxyService;
 import no.unit.nva.doi.MetadataAndContentLocation;
 import no.unit.nva.doi.fetch.DoiValidator;
-import no.unit.nva.doi.fetch.exceptions.CreatePublicationException;
-import no.unit.nva.doi.fetch.exceptions.MalformedRequestException;
+import no.unit.nva.doi.fetch.commons.publication.model.AssociatedArtifact;
+import no.unit.nva.doi.fetch.commons.publication.model.AssociatedLink;
+import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
 import no.unit.nva.doi.fetch.exceptions.UnsupportedDocumentTypeException;
-import no.unit.nva.doi.fetch.model.RequestBody;
-import no.unit.nva.doi.fetch.model.Summary;
-import no.unit.nva.doi.fetch.service.IdentityUpdater;
-import no.unit.nva.doi.fetch.service.PublicationConverter;
-import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
 import no.unit.nva.doi.transformer.DoiTransformService;
 import no.unit.nva.doi.transformer.utils.CristinProxyClient;
-import no.unit.nva.metadata.CreatePublicationRequest;
+import no.unit.nva.doi.transformer.utils.InvalidIssnException;
 import no.unit.nva.metadata.service.MetadataService;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.associatedartifacts.AssociatedArtifactList;
-import no.unit.nva.model.associatedartifacts.AssociatedLink;
-import no.unit.nva.model.exceptions.InvalidIsbnException;
-import no.unit.nva.model.exceptions.InvalidIssnException;
-import nva.commons.apigateway.ApiGatewayHandler;
-import nva.commons.apigateway.RequestInfo;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.core.Environment;
-import nva.commons.core.JacocoGenerated;
-import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,14 +41,15 @@ public class FetchDoiService {
         this.metadataService = metadataService;
     }
 
-    public CreatePublicationRequest newCreatePublicationRequest(String owner, URI customerId, URL url)
-        throws URISyntaxException, IOException, InvalidIssnException,
-               MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
+    public CreatePublicationRequest newCreatePublicationRequest(URL url)
+        throws URISyntaxException, IOException, MetadataNotFoundException, UnsupportedDocumentTypeException,
+               InvalidIssnException {
+
         CreatePublicationRequest request;
 
         if (urlIsValidDoi(url)) {
             logger.info("URL is a DOI");
-            request = getPublicationFromDoi(owner, customerId, url);
+            request = getPublicationFromDoi(url);
         } else {
             logger.info("URL is NOT a DOI, falling back to web metadata scraping");
             request = getPublicationFromOtherUrl(url);
@@ -96,31 +76,28 @@ public class FetchDoiService {
         return request;
     }
 
-    private AssociatedArtifactList associatedArtifactsWithLinkToMetadataSource(URL url) {
-        var associatedArtifact = new AssociatedLink(URI.create(url.toString()), null, null);
-        return new AssociatedArtifactList(associatedArtifact);
+    private List<AssociatedArtifact> associatedArtifactsWithLinkToMetadataSource(URL url) {
+        return List.of(new AssociatedLink(URI.create(url.toString())));
     }
 
-    private CreatePublicationRequest getPublicationFromDoi(String owner, URI customerId, URL doi)
-        throws URISyntaxException, IOException, InvalidIssnException,
-               MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
-        var publicationMetadata = getPublicationMetadataFromDoi(doi, owner, customerId);
-        Publication publication =
+    private CreatePublicationRequest getPublicationFromDoi(URL doi)
+        throws URISyntaxException, IOException, MetadataNotFoundException, InvalidIssnException {
+
+        var publicationMetadata = getPublicationMetadataFromDoi(doi);
+        var publication =
             IdentityUpdater.enrichPublicationCreators(cristinProxyClient, publicationMetadata);
         return restServiceObjectMapper.convertValue(publication, CreatePublicationRequest.class);
     }
 
-    private Publication getPublicationMetadataFromDoi(URL doiUrl,
-                                                      String owner, URI customerId)
-        throws URISyntaxException, IOException, InvalidIssnException,
-               MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
+    private CreatePublicationRequest getPublicationMetadataFromDoi(URL doiUrl)
+        throws URISyntaxException, IOException, MetadataNotFoundException, InvalidIssnException {
 
         MetadataAndContentLocation metadataAndContentLocation = doiProxyService.lookupDoiMetadata(
             doiUrl.toString(), DataciteContentType.DATACITE_JSON);
 
         return doiTransformService.transformPublication(
             metadataAndContentLocation.getJson(),
-            metadataAndContentLocation.getContentHeader(), owner, customerId);
+            metadataAndContentLocation.getContentHeader());
     }
 
 }

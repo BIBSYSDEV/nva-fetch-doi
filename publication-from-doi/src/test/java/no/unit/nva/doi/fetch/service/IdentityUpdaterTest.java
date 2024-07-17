@@ -1,41 +1,29 @@
 package no.unit.nva.doi.fetch.service;
 
-import java.util.Collections;
-import java.util.Objects;
-import no.unit.nva.doi.transformer.utils.CristinProxyClient;
-import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Identity;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.model.Username;
-import no.unit.nva.model.role.Role;
-import no.unit.nva.model.role.RoleType;
-import org.hamcrest.beans.HasPropertyWithValue;
-import org.hamcrest.core.Every;
-import org.junit.jupiter.api.Test;
-
-import java.net.URI;
-import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
-import static net.bytebuddy.matcher.ElementMatchers.is;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import java.net.URI;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import no.unit.nva.doi.fetch.commons.publication.model.Contributor;
+import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
+import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
+import no.unit.nva.doi.fetch.commons.publication.model.Identity;
+import no.unit.nva.doi.fetch.commons.publication.model.Role;
+import no.unit.nva.doi.transformer.utils.CristinProxyClient;
+import org.hamcrest.beans.HasPropertyWithValue;
+import org.hamcrest.core.Every;
+import org.junit.jupiter.api.Test;
 
 class IdentityUpdaterTest {
 
@@ -50,9 +38,9 @@ class IdentityUpdaterTest {
         var sampleIdentifier = URI.create(SAMPLE_IDENTITY_IDENTIFIER);
         when(cristinProxyClient.lookupIdentifierFromOrcid(any())).thenReturn(Optional.of(sampleIdentifier));
         var publication = createPublicationWithIdentity(identity);
-        var intialIdentifiers = getIdentifiers(publication);
+        var initialIdentifiers = getIdentifiers(publication);
 
-        assertThat(hasIdentifierMatchingSample(intialIdentifiers), equalTo(false));
+        assertThat(hasIdentifierMatchingSample(initialIdentifiers), equalTo(false));
 
         var updatedPublication = IdentityUpdater.enrichPublicationCreators(cristinProxyClient, publication);
         var updatedIdentifiers = getIdentifiers(updatedPublication);
@@ -73,7 +61,7 @@ class IdentityUpdaterTest {
 
     @Test
     public void shouldIgnoreExceptionsAndReturnUnmodifiedPublicationWhenEnrichPublicationCreatorsThrowsException() {
-        var identity = new Identity.Builder().withOrcId(ILLEGAL_ORCID).build();
+        var identity = new Identity(null, null, null, ILLEGAL_ORCID);
         var publication = createPublicationWithIdentity(identity);
         var cristinProxyClient = mock(CristinProxyClient.class);
         doThrow(new RuntimeException()).when(cristinProxyClient).lookupIdentifierFromOrcid(any());
@@ -84,7 +72,7 @@ class IdentityUpdaterTest {
 
     @Test
     public void shouldNotUpdateIdentifierWhenIdentifierAlreadyExistsWhenEnrichingPublicationCreators() {
-        var identity = new Identity.Builder().withId(randomUri()).withOrcId(SAMPLE_ORCID).build();
+        var identity = new Identity(randomUri(), null, null, SAMPLE_ORCID);
         var publication = createPublicationWithIdentity(identity);
         var cristinProxyClient = mock(CristinProxyClient.class);
         var updatedPublication = IdentityUpdater.enrichPublicationCreators(cristinProxyClient, publication);
@@ -94,7 +82,7 @@ class IdentityUpdaterTest {
 
     @Test
     public void shouldNotAlterPublicationWhenMissingIdentityCallingEnrichPublicationCreators() {
-        var publication = createPublicationWithIdentites(List.of());
+        var publication = createPublicationWithIdentities(List.of());
         var cristinProxyClient = mock(CristinProxyClient.class);
         var updatedPublication = IdentityUpdater.enrichPublicationCreators(cristinProxyClient, publication);
 
@@ -103,8 +91,8 @@ class IdentityUpdaterTest {
 
     @Test
     public void shouldNotEnrichContributorsWhenMoreThanTenUnverifiedContributorsExist() {
-        var identities = Collections.nCopies(11, 1).stream().map(i -> createIdentityWithOrcid()).toList();
-        var publication = createPublicationWithIdentites(identities);
+        var identities = Stream.generate(this::createIdentityWithOrcid).limit(11).toList();
+        var publication = createPublicationWithIdentities(identities);
         var cristinProxyClient = mock(CristinProxyClient.class);
         var sampleIdentifier = URI.create(SAMPLE_IDENTITY_IDENTIFIER);
         when(cristinProxyClient.lookupIdentifierFromOrcid(any())).thenReturn(Optional.of(sampleIdentifier));
@@ -115,13 +103,13 @@ class IdentityUpdaterTest {
         assertThat(updatedPublication, equalTo(publication));
     }
 
-    private List<URI> getIdentifiers(Publication publication) {
+    private List<URI> getIdentifiers(CreatePublicationRequest publication) {
         return Optional.ofNullable(publication)
-                   .map(Publication::getEntityDescription)
+                   .map(CreatePublicationRequest::getEntityDescription)
                    .map(EntityDescription::getContributors)
                    .orElse(Collections.emptyList())
                    .stream()
-                   .map(Contributor::getIdentity)
+                   .map(Contributor::identity)
                    .filter(Objects::nonNull)
                    .map(Identity::getId)
                    .filter(Objects::nonNull)
@@ -136,36 +124,24 @@ class IdentityUpdaterTest {
     }
 
     private Identity createIdentityWithOrcid() {
-        return new Identity.Builder().withOrcId(SAMPLE_ORCID).build();
+        return new Identity(null, null, null, SAMPLE_ORCID);
     }
 
-
-    private Publication createPublicationWithIdentity(Identity identity) {
-        return createPublicationWithIdentites(List.of(identity));
+    private CreatePublicationRequest createPublicationWithIdentity(Identity identity) {
+        return createPublicationWithIdentities(List.of(identity));
     }
 
-    private Publication createPublicationWithIdentites(List<Identity> identites) {
-        var contributors = identites.stream().map(identity -> new Contributor.Builder()
-                                                                  .withRole(new RoleType(Role.CREATOR))
-                                                                  .withIdentity(identity)
-                                                                  .build())
+    private CreatePublicationRequest createPublicationWithIdentities(List<Identity> identities) {
+        var contributors = identities.stream().map(identity -> new Contributor.Builder()
+                                                                   .withRole(new Role("Creator"))
+                                                                   .withIdentity(identity)
+                                                                   .build())
                                .toList();
 
-        return new Publication.Builder()
-                   .withIdentifier(new SortableIdentifier(UUID.randomUUID().toString()))
-                   .withModifiedDate(Instant.now())
-                   .withResourceOwner(randomResourceOwner())
-                   .withPublisher(new Organization.Builder()
-                                      .withId(URI.create("http://example.org/publisher/1"))
-                                      .build()
-                   )
+        return new CreatePublicationRequest.Builder()
                    .withEntityDescription(new EntityDescription.Builder()
                                               .withContributors(contributors)
                                               .build())
                    .build();
-    }
-
-    private ResourceOwner randomResourceOwner() {
-        return new ResourceOwner(new Username(randomString()), randomUri());
     }
 }

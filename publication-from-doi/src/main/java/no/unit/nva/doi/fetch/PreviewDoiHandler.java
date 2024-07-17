@@ -5,12 +5,12 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
 import no.unit.nva.doi.DoiProxyService;
+import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
 import no.unit.nva.doi.fetch.exceptions.MalformedRequestException;
 import no.unit.nva.doi.fetch.model.RequestBody;
 import no.unit.nva.doi.fetch.service.FetchDoiService;
 import no.unit.nva.doi.transformer.DoiTransformService;
 import no.unit.nva.doi.transformer.utils.CristinProxyClient;
-import no.unit.nva.metadata.CreatePublicationRequest;
 import no.unit.nva.metadata.service.MetadataService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -21,7 +21,7 @@ import nva.commons.core.JacocoGenerated;
 public class PreviewDoiHandler extends ApiGatewayHandler<RequestBody, CreatePublicationRequest> {
 
     public static final String NULL_DOI_URL_ERROR = "doiUrl can not be null";
-    private FetchDoiService fetchDoiService;
+    private final FetchDoiService fetchDoiService;
 
     @SuppressWarnings("unused")
     @JacocoGenerated
@@ -52,11 +52,8 @@ public class PreviewDoiHandler extends ApiGatewayHandler<RequestBody, CreatePubl
 
         validate(input);
 
-        var owner = requestInfo.getUserName();
-        var customerId = requestInfo.getCurrentCustomer();
-
         var inputUri = input.getDoiUrl();
-        return attempt(() -> this.fetchDoiService.newCreatePublicationRequest(owner, customerId, inputUri))
+        return attempt(() -> this.fetchDoiService.newCreatePublicationRequest(inputUri))
                    .orElseThrow(exception -> new RuntimeException(exception.getException()));
     }
 

@@ -1,6 +1,8 @@
 package no.unit.nva.metadata;
 
 import java.util.Optional;
+import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
+import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
 import no.unit.nva.metadata.extractors.AbstractExtractor;
 import no.unit.nva.metadata.extractors.ContributorExtractor;
 import no.unit.nva.metadata.extractors.DateExtractor;
@@ -14,7 +16,6 @@ import no.unit.nva.metadata.extractors.TitleExtractor;
 import no.unit.nva.metadata.filters.FilterDuplicateContributors;
 import no.unit.nva.metadata.filters.FilterShorterTitles;
 import no.unit.nva.metadata.type.DcTerms;
-import no.unit.nva.model.EntityDescription;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Statement;
 

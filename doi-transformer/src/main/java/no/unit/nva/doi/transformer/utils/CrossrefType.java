@@ -6,7 +6,7 @@ import java.util.Arrays;
 import nva.commons.core.SingletonCollector;
 
 /**
- * Enumeration, one of the type ids from https://api.crossref.org/v1/types
+ * Enumeration, one of the type ids from <a href="https://api.crossref.org/v1/types">Crossref types</a>
  */
 public enum CrossrefType {
     JOURNAL_ARTICLE("journal-article", PublicationType.JOURNAL_CONTENT),

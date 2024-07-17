@@ -1,7 +1,7 @@
 package no.unit.nva.doi.fetch.service;
 
-import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
+import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import com.google.common.net.MediaType;
 import java.io.IOException;
 import java.net.URI;
@@ -11,9 +11,9 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import no.sikt.nva.doi.fetch.jsonconfig.Json;
-import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
+import no.unit.nva.doi.fetch.commons.publication.model.PublicationResponse;
 import no.unit.nva.doi.fetch.exceptions.CreatePublicationException;
-import no.unit.nva.metadata.CreatePublicationRequest;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
