@@ -29,23 +29,6 @@ public class EntityDescription {
     public EntityDescription() {
     }
 
-    public EntityDescription(String mainAbstract, Map<String, String> alternativeAbstracts, String mainTitle,
-                             Map<String, String> alternativeTitles, String description, URI language,
-                             PublicationDate publicationDate, Reference reference, List<Contributor> contributors,
-                             List<String> tags, URI metadataSource) {
-        this.mainAbstract = mainAbstract;
-        this.alternativeAbstracts = alternativeAbstracts;
-        this.mainTitle = mainTitle;
-        this.alternativeTitles = alternativeTitles;
-        this.description = description;
-        this.language = language;
-        this.publicationDate = publicationDate;
-        this.reference = reference;
-        this.contributors = contributors;
-        this.tags = tags;
-        this.metadataSource = metadataSource;
-    }
-
     @JsonProperty("abstract")
     public String getMainAbstract() {
         return mainAbstract;
@@ -252,17 +235,20 @@ public class EntityDescription {
         }
 
         public EntityDescription build() {
-            return new EntityDescription(mainAbstract,
-                                         alternativeAbstracts,
-                                         mainTitle,
-                                         alternativeTitles,
-                                         description,
-                                         language,
-                                         publicationDate,
-                                         reference,
-                                         contributors,
-                                         tags,
-                                         metadataSource);
+            var entityDescription = new EntityDescription();
+            entityDescription.setMainAbstract(mainAbstract);
+            entityDescription.setAlternativeAbstracts(alternativeAbstracts);
+            entityDescription.setMainTitle(mainTitle);
+            entityDescription.setAlternativeTitles(alternativeTitles);
+            entityDescription.setDescription(description);
+            entityDescription.setLanguage(language);
+            entityDescription.setPublicationDate(publicationDate);
+            entityDescription.setReference(reference);
+            entityDescription.setContributors(contributors);
+            entityDescription.setTags(tags);
+            entityDescription.setMetadataSource(metadataSource);
+
+            return entityDescription;
         }
     }
 }

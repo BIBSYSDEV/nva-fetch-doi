@@ -324,7 +324,7 @@ public class CrossRefConverter extends AbstractConverter {
         throws UnsupportedDocumentTypeException {
         CrossrefType byType = getByType(document.getType());
         if (byType == JOURNAL_ARTICLE) {
-            return AcademicArticle(document);
+            return academicArticle(document);
         } else if (byType == BOOK) {
             if (hasEditor(document)) {
                 return createBookAnthology(document);
@@ -355,7 +355,7 @@ public class CrossRefConverter extends AbstractConverter {
         return new AcademicChapter("AcademicChapter", extractRangePages(document));
     }
 
-    private AcademicArticle AcademicArticle(CrossRefDocument document) {
+    private AcademicArticle academicArticle(CrossRefDocument document) {
         return new AcademicArticle("AcademicArticle",
                                    extractRangePages(document), document.getVolume(), document.getIssue());
     }
