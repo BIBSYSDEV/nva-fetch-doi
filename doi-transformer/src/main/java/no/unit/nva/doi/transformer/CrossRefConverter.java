@@ -11,7 +11,6 @@ import static no.unit.nva.doi.transformer.utils.CrossrefType.BOOK;
 import static no.unit.nva.doi.transformer.utils.CrossrefType.BOOK_CHAPTER;
 import static no.unit.nva.doi.transformer.utils.CrossrefType.EDITED_BOOK;
 import static no.unit.nva.doi.transformer.utils.CrossrefType.JOURNAL_ARTICLE;
-import static no.unit.nva.doi.transformer.utils.CrossrefType.PROCEEDINGS_ARTICLE;
 import static no.unit.nva.doi.transformer.utils.CrossrefType.getByType;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
@@ -324,7 +323,7 @@ public class CrossRefConverter extends AbstractConverter {
     private PublicationInstance extractPublicationInstance(CrossRefDocument document)
         throws UnsupportedDocumentTypeException {
         CrossrefType byType = getByType(document.getType());
-        if (JOURNAL_ARTICLE.equals(byType) || PROCEEDINGS_ARTICLE.equals(byType)) {
+        if (JOURNAL_ARTICLE.equals(byType)) {
             return academicArticle(document);
         } else if (BOOK.equals(byType)) {
             if (hasEditor(document)) {

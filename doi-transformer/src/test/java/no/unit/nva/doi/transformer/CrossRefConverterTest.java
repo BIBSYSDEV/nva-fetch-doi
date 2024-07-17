@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
@@ -38,7 +37,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import no.sikt.nva.doi.fetch.jsonconfig.Json;
-import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.fetch.commons.publication.model.Agent;
 import no.unit.nva.doi.fetch.commons.publication.model.Contributor;
 import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
@@ -66,7 +64,6 @@ import no.unit.nva.doi.transformer.model.crossrefmodel.Isxn.IsxnType;
 import no.unit.nva.doi.transformer.model.crossrefmodel.Link;
 import no.unit.nva.doi.transformer.utils.CrossrefType;
 import no.unit.nva.doi.transformer.utils.IssnCleaner;
-import nva.commons.core.ioutils.IoUtils;
 import nva.commons.doi.DoiConverter;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
@@ -326,31 +323,6 @@ public class CrossRefConverterTest extends ConversionTest {
         sampleJournalArticle.setDoi(SOME_DOI);
         URI actualDoi = toPublication(sampleJournalArticle).getEntityDescription().getReference().getDoi();
         assertThat(actualDoi, is(equalTo(doiConverter.toUri(SOME_DOI))));
-    }
-
-    @Test
-    void toPublicationMapsProceedingsArticleToAcademicArticle() throws JsonProcessingException {
-        final var proceedingsArticle = sampleProceedingsArticle();
-        final var createPublicationRequest = toPublication(proceedingsArticle);
-
-        final var publicationContext = createPublicationRequest
-                                           .getEntityDescription()
-                                           .getReference()
-                                           .getPublicationContext();
-
-        assertInstanceOf(UnconfirmedJournal.class, publicationContext);
-        var unconfirmedJournal = (UnconfirmedJournal) publicationContext;
-
-        var expectedJournalTitle = "Proceedings of the 2019 ACM Conference on Innovation and Technology in Computer "
-                                   + "Science Education";
-        assertThat(unconfirmedJournal.title(), is(equalTo(expectedJournalTitle)));
-
-        final var publicationInstance = createPublicationRequest
-                                            .getEntityDescription()
-                                            .getReference()
-                                            .getPublicationInstance();
-
-        assertInstanceOf(AcademicArticle.class, publicationInstance);
     }
 
     @Test
@@ -813,11 +785,6 @@ public class CrossRefConverterTest extends ConversionTest {
         return document;
     }
 
-    private CrossRefDocument sampleProceedingsArticle() throws JsonProcessingException {
-        return JsonUtils.dtoObjectMapper.readValue(
-            stringFromResources(Path.of("crossrefProceedingsArticle.json")), CrossRefDocument.class);
-    }
-
     private CrossRefDocument sampleBook() {
         CrossRefDocument document = sampleCrossRefDocumentWithBasicMetadata();
         setPublicationTypeBook(document);
@@ -857,10 +824,6 @@ public class CrossRefConverterTest extends ConversionTest {
 
     private void setPublicationTypeJournalArticle(CrossRefDocument document) {
         document.setType(CrossrefType.JOURNAL_ARTICLE.getType());
-    }
-
-    private void setPublicationTypeProceedingsArticle(CrossRefDocument document) {
-        document.setType(CrossrefType.PROCEEDINGS_ARTICLE.getType());
     }
 
     private void setPublicationTypeBook(CrossRefDocument document) {
