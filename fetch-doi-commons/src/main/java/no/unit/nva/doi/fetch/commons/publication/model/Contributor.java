@@ -1,9 +1,11 @@
 package no.unit.nva.doi.fetch.commons.publication.model;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.List;
 import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public record Contributor(Role role, Identity identity, List<Agent> affiliations, Integer sequence) {
 
     @JacocoGenerated
