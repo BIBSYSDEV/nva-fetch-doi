@@ -2,6 +2,7 @@ package no.unit.nva.doi.transformer;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.doi.transformer.CrossRefConverter.UNRECOGNIZED_TYPE_MESSAGE;
+import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
@@ -21,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
@@ -36,6 +38,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import no.sikt.nva.doi.fetch.jsonconfig.Json;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.fetch.commons.publication.model.Agent;
 import no.unit.nva.doi.fetch.commons.publication.model.Contributor;
 import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
@@ -294,11 +297,11 @@ public class CrossRefConverterTest extends ConversionTest {
     @DisplayName("toPublication sets abstract when input has non empty abstract")
     void toPublicationSetsAbstractWhenInputHasNonEmptyAbstract()
         throws IOException {
-        String json = IoUtils.stringFromResources(Path.of(CROSSREF_WITH_ABSTRACT_JSON));
+        String json = stringFromResources(Path.of(CROSSREF_WITH_ABSTRACT_JSON));
         CrossRefDocument crossRefDocument = Json.readValue(json, CrossrefApiResponse.class).getMessage();
         String abstractText = toPublication(crossRefDocument).getEntityDescription().getMainAbstract();
         assertThat(abstractText, is(not(emptyString())));
-        String expectedAbstract = IoUtils.stringFromResources(Path.of(PROCESSED_ABSTRACT));
+        String expectedAbstract = stringFromResources(Path.of(PROCESSED_ABSTRACT));
         assertThat(abstractText, is(equalTo(expectedAbstract)));
     }
 
@@ -326,9 +329,34 @@ public class CrossRefConverterTest extends ConversionTest {
     }
 
     @Test
+    void toPublicationMapsProceedingsArticleToAcademicArticle() throws JsonProcessingException {
+        final var proceedingsArticle = sampleProceedingsArticle();
+        final var createPublicationRequest = toPublication(proceedingsArticle);
+
+        final var publicationContext = createPublicationRequest
+                                           .getEntityDescription()
+                                           .getReference()
+                                           .getPublicationContext();
+
+        assertInstanceOf(UnconfirmedJournal.class, publicationContext);
+        var unconfirmedJournal = (UnconfirmedJournal) publicationContext;
+
+        var expectedJournalTitle = "Proceedings of the 2019 ACM Conference on Innovation and Technology in Computer "
+                                   + "Science Education";
+        assertThat(unconfirmedJournal.title(), is(equalTo(expectedJournalTitle)));
+
+        final var publicationInstance = createPublicationRequest
+                                            .getEntityDescription()
+                                            .getReference()
+                                            .getPublicationInstance();
+
+        assertInstanceOf(AcademicArticle.class, publicationInstance);
+    }
+
+    @Test
     @DisplayName("toPublication sets the doi of the Reference when the Crossref document has at least one"
                  + " \"Container\" value ")
-    void toPublicationSetsTheNameOfTheReferenceWhenTheCrossrefDocHasAtLeatOneContainterTitle() {
+    void toPublicationSetsTheNameOfTheReferenceWhenTheCrossrefDocHasAtLeastOneContainerTitle() {
         CrossRefDocument sampleJournalArticle = sampleJournalArticle();
         sampleJournalArticle.setContainerTitle(Arrays.asList(FIRST_NAME_OF_JOURNAL, SECOND_NAME_OF_JOURNAL));
         String actualJournalName = ((UnconfirmedJournal) toPublication(sampleJournalArticle)
@@ -785,6 +813,11 @@ public class CrossRefConverterTest extends ConversionTest {
         return document;
     }
 
+    private CrossRefDocument sampleProceedingsArticle() throws JsonProcessingException {
+        return JsonUtils.dtoObjectMapper.readValue(
+            stringFromResources(Path.of("crossrefProceedingsArticle.json")), CrossRefDocument.class);
+    }
+
     private CrossRefDocument sampleBook() {
         CrossRefDocument document = sampleCrossRefDocumentWithBasicMetadata();
         setPublicationTypeBook(document);
@@ -824,6 +857,10 @@ public class CrossRefConverterTest extends ConversionTest {
 
     private void setPublicationTypeJournalArticle(CrossRefDocument document) {
         document.setType(CrossrefType.JOURNAL_ARTICLE.getType());
+    }
+
+    private void setPublicationTypeProceedingsArticle(CrossRefDocument document) {
+        document.setType(CrossrefType.PROCEEDINGS_ARTICLE.getType());
     }
 
     private void setPublicationTypeBook(CrossRefDocument document) {

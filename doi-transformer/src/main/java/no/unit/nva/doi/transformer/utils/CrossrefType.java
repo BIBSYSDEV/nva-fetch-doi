@@ -10,6 +10,7 @@ import nva.commons.core.SingletonCollector;
  */
 public enum CrossrefType {
     JOURNAL_ARTICLE("journal-article", PublicationType.JOURNAL_CONTENT),
+    PROCEEDINGS_ARTICLE("proceedings-article", PublicationType.JOURNAL_CONTENT),
     BOOK("book", PublicationType.BOOK),
     BOOK_CHAPTER("book-chapter", PublicationType.BOOK_CHAPTER),
     EDITED_BOOK("edited-book", PublicationType.EDITED_BOOK),
