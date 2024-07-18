@@ -67,11 +67,17 @@ public class ImportDoiHandler extends ApiGatewayHandler<RequestBody, Summary> {
     }
 
     @Override
+    protected void validateRequest(RequestBody requestBody, RequestInfo requestInfo, Context context)
+        throws ApiGatewayException {
+        validate(requestBody);
+    }
+
+    @Override
     protected Summary processInput(RequestBody input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
 
         var apiUrl = urlToPublicationProxy();
-        validate(input);
+
 
         var authHeader = requestInfo.getAuthHeader();
 

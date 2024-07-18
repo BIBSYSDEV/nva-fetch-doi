@@ -47,10 +47,13 @@ public class PreviewDoiHandler extends ApiGatewayHandler<RequestBody, CreatePubl
     }
 
     @Override
-    protected CreatePublicationRequest processInput(RequestBody input, RequestInfo requestInfo, Context context)
+    protected void validateRequest(RequestBody requestBody, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
+        validate(requestBody);
+    }
 
-        validate(input);
+    @Override
+    protected CreatePublicationRequest processInput(RequestBody input, RequestInfo requestInfo, Context context) {
 
         var inputUri = input.getDoiUrl();
         return attempt(() -> this.fetchDoiService.newCreatePublicationRequest(inputUri))
