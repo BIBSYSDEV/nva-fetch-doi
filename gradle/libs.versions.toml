@@ -20,7 +20,6 @@ junit5 = { strictly = '5.10.0' }
 mockito = { strictly = '5.3.1' }
 log4j = { strictly = '2.23.0' }
 slf4j = { prefer = '2.0.11' }
-nvaLanguage = { strictly = '1.0' }
 guava = { prefer = '32.1.2-jre' }
 awslog4j2 = { strictly = '1.6.0' }
 
@@ -35,7 +34,6 @@ nva-identifiers = { group = "com.github.bibsysdev", name = "identifiers", versio
 nva-doi = { group = "com.github.bibsysdev", name = "doi", version.ref = "nva" }
 nva-events = { group = "com.github.bibsysdev", name = "eventhandlers", version.ref = "nva" }
 nva-testutils = { group = "com.github.bibsysdev", name = "nvatestutils", version.ref = "nva" }
-nva-language = { group = 'com.github.bibsysdev', name = 'nva-language', version.ref = "nvaLanguage" }
 
 jackson-core = { group = "com.fasterxml.jackson.core", name = "jackson-core", version.ref = "jacksonVersion" }
 jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-databind", version.ref = "jacksonVersion" }
