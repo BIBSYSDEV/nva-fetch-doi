@@ -7,10 +7,6 @@ import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.DAY_I
 import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.FROM_DATE_INDEX_IN_DATE_ARRAY;
 import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.MONTH_INDEX;
 import static no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate.YEAR_INDEX;
-import static no.unit.nva.doi.transformer.utils.CrossrefType.BOOK;
-import static no.unit.nva.doi.transformer.utils.CrossrefType.BOOK_CHAPTER;
-import static no.unit.nva.doi.transformer.utils.CrossrefType.EDITED_BOOK;
-import static no.unit.nva.doi.transformer.utils.CrossrefType.JOURNAL_ARTICLE;
 import static no.unit.nva.doi.transformer.utils.CrossrefType.getByType;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
@@ -28,6 +24,7 @@ import java.util.stream.Collectors;
 import no.unit.nva.doi.fetch.commons.publication.model.Agent;
 import no.unit.nva.doi.fetch.commons.publication.model.Contributor;
 import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
+import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest.Builder;
 import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
 import no.unit.nva.doi.fetch.commons.publication.model.Identity;
 import no.unit.nva.doi.fetch.commons.publication.model.MonographPages;
@@ -55,6 +52,7 @@ import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefAffiliation;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefContributor;
 import no.unit.nva.doi.transformer.model.crossrefmodel.CrossrefDate;
 import no.unit.nva.doi.transformer.model.crossrefmodel.Isxn;
+import no.unit.nva.doi.transformer.model.crossrefmodel.Isxn.IsxnType;
 import no.unit.nva.doi.transformer.utils.CrossrefType;
 import no.unit.nva.doi.transformer.utils.IsbnCleaner;
 import no.unit.nva.doi.transformer.utils.IssnCleaner;
@@ -92,7 +90,7 @@ public class CrossRefConverter extends AbstractConverter {
     public CreatePublicationRequest toPublication(CrossRefDocument document) {
 
         if (document != null && hasTitle(document)) {
-            return new CreatePublicationRequest.Builder()
+            return new Builder()
                        //.withCreatedDate(extractInstantFromCrossrefDate(document.getCreated()))
                        //.withModifiedDate(extractInstantFromCrossrefDate(document.getDeposited()))
                        //.withPublishedDate(extractInstantFromCrossrefDate(document.getIssued()))
@@ -186,12 +184,10 @@ public class CrossRefConverter extends AbstractConverter {
 
     private Reference extractReference(CrossRefDocument document) {
         try {
-            PublicationInstance instance = extractPublicationInstance(document);
-            PublicationContext context = extractPublicationContext(document);
             return new Reference.Builder()
                        .withDoi(doiConverter.toUri(document.getDoi()))
-                       .withPublicationContext(context)
-                       .withPublicationInstance(instance)
+                       .withPublicationContext(extractPublicationContext(document))
+                       .withPublicationInstance(extractPublicationInstance(document))
                        .build();
         } catch (UnsupportedDocumentTypeException e) {
             logger.error(String.format(UNRECOGNIZED_TYPE_MESSAGE + CANNOT_CREATE_REFERENCE_FOR_PUBLICATION,
@@ -213,25 +209,20 @@ public class CrossRefConverter extends AbstractConverter {
 
     private PublicationContext extractPublicationContext(CrossRefDocument document)
         throws UnsupportedDocumentTypeException {
-
-        CrossrefType crossrefType = getByType(document.getType());
-        return createContext(document, crossrefType.getPublicationType());
+        return getByType(document.getType())
+            .map(CrossrefType::getPublicationType)
+            .map(publicationType -> createContext(document, publicationType))
+            .orElse(null);
     }
 
     @JacocoGenerated
-    private PublicationContext createContext(CrossRefDocument document, PublicationType publicationType)
-        throws UnsupportedDocumentTypeException {
-        if (publicationType == PublicationType.JOURNAL_CONTENT) {
-            return createJournalContext(document);
-        } else if (publicationType == PublicationType.BOOK) {
-            return createBookContext(document);
-        } else if (publicationType == PublicationType.BOOK_CHAPTER) {
-            return createAnthologyContext();
-        } else if (publicationType == PublicationType.EDITED_BOOK) {
-            return createBookContext(document);
-        } else {
-            throw new UnsupportedDocumentTypeException(String.format(UNRECOGNIZED_TYPE_MESSAGE, document.getType()));
-        }
+    private PublicationContext createContext(CrossRefDocument document, PublicationType publicationType) {
+        return switch (publicationType) {
+            case JOURNAL_CONTENT -> createJournalContext(document);
+            case BOOK, EDITED_BOOK -> createBookContext(document);
+            case BOOK_CHAPTER -> createAnthologyContext();
+            case null -> null;
+        };
     }
 
     private Book createBookContext(CrossRefDocument document) {
@@ -302,14 +293,14 @@ public class CrossRefConverter extends AbstractConverter {
     }
 
     private String extractPrintIssn(CrossRefDocument document) {
-        return IssnCleaner.clean(filterIssnsByType(document, Isxn.IsxnType.PRINT));
+        return IssnCleaner.clean(filterIssnsByType(document, IsxnType.PRINT));
     }
 
     private String extractOnlineIssn(CrossRefDocument document) {
-        return IssnCleaner.clean(filterIssnsByType(document, Isxn.IsxnType.ELECTRONIC));
+        return IssnCleaner.clean(filterIssnsByType(document, IsxnType.ELECTRONIC));
     }
 
-    private String filterIssnsByType(CrossRefDocument crossRefDocument, Isxn.IsxnType type) {
+    private String filterIssnsByType(CrossRefDocument crossRefDocument, IsxnType type) {
         List<Isxn> issns = crossRefDocument.getIssnType();
         if (isNull(issns) || issns.isEmpty()) {
             return null;
@@ -320,23 +311,29 @@ public class CrossRefConverter extends AbstractConverter {
                    .orElse(null);
     }
 
-    private PublicationInstance extractPublicationInstance(CrossRefDocument document)
-        throws UnsupportedDocumentTypeException {
-        CrossrefType byType = getByType(document.getType());
-        if (JOURNAL_ARTICLE.equals(byType)) {
-            return academicArticle(document);
-        } else if (BOOK.equals(byType)) {
-            if (hasEditor(document)) {
-                return createBookAnthology(document);
-            } else {
-                return createBookMonograph(document);
-            }
-        } else if (BOOK_CHAPTER.equals(byType)) {
-            return createChapterArticle(document);
-        } else if (EDITED_BOOK.equals(byType)) {
+    private PublicationInstance extractPublicationInstance(CrossRefDocument document) {
+        return getByType(document.getType())
+                   .map(crossrefType -> createInstance(document, crossrefType))
+                   .orElse(null);
+
+    }
+
+    private PublicationInstance createInstance(CrossRefDocument document, CrossrefType publicationType) {
+        return switch (publicationType) {
+            case JOURNAL_ARTICLE -> academicArticle(document);
+            case BOOK -> createBook(document);
+            case BOOK_CHAPTER -> createChapterArticle(document);
+            case EDITED_BOOK -> createBookAnthology(document);
+            default -> null;
+        };
+    }
+
+    private PublicationInstance createBook(CrossRefDocument document) {
+        if (hasEditor(document)) {
             return createBookAnthology(document);
+        } else {
+            return createBookMonograph(document);
         }
-        throw new UnsupportedDocumentTypeException(String.format(UNRECOGNIZED_TYPE_MESSAGE, document.getType()));
     }
 
     private boolean hasEditor(CrossRefDocument document) {

@@ -32,12 +32,11 @@ public final class DataciteTypesUtil {
      * @param dataciteResponse a DataciteResponse document.
      * @return a PublicationType.
      */
-    public static PublicationType mapToType(DataciteResponse dataciteResponse) {
+    public static Optional<PublicationType> mapToType(DataciteResponse dataciteResponse) {
         DataciteTypes types = dataciteResponse.getTypes();
         return Optional.ofNullable(types)
                 .filter(DataciteTypesUtil::isTextType)
-                .map(DataciteTypesUtil::getAnalyzedType)
-                .orElse(null);
+                .map(DataciteTypesUtil::getAnalyzedType);
     }
 
     private static boolean isTextType(DataciteTypes dataciteTypes) {

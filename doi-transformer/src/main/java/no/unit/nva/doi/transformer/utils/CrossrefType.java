@@ -1,8 +1,7 @@
 package no.unit.nva.doi.transformer.utils;
 
-import static java.util.Objects.isNull;
-
 import java.util.Arrays;
+import java.util.Optional;
 import nva.commons.core.SingletonCollector;
 
 /**
@@ -29,19 +28,16 @@ public enum CrossrefType {
      * @param type the Crossref type string.
      * @return a PublicationType.
      */
-    public static CrossrefType getByType(String type) {
-        if (isNull(type)) {
-            return NON_EXISTING_TYPE;
-        }
-
+    public static Optional<CrossrefType> getByType(String type) {
         return collectSingleNonEmptyCrossrefType(type);
     }
 
-    private static CrossrefType collectSingleNonEmptyCrossrefType(String type) {
+    private static Optional<CrossrefType> collectSingleNonEmptyCrossrefType(String type) {
         return Arrays.stream(values())
-                .filter(crossrefType -> !crossrefType.equals(NON_EXISTING_TYPE))
-                .filter(crossrefType -> crossrefType.getType().equalsIgnoreCase(type))
-                .collect(SingletonCollector.collectOrElse(NON_EXISTING_TYPE));
+                   .filter(crossrefType -> !crossrefType.equals(NON_EXISTING_TYPE))
+                   .filter(crossrefType -> crossrefType.getType().equalsIgnoreCase(type))
+                   .map(Optional::of)
+                   .collect(SingletonCollector.collectOrElse(Optional.empty()));
     }
 
     public String getType() {

@@ -2,6 +2,7 @@ package no.unit.nva.doi.transformer;
 
 import static java.util.Objects.nonNull;
 import static java.util.function.Predicate.not;
+import static no.unit.nva.doi.transformer.utils.PublicationType.JOURNAL_CONTENT;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.util.AbstractMap.SimpleEntry;
@@ -118,7 +119,7 @@ public class DataciteResponseConverter extends AbstractConverter {
         return Collections.emptyList();
     }
 
-    private Reference createReference(DataciteResponse dataciteResponse) throws InvalidIssnException {
+    private Reference createReference(DataciteResponse dataciteResponse) {
         return new Reference.Builder()
                    .withDoi(doiConverter.toUri(dataciteResponse.getDoi()))
                    .withPublicationContext(extractPublicationContext(dataciteResponse))
@@ -127,32 +128,35 @@ public class DataciteResponseConverter extends AbstractConverter {
     }
 
     private PublicationInstance extractPublicationInstance(DataciteResponse dataciteResponse) {
-        PublicationInstance publicationInstance = null;
-        if (PublicationType.JOURNAL_CONTENT.equals(extractPublicationType(dataciteResponse))) {
-            DataciteContainer container = dataciteResponse.getContainer();
-            String issue = container.getIssue();
-            String volume = container.getVolume();
-            publicationInstance = new AcademicArticle("AcademicArticle", extractPages(container), volume, issue);
-        }
-        return publicationInstance;
+        return extractPublicationType(dataciteResponse)
+                   .filter(JOURNAL_CONTENT::equals)
+                   .map(publicationType -> dataciteResponse.getContainer())
+                   .map(this::createAcademicArticle)
+                   .orElse(null);
+    }
+
+    private AcademicArticle createAcademicArticle(DataciteContainer dataciteContainer) {
+        return new AcademicArticle("AcademicArticle", extractPages(dataciteContainer),
+                                   dataciteContainer.getVolume(), dataciteContainer.getIssue());
     }
 
     private Range extractPages(DataciteContainer container) {
         return new Range(container.getFirstPage(), container.getLastPage());
     }
 
-    private PublicationContext extractPublicationContext(DataciteResponse dataciteResponse)
-        throws InvalidIssnException {
-        PublicationContext publicationContext = null;
-        PublicationType type = extractPublicationType(dataciteResponse);
-        if (nonNull(type) && type.equals(PublicationType.JOURNAL_CONTENT)) {
-            publicationContext = new UnconfirmedJournal(
-                dataciteResponse.getContainer().getTitle(),
-                extractPrintIssn(dataciteResponse),
-                extractOnlineIssn(dataciteResponse)
-            );
-        }
-        return publicationContext;
+    private PublicationContext extractPublicationContext(DataciteResponse dataciteResponse) {
+        return extractPublicationType(dataciteResponse)
+                   .filter(JOURNAL_CONTENT::equals)
+                   .map(publicationType -> createUnconfirmedJournal(dataciteResponse))
+                   .orElse(null);
+    }
+
+    private UnconfirmedJournal createUnconfirmedJournal(DataciteResponse dataciteResponse) {
+        return new UnconfirmedJournal(
+            dataciteResponse.getContainer().getTitle(),
+            extractPrintIssn(dataciteResponse),
+            extractOnlineIssn(dataciteResponse)
+        );
     }
 
     private String extractOnlineIssn(DataciteResponse dataciteResponse) {
@@ -200,7 +204,7 @@ public class DataciteResponseConverter extends AbstractConverter {
                    .map(LicensingIndicator::isOpen).orElse(false);
     }
 
-    private PublicationType extractPublicationType(DataciteResponse dataciteResponse) {
+    private Optional<PublicationType> extractPublicationType(DataciteResponse dataciteResponse) {
         return DataciteTypesUtil.mapToType(dataciteResponse);
     }
 

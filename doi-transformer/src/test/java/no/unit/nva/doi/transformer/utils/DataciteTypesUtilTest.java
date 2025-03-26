@@ -31,7 +31,7 @@ class DataciteTypesUtilTest {
         DataciteResponse dataciteResponse = new DataciteResponse.Builder()
                 .withTypes(dataciteTypes)
                 .build();
-        assertEquals(PublicationType.JOURNAL_CONTENT, DataciteTypesUtil.mapToType(dataciteResponse));
+        assertEquals(PublicationType.JOURNAL_CONTENT, DataciteTypesUtil.mapToType(dataciteResponse).orElseThrow());
 
     }
 
@@ -51,7 +51,7 @@ class DataciteTypesUtilTest {
         DataciteResponse dataciteResponse = new DataciteResponse.Builder()
                 .withTypes(dataciteTypes)
                 .build();
-        assertEquals(PublicationType.JOURNAL_CONTENT, DataciteTypesUtil.mapToType(dataciteResponse));
+        assertEquals(PublicationType.JOURNAL_CONTENT, DataciteTypesUtil.mapToType(dataciteResponse).orElseThrow());
     }
 
     @DisplayName("The mapping utility returns type JOURNAL_CONTENT when all but two types map to JOURNAL_CONTENT")
@@ -71,23 +71,23 @@ class DataciteTypesUtilTest {
         DataciteResponse dataciteResponse = new DataciteResponse.Builder()
                 .withTypes(dataciteTypes)
                 .build();
-        assertEquals(PublicationType.JOURNAL_CONTENT, DataciteTypesUtil.mapToType(dataciteResponse));
+        assertEquals(PublicationType.JOURNAL_CONTENT, DataciteTypesUtil.mapToType(dataciteResponse).orElseThrow());
     }
 
     @DisplayName("The mapping utility returns type JOURNAL_CONTENT when two types map to JOURNAL_CONTENT")
     @Test
     void mapToTypeReturnsJournalContentWhenTwoTypesAreJournalContent() {
-        DataciteTypes dataciteTypes = new DataciteTypes.Builder()
+        var dataciteTypes = new DataciteTypes.Builder()
                 .withBibtex(BibTexType.CONFERENCE.getType())
                 .withCiteproc(CiteProcType.PAPER_CONFERENCE.getType())
                 .withResourceType("JournalArticle")
                 .withSchemaOrg(SchemaOrgType.SCHOLARLY_ARTICLE.getType())
                 .withResourceTypeGeneral("Text")
                 .build();
-        DataciteResponse dataciteResponse = new DataciteResponse.Builder()
+        var dataciteResponse = new DataciteResponse.Builder()
                 .withTypes(dataciteTypes)
                 .build();
-        assertEquals(PublicationType.JOURNAL_CONTENT, DataciteTypesUtil.mapToType(dataciteResponse));
+        assertEquals(PublicationType.JOURNAL_CONTENT, DataciteTypesUtil.mapToType(dataciteResponse).orElseThrow());
     }
 
 

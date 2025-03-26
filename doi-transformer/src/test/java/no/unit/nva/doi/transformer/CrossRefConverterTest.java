@@ -1,7 +1,6 @@
 package no.unit.nva.doi.transformer;
 
 import static java.util.Objects.nonNull;
-import static no.unit.nva.doi.transformer.CrossRefConverter.UNRECOGNIZED_TYPE_MESSAGE;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
@@ -16,10 +15,10 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.hamcrest.text.IsEmptyString.emptyString;
 import static org.hamcrest.text.MatchesPattern.matchesPattern;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
@@ -156,13 +155,13 @@ public class CrossRefConverterTest extends ConversionTest {
 
     @ParameterizedTest(name = "toPublicationDoesNotThrowExceptionWhenPublicationTypeIsMissingButLogsWarning")
     @NullAndEmptySource
-    public void toPublicationDoesNotThrowExceptionWhenPublicationTypeIsMissingButLogsWarning(String crossRefType) {
-        TestAppender logAppender = LogUtils.getTestingAppenderForRootLogger();
-        CrossRefDocument crossrefDoc = sampleBook();
+    public void toPublicationReturnPublicationRequestWithoutPublicationInstanceAndPublicationContextWhenPublicationTypeIsMissing(String crossRefType) {
+        var crossrefDoc = sampleBook();
         crossrefDoc.setType(crossRefType);
-        assertDoesNotThrow(() -> toPublication(crossrefDoc));
-        String expectedMessage = String.format(UNRECOGNIZED_TYPE_MESSAGE, crossRefType);
-        assertThat(logAppender.getMessages(), containsString(expectedMessage));
+        var publicationRequest = toPublication(crossrefDoc);
+
+        assertNull(publicationRequest.getEntityDescription().getReference().getPublicationInstance());
+        assertNull(publicationRequest.getEntityDescription().getReference().getPublicationContext());
     }
 
     @Test
@@ -201,27 +200,25 @@ public class CrossRefConverterTest extends ConversionTest {
     }
 
     @Test
-    @DisplayName("An CrossRef document with unknown type logs error and continues")
-    void anCrossRefDocumentWithUnknownTypeLogsErrorAndContinues()
+    void anCrossRefDocumentWithUnknownTypeIsMappedToPublicationRequestWithoutPublicationInstanceAndPublicationContext()
         throws IllegalArgumentException {
-        CrossRefDocument crossRefDocument = sampleCrossRefDocumentWithBasicMetadata();
+        var crossRefDocument = sampleCrossRefDocumentWithBasicMetadata();
         crossRefDocument.setType(SOME_STRANGE_CROSSREF_TYPE);
-        TestAppender testAppender = LogUtils.getTestingAppender(CrossRefConverter.class);
-        toPublication(crossRefDocument);
-        String expectedError = String.format(UNRECOGNIZED_TYPE_MESSAGE, SOME_STRANGE_CROSSREF_TYPE);
-        assertThat(testAppender.getMessages(), containsString(expectedError));
+        var publicationRequest = toPublication(crossRefDocument);
+
+        assertNull(publicationRequest.getEntityDescription().getReference().getPublicationInstance());
+        assertNull(publicationRequest.getEntityDescription().getReference().getPublicationContext());
     }
 
     @Test
-    @DisplayName("An CrossRef document without type throws IllegalArgument exception")
-    void anCrossRefDocumentWithoutTypeThrowsIllegalArgumentException()
+    void anCrossRefDocumentWithoutTypeReturnsPublicationRequestWithoutPublicationContextAndPublicationInstance()
         throws IllegalArgumentException {
-        CrossRefDocument crossRefDocument = sampleCrossRefDocumentWithBasicMetadata();
+        var crossRefDocument = sampleCrossRefDocumentWithBasicMetadata();
         crossRefDocument.setType(null);
-        TestAppender testAppender = LogUtils.getTestingAppender(CrossRefConverter.class);
-        toPublication(crossRefDocument);
-        String expectedError = String.format(UNRECOGNIZED_TYPE_MESSAGE, "null");
-        assertThat(testAppender.getMessages(), containsString(expectedError));
+        var publicationRequest = toPublication(crossRefDocument);
+
+        assertNull(publicationRequest.getEntityDescription().getReference().getPublicationInstance());
+        assertNull(publicationRequest.getEntityDescription().getReference().getPublicationContext());
     }
 
     @Test
