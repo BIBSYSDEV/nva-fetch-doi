@@ -18,7 +18,6 @@ import no.unit.nva.doi.fetch.commons.publication.model.Contributor;
 import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
 import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
 import no.unit.nva.doi.fetch.commons.publication.model.Identity;
-import no.unit.nva.doi.fetch.commons.publication.model.PublicationContext;
 import no.unit.nva.doi.fetch.commons.publication.model.PublicationInstance;
 import no.unit.nva.doi.fetch.commons.publication.model.Range;
 import no.unit.nva.doi.fetch.commons.publication.model.Reference;
@@ -122,21 +121,20 @@ public class DataciteResponseConverter extends AbstractConverter {
     private Reference createReference(DataciteResponse dataciteResponse) {
         return new Reference.Builder()
                    .withDoi(doiConverter.toUri(dataciteResponse.getDoi()))
-                   .withPublicationContext(extractPublicationContext(dataciteResponse))
-                   .withPublicationInstance(extractPublicationInstance(dataciteResponse))
+                   .withPublicationContext(extractPublicationContext(dataciteResponse).orElse(null))
+                   .withPublicationInstance(extractPublicationInstance(dataciteResponse).orElse(null))
                    .build();
     }
 
-    private PublicationInstance extractPublicationInstance(DataciteResponse dataciteResponse) {
+    private Optional<PublicationInstance> extractPublicationInstance(DataciteResponse dataciteResponse) {
         return extractPublicationType(dataciteResponse)
                    .filter(JOURNAL_CONTENT::equals)
                    .map(publicationType -> dataciteResponse.getContainer())
-                   .map(this::createAcademicArticle)
-                   .orElse(null);
+                   .map(this::createAcademicArticle);
     }
 
     private AcademicArticle createAcademicArticle(DataciteContainer dataciteContainer) {
-        return new AcademicArticle("AcademicArticle", extractPages(dataciteContainer),
+        return new AcademicArticle(extractPages(dataciteContainer),
                                    dataciteContainer.getVolume(), dataciteContainer.getIssue());
     }
 
@@ -144,11 +142,10 @@ public class DataciteResponseConverter extends AbstractConverter {
         return new Range(container.getFirstPage(), container.getLastPage());
     }
 
-    private PublicationContext extractPublicationContext(DataciteResponse dataciteResponse) {
+    private Optional<UnconfirmedJournal> extractPublicationContext(DataciteResponse dataciteResponse) {
         return extractPublicationType(dataciteResponse)
                    .filter(JOURNAL_CONTENT::equals)
-                   .map(publicationType -> createUnconfirmedJournal(dataciteResponse))
-                   .orElse(null);
+                   .map(publicationType -> createUnconfirmedJournal(dataciteResponse));
     }
 
     private UnconfirmedJournal createUnconfirmedJournal(DataciteResponse dataciteResponse) {

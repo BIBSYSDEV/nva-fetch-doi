@@ -186,8 +186,8 @@ public class CrossRefConverter extends AbstractConverter {
         try {
             return new Reference.Builder()
                        .withDoi(doiConverter.toUri(document.getDoi()))
-                       .withPublicationContext(extractPublicationContext(document))
-                       .withPublicationInstance(extractPublicationInstance(document))
+                       .withPublicationContext(extractPublicationContext(document).orElse(null))
+                       .withPublicationInstance(extractPublicationInstance(document).orElse(null))
                        .build();
         } catch (UnsupportedDocumentTypeException e) {
             logger.error(String.format(UNRECOGNIZED_TYPE_MESSAGE + CANNOT_CREATE_REFERENCE_FOR_PUBLICATION,
@@ -207,12 +207,11 @@ public class CrossRefConverter extends AbstractConverter {
                    : new MonographPages(pages);
     }
 
-    private PublicationContext extractPublicationContext(CrossRefDocument document)
+    private Optional<PublicationContext> extractPublicationContext(CrossRefDocument document)
         throws UnsupportedDocumentTypeException {
         return getByType(document.getType())
             .map(CrossrefType::getPublicationType)
-            .map(publicationType -> createContext(document, publicationType))
-            .orElse(null);
+            .map(publicationType -> createContext(document, publicationType));
     }
 
     @JacocoGenerated
@@ -311,10 +310,9 @@ public class CrossRefConverter extends AbstractConverter {
                    .orElse(null);
     }
 
-    private PublicationInstance extractPublicationInstance(CrossRefDocument document) {
+    private Optional<PublicationInstance> extractPublicationInstance(CrossRefDocument document) {
         return getByType(document.getType())
-                   .map(crossrefType -> createInstance(document, crossrefType))
-                   .orElse(null);
+                   .map(crossrefType -> createInstance(document, crossrefType));
 
     }
 
@@ -345,16 +343,15 @@ public class CrossRefConverter extends AbstractConverter {
     }
 
     private AcademicMonograph createBookMonograph(CrossRefDocument document) {
-        return new AcademicMonograph("AcademicMonograph", extractMonographPages(document));
+        return new AcademicMonograph(extractMonographPages(document));
     }
 
     private AcademicChapter createChapterArticle(CrossRefDocument document) {
-        return new AcademicChapter("AcademicChapter", extractRangePages(document));
+        return new AcademicChapter(extractRangePages(document));
     }
 
     private AcademicArticle academicArticle(CrossRefDocument document) {
-        return new AcademicArticle("AcademicArticle",
-                                   extractRangePages(document), document.getVolume(), document.getIssue());
+        return new AcademicArticle(extractRangePages(document), document.getVolume(), document.getIssue());
     }
 
     private String extractJournalTitle(CrossRefDocument document) {

@@ -32,7 +32,7 @@ public class ModelSerializationTest {
                                    "123", new UnconfirmedPublisher("name"),
                                    List.of("isbn"));
 
-        var academicMonograph = new AcademicMonograph("AcademicMonograph", new Range("1", "10"));
+        var academicMonograph = new AcademicMonograph(new Range("1", "10"));
 
         var reference = new Reference.Builder()
                             .withDoi(randomUri)

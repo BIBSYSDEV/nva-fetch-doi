@@ -71,7 +71,7 @@ public final class DocumentTypeExtractor {
         throws InvalidIssnException {
         if (isNull(reference.getPublicationInstance()) && isNull(reference.getPublicationContext())) {
             var validatedIssn = validateIssn(issn);
-            var instanceType = new AcademicArticle("AcademicArticle", null, null, null);
+            var instanceType = new AcademicArticle(null, null, null);
             UnconfirmedJournal contextType = new UnconfirmedJournal(null, null, validatedIssn);
             reference.setPublicationInstance(instanceType);
             reference.setPublicationContext(contextType);
@@ -100,7 +100,7 @@ public final class DocumentTypeExtractor {
                 presentIsbn -> reference.setPublicationContext(
                     addNonPreexistingIsbn(presentIsbn, (Book) context, isbnList)));
         } else {
-            var academicMonograph = new AcademicMonograph("AcademicMonograph", null);
+            var academicMonograph = new AcademicMonograph(null);
             var isbnList = validatedIsbn.stream().toList();
             Book contextType = new Book(null, null, null, isbnList);
             reference.setPublicationInstance(academicMonograph);

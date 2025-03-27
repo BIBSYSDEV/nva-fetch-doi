@@ -1,5 +1,6 @@
 package no.unit.nva.doi.transformer.utils;
 
+import static java.util.function.Predicate.not;
 import java.util.Arrays;
 import java.util.Optional;
 import nva.commons.core.SingletonCollector;
@@ -34,7 +35,7 @@ public enum CrossrefType {
 
     private static Optional<CrossrefType> collectSingleNonEmptyCrossrefType(String type) {
         return Arrays.stream(values())
-                   .filter(crossrefType -> !crossrefType.equals(NON_EXISTING_TYPE))
+                   .filter(not(NON_EXISTING_TYPE::equals))
                    .filter(crossrefType -> crossrefType.getType().equalsIgnoreCase(type))
                    .map(Optional::of)
                    .collect(SingletonCollector.collectOrElse(Optional.empty()));
