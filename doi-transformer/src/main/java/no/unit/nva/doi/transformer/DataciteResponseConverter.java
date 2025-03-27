@@ -37,7 +37,6 @@ import no.unit.nva.doi.transformer.utils.DataciteTypesUtil;
 import no.unit.nva.doi.transformer.utils.InvalidIssnException;
 import no.unit.nva.doi.transformer.utils.IssnCleaner;
 import no.unit.nva.doi.transformer.utils.LicensingIndicator;
-import no.unit.nva.doi.transformer.utils.PublicationType;
 import nva.commons.core.StringUtils;
 import nva.commons.doi.DoiConverter;
 
@@ -127,10 +126,14 @@ public class DataciteResponseConverter extends AbstractConverter {
     }
 
     private Optional<PublicationInstance> extractPublicationInstance(DataciteResponse dataciteResponse) {
-        return extractPublicationType(dataciteResponse)
-                   .filter(JOURNAL_CONTENT::equals)
-                   .map(publicationType -> dataciteResponse.getContainer())
+        return Optional.of(dataciteResponse)
+                   .filter(DataciteResponseConverter::isJournalContent)
+                   .map(DataciteResponse::getContainer)
                    .map(this::createAcademicArticle);
+    }
+
+    private static boolean isJournalContent(DataciteResponse dataciteResponse) {
+        return DataciteTypesUtil.mapToType(dataciteResponse).map(JOURNAL_CONTENT::equals).orElse(false);
     }
 
     private AcademicArticle createAcademicArticle(DataciteContainer dataciteContainer) {
@@ -143,9 +146,9 @@ public class DataciteResponseConverter extends AbstractConverter {
     }
 
     private Optional<UnconfirmedJournal> extractPublicationContext(DataciteResponse dataciteResponse) {
-        return extractPublicationType(dataciteResponse)
-                   .filter(JOURNAL_CONTENT::equals)
-                   .map(publicationType -> createUnconfirmedJournal(dataciteResponse));
+        return Optional.of(dataciteResponse)
+                   .filter(DataciteResponseConverter::isJournalContent)
+                   .map(this::createUnconfirmedJournal);
     }
 
     private UnconfirmedJournal createUnconfirmedJournal(DataciteResponse dataciteResponse) {
@@ -199,10 +202,6 @@ public class DataciteResponseConverter extends AbstractConverter {
     protected boolean hasOpenAccessRights(DataciteRights dataciteRights) {
         return Optional.ofNullable(dataciteRights.getRightsUri())
                    .map(LicensingIndicator::isOpen).orElse(false);
-    }
-
-    private Optional<PublicationType> extractPublicationType(DataciteResponse dataciteResponse) {
-        return DataciteTypesUtil.mapToType(dataciteResponse);
     }
 
     private String extractAbstract() {
