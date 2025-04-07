@@ -30,11 +30,11 @@ public final class ContributorExtractor {
         EntityDescription entityDescription = extractionPair.getEntityDescription();
         List<Contributor> contributorList = entityDescription.getContributors();
         if (isNull(contributorList)) {
-            ArrayList<Contributor> newList = new ArrayList<>();
+            var newList = new ArrayList<Contributor>();
             newList.add(contributor);
             entityDescription.setContributors(newList);
         } else {
-            ArrayList<Contributor> newContributorList = new ArrayList<>(entityDescription.getContributors());
+            var newContributorList = new ArrayList<>(entityDescription.getContributors());
             newContributorList.add(contributor);
             entityDescription.setContributors(newContributorList);
         }

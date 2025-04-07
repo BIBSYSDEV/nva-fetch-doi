@@ -57,7 +57,7 @@ public enum DataciteRelationType {
             return NON_EXISTING_RELATION;
         }
 
-        return Arrays.stream(DataciteRelationType.values())
+        return Arrays.stream(values())
                 .filter(value -> !value.equals(NON_EXISTING_RELATION))
                 .filter(value -> value.getRelation().equalsIgnoreCase(relation))
                 .collect(SingletonCollector.collectOrElse(NON_EXISTING_RELATION));

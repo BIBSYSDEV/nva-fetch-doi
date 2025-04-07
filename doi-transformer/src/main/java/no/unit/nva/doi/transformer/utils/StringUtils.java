@@ -51,7 +51,7 @@ public final class StringUtils {
                 output = input;
             }
         }
-        return StringUtils.removeMultipleWhiteSpaces(output).trim();
+        return removeMultipleWhiteSpaces(output).trim();
     }
 
     private static String textWithoutXmlTags(NodeList nodeList) {

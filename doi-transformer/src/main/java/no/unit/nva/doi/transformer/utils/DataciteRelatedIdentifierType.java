@@ -57,7 +57,7 @@ public enum DataciteRelatedIdentifierType {
 
 
     private static boolean isKnown(DataciteRelatedIdentifierType dataciteRelatedIdentifierType) {
-        return !dataciteRelatedIdentifierType.equals(DataciteRelatedIdentifierType.UNKNOWN_IDENTIFIER);
+        return !dataciteRelatedIdentifierType.equals(UNKNOWN_IDENTIFIER);
     }
 
     /**
