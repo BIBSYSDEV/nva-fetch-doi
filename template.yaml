@@ -230,7 +230,7 @@ Resources:
       MemorySize: 128
       Timeout: 30
       Role: !GetAtt ApiGatewayCreateDeploymentLambdaRole.Arn
-      Runtime: python3.8
+      Runtime: python3.13
       Code:
         ZipFile: |
           import json, boto3
