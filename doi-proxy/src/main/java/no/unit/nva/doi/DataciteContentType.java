@@ -29,7 +29,7 @@ public enum DataciteContentType {
      */
     public static DataciteContentType lookup(String contentType) {
         return Arrays
-            .stream(DataciteContentType.values())
+            .stream(values())
             .filter(dataciteContentType -> dataciteContentType.getContentType().equals(contentType))
             .findAny()
             .orElseThrow(() ->
@@ -38,7 +38,7 @@ public enum DataciteContentType {
                                      DataciteContentTypeNotFound,
                                      contentType,
                                      String.join(",", Arrays
-                                         .stream(DataciteContentType.values())
+                                         .stream(values())
                                          .map(DataciteContentType::getContentType)
                                          .collect(Collectors.joining(",")))))
             );

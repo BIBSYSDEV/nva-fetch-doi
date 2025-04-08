@@ -65,7 +65,7 @@ public enum RisType {
         }
 
         return Arrays.stream(values())
-                .filter(risType -> !risType.equals(RisType.NON_EXISTING_TYPE))
+                .filter(risType -> !risType.equals(NON_EXISTING_TYPE))
                 .filter(s -> s.name().equalsIgnoreCase(type))
                 .collect(SingletonCollector.collectOrElse(NON_EXISTING_TYPE));
     }

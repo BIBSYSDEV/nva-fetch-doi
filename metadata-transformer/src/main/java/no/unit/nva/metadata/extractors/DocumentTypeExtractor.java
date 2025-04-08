@@ -109,14 +109,14 @@ public final class DocumentTypeExtractor {
     }
 
     private static Book addNonPreexistingIsbn(String isbn, Book context, List<String> isbnList) {
-        if (!isbnList.contains(isbn)) {
+        if (isbnList.contains(isbn)) {
+            return context;
+        } else {
             isbnList.add(isbn);
             return new Book(context.series(),
                             context.seriesNumber(),
                             context.publisher(),
                             isbnList);
-        } else {
-            return context;
         }
     }
 

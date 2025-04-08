@@ -67,7 +67,7 @@ public enum CiteProcType {
         }
 
         return Arrays.stream(values())
-                .filter(citeProcType -> !citeProcType.equals(CiteProcType.NON_EXISTING_TYPE))
+                .filter(citeProcType -> !citeProcType.equals(NON_EXISTING_TYPE))
                 .filter(s -> s.getType().equalsIgnoreCase(type))
                 .collect(SingletonCollector.collectOrElse(NON_EXISTING_TYPE));
     }

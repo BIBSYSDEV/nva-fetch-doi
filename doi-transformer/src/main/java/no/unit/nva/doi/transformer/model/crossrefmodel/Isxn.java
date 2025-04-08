@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import nva.commons.core.JacocoGenerated;
 
 import java.util.Arrays;
-import java.util.stream.Collectors;
 
 @SuppressWarnings("PMD.ShortClassName")
 public class Isxn {
@@ -35,11 +34,7 @@ public class Isxn {
         ELECTRONIC("electronic");
 
         private final String name;
-        private static final String DELIMITER = ", ";
-        private static String ISSN_TYPE_NAMES = Arrays.stream(values()).map(issnType -> issnType.getName()).collect(
-            Collectors.joining(DELIMITER));
-
-        private static String ERROR_MESSAGE = "Invalid Type:%s.  Allowed types are: " + ISSN_TYPE_NAMES;
+        private static String ERROR_MESSAGE = "Invalid Type:%s.  Allowed types are: print, electronic";
 
         IsxnType(String name) {
             this.name = name;

@@ -186,7 +186,7 @@ public enum SchemaOrgType {
         }
 
         return Arrays.stream(values())
-                .filter(schemaOrgType -> !schemaOrgType.equals(SchemaOrgType.NON_EXISTING_TYPE))
+                .filter(schemaOrgType -> !schemaOrgType.equals(NON_EXISTING_TYPE))
                 .filter(s -> s.getType().equalsIgnoreCase(type))
                 .collect(SingletonCollector.collectOrElse(NON_EXISTING_TYPE));
     }

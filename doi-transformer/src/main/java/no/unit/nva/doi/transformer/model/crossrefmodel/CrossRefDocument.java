@@ -6,7 +6,7 @@ import nva.commons.core.JacocoGenerated;
 
 import java.util.List;
 
-@SuppressWarnings({"PMD.TooManyFields", "PMD.ExcessivePublicCount"})
+@SuppressWarnings({"PMD.TooManyFields", "PMD.ExcessivePublicCount", "PMD.CyclomaticComplexity"})
 public class CrossRefDocument {
 
     @JsonProperty("publisher")
