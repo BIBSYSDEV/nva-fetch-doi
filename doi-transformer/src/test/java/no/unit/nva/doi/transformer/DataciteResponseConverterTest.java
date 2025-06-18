@@ -45,10 +45,12 @@ public class DataciteResponseConverterTest {
 
     @Test
     void shouldHandlePublishersThatAreObjects() throws JsonProcessingException {
-        var data = IoUtils.stringFromResources(Path.of("datacite_publisher_is_object.json"));
+        var expected = "My publisher";
+        var data = IoUtils.stringFromResources(Path.of("datacite_publisher_is_object.json"))
+                .formatted(expected);
 
-        var x = JsonUtils.dtoObjectMapper.readValue(data, DataciteResponse.class);
-        assertNotNull(x);
+        var dataciteResponse = JsonUtils.dtoObjectMapper.readValue(data, DataciteResponse.class);
+        assertThat(dataciteResponse.getPublisher(), equalTo(expected));
     }
 
 

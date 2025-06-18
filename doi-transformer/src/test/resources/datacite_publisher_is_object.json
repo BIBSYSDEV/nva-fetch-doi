@@ -58,7 +58,7 @@
     }
   ],
   "publisher": {
-    "name": "Norges teknisk-naturvitenskapelige universitet"
+    "name": "%s"
   },
   "container": {},
   "subjects": [],
