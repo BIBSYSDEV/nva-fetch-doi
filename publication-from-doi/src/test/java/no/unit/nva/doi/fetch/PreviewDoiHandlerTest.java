@@ -132,8 +132,4 @@ class PreviewDoiHandlerTest extends DoiHandlerTestUtils {
 
         return new PreviewDoiHandler(doiTransformService, doiProxyService, cristinProxyClient, metadataService, environment);
     }
-
-
-
-
 }
