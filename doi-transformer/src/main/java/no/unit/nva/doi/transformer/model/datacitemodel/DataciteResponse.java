@@ -15,7 +15,7 @@ public class DataciteResponse {
     private DataciteTypes types;
     private List<DataciteCreator> creators;
     private List<DataciteTitle> titles;
-    private String publisher;
+    private Publisher publisher;
     private DataciteContainer container;
     private List<DataciteContributor> contributors;
     private List<DataciteDate> dates;
@@ -116,12 +116,12 @@ public class DataciteResponse {
 
     @JacocoGenerated
     public String getPublisher() {
-        return publisher;
+        return publisher.value();
     }
 
     @JacocoGenerated
-    public void setPublisher(String publisher) {
-        this.publisher = publisher;
+    public void setPublisher(Object publisher) {
+        this.publisher = Publisher.fromJson(publisher);
     }
 
     @JacocoGenerated
