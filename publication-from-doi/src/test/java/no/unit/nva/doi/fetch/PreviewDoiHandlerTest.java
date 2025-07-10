@@ -27,7 +27,6 @@ import no.unit.nva.doi.transformer.DoiTransformService;
 import no.unit.nva.doi.transformer.utils.CristinProxyClient;
 import no.unit.nva.doi.transformer.utils.InvalidIssnException;
 import no.unit.nva.metadata.service.MetadataService;
-import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,11 +41,8 @@ class PreviewDoiHandlerTest extends DoiHandlerTestUtils {
 
     @BeforeEach
     public void setUp() {
-        environment = mock(Environment.class);
+        environment = new Environment();
         context = getMockContext();
-
-        when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALL_ORIGINS);
-        when(environment.readEnv(ImportDoiHandler.PUBLICATION_API_HOST_ENV)).thenReturn("localhost");
     }
 
     @Test

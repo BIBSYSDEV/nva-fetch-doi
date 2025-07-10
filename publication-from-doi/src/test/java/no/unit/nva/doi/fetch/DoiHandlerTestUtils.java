@@ -201,6 +201,7 @@ public class DoiHandlerTestUtils {
     Environment createEnvironmentWithInvalidHost() {
         Environment environment = mock(Environment.class);
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALL_ORIGINS);
+        when(environment.readEnv("COGNITO_AUTHORIZER_URLS")).thenReturn("http://localhost:3000");
         when(environment.readEnv(ImportDoiHandler.PUBLICATION_API_HOST_ENV)).thenReturn(INVALID_HOST_STRING);
         return environment;
     }
