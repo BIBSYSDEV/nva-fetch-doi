@@ -68,13 +68,10 @@ class ImportDoiHandlerTest extends DoiHandlerTestUtils {
 
     @BeforeEach
     public void setUp() {
-        environment = mock(Environment.class);
+        environment = new Environment();
         context = getMockContext();
         output = new ByteArrayOutputStream();
         publicationPersistenceService = mock(PublicationPersistenceService.class);
-
-        when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALL_ORIGINS);
-        when(environment.readEnv(ImportDoiHandler.PUBLICATION_API_HOST_ENV)).thenReturn("localhost");
     }
 
     @Test
