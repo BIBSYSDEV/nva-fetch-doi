@@ -10,6 +10,9 @@ Parameters:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Description: Reference to Cognito UserPool for the stage
     Default: CognitoAuthorizerArn
+  CognitoAuthorizerUrls:
+    Type: AWS::SSM::Parameter::Value<CommaDelimitedList>
+    Default: CognitoAuthorizerUrls
   CognitoUri:
     Type: AWS::SSM::Parameter::Value<String>
     Description: URI to the OAUTH endpoint of the Cognito client
@@ -53,6 +56,7 @@ Globals:
     Environment:
       Variables:
         COGNITO_HOST: !Ref CognitoUri
+        COGNITO_AUTHORIZER_URLS: !Join [ ",", !Ref CognitoAuthorizerUrls ]
   Api:
     Cors:
       AllowMethods: "'POST,OPTIONS'"
