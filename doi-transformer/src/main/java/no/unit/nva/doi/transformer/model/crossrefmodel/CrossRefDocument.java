@@ -56,8 +56,6 @@ public class CrossRefDocument {
     private List<String> containerTitle;
     @JsonProperty("short-container-title")
     private List<String> shortContainerTitle;
-    @JsonProperty("group-title")
-    private List<String> groupTitle;
     @JsonProperty("issue")
     private String issue;
     @JsonProperty("volume")
@@ -445,15 +443,6 @@ public class CrossRefDocument {
     @JacocoGenerated
     public void setAccepted(CrossrefDate accepted) {
         this.accepted = accepted;
-    }
-
-    public List<String> getGroupTitle() {
-        return groupTitle;
-    }
-
-    @JacocoGenerated
-    public void setGroupTitle(List<String> groupTitle) {
-        this.groupTitle = groupTitle;
     }
 
     public String getArticleNumber() {
