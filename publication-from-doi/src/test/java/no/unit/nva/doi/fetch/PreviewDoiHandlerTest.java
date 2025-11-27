@@ -20,11 +20,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import no.unit.nva.clients.cristin.CristinClient;
 import no.unit.nva.doi.DoiProxyService;
 import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
 import no.unit.nva.doi.transformer.DoiTransformService;
-import no.unit.nva.doi.transformer.utils.CristinProxyClient;
 import no.unit.nva.doi.transformer.utils.InvalidIssnException;
 import no.unit.nva.metadata.service.MetadataService;
 import nva.commons.apigateway.GatewayResponse;
@@ -111,10 +111,10 @@ class PreviewDoiHandlerTest extends DoiHandlerTestUtils {
         throws URISyntaxException, IOException, InvalidIssnException, MetadataNotFoundException {
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
-        CristinProxyClient cristinProxyClient = mock(CristinProxyClient.class);
+        var cristinClient = mock(CristinClient.class);
         MetadataService metadataService = mockMetadataServiceReturningSuccessfulResult();
 
-        return new PreviewDoiHandler(doiTransformService, doiProxyService, cristinProxyClient, metadataService, environment);
+        return new PreviewDoiHandler(doiTransformService, doiProxyService, cristinClient, metadataService, environment);
     }
 
     PreviewDoiHandler createHandlerWithFailingDoiProxy(Environment environment)
@@ -123,9 +123,9 @@ class PreviewDoiHandlerTest extends DoiHandlerTestUtils {
         when(doiProxyService.lookupDoiMetadata(anyString(), any())).thenThrow(new IOException(""));
 
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
-        CristinProxyClient cristinProxyClient = mock(CristinProxyClient.class);
+        var cristinClient = mock(CristinClient.class);
         MetadataService metadataService = mockMetadataServiceReturningSuccessfulResult();
 
-        return new PreviewDoiHandler(doiTransformService, doiProxyService, cristinProxyClient, metadataService, environment);
+        return new PreviewDoiHandler(doiTransformService, doiProxyService, cristinClient, metadataService, environment);
     }
 }

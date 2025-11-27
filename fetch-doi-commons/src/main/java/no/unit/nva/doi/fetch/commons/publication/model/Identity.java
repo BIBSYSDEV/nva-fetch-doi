@@ -8,10 +8,12 @@ import nva.commons.core.JacocoGenerated;
 @JacocoGenerated
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class Identity {
+
     private URI id;
     private String name;
     private String nameType;
     private String orcId;
+    private VerificationStatus verificationStatus;
 
     public Identity() {
     }
@@ -55,23 +57,30 @@ public class Identity {
         this.orcId = orcId;
     }
 
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(getId(), getName(), getNameType(), getOrcId(), getVerificationStatus());
+    }
+
+    @JacocoGenerated
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof Identity identity)) {
             return false;
         }
-        Identity identity = (Identity) o;
         return Objects.equals(getId(), identity.getId())
                && Objects.equals(getName(), identity.getName())
                && Objects.equals(getNameType(), identity.getNameType())
-               && Objects.equals(getOrcId(), identity.getOrcId());
+               && Objects.equals(getOrcId(), identity.getOrcId())
+               && getVerificationStatus() == identity.getVerificationStatus();
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(getId(), getName(), getNameType(), getOrcId());
+    public VerificationStatus getVerificationStatus() {
+        return verificationStatus;
+    }
+
+    public void setVerificationStatus(VerificationStatus verificationStatus) {
+        this.verificationStatus = verificationStatus;
     }
 }

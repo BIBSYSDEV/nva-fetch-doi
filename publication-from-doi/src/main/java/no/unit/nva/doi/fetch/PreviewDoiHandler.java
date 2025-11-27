@@ -4,13 +4,13 @@ import static java.util.Objects.isNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
+import no.unit.nva.clients.cristin.CristinClient;
 import no.unit.nva.doi.DoiProxyService;
 import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
 import no.unit.nva.doi.fetch.exceptions.MalformedRequestException;
 import no.unit.nva.doi.fetch.model.RequestBody;
 import no.unit.nva.doi.fetch.service.FetchDoiService;
 import no.unit.nva.doi.transformer.DoiTransformService;
-import no.unit.nva.doi.transformer.utils.CristinProxyClient;
 import no.unit.nva.metadata.service.MetadataService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -32,17 +32,17 @@ public class PreviewDoiHandler extends ApiGatewayHandler<RequestBody, CreatePubl
     @JacocoGenerated
     public PreviewDoiHandler(Environment environment) {
         this(new DoiTransformService(),
-             new DoiProxyService(environment), new CristinProxyClient(),
+             new DoiProxyService(environment), CristinClient.defaultClient(),
              getMetadataService(), environment);
     }
 
     public PreviewDoiHandler(DoiTransformService doiTransformService,
                             DoiProxyService doiProxyService,
-                            CristinProxyClient cristinProxyClient,
+                            CristinClient cristinClient,
                             MetadataService metadataService,
                             Environment environment) {
         super(RequestBody.class, environment);
-        this.fetchDoiService = new FetchDoiService(doiTransformService, doiProxyService, cristinProxyClient,
+        this.fetchDoiService = new FetchDoiService(doiTransformService, doiProxyService, cristinClient,
                                                    metadataService);
     }
 

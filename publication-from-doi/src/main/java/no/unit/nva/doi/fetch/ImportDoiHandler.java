@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import no.sikt.nva.doi.fetch.jsonconfig.Json;
+import no.unit.nva.clients.cristin.CristinClient;
 import no.unit.nva.doi.DoiProxyService;
 import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
 import no.unit.nva.doi.fetch.commons.publication.model.PublicationResponse;
@@ -19,7 +20,6 @@ import no.unit.nva.doi.fetch.service.FetchDoiService;
 import no.unit.nva.doi.fetch.service.PublicationConverter;
 import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
 import no.unit.nva.doi.transformer.DoiTransformService;
-import no.unit.nva.doi.transformer.utils.CristinProxyClient;
 import no.unit.nva.metadata.service.MetadataService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -46,7 +46,7 @@ public class ImportDoiHandler extends ApiGatewayHandler<RequestBody, Summary> {
     @JacocoGenerated
     public ImportDoiHandler(Environment environment) {
         this(new PublicationConverter(), new DoiTransformService(),
-             new DoiProxyService(environment), new PublicationPersistenceService(), new CristinProxyClient(),
+             new DoiProxyService(environment), new PublicationPersistenceService(), CristinClient.defaultClient(),
              getMetadataService(), environment);
     }
 
@@ -54,7 +54,7 @@ public class ImportDoiHandler extends ApiGatewayHandler<RequestBody, Summary> {
                             DoiTransformService doiTransformService,
                             DoiProxyService doiProxyService,
                             PublicationPersistenceService publicationPersistenceService,
-                            CristinProxyClient cristinProxyClient,
+                            CristinClient cristinClient,
                             MetadataService metadataService,
                             Environment environment) {
         super(RequestBody.class, environment);
@@ -62,7 +62,7 @@ public class ImportDoiHandler extends ApiGatewayHandler<RequestBody, Summary> {
         this.publicationPersistenceService = publicationPersistenceService;
 
         this.publicationApiHost = environment.readEnv(PUBLICATION_API_HOST_ENV);
-        this.fetchDoiService = new FetchDoiService(doiTransformService, doiProxyService, cristinProxyClient,
+        this.fetchDoiService = new FetchDoiService(doiTransformService, doiProxyService, cristinClient,
                                                    metadataService);
     }
 
