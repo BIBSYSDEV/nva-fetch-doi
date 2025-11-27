@@ -12,6 +12,7 @@ import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
 import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
 import no.unit.nva.doi.fetch.commons.publication.model.Identity;
 import no.unit.nva.doi.fetch.commons.publication.model.VerificationStatus;
+import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,7 +80,8 @@ public final class IdentityUpdater {
     }
 
     private static void updateIdentifierIfFoundFromOrcid(CristinClient cristinClient, Identity identity) {
-        var person = cristinClient.getPerson(identity.getOrcId());
+        var orcId = UriWrapper.fromUri(identity.getOrcId()).getLastPathElement();
+        var person = cristinClient.getPerson(orcId);
         if (person.isPresent()) {
             identity.setId(person.map(CristinPersonDto::id).orElse(null));
             identity.setVerificationStatus(person.map(CristinPersonDto::verified).map(VerificationStatus::fromBoolean).orElse(NOT_VERIFIED));
