@@ -20,7 +20,7 @@ public final class IdentityUpdater {
 
     public static final String PROBLEM_UPDATING_IDENTITY_MESSAGE = "Problem updating Identity, ignoring and moving on";
     private static final Logger logger = LoggerFactory.getLogger(IdentityUpdater.class);
-    public static final int MAX_CONTRIBUTORS_TO_LOOKUP = 10;
+    public static final int MAX_CONTRIBUTORS_TO_LOOKUP = 100;
 
     private IdentityUpdater() {
     }

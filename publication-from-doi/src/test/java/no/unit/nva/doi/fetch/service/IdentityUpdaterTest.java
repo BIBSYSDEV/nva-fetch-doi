@@ -128,7 +128,7 @@ class IdentityUpdaterTest {
 
     @Test
     public void shouldNotEnrichContributorsWhenMoreThanTenUnverifiedContributorsExist() {
-        var identities = Stream.generate(this::createIdentityWithOrcid).limit(11).toList();
+        var identities = Stream.generate(this::createIdentityWithOrcid).limit(101).toList();
         var publication = createPublicationWithIdentities(identities);
         var cristinClient = mock(CristinClient.class);
         var sampleIdentifier = URI.create(SAMPLE_IDENTITY_IDENTIFIER);
