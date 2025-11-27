@@ -20,7 +20,6 @@ public final class IdentityUpdater {
 
     public static final String PROBLEM_UPDATING_IDENTITY_MESSAGE = "Problem updating Identity, ignoring and moving on";
     private static final Logger logger = LoggerFactory.getLogger(IdentityUpdater.class);
-    public static final int MAX_CONTRIBUTORS_TO_LOOKUP = 10;
 
     private IdentityUpdater() {
     }
@@ -38,7 +37,6 @@ public final class IdentityUpdater {
 
         var possibleContributors = extractPossibleContributors(publication);
         possibleContributors.ifPresent(contributors -> tryUpdatingContributorsOrLogError(cristinClient,
-                                                                                         publication,
                                                                                          contributors));
         return publication;
     }
@@ -50,25 +48,18 @@ public final class IdentityUpdater {
     }
 
     private static void tryUpdatingContributorsOrLogError(CristinClient cristinClient,
-                                                          CreatePublicationRequest publication,
                                                           List<Contributor> contributors) {
         try {
-            updateContributors(cristinClient, publication, contributors);
+            updateContributors(cristinClient, contributors);
         } catch (Exception e) {
             logger.info(PROBLEM_UPDATING_IDENTITY_MESSAGE, e);
         }
     }
 
-    private static void updateContributors(CristinClient cristinClient, CreatePublicationRequest publication,
+    private static void updateContributors(CristinClient cristinClient,
                                            List<Contributor> contributors) {
         var contributorsWithOnlyOrcid = contributors.stream()
                                             .filter(IdentityUpdater::hasOrcidButNotIdentifier).toList();
-        if (contributorsWithOnlyOrcid.size() > MAX_CONTRIBUTORS_TO_LOOKUP) {
-            logger.warn("Skipping updateContributors as too many without known cristin-identifier: {}",
-                        publication.getEntityDescription().getMetadataSource());
-            return;
-        }
-
         contributorsWithOnlyOrcid
             .forEach(contributor -> updateIdentifierIfFoundFromOrcid(cristinClient, contributor.identity())
         );

@@ -24,8 +24,6 @@ import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
 import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
 import no.unit.nva.doi.fetch.commons.publication.model.Identity;
 import no.unit.nva.doi.fetch.commons.publication.model.Role;
-import org.hamcrest.beans.HasPropertyWithValue;
-import org.hamcrest.core.Every;
 import org.junit.jupiter.api.Test;
 
 class IdentityUpdaterTest {
@@ -123,20 +121,6 @@ class IdentityUpdaterTest {
         var cristinClient = mock(CristinClient.class);
         var updatedPublication = IdentityUpdater.enrichPublicationCreators(cristinClient, publication);
 
-        assertThat(updatedPublication, equalTo(publication));
-    }
-
-    @Test
-    public void shouldNotEnrichContributorsWhenMoreThanTenUnverifiedContributorsExist() {
-        var identities = Stream.generate(this::createIdentityWithOrcid).limit(11).toList();
-        var publication = createPublicationWithIdentities(identities);
-        var cristinClient = mock(CristinClient.class);
-        var sampleIdentifier = URI.create(SAMPLE_IDENTITY_IDENTIFIER);
-        when(cristinClient.getPerson((String) any())).thenReturn(createPersonWithId(sampleIdentifier));
-
-        var updatedPublication = IdentityUpdater.enrichPublicationCreators(cristinClient, publication);
-
-        assertThat(identities, Every.everyItem(HasPropertyWithValue.hasProperty("id", equalTo(null))));
         assertThat(updatedPublication, equalTo(publication));
     }
 
