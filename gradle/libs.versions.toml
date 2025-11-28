@@ -29,6 +29,7 @@ nva-secrets = { group = "com.github.bibsysdev", name = "secrets", version.ref = 
 nva-logutils = { group = "com.github.bibsysdev", name = "logutils", version.ref = "nva" }
 nva-identifiers = { group = "com.github.bibsysdev", name = "identifiers", version.ref = "nva" }
 nva-doi = { group = "com.github.bibsysdev", name = "doi", version.ref = "nva" }
+nva-client = { group = "com.github.bibsysdev", name = "clients", version.ref = "nva" }
 nva-testutils = { group = "com.github.bibsysdev", name = "nvatestutils", version.ref = "nva" }
 
 jackson-core = { group = "com.fasterxml.jackson.core", name = "jackson-core", version.ref = "jacksonVersion" }

@@ -31,6 +31,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.util.Optional;
+import no.unit.nva.clients.cristin.CristinClient;
 import no.unit.nva.doi.CrossRefClient;
 import no.unit.nva.doi.DataciteClient;
 import no.unit.nva.doi.DoiProxyService;
@@ -42,12 +43,10 @@ import no.unit.nva.doi.fetch.model.Summary;
 import no.unit.nva.doi.fetch.service.PublicationConverter;
 import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
 import no.unit.nva.doi.transformer.DoiTransformService;
-import no.unit.nva.doi.transformer.utils.CristinProxyClient;
 import no.unit.nva.doi.transformer.utils.InvalidIsbnException;
 import no.unit.nva.doi.transformer.utils.InvalidIssnException;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.metadata.service.MetadataService;
-import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.core.Environment;
 import nva.commons.logutils.LogUtils;
@@ -148,10 +147,10 @@ class ImportDoiHandlerTest extends DoiHandlerTestUtils {
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mock(DoiProxyService.class);
         PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
-        CristinProxyClient cristinProxyClient = mock(CristinProxyClient.class);
+        var cristinClient = mock(CristinClient.class);
         MetadataService metadataService = mock(MetadataService.class);
         ImportDoiHandler importDoiHandler = new ImportDoiHandler(publicationConverter, doiTransformService,
-                                                                 doiProxyService, publicationPersistenceService, cristinProxyClient,
+                                                                 doiProxyService, publicationPersistenceService, cristinClient,
                                                                  metadataService, environment);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         importDoiHandler.handleRequest(malformedInputStream(), output, context);
@@ -167,7 +166,7 @@ class ImportDoiHandlerTest extends DoiHandlerTestUtils {
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
         PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
-        CristinProxyClient cristinProxyClient = mock(CristinProxyClient.class);
+        var cristinProxyClient = mock(CristinClient.class);
         MetadataService metadataService = mock(MetadataService.class);
 
         ImportDoiHandler importDoiHandler = new ImportDoiHandler(publicationConverter, doiTransformService,
@@ -190,7 +189,7 @@ class ImportDoiHandlerTest extends DoiHandlerTestUtils {
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mockDoiProxyReceivingFailedResult();
         PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
-        CristinProxyClient cristinProxyClient = mock(CristinProxyClient.class);
+        var cristinProxyClient = mock(CristinClient.class);
         MetadataService metadataService = mock(MetadataService.class);
 
         ImportDoiHandler handler = new ImportDoiHandler(publicationConverter, doiTransformService, doiProxyService,
@@ -211,7 +210,7 @@ class ImportDoiHandlerTest extends DoiHandlerTestUtils {
         PublicationConverter publicationConverter = mockPublicationConverter();
         DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
-        CristinProxyClient cristinProxyClient = mock(CristinProxyClient.class);
+        var cristinProxyClient = mock(CristinClient.class);
         MetadataService metadataService = mock(MetadataService.class);
 
         PublicationPersistenceService publicationPersistenceService =
@@ -231,7 +230,7 @@ class ImportDoiHandlerTest extends DoiHandlerTestUtils {
     private ImportDoiHandler handlerReceivingEmptyResponse(PublicationConverter publicationConverter) {
         DoiTransformService doiTransformService = mock(DoiTransformService.class);
         DoiProxyService doiProxyService = mock(DoiProxyService.class);
-        CristinProxyClient cristinProxyClient = mock(CristinProxyClient.class);
+        var cristinProxyClient = mock(CristinClient.class);
         MetadataService metadataService = mock(MetadataService.class);
         when(metadataService.generateCreatePublicationRequest(any())).thenReturn(Optional.empty());
 
@@ -252,7 +251,7 @@ class ImportDoiHandlerTest extends DoiHandlerTestUtils {
         PublicationConverter publicationConverter = mockPublicationConverter();
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
-        CristinProxyClient cristinProxyClient = mock(CristinProxyClient.class);
+        var cristinProxyClient = mock(CristinClient.class);
         MetadataService metadataService = mockMetadataServiceReturningSuccessfulResult();
 
         return new ImportDoiHandler(publicationConverter, doiTransformService,

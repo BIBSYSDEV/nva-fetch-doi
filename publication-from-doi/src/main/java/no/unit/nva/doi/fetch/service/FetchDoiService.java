@@ -6,6 +6,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
+import no.unit.nva.clients.cristin.CristinClient;
 import no.unit.nva.doi.DataciteContentType;
 import no.unit.nva.doi.DoiProxyService;
 import no.unit.nva.doi.MetadataAndContentLocation;
@@ -16,7 +17,6 @@ import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
 import no.unit.nva.doi.fetch.exceptions.UnsupportedDocumentTypeException;
 import no.unit.nva.doi.transformer.DoiTransformService;
-import no.unit.nva.doi.transformer.utils.CristinProxyClient;
 import no.unit.nva.doi.transformer.utils.InvalidIssnException;
 import no.unit.nva.metadata.service.MetadataService;
 import org.slf4j.Logger;
@@ -28,16 +28,16 @@ public class FetchDoiService {
     private static final Logger logger = LoggerFactory.getLogger(FetchDoiService.class);
     private final transient DoiTransformService doiTransformService;
     private final transient DoiProxyService doiProxyService;
-    private final transient CristinProxyClient cristinProxyClient;
+    private final transient CristinClient cristinClient;
     private final transient MetadataService metadataService;
 
     public FetchDoiService(DoiTransformService doiTransformService,
                             DoiProxyService doiProxyService,
-                            CristinProxyClient cristinProxyClient,
+                            CristinClient cristinClient,
                             MetadataService metadataService) {
         this.doiTransformService = doiTransformService;
         this.doiProxyService = doiProxyService;
-        this.cristinProxyClient = cristinProxyClient;
+        this.cristinClient = cristinClient;
         this.metadataService = metadataService;
     }
 
@@ -85,7 +85,7 @@ public class FetchDoiService {
 
         var publicationMetadata = getPublicationMetadataFromDoi(doi);
         var publication =
-            IdentityUpdater.enrichPublicationCreators(cristinProxyClient, publicationMetadata);
+            IdentityUpdater.enrichPublicationCreators(cristinClient, publicationMetadata);
         return restServiceObjectMapper.convertValue(publication, CreatePublicationRequest.class);
     }
 
