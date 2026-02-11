@@ -1,10 +1,9 @@
 package no.unit.nva.doi.fetch;
 
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
-import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_OK;
-import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.core.StringContains.containsString;
@@ -23,6 +22,7 @@ import java.net.URISyntaxException;
 import no.unit.nva.clients.cristin.CristinClient;
 import no.unit.nva.doi.DoiProxyService;
 import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
+import no.unit.nva.doi.fetch.exceptions.MetadataFetchException;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
 import no.unit.nva.doi.transformer.DoiTransformService;
 import no.unit.nva.doi.transformer.utils.InvalidIssnException;
@@ -40,13 +40,13 @@ class PreviewDoiHandlerTest extends DoiHandlerTestUtils {
     private Context context;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         environment = new Environment();
         context = getMockContext();
     }
 
     @Test
-    public void shouldReturnCreatePublicationRequestGivenValidInput()
+    void shouldReturnCreatePublicationRequestGivenValidInput()
         throws Exception {
         PreviewDoiHandler importDoiHandler = createHandler(environment);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -67,33 +67,19 @@ class PreviewDoiHandlerTest extends DoiHandlerTestUtils {
     }
 
     @Test
-    public void shouldReturnInternalServerErrorWhenDoiProxyThrows() throws Exception {
+    void shouldReturnBadGatewayWhenDoiProxyThrows() throws Exception {
 
         var handler = createHandlerWithFailingDoiProxy(environment);
 
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         handler.handleRequest(createSampleRequest(), output, context);
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse(output);
-        assertEquals(HTTP_INTERNAL_ERROR, gatewayResponse.getStatusCode());
-        assertThat(getProblemDetail(gatewayResponse), containsString(
-            MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS));
+        assertEquals(HTTP_BAD_GATEWAY, gatewayResponse.getStatusCode());
+        assertThat(getProblemDetail(gatewayResponse), containsString("Failed to fetch metadata from URL"));
     }
 
     @Test
-    public void shouldReturnNotFoundWhenDoiProxyThrows() throws Exception {
-
-        var handler = createHandlerWithFailingDoiProxy(environment);
-
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        handler.handleRequest(createSampleRequest(), output, context);
-        GatewayResponse<Problem> gatewayResponse = parseFailureResponse(output);
-        assertEquals(HTTP_INTERNAL_ERROR, gatewayResponse.getStatusCode());
-        assertThat(getProblemDetail(gatewayResponse), containsString(
-            MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS));
-    }
-
-    @Test
-    public void shouldReturnMalformedRequestExceptionWhenInputIsNull() throws Exception {
+    void shouldReturnMalformedRequestExceptionWhenInputIsNull() throws Exception {
 
         PreviewDoiHandler importDoiHandler = createHandler(environment);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -108,7 +94,8 @@ class PreviewDoiHandlerTest extends DoiHandlerTestUtils {
     }
 
     PreviewDoiHandler createHandler(Environment environment)
-        throws URISyntaxException, IOException, InvalidIssnException, MetadataNotFoundException {
+        throws URISyntaxException, IOException, InvalidIssnException, MetadataNotFoundException,
+               MetadataFetchException {
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
         var cristinClient = mock(CristinClient.class);
@@ -118,7 +105,8 @@ class PreviewDoiHandlerTest extends DoiHandlerTestUtils {
     }
 
     PreviewDoiHandler createHandlerWithFailingDoiProxy(Environment environment)
-        throws URISyntaxException, IOException, InvalidIssnException, MetadataNotFoundException {
+        throws URISyntaxException, IOException, InvalidIssnException, MetadataNotFoundException,
+               MetadataFetchException {
         DoiProxyService doiProxyService = mock(DoiProxyService.class);
         when(doiProxyService.lookupDoiMetadata(anyString(), any())).thenThrow(new IOException(""));
 

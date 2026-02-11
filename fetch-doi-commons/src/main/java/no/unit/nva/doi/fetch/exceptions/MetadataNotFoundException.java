@@ -11,6 +11,6 @@ public class MetadataNotFoundException extends ApiGatewayException {
 
     @Override
     protected Integer statusCode() {
-        return HttpURLConnection.HTTP_BAD_GATEWAY;
+        return HttpURLConnection.HTTP_BAD_REQUEST;
     }
 }

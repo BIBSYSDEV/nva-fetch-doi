@@ -14,8 +14,8 @@ import no.unit.nva.doi.fetch.DoiValidator;
 import no.unit.nva.doi.fetch.commons.publication.model.AssociatedArtifact;
 import no.unit.nva.doi.fetch.commons.publication.model.AssociatedLink;
 import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
+import no.unit.nva.doi.fetch.exceptions.MetadataFetchException;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
-import no.unit.nva.doi.fetch.exceptions.UnsupportedDocumentTypeException;
 import no.unit.nva.doi.transformer.DoiTransformService;
 import no.unit.nva.doi.transformer.utils.InvalidIssnException;
 import no.unit.nva.metadata.service.MetadataService;
@@ -42,7 +42,7 @@ public class FetchDoiService {
     }
 
     public CreatePublicationRequest newCreatePublicationRequest(URL url)
-        throws URISyntaxException, IOException, MetadataNotFoundException, UnsupportedDocumentTypeException,
+        throws URISyntaxException, IOException, MetadataFetchException, MetadataNotFoundException,
                InvalidIssnException {
 
         CreatePublicationRequest request;
@@ -65,8 +65,9 @@ public class FetchDoiService {
     }
 
     private CreatePublicationRequest getPublicationFromOtherUrl(URL url)
-        throws URISyntaxException, MetadataNotFoundException {
-        return metadataService.generateCreatePublicationRequest(url.toURI())
+        throws URISyntaxException, MetadataFetchException, MetadataNotFoundException {
+        var createPublicationRequest = metadataService.generateCreatePublicationRequest(url.toURI());
+        return createPublicationRequest
                    .map(request -> saveSourceAsLinkInAssociatedArtifacts(request, url))
                    .orElseThrow(() -> new MetadataNotFoundException(NO_METADATA_FOUND));
     }
