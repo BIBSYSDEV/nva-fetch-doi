@@ -79,6 +79,16 @@ class PreviewDoiHandlerTest extends DoiHandlerTestUtils {
     }
 
     @Test
+    void shouldReturnBadRequestWhenNoMetadataFound() throws Exception {
+        var handler = createHandlerWithNoMetadataFound(environment);
+
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        handler.handleRequest(createSampleRequest(), output, context);
+        GatewayResponse<Problem> gatewayResponse = parseFailureResponse(output);
+        assertEquals(HTTP_BAD_REQUEST, gatewayResponse.getStatusCode());
+    }
+
+    @Test
     void shouldReturnMalformedRequestExceptionWhenInputIsNull() throws Exception {
 
         PreviewDoiHandler importDoiHandler = createHandler(environment);
@@ -98,6 +108,20 @@ class PreviewDoiHandlerTest extends DoiHandlerTestUtils {
                MetadataFetchException {
         DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
+        var cristinClient = mock(CristinClient.class);
+        MetadataService metadataService = mockMetadataServiceReturningSuccessfulResult();
+
+        return new PreviewDoiHandler(doiTransformService, doiProxyService, cristinClient, metadataService, environment);
+    }
+
+    PreviewDoiHandler createHandlerWithNoMetadataFound(Environment environment)
+        throws URISyntaxException, IOException, InvalidIssnException, MetadataNotFoundException,
+               MetadataFetchException {
+        DoiProxyService doiProxyService = mock(DoiProxyService.class);
+        when(doiProxyService.lookupDoiMetadata(anyString(), any()))
+            .thenThrow(new MetadataNotFoundException("No metadata found"));
+
+        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         var cristinClient = mock(CristinClient.class);
         MetadataService metadataService = mockMetadataServiceReturningSuccessfulResult();
 
