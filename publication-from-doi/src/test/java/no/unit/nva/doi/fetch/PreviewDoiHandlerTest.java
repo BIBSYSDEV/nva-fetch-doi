@@ -24,14 +24,11 @@ import no.unit.nva.doi.DoiProxyService;
 import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
 import no.unit.nva.doi.fetch.exceptions.MetadataFetchException;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
-import no.unit.nva.doi.transformer.DoiTransformService;
 import no.unit.nva.doi.transformer.utils.InvalidIssnException;
-import no.unit.nva.metadata.service.MetadataService;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.zalando.problem.Problem;
 
 class PreviewDoiHandlerTest extends DoiHandlerTestUtils {
 
@@ -48,8 +45,8 @@ class PreviewDoiHandlerTest extends DoiHandlerTestUtils {
     @Test
     void shouldReturnCreatePublicationRequestGivenValidInput()
         throws Exception {
-        PreviewDoiHandler importDoiHandler = createHandler(environment);
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        var importDoiHandler = createHandler(environment);
+        var output = new ByteArrayOutputStream();
 
         importDoiHandler.handleRequest(createSampleRequest(), output, context);
 
@@ -57,10 +54,10 @@ class PreviewDoiHandlerTest extends DoiHandlerTestUtils {
         assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
-        CreatePublicationRequest createPublicationRequest = gatewayResponse.getBodyObject(CreatePublicationRequest.class);
+        var createPublicationRequest = gatewayResponse.getBodyObject(CreatePublicationRequest.class);
 
         var isDoi = true;
-        CreatePublicationRequest expectedCreateRequest = expectedCreatePublicationRequest(isDoi,
+        var expectedCreateRequest = expectedCreatePublicationRequest(isDoi,
                                                                                           URI.create(VALID_DOI));
 
         assertEquals(createPublicationRequest, expectedCreateRequest);
@@ -71,9 +68,9 @@ class PreviewDoiHandlerTest extends DoiHandlerTestUtils {
 
         var handler = createHandlerWithFailingDoiProxy(environment);
 
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        var output = new ByteArrayOutputStream();
         handler.handleRequest(createSampleRequest(), output, context);
-        GatewayResponse<Problem> gatewayResponse = parseFailureResponse(output);
+        var gatewayResponse = parseFailureResponse(output);
         assertEquals(HTTP_BAD_GATEWAY, gatewayResponse.getStatusCode());
         assertThat(getProblemDetail(gatewayResponse), containsString("Failed to fetch metadata from URL"));
     }
@@ -91,10 +88,10 @@ class PreviewDoiHandlerTest extends DoiHandlerTestUtils {
     @Test
     void shouldReturnMalformedRequestExceptionWhenInputIsNull() throws Exception {
 
-        PreviewDoiHandler importDoiHandler = createHandler(environment);
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        var importDoiHandler = createHandler(environment);
+        var output = new ByteArrayOutputStream();
         importDoiHandler.handleRequest(malformedInputStream(), output, context);
-        GatewayResponse<CreatePublicationRequest> gatewayResponse = parseSuccessResponse(output.toString());
+        var gatewayResponse = parseSuccessResponse(output.toString());
         assertEquals(HTTP_BAD_REQUEST, gatewayResponse.getStatusCode());
 
     }
@@ -106,10 +103,10 @@ class PreviewDoiHandlerTest extends DoiHandlerTestUtils {
     PreviewDoiHandler createHandler(Environment environment)
         throws URISyntaxException, IOException, InvalidIssnException, MetadataNotFoundException,
                MetadataFetchException {
-        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
-        DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
+        var doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
+        var doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
         var cristinClient = mock(CristinClient.class);
-        MetadataService metadataService = mockMetadataServiceReturningSuccessfulResult();
+        var metadataService = mockMetadataServiceReturningSuccessfulResult();
 
         return new PreviewDoiHandler(doiTransformService, doiProxyService, cristinClient, metadataService, environment);
     }
@@ -123,7 +120,7 @@ class PreviewDoiHandlerTest extends DoiHandlerTestUtils {
 
         var doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         var cristinClient = mock(CristinClient.class);
-        MetadataService metadataService = mockMetadataServiceReturningSuccessfulResult();
+        var metadataService = mockMetadataServiceReturningSuccessfulResult();
 
         return new PreviewDoiHandler(doiTransformService, doiProxyService, cristinClient, metadataService, environment);
     }
@@ -131,12 +128,12 @@ class PreviewDoiHandlerTest extends DoiHandlerTestUtils {
     PreviewDoiHandler createHandlerWithFailingDoiProxy(Environment environment)
         throws URISyntaxException, IOException, InvalidIssnException, MetadataNotFoundException,
                MetadataFetchException {
-        DoiProxyService doiProxyService = mock(DoiProxyService.class);
+        var doiProxyService = mock(DoiProxyService.class);
         when(doiProxyService.lookupDoiMetadata(anyString(), any())).thenThrow(new IOException(""));
 
-        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
+        var doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         var cristinClient = mock(CristinClient.class);
-        MetadataService metadataService = mockMetadataServiceReturningSuccessfulResult();
+        var metadataService = mockMetadataServiceReturningSuccessfulResult();
 
         return new PreviewDoiHandler(doiTransformService, doiProxyService, cristinClient, metadataService, environment);
     }

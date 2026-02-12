@@ -23,8 +23,8 @@ import nva.commons.core.JacocoGenerated;
 
 public class PreviewDoiHandler extends ApiGatewayHandler<RequestBody, CreatePublicationRequest> {
 
-    public static final String NULL_DOI_URL_ERROR = "doiUrl can not be null";
-    public static final String FAILED_TO_FETCH_METADATA = "Failed to fetch metadata from URL: %s";
+    private static final String NULL_DOI_URL_ERROR = "doiUrl can not be null";
+    private static final String FAILED_TO_FETCH_METADATA = "Failed to fetch metadata from URL: %s";
     private static final Logger logger = LoggerFactory.getLogger(PreviewDoiHandler.class);
     private final FetchDoiService fetchDoiService;
 
