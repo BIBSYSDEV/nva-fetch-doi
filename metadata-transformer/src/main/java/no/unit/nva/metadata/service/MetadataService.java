@@ -22,6 +22,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import no.sikt.nva.doi.fetch.jsonconfig.Json;
 import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
+import no.unit.nva.doi.fetch.exceptions.MetadataFetchException;
 import no.unit.nva.metadata.MetadataConverter;
 import no.unit.nva.metadata.type.Bibo;
 import no.unit.nva.metadata.type.Citation;
@@ -101,14 +102,15 @@ public class MetadataService {
      * @param uri URI to dereference.
      * @return CreatePublicationRequest for selected set of metadata.
      */
-    public Optional<CreatePublicationRequest> generateCreatePublicationRequest(URI uri) {
+    public Optional<CreatePublicationRequest> generateCreatePublicationRequest(URI uri)
+        throws MetadataFetchException {
         try {
-            Model metadata = getMetadata(uri);
-            MetadataConverter converter = new MetadataConverter(metadata);
+            var metadata = getMetadata(uri);
+            var converter = new MetadataConverter(metadata);
             return converter.generateCreatePublicationRequest();
-        } catch (Exception e) {
-            logger.error("Error mapping metadata to CreatePublicationRequest", e);
-            throw new RuntimeException(e);
+        } catch (Exception exception) {
+            logger.error("Error fetching metadata from URI: {}", uri, exception);
+            throw new MetadataFetchException("Failed to fetch metadata from: %s".formatted(uri), exception);
         }
     }
     

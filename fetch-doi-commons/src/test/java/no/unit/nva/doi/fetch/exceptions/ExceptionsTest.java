@@ -6,54 +6,61 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Test;
 
-public class ExceptionsTest {
+class ExceptionsTest {
 
-    public static final String MESSAGE = "message";
+    private static final String MESSAGE = "message";
 
     @Test
-    public void canCreateInsertPublicationException() {
+    void canCreateInsertPublicationException() {
         CreatePublicationException exception = new CreatePublicationException(MESSAGE);
         assertNotNull(exception);
         assertEquals(HttpStatus.SC_BAD_GATEWAY, exception.statusCode());
     }
 
     @Test
-    public void canCreateMalformedRequestException() {
+    void canCreateMalformedRequestException() {
         MalformedRequestException exception = new MalformedRequestException(MESSAGE);
         assertNotNull(exception);
         assertEquals(HttpStatus.SC_BAD_REQUEST, exception.statusCode());
     }
 
     @Test
-    public void canCreateMetadataNotFoundException() {
-        MetadataNotFoundException exception = new MetadataNotFoundException(MESSAGE);
+    void canCreateMetadataFetchException() {
+        MetadataFetchException exception = new MetadataFetchException(MESSAGE, null);
         assertNotNull(exception);
         assertEquals(HttpStatus.SC_BAD_GATEWAY, exception.statusCode());
     }
 
     @Test
-    public void canCreateNoContentLocationFoundException() {
+    void canCreateMetadataNotFoundException() {
+        MetadataNotFoundException exception = new MetadataNotFoundException(MESSAGE);
+        assertNotNull(exception);
+        assertEquals(HttpStatus.SC_BAD_REQUEST, exception.statusCode());
+    }
+
+    @Test
+    void canCreateNoContentLocationFoundException() {
         NoContentLocationFoundException exception = new NoContentLocationFoundException(MESSAGE);
         assertNotNull(exception);
         assertEquals(HttpStatus.SC_BAD_GATEWAY, exception.statusCode());
     }
 
     @Test
-    public void canCreateNoPublicationException() {
+    void canCreateNoPublicationException() {
         NoPublicationException exception = new NoPublicationException(MESSAGE);
         assertNotNull(exception);
         assertEquals(HttpStatus.SC_BAD_GATEWAY, exception.statusCode());
     }
 
     @Test
-    public void canCreateTransformFailedException() {
+    void canCreateTransformFailedException() {
         TransformFailedException exception = new TransformFailedException(MESSAGE);
         assertNotNull(exception);
         assertEquals(HttpStatus.SC_BAD_GATEWAY, exception.statusCode());
     }
 
     @Test
-    public void canCreateUnsupportedDocumentTypeException() {
+    void canCreateUnsupportedDocumentTypeException() {
         UnsupportedDocumentTypeException exception = new UnsupportedDocumentTypeException(MESSAGE);
         assertNotNull(exception);
         assertEquals(HttpStatus.SC_BAD_GATEWAY, exception.statusCode());

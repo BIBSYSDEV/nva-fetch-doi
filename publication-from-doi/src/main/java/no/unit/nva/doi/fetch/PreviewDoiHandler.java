@@ -8,6 +8,7 @@ import no.unit.nva.clients.cristin.CristinClient;
 import no.unit.nva.doi.DoiProxyService;
 import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
 import no.unit.nva.doi.fetch.exceptions.MalformedRequestException;
+import no.unit.nva.doi.fetch.exceptions.MetadataFetchException;
 import no.unit.nva.doi.fetch.model.RequestBody;
 import no.unit.nva.doi.fetch.service.FetchDoiService;
 import no.unit.nva.doi.transformer.DoiTransformService;
@@ -15,12 +16,16 @@ import no.unit.nva.metadata.service.MetadataService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 public class PreviewDoiHandler extends ApiGatewayHandler<RequestBody, CreatePublicationRequest> {
 
-    public static final String NULL_DOI_URL_ERROR = "doiUrl can not be null";
+    private static final String NULL_DOI_URL_ERROR = "doiUrl can not be null";
+    private static final String FAILED_TO_FETCH_METADATA = "Failed to fetch metadata from URL: %s";
+    private static final Logger logger = LoggerFactory.getLogger(PreviewDoiHandler.class);
     private final FetchDoiService fetchDoiService;
 
     @SuppressWarnings("unused")
@@ -53,11 +58,12 @@ public class PreviewDoiHandler extends ApiGatewayHandler<RequestBody, CreatePubl
     }
 
     @Override
-    protected CreatePublicationRequest processInput(RequestBody input, RequestInfo requestInfo, Context context) {
+    protected CreatePublicationRequest processInput(RequestBody input, RequestInfo requestInfo, Context context)
+        throws ApiGatewayException {
 
         var inputUri = input.getDoiUrl();
         return attempt(() -> this.fetchDoiService.newCreatePublicationRequest(inputUri))
-                   .orElseThrow(exception -> new RuntimeException(exception.getException()));
+                   .orElseThrow(fail -> handleError(fail.getException(), inputUri.toString()));
     }
 
     @Override
@@ -74,6 +80,14 @@ public class PreviewDoiHandler extends ApiGatewayHandler<RequestBody, CreatePubl
         if (isNull(input) || isNull(input.getDoiUrl())) {
             throw new MalformedRequestException(NULL_DOI_URL_ERROR);
         }
+    }
+
+    private ApiGatewayException handleError(Exception exception, String url) {
+        logger.error(FAILED_TO_FETCH_METADATA.formatted(url), exception);
+        if (exception instanceof ApiGatewayException apiGatewayException) {
+            return apiGatewayException;
+        }
+        return new MetadataFetchException(FAILED_TO_FETCH_METADATA.formatted(url), exception);
     }
 
 }

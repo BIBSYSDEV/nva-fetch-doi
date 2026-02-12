@@ -1,7 +1,6 @@
 package no.unit.nva.doi.fetch;
 
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
-import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_OK;
@@ -35,15 +34,13 @@ import no.unit.nva.clients.cristin.CristinClient;
 import no.unit.nva.doi.CrossRefClient;
 import no.unit.nva.doi.DataciteClient;
 import no.unit.nva.doi.DoiProxyService;
-import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
+import no.unit.nva.doi.fetch.exceptions.MetadataFetchException;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
-import no.unit.nva.doi.fetch.exceptions.UnsupportedDocumentTypeException;
 import no.unit.nva.doi.fetch.model.PublicationDate;
 import no.unit.nva.doi.fetch.model.Summary;
 import no.unit.nva.doi.fetch.service.PublicationConverter;
 import no.unit.nva.doi.fetch.service.PublicationPersistenceService;
 import no.unit.nva.doi.transformer.DoiTransformService;
-import no.unit.nva.doi.transformer.utils.InvalidIsbnException;
 import no.unit.nva.doi.transformer.utils.InvalidIssnException;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.metadata.service.MetadataService;
@@ -66,7 +63,7 @@ class ImportDoiHandlerTest extends DoiHandlerTestUtils {
 
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         environment = new Environment();
         context = getMockContext();
         output = new ByteArrayOutputStream();
@@ -74,20 +71,20 @@ class ImportDoiHandlerTest extends DoiHandlerTestUtils {
     }
 
     @Test
-    public void testOkResponse()
+    void testOkResponse()
         throws Exception {
-        ImportDoiHandler importDoiHandler = this.createImportHandler(environment);
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        var importDoiHandler = this.createImportHandler(environment);
+        var output = new ByteArrayOutputStream();
         importDoiHandler.handleRequest(createSampleRequest(), output, context);
-        GatewayResponse<Summary> gatewayResponse = parseSuccessResponse(output.toString());
+        var gatewayResponse = parseSuccessResponse(output.toString());
         assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
-        Summary summary = gatewayResponse.getBodyObject(Summary.class);
+        var summary = gatewayResponse.getBodyObject(Summary.class);
         assertNotNull(summary.getIdentifier());
 
         var isDoi = true;
-        CreatePublicationRequest expectedCreateRequest = expectedCreatePublicationRequest(isDoi,
+        var expectedCreateRequest = expectedCreatePublicationRequest(isDoi,
                                                                                           URI.create(VALID_DOI));
 
         verify(publicationPersistenceService, times(1))
@@ -95,20 +92,20 @@ class ImportDoiHandlerTest extends DoiHandlerTestUtils {
     }
 
     @Test
-    public void handleRequestReturnsSummaryWithIdentifierWhenUrlIsValidNonDoi()
+    void handleRequestReturnsSummaryWithIdentifierWhenUrlIsValidNonDoi()
         throws Exception {
         ImportDoiHandler importDoiHandler = this.createImportHandler(environment);
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        var output = new ByteArrayOutputStream();
         importDoiHandler.handleRequest(nonDoiUrlInputStream(), output, context);
-        GatewayResponse<Summary> gatewayResponse = parseSuccessResponse(output.toString());
+        var gatewayResponse = parseSuccessResponse(output.toString());
         assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
-        Summary summary = gatewayResponse.getBodyObject(Summary.class);
+        var summary = gatewayResponse.getBodyObject(Summary.class);
         assertNotNull(summary.getIdentifier());
 
         var isDoi = false;
-        CreatePublicationRequest expectedCreateRequest = expectedCreatePublicationRequest(isDoi,
+        var expectedCreateRequest = expectedCreatePublicationRequest(isDoi,
                                                                                           URI.create(VALID_NON_DOI));
 
         verify(publicationPersistenceService, times(1))
@@ -116,24 +113,24 @@ class ImportDoiHandlerTest extends DoiHandlerTestUtils {
     }
 
     @Test
-    public void testBadGatewayResponseWhenUrlIsInvalidNonDoi() throws Exception {
-        PublicationConverter publicationConverter = mock(PublicationConverter.class);
+    void testBadRequestResponseWhenUrlIsInvalidNonDoi() throws Exception {
+        var publicationConverter = mock(PublicationConverter.class);
 
-        ImportDoiHandler importDoiHandler = handlerReceivingEmptyResponse(publicationConverter);
+        var importDoiHandler = handlerReceivingEmptyResponse(publicationConverter);
         importDoiHandler.handleRequest(nonDoiUrlInputStream(), output, context);
-        GatewayResponse<Problem> gatewayResponse = parseFailureResponse(output);
-        assertEquals(HTTP_BAD_GATEWAY, gatewayResponse.getStatusCode());
+        var gatewayResponse = parseFailureResponse(output);
+        assertEquals(HTTP_BAD_REQUEST, gatewayResponse.getStatusCode());
         assertThat(getProblemDetail(gatewayResponse), containsString(NO_METADATA_FOUND));
     }
 
     @Test
-    public void shouldReturnInternalErrorWhenUrlToPublicationProxyIsNotValidAndContainInformativeMessage()
+    void shouldReturnInternalErrorWhenUrlToPublicationProxyIsNotValidAndContainInformativeMessage()
         throws IOException, InvalidIssnException, URISyntaxException,
-               MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
+               MetadataNotFoundException, MetadataFetchException {
 
         var logger = LogUtils.getTestingAppenderForRootLogger();
-        Environment environmentWithInvalidHost = createEnvironmentWithInvalidHost();
-        ImportDoiHandler importDoiHandler = this.createImportHandler(environmentWithInvalidHost);
+        var environmentWithInvalidHost = createEnvironmentWithInvalidHost();
+        var importDoiHandler = this.createImportHandler(environmentWithInvalidHost);
 
         importDoiHandler.handleRequest(createSampleRequest(), output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
@@ -142,96 +139,97 @@ class ImportDoiHandlerTest extends DoiHandlerTestUtils {
     }
 
     @Test
-    public void testBadRequestResponse() throws Exception {
-        PublicationConverter publicationConverter = mock(PublicationConverter.class);
-        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
-        DoiProxyService doiProxyService = mock(DoiProxyService.class);
-        PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
+    void testBadRequestResponse() throws Exception {
+        var publicationConverter = mock(PublicationConverter.class);
+        var doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
+        var doiProxyService = mock(DoiProxyService.class);
+        var publicationPersistenceService = mock(PublicationPersistenceService.class);
         var cristinClient = mock(CristinClient.class);
-        MetadataService metadataService = mock(MetadataService.class);
-        ImportDoiHandler importDoiHandler = new ImportDoiHandler(publicationConverter, doiTransformService,
+        var metadataService = mock(MetadataService.class);
+        var importDoiHandler = new ImportDoiHandler(publicationConverter, doiTransformService,
                                                                  doiProxyService, publicationPersistenceService, cristinClient,
                                                                  metadataService, environment);
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        var output = new ByteArrayOutputStream();
         importDoiHandler.handleRequest(malformedInputStream(), output, context);
-        GatewayResponse<Problem> gatewayResponse = parseFailureResponse(output);
+        var gatewayResponse = parseFailureResponse(output);
         assertEquals(HTTP_BAD_REQUEST, gatewayResponse.getStatusCode());
         assertThat(getProblemDetail(gatewayResponse), containsString(ImportDoiHandler.NULL_DOI_URL_ERROR));
     }
 
     @Test
-    public void testInternalServerErrorResponse() throws Exception {
-        PublicationConverter publicationConverter = mock(PublicationConverter.class);
+    void testInternalServerErrorResponse() throws Exception {
+        var publicationConverter = mock(PublicationConverter.class);
         when(publicationConverter.toSummary(any())).thenThrow(new RuntimeException(SOME_ERROR_MESSAGE));
-        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
-        DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
-        PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
+        var doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
+        var doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
+        var publicationPersistenceService = mock(PublicationPersistenceService.class);
         var cristinProxyClient = mock(CristinClient.class);
-        MetadataService metadataService = mock(MetadataService.class);
+        var metadataService = mock(MetadataService.class);
 
-        ImportDoiHandler importDoiHandler = new ImportDoiHandler(publicationConverter, doiTransformService,
+        var importDoiHandler = new ImportDoiHandler(publicationConverter, doiTransformService,
                                                                  doiProxyService, publicationPersistenceService, cristinProxyClient,
                                                                  metadataService, environment);
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        var output = new ByteArrayOutputStream();
         importDoiHandler.handleRequest(createSampleRequest(), output, context);
-        GatewayResponse<Problem> gatewayResponse = parseFailureResponse(output);
+        var gatewayResponse = parseFailureResponse(output);
         assertEquals(HTTP_INTERNAL_ERROR, gatewayResponse.getStatusCode());
         assertThat(getProblemDetail(gatewayResponse), containsString(
             MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS));
     }
 
     @Test
-    @DisplayName("handler returns BadGateway error when DoiProxyService returns failed response")
-    public void handlerReturnsBadGatewayErrorWhenDoiProxyServiceReturnsFailedResponse()
+    @DisplayName("handler returns BadRequest when DoiProxyService returns no metadata")
+    void handlerReturnsBadRequestWhenDoiProxyServiceReturnsNoMetadata()
         throws Exception {
 
-        PublicationConverter publicationConverter = mockPublicationConverter();
-        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
-        DoiProxyService doiProxyService = mockDoiProxyReceivingFailedResult();
-        PublicationPersistenceService publicationPersistenceService = mock(PublicationPersistenceService.class);
+        var publicationConverter = mockPublicationConverter();
+        var doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
+        var doiProxyService = mockDoiProxyReceivingFailedResult();
+        var publicationPersistenceService = mock(PublicationPersistenceService.class);
         var cristinProxyClient = mock(CristinClient.class);
-        MetadataService metadataService = mock(MetadataService.class);
+        var metadataService = mock(MetadataService.class);
 
-        ImportDoiHandler handler = new ImportDoiHandler(publicationConverter, doiTransformService, doiProxyService,
+        var handler = new ImportDoiHandler(publicationConverter, doiTransformService, doiProxyService,
                                                         publicationPersistenceService, cristinProxyClient, metadataService,
                                                         environment);
-        ByteArrayOutputStream outputStream = outputStream();
+        var outputStream = outputStream();
         handler.handleRequest(createSampleRequest(), outputStream, context);
-        GatewayResponse<Problem> gatewayResponse = parseFailureResponse(outputStream);
-        assertThat(gatewayResponse.getStatusCode(), is(equalTo(Status.BAD_GATEWAY.getStatusCode())));
+        var gatewayResponse = parseFailureResponse(outputStream);
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(Status.BAD_REQUEST.getStatusCode())));
         assertThat(getProblemDetail(gatewayResponse), containsString(DoiProxyService.ERROR_READING_METADATA));
     }
 
     @Test
     @DisplayName("handler returns BadGateway when ResourcePersistenceService returns failed response")
-    public void handlerReturnsBadGatewayErrorWhenResourcePersistenceServiceReturnsFailedResponse()
+    void handlerReturnsBadGatewayErrorWhenResourcePersistenceServiceReturnsFailedResponse()
         throws Exception {
 
-        PublicationConverter publicationConverter = mockPublicationConverter();
-        DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
-        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
+        var publicationConverter = mockPublicationConverter();
+        var doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
+        var doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
         var cristinProxyClient = mock(CristinClient.class);
-        MetadataService metadataService = mock(MetadataService.class);
+        var metadataService = mock(MetadataService.class);
 
-        PublicationPersistenceService publicationPersistenceService =
+        var publicationPersistenceService =
             mockResourcePersistenceServiceReceivingFailedResult();
 
-        ImportDoiHandler handler = new ImportDoiHandler(publicationConverter, doiTransformService, doiProxyService,
+        var handler = new ImportDoiHandler(publicationConverter, doiTransformService, doiProxyService,
                                                         publicationPersistenceService, cristinProxyClient, metadataService,
                                                         environment);
-        ByteArrayOutputStream outputStream = outputStream();
+        var outputStream = outputStream();
         handler.handleRequest(createSampleRequest(), outputStream, context);
-        GatewayResponse<Problem> gatewayResponse = parseFailureResponse(outputStream);
+        var gatewayResponse = parseFailureResponse(outputStream);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(Status.BAD_GATEWAY.getStatusCode())));
         assertThat(getProblemDetail(gatewayResponse), containsString(PublicationPersistenceService.WARNING_MESSAGE));
     }
 
 
-    private ImportDoiHandler handlerReceivingEmptyResponse(PublicationConverter publicationConverter) {
-        DoiTransformService doiTransformService = mock(DoiTransformService.class);
-        DoiProxyService doiProxyService = mock(DoiProxyService.class);
+    private ImportDoiHandler handlerReceivingEmptyResponse(PublicationConverter publicationConverter)
+        throws MetadataFetchException {
+        var doiTransformService = mock(DoiTransformService.class);
+        var doiProxyService = mock(DoiProxyService.class);
         var cristinProxyClient = mock(CristinClient.class);
-        MetadataService metadataService = mock(MetadataService.class);
+        var metadataService = mock(MetadataService.class);
         when(metadataService.generateCreatePublicationRequest(any())).thenReturn(Optional.empty());
 
         return new ImportDoiHandler(publicationConverter, doiTransformService,
@@ -240,19 +238,19 @@ class ImportDoiHandlerTest extends DoiHandlerTestUtils {
     }
 
     private DoiProxyService mockDoiProxyReceivingFailedResult() {
-        DataciteClient dataciteClient = mock(DataciteClient.class);
-        CrossRefClient crossRefClient = mock(CrossRefClient.class);
+        var dataciteClient = mock(DataciteClient.class);
+        var crossRefClient = mock(CrossRefClient.class);
         return new DoiProxyService(crossRefClient, dataciteClient);
     }
 
     private ImportDoiHandler createImportHandler(Environment environment)
         throws URISyntaxException, IOException, InvalidIssnException,
-               MetadataNotFoundException, InvalidIsbnException, UnsupportedDocumentTypeException {
-        PublicationConverter publicationConverter = mockPublicationConverter();
-        DoiTransformService doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
-        DoiProxyService doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
+               MetadataNotFoundException, MetadataFetchException {
+        var publicationConverter = mockPublicationConverter();
+        var doiTransformService = mockDoiTransformServiceReturningSuccessfulResult();
+        var doiProxyService = mockDoiProxyServiceReceivingSuccessfulResult();
         var cristinProxyClient = mock(CristinClient.class);
-        MetadataService metadataService = mockMetadataServiceReturningSuccessfulResult();
+        var metadataService = mockMetadataServiceReturningSuccessfulResult();
 
         return new ImportDoiHandler(publicationConverter, doiTransformService,
                                     doiProxyService, publicationPersistenceService, cristinProxyClient, metadataService,
@@ -260,7 +258,7 @@ class ImportDoiHandlerTest extends DoiHandlerTestUtils {
     }
 
     private PublicationConverter mockPublicationConverter() {
-        PublicationConverter publicationConverter = mock(PublicationConverter.class);
+        var publicationConverter = mock(PublicationConverter.class);
         when(publicationConverter.toSummary(any())).thenReturn(createSummary());
         return publicationConverter;
     }
@@ -280,15 +278,15 @@ class ImportDoiHandlerTest extends DoiHandlerTestUtils {
 
     @SuppressWarnings("unchecked")
     private HttpClient mockHttpClientReceivingFailure() throws IOException, InterruptedException {
-        HttpClient client = mock(HttpClient.class);
-        HttpResponse<Object> failedResponse = mockFailedHttpResponse();
+        var client = mock(HttpClient.class);
+        var failedResponse = mockFailedHttpResponse();
         when(client.send(any(HttpRequest.class), any(BodyHandler.class))).thenReturn(failedResponse);
         return client;
     }
 
     @SuppressWarnings("unchecked")
     private HttpResponse<Object> mockFailedHttpResponse() {
-        HttpResponse<Object> response = mock(HttpResponse.class);
+        var response = mock(HttpResponse.class);
         when(response.statusCode()).thenReturn(Status.BAD_REQUEST.getStatusCode());
         return response;
     }

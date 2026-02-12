@@ -32,6 +32,7 @@ import no.unit.nva.doi.fetch.commons.publication.model.AssociatedArtifact;
 import no.unit.nva.doi.fetch.commons.publication.model.AssociatedLink;
 import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
 import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
+import no.unit.nva.doi.fetch.exceptions.MetadataFetchException;
 import no.unit.nva.doi.fetch.exceptions.MetadataNotFoundException;
 import no.unit.nva.doi.fetch.model.RequestBody;
 import no.unit.nva.doi.transformer.DoiTransformService;
@@ -96,7 +97,7 @@ public class DoiHandlerTestUtils {
         return service;
     }
 
-    MetadataService mockMetadataServiceReturningSuccessfulResult() {
+    MetadataService mockMetadataServiceReturningSuccessfulResult() throws MetadataFetchException {
 
         EntityDescription entityDescription = new EntityDescription();
         entityDescription.setMainTitle(MAIN_TITLE);
