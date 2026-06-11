@@ -31,7 +31,6 @@ public class MetadataConverter {
         this.emptyDescriptionHash = entityDescription.hashCode();
     }
 
-    @SuppressWarnings("PMD.CloseResource")
     public Optional<CreatePublicationRequest> generateCreatePublicationRequest() {
         if (metadata.isEmpty()) {
             return Optional.empty();

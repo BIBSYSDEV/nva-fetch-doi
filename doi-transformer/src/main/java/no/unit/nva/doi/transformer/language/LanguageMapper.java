@@ -56,8 +56,6 @@ public final class LanguageMapper {
         return new HashSet<>(ISO2URI.values());
     }
 
-    // For some reason it does not like the mapping to SimpleEntry
-    @SuppressWarnings("PMD.UseConcurrentHashMap")
     private static Map<String, URI> isoToUri(Path path) {
 
         List<String> lines = IoUtils.linesfromResource(path);

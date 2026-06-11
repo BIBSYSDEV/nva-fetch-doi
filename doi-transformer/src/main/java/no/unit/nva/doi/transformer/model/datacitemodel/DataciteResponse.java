@@ -6,7 +6,7 @@ import java.util.List;
 import nva.commons.core.JacocoGenerated;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@SuppressWarnings({"PMD.TooManyFields", "PMD.ExcessivePublicCount"})
+@SuppressWarnings("PMD.TooManyFields")
 public class DataciteResponse {
 
     private URL id;

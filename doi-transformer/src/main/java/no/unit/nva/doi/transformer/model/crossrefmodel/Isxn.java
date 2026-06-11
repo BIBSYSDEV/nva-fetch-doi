@@ -5,7 +5,6 @@ import nva.commons.core.JacocoGenerated;
 
 import java.util.Arrays;
 
-@SuppressWarnings("PMD.ShortClassName")
 public class Isxn {
 
     @JsonProperty("value")

@@ -9,6 +9,7 @@ import no.unit.nva.doi.fetch.commons.publication.model.instancetypes.AcademicMon
 import no.unit.nva.doi.fetch.commons.publication.model.instancetypes.BookAnthology;
 import no.unit.nva.doi.fetch.commons.publication.model.instancetypes.BookMonograph;
 
+@SuppressWarnings("PMD.ImplicitFunctionalInterface")
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonSubTypes({
     @JsonSubTypes.Type(name = "AcademicArticle", value = AcademicArticle.class),

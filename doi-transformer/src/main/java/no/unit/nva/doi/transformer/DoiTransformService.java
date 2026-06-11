@@ -34,7 +34,7 @@ public class DoiTransformService {
         throws JsonProcessingException, InvalidIssnException {
 
         MetadataLocation metadataLocation = MetadataLocation.lookup(contentLocation);
-        if (metadataLocation.equals(MetadataLocation.CROSSREF)) {
+        if (metadataLocation == MetadataLocation.CROSSREF) {
             return convertFromCrossRef(body);
         } else {
             return convertFromDatacite(body);

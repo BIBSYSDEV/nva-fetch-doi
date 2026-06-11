@@ -64,7 +64,7 @@ import nva.commons.doi.DoiConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
+@SuppressWarnings("PMD.GodClass")
 public class CrossRefConverter extends AbstractConverter {
 
     public static final String INVALID_ENTRY_ERROR = "The entry is empty or has no title";
@@ -174,6 +174,7 @@ public class CrossRefConverter extends AbstractConverter {
                    .isPresent();
     }
 
+    @SuppressWarnings("PMD.AvoidCatchingGenericException")
     private Optional<URI> tryCreatingUri(String source) {
         try {
             return Optional.of(URI.create(source));
@@ -300,11 +301,11 @@ public class CrossRefConverter extends AbstractConverter {
     }
 
     private String filterIssnsByType(CrossRefDocument crossRefDocument, IsxnType type) {
-        List<Isxn> issns = crossRefDocument.getIssnType();
+        var issns = crossRefDocument.getIssnType();
         if (isNull(issns) || issns.isEmpty()) {
             return null;
         }
-        return issns.stream().filter(issn -> issn.getType().equals(type))
+        return issns.stream().filter(issn -> issn.getType() == type)
                    .map(Isxn::getValue)
                    .findAny()
                    .orElse(null);

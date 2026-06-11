@@ -102,6 +102,7 @@ public class MetadataService {
      * @param uri URI to dereference.
      * @return CreatePublicationRequest for selected set of metadata.
      */
+    @SuppressWarnings("PMD.AvoidCatchingGenericException")
     public Optional<CreatePublicationRequest> generateCreatePublicationRequest(URI uri)
         throws MetadataFetchException {
         try {
@@ -156,7 +157,6 @@ public class MetadataService {
         }
     }
     
-    @SuppressWarnings("PMD.CloseResource")
     private Model normalizeStatements(RepositoryResult<Statement> statements) throws IOException, InterruptedException {
         Model model = new TreeModel();
         for (Statement statement : statements) {
@@ -188,7 +188,7 @@ public class MetadataService {
     }
     
     private boolean isPotentialDoiProperty(OntologyProperty ontologyProperty) {
-        return Bibo.DOI.equals(ontologyProperty) || DcTerms.IDENTIFIER.equals(ontologyProperty);
+        return Bibo.DOI == ontologyProperty || DcTerms.IDENTIFIER == ontologyProperty;
     }
     
     private OntologyProperty getMappedOntologyProperty(Statement statement) {

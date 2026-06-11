@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.commons.json.JsonUtils;
 
-@SuppressWarnings({"PMD.ShortClassName"})
 public final class Json {
 
     private static final ObjectMapper OBJECT_MAPPER = JsonUtils.dtoObjectMapper;

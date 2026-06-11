@@ -170,7 +170,7 @@ public class DataciteResponseConverter extends AbstractConverter {
 
     private boolean isOnlineIssn(DataciteRelatedIdentifier identifier) {
         return DataciteRelatedIdentifierType.getByCode(identifier.getRelatedIdentifierType())
-                   .equals(DataciteRelatedIdentifierType.EISSN);
+                   == DataciteRelatedIdentifierType.EISSN;
     }
 
     private String extractPrintIssn(DataciteResponse dataciteResponse) {
@@ -191,12 +191,12 @@ public class DataciteResponseConverter extends AbstractConverter {
 
     private boolean isPrintIssn(DataciteRelatedIdentifier identifier) {
         return DataciteRelatedIdentifierType.getByCode(identifier.getRelatedIdentifierType())
-                   .equals(DataciteRelatedIdentifierType.ISSN);
+                   == DataciteRelatedIdentifierType.ISSN;
     }
 
     private boolean isPartOf(DataciteRelatedIdentifier identifier) {
         return DataciteRelationType.getByRelation(identifier.getRelationType())
-                   .equals(DataciteRelationType.IS_PART_OF);
+                   == DataciteRelationType.IS_PART_OF;
     }
 
     protected boolean hasOpenAccessRights(DataciteRights dataciteRights) {
