@@ -1,3 +1,7 @@
+plugins {
+    id 'nva.fetch.doi.java-conventions'
+}
+
 dependencies {
     implementation project(":fetch-doi-commons")
 

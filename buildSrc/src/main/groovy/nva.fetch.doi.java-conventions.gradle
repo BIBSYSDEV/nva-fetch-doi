@@ -1,59 +1,19 @@
 plugins {
-    id 'java'
-    id 'pmd'
-    id 'jacoco-report-aggregation'
-    id 'test-report-aggregation'
+    id 'nva.java-conventions'
 }
 
-
-group = 'com.github.bibsysdev'
+nva {
+    errorprone {
+        allErrorsAsWarnings = true // FIXME
+    }
+    pmd {
+        rulesetFile = rootProject.file('config/pmd/ruleset.xml')
+    }
+    spotless {
+        enabled = false // FIXME
+    }
+}
 
 dependencies {
     testImplementation libs.bundles.testing
-}
-
-
-repositories {
-    mavenCentral()
-    maven { url 'https://jitpack.io' }
-}
-
-tasks.named('test') {
-    useJUnitPlatform()
-    failFast = true
-    testLogging {
-        events 'skipped', 'passed', 'failed'
-    }
-}
-
-pmd {
-    toolVersion = '7.23.0'
-    ruleSetConfig = rootProject.resources.text.fromFile('config/pmd/ruleset.xml')
-    ruleSets = []
-    ignoreFailures = false
-}
-
-
-check.dependsOn jacocoTestCoverageVerification
-jacocoTestCoverageVerification.dependsOn(jacocoTestReport)
-
-jacocoTestCoverageVerification {
-
-    violationRules {
-        rule {
-            limit {
-                counter = 'METHOD'
-                value = 'COVEREDRATIO'
-                minimum = 1.000
-            }
-        }
-
-        rule {
-            limit {
-                counter = 'CLASS'
-                value = 'COVEREDRATIO'
-                minimum = 1.000
-            }
-        }
-    }
 }

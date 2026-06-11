@@ -1,3 +1,7 @@
+plugins {
+    id 'nva.fetch.doi.java-conventions'
+}
+
 dependencies {
 
     implementation project(":json-config")
@@ -7,7 +11,6 @@ dependencies {
         exclude group: 'org.yaml', module: 'snakeyaml'
         exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j-impl'
     }
-//    implementation group: 'org.eclipse.rdf4j', name: 'rdf4j-rio-jsonld', version: '3.7.7'
 
     implementation(libs.bundles.rdf4j)
     implementation libs.nva.core
