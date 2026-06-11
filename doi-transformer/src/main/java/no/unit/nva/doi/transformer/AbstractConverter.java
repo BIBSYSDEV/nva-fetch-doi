@@ -8,29 +8,29 @@ import nva.commons.doi.DoiConverter;
 
 public class AbstractConverter {
 
-    public static final String PLAIN_NAME_SEPARATOR = " ";
+  public static final String PLAIN_NAME_SEPARATOR = " ";
 
-    protected DoiConverter doiConverter;
-    protected LanguageDetector languageDetector;
+  protected DoiConverter doiConverter;
+  protected LanguageDetector languageDetector;
 
-    public AbstractConverter(LanguageDetector detector, DoiConverter doiConverter) {
-        this.languageDetector = detector;
-        this.doiConverter = doiConverter;
-    }
+  public AbstractConverter(LanguageDetector detector, DoiConverter doiConverter) {
+    this.languageDetector = detector;
+    this.doiConverter = doiConverter;
+  }
 
-    protected String toName(String givenName, String familyName) {
-        return String.join(PLAIN_NAME_SEPARATOR, givenName, familyName);
-    }
+  protected String toName(String givenName, String familyName) {
+    return String.join(PLAIN_NAME_SEPARATOR, givenName, familyName);
+  }
 
-    protected PublicationDate toDate(Integer publicationYear) {
-        return new PublicationDate(publicationYear.toString(), null, null);
-    }
+  protected PublicationDate toDate(Integer publicationYear) {
+    return new PublicationDate(publicationYear.toString(), null, null);
+  }
 
-    protected String getMainTitle(Stream<String> titles) {
-        return titles.findFirst().orElse(null);
-    }
+  protected String getMainTitle(Stream<String> titles) {
+    return titles.findFirst().orElse(null);
+  }
 
-    protected TextLang detectLanguage(String title) {
-        return new TextLang(title, languageDetector.detectLangWithDefault(title));
-    }
+  protected TextLang detectLanguage(String title) {
+    return new TextLang(title, languageDetector.detectLangWithDefault(title));
+  }
 }

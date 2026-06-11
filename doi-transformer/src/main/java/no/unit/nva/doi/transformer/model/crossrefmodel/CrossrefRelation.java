@@ -6,34 +6,36 @@ import nva.commons.core.JacocoGenerated;
 @JacocoGenerated
 public class CrossrefRelation {
 
-    @JsonProperty("id-type")
-    private String idType;
-    @JsonProperty("id")
-    private String id;
-    @JsonProperty("asserted-by")
-    private String assertedBy;
+  @JsonProperty("id-type")
+  private String idType;
 
-    public String getIdType() {
-        return idType;
-    }
+  @JsonProperty("id")
+  private String id;
 
-    public void setIdType(String idType) {
-        this.idType = idType;
-    }
+  @JsonProperty("asserted-by")
+  private String assertedBy;
 
-    public String getId() {
-        return id;
-    }
+  public String getIdType() {
+    return idType;
+  }
 
-    public void setId(String id) {
-        this.id = id;
-    }
+  public void setIdType(String idType) {
+    this.idType = idType;
+  }
 
-    public String getAssertedBy() {
-        return assertedBy;
-    }
+  public String getId() {
+    return id;
+  }
 
-    public void setAssertedBy(String assertedBy) {
-        this.assertedBy = assertedBy;
-    }
+  public void setId(String id) {
+    this.id = id;
+  }
+
+  public String getAssertedBy() {
+    return assertedBy;
+  }
+
+  public void setAssertedBy(String assertedBy) {
+    this.assertedBy = assertedBy;
+  }
 }

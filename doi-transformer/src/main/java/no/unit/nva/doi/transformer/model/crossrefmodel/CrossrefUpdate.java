@@ -6,44 +6,47 @@ import nva.commons.core.JacocoGenerated;
 @JacocoGenerated
 public class CrossrefUpdate {
 
-    @JsonProperty("updated")
-    private CrossrefDate updated;
-    @JsonProperty("DOI")
-    private String doi;
-    @JsonProperty("type")
-    private String type;
-    @JsonProperty("label")
-    private String label;
+  @JsonProperty("updated")
+  private CrossrefDate updated;
 
-    public CrossrefDate getUpdated() {
-        return updated;
-    }
+  @JsonProperty("DOI")
+  private String doi;
 
-    public void setUpdated(CrossrefDate updated) {
-        this.updated = updated;
-    }
+  @JsonProperty("type")
+  private String type;
 
-    public String getDoi() {
-        return doi;
-    }
+  @JsonProperty("label")
+  private String label;
 
-    public void setDoi(String doi) {
-        this.doi = doi;
-    }
+  public CrossrefDate getUpdated() {
+    return updated;
+  }
 
-    public String getType() {
-        return type;
-    }
+  public void setUpdated(CrossrefDate updated) {
+    this.updated = updated;
+  }
 
-    public void setType(String type) {
-        this.type = type;
-    }
+  public String getDoi() {
+    return doi;
+  }
 
-    public String getLabel() {
-        return label;
-    }
+  public void setDoi(String doi) {
+    this.doi = doi;
+  }
 
-    public void setLabel(String label) {
-        this.label = label;
-    }
+  public String getType() {
+    return type;
+  }
+
+  public void setType(String type) {
+    this.type = type;
+  }
+
+  public String getLabel() {
+    return label;
+  }
+
+  public void setLabel(String label) {
+    this.label = label;
+  }
 }

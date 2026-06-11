@@ -1,5 +1,9 @@
 package no.unit.nva.doi;
 
+import static org.apache.hc.core5.http.ContentType.APPLICATION_JSON;
+import static org.apache.hc.core5.http.HttpHeaders.CONTENT_TYPE;
+import static org.apache.hc.core5.http.HttpHeaders.USER_AGENT;
+
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -9,7 +13,6 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
@@ -21,138 +24,143 @@ import nva.commons.secrets.SecretsReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.hc.core5.http.ContentType.APPLICATION_JSON;
-import static org.apache.hc.core5.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.hc.core5.http.HttpHeaders.USER_AGENT;
-
 public class CrossRefClient {
 
-    public static final String CROSSREF_LINK = "https://api.crossref.org";
-    public static final String WORKS = "works";
+  public static final String CROSSREF_LINK = "https://api.crossref.org";
+  public static final String WORKS = "works";
 
-    public static final int TIMEOUT_DURATION = 30;
-    public static final String COULD_NOT_FIND_ENTRY_WITH_DOI = "Could not find entry with DOI:";
-    public static final String UNKNOWN_ERROR_MESSAGE = "Something went wrong. StatusCode:";
-    public static final String FETCH_ERROR = "CrossRefClient failed while trying to fetch:";
-    public static final String CROSSREF_USER_AGENT = getUserAgent();
-    public static final String ADDING_TOKEN_IN_HEADER =
-        "CrossRef Api PLUS token is present, adding token in header";
-    public static final String CROSSREFPLUSAPITOKEN_NAME_ENV = "CROSSREFPLUSAPITOKEN_NAME";
-    public static final String CROSSREFPLUSAPITOKEN_KEY_ENV = "CROSSREFPLUSAPITOKEN_KEY";
-    public static final String CROSSREF_API_KEY_SECRET_NOT_FOUND_TEMPLATE =
-        "Crossref API token could not be found with name: {} and key: {}";
-    public static final String CROSSREF_SECRETS_NOT_FOUND = "Crossref secrets not found";
+  public static final int TIMEOUT_DURATION = 30;
+  public static final String COULD_NOT_FIND_ENTRY_WITH_DOI = "Could not find entry with DOI:";
+  public static final String UNKNOWN_ERROR_MESSAGE = "Something went wrong. StatusCode:";
+  public static final String FETCH_ERROR = "CrossRefClient failed while trying to fetch:";
+  public static final String CROSSREF_USER_AGENT = getUserAgent();
+  public static final String ADDING_TOKEN_IN_HEADER =
+      "CrossRef Api PLUS token is present, adding token in header";
+  public static final String CROSSREFPLUSAPITOKEN_NAME_ENV = "CROSSREFPLUSAPITOKEN_NAME";
+  public static final String CROSSREFPLUSAPITOKEN_KEY_ENV = "CROSSREFPLUSAPITOKEN_KEY";
+  public static final String CROSSREF_API_KEY_SECRET_NOT_FOUND_TEMPLATE =
+      "Crossref API token could not be found with name: {} and key: {}";
+  public static final String CROSSREF_SECRETS_NOT_FOUND = "Crossref secrets not found";
 
-    private static final String CROSSREF_PLUSAPI_HEADER = "Crossref-Plus-API-Token";
-    private static final String CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE = "Bearer %s";
-    private static final String DOI_EXAMPLES = "10.1000/182, https://doi.org/10.1000/182";
-    public static final String ILLEGAL_DOI_MESSAGE = "Illegal DOI:%s. Valid examples:" + DOI_EXAMPLES;
-    private static final Logger LOGGER = LoggerFactory.getLogger(CrossRefClient.class);
-    private final transient HttpClient httpClient;
-    private final String secretName;
-    private final String secretKey;
-    private final SecretsReader secretsReader;
+  private static final String CROSSREF_PLUSAPI_HEADER = "Crossref-Plus-API-Token";
+  private static final String CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE = "Bearer %s";
+  private static final String DOI_EXAMPLES = "10.1000/182, https://doi.org/10.1000/182";
+  public static final String ILLEGAL_DOI_MESSAGE = "Illegal DOI:%s. Valid examples:" + DOI_EXAMPLES;
+  private static final Logger LOGGER = LoggerFactory.getLogger(CrossRefClient.class);
+  private final transient HttpClient httpClient;
+  private final String secretName;
+  private final String secretKey;
+  private final SecretsReader secretsReader;
 
-    @JacocoGenerated
-    public CrossRefClient() {
-        this(HttpClient.newHttpClient(), new Environment(), new SecretsReader());
+  @JacocoGenerated
+  public CrossRefClient() {
+    this(HttpClient.newHttpClient(), new Environment(), new SecretsReader());
+  }
+
+  public CrossRefClient(
+      HttpClient httpClient, Environment environment, SecretsReader secretsReader) {
+    this.httpClient = httpClient;
+    this.secretsReader = secretsReader;
+    secretName = environment.readEnv(CROSSREFPLUSAPITOKEN_NAME_ENV);
+    secretKey = environment.readEnv(CROSSREFPLUSAPITOKEN_KEY_ENV);
+  }
+
+  /**
+   * The method returns the object containing the metadata (title, author, etc.) of the publication
+   * with the specific DOI, and the source where the metadata were acquired.
+   *
+   * @param doi a doi identifier or URL.
+   * @return FetchResult contains the JSON object and the location from where it was fetched.
+   */
+  public Optional<MetadataAndContentLocation> fetchDataForDoi(String doi) {
+    URI targetUri = createUrlToCrossRef(doi);
+    return fetchJson(targetUri);
+  }
+
+  protected URI createUrlToCrossRef(String doi) {
+    var crossRefWorks = UriWrapper.fromUri(CROSSREF_LINK).addChild(WORKS);
+    return Optional.ofNullable(doi)
+        .map(URI::create)
+        .map(URI::getPath)
+        .filter(path -> !path.isBlank())
+        .map(crossRefWorks::addChild)
+        .map(UriWrapper::getUri)
+        .orElseThrow(() -> new IllegalArgumentException(String.format(ILLEGAL_DOI_MESSAGE, doi)));
+  }
+
+  private Optional<MetadataAndContentLocation> fetchJson(URI doiUri) {
+    HttpRequest request = createRequest(doiUri);
+    try {
+      return Optional.ofNullable(getFromWeb(request))
+          .map(json -> new MetadataAndContentLocation(CROSSREF_LINK, json));
+    } catch (InterruptedException
+        | ExecutionException
+        | BadRequestException
+        | NotFoundException e) {
+      String details = FETCH_ERROR + doiUri;
+      LOGGER.warn(details);
+      LOGGER.warn(e.getMessage());
+      return Optional.empty();
     }
+  }
 
-    public CrossRefClient(HttpClient httpClient, Environment environment, SecretsReader secretsReader) {
-        this.httpClient = httpClient;
-        this.secretsReader = secretsReader;
-        secretName = environment.readEnv(CROSSREFPLUSAPITOKEN_NAME_ENV);
-        secretKey = environment.readEnv(CROSSREFPLUSAPITOKEN_KEY_ENV);
-    }
-
-    /**
-     * The method returns the object containing the metadata (title, author, etc.) of the publication with the specific
-     * DOI, and the source where the metadata were acquired.
-     *
-     * @param doi a doi identifier or URL.
-     * @return FetchResult contains the JSON object and the location from where it was fetched.
-     */
-    public Optional<MetadataAndContentLocation> fetchDataForDoi(String doi) {
-        URI targetUri = createUrlToCrossRef(doi);
-        return fetchJson(targetUri);
-    }
-
-    protected URI createUrlToCrossRef(String doi) {
-        var crossRefWorks = UriWrapper.fromUri(CROSSREF_LINK).addChild(WORKS);
-        return Optional.ofNullable(doi)
-            .map(URI::create)
-            .map(URI::getPath)
-            .filter(path -> !path.isBlank())
-            .map(crossRefWorks::addChild)
-            .map(UriWrapper::getUri)
-            .orElseThrow(() -> new IllegalArgumentException(String.format(ILLEGAL_DOI_MESSAGE,doi)));
-    }
-
-    private Optional<MetadataAndContentLocation> fetchJson(URI doiUri) {
-        HttpRequest request = createRequest(doiUri);
-        try {
-            return Optional.ofNullable(getFromWeb(request))
-                .map(json -> new MetadataAndContentLocation(CROSSREF_LINK, json));
-        } catch (InterruptedException | ExecutionException | BadRequestException | NotFoundException e) {
-            String details = FETCH_ERROR + doiUri;
-            LOGGER.warn(details);
-            LOGGER.warn(e.getMessage());
-            return Optional.empty();
-        }
-    }
-
-    private HttpRequest createRequest(URI doiUri) {
-        HttpRequest.Builder builder = HttpRequest.newBuilder(doiUri)
+  private HttpRequest createRequest(URI doiUri) {
+    HttpRequest.Builder builder =
+        HttpRequest.newBuilder(doiUri)
             .header(CONTENT_TYPE, APPLICATION_JSON.toString())
             .header(USER_AGENT, CROSSREF_USER_AGENT)
             .timeout(Duration.ofSeconds(TIMEOUT_DURATION))
             .GET();
 
-        LOGGER.info(ADDING_TOKEN_IN_HEADER);
-        builder.setHeader(CROSSREF_PLUSAPI_HEADER,
-                          String.format(CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE, getCrossRefApiPlusToken()));
+    LOGGER.info(ADDING_TOKEN_IN_HEADER);
+    builder.setHeader(
+        CROSSREF_PLUSAPI_HEADER,
+        String.format(CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE, getCrossRefApiPlusToken()));
 
-        return builder.build();
-    }
+    return builder.build();
+  }
 
-    private static String getUserAgent() {
-        var environment = new Environment();
-        var apiHost = environment.readEnv("API_HOST");
-        return UserAgent.newBuilder().client(CrossRefClient.class)
-                .environment(apiHost)
-                .repository(URI.create("https://github.com/BIBSYSDEV/nva-fetch-doi"))
-                .email("support@sikt.no")
-                .version("1.0")
-                .build().toString();
-    }
+  private static String getUserAgent() {
+    var environment = new Environment();
+    var apiHost = environment.readEnv("API_HOST");
+    return UserAgent.newBuilder()
+        .client(CrossRefClient.class)
+        .environment(apiHost)
+        .repository(URI.create("https://github.com/BIBSYSDEV/nva-fetch-doi"))
+        .email("support@sikt.no")
+        .version("1.0")
+        .build()
+        .toString();
+  }
 
-    private String getFromWeb(HttpRequest request)
+  private String getFromWeb(HttpRequest request)
       throws InterruptedException, ExecutionException, BadRequestException, NotFoundException {
-        HttpResponse<String> response = httpClient.sendAsync(request, BodyHandlers.ofString()).get();
-        if (responseIsSuccessful(response)) {
-            return response.body();
-        } else {
-            return handleError(request, response);
-        }
+    HttpResponse<String> response = httpClient.sendAsync(request, BodyHandlers.ofString()).get();
+    if (responseIsSuccessful(response)) {
+      return response.body();
+    } else {
+      return handleError(request, response);
     }
+  }
 
-    private String handleError(HttpRequest request, HttpResponse<String> response) throws BadRequestException, NotFoundException {
-        if (response.statusCode() == HttpURLConnection.HTTP_NOT_FOUND) {
-            throw new NotFoundException(COULD_NOT_FIND_ENTRY_WITH_DOI + request.uri().toString());
-        }
-        throw new BadRequestException(UNKNOWN_ERROR_MESSAGE + response.statusCode());
+  private String handleError(HttpRequest request, HttpResponse<String> response)
+      throws BadRequestException, NotFoundException {
+    if (response.statusCode() == HttpURLConnection.HTTP_NOT_FOUND) {
+      throw new NotFoundException(COULD_NOT_FIND_ENTRY_WITH_DOI + request.uri().toString());
     }
+    throw new BadRequestException(UNKNOWN_ERROR_MESSAGE + response.statusCode());
+  }
 
-    private boolean responseIsSuccessful(HttpResponse<String> response) {
-        return response.statusCode() == HttpURLConnection.HTTP_OK;
-    }
+  private boolean responseIsSuccessful(HttpResponse<String> response) {
+    return response.statusCode() == HttpURLConnection.HTTP_OK;
+  }
 
-    private String getCrossRefApiPlusToken() {
-        try {
-            return secretsReader.fetchSecret(secretName, secretKey);
-        } catch (ErrorReadingSecretException e) {
-            LOGGER.error(CROSSREF_API_KEY_SECRET_NOT_FOUND_TEMPLATE, secretName, secretKey);
-            throw new RuntimeException(e);
-        }
+  private String getCrossRefApiPlusToken() {
+    try {
+      return secretsReader.fetchSecret(secretName, secretKey);
+    } catch (ErrorReadingSecretException e) {
+      LOGGER.error(CROSSREF_API_KEY_SECRET_NOT_FOUND_TEMPLATE, secretName, secretKey);
+      throw new RuntimeException(e);
     }
+  }
 }

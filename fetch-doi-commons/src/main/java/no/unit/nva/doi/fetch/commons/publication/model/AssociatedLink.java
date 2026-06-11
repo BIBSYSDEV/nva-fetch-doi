@@ -7,6 +7,4 @@ import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
 @JsonTypeInfo(use = Id.NAME, property = "type")
-public record AssociatedLink(URI id) implements AssociatedArtifact {
-
-}
+public record AssociatedLink(URI id) implements AssociatedArtifact {}

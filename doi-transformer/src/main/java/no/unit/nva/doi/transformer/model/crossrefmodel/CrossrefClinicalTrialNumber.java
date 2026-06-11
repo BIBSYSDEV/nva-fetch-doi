@@ -6,35 +6,36 @@ import nva.commons.core.JacocoGenerated;
 @JacocoGenerated
 public class CrossrefClinicalTrialNumber {
 
-    @JsonProperty("clinical-trial-number")
-    private String clinicalTrialNumber;
-    @JsonProperty("registry")
-    private String registry;
-    @JsonProperty("type")
-    private String type;
+  @JsonProperty("clinical-trial-number")
+  private String clinicalTrialNumber;
 
+  @JsonProperty("registry")
+  private String registry;
 
-    public String getClinicalTrialNumber() {
-        return clinicalTrialNumber;
-    }
+  @JsonProperty("type")
+  private String type;
 
-    public void setClinicalTrialNumber(String clinicalTrialNumber) {
-        this.clinicalTrialNumber = clinicalTrialNumber;
-    }
+  public String getClinicalTrialNumber() {
+    return clinicalTrialNumber;
+  }
 
-    public String getRegistry() {
-        return registry;
-    }
+  public void setClinicalTrialNumber(String clinicalTrialNumber) {
+    this.clinicalTrialNumber = clinicalTrialNumber;
+  }
 
-    public void setRegistry(String registry) {
-        this.registry = registry;
-    }
+  public String getRegistry() {
+    return registry;
+  }
 
-    public String getType() {
-        return type;
-    }
+  public void setRegistry(String registry) {
+    this.registry = registry;
+  }
 
-    public void setType(String type) {
-        this.type = type;
-    }
+  public String getType() {
+    return type;
+  }
+
+  public void setType(String type) {
+    this.type = type;
+  }
 }

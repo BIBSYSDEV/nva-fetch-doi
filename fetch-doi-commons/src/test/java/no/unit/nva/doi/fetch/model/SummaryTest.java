@@ -8,23 +8,21 @@ import org.junit.jupiter.api.Test;
 
 public class SummaryTest {
 
-    @Test
-    public void canMapSummary() throws JsonProcessingException {
-        PublicationDate date = new PublicationDate.Builder()
-            .withDay("08")
-            .withMonth("06")
-            .withYear("2020")
-            .build();
+  @Test
+  public void canMapSummary() throws JsonProcessingException {
+    PublicationDate date =
+        new PublicationDate.Builder().withDay("08").withMonth("06").withYear("2020").build();
 
-        Summary summary = new Summary.Builder()
+    Summary summary =
+        new Summary.Builder()
             .withCreatorName("creator name")
             .withIdentifier(SortableIdentifier.next())
             .withTitle("title")
             .withDate(date)
             .build();
 
-        Summary mappedSummary = Json.readValue(Json.writeValueAsString(summary), Summary.class);
+    Summary mappedSummary = Json.readValue(Json.writeValueAsString(summary), Summary.class);
 
-        Assertions.assertNotNull(mappedSummary);
-    }
+    Assertions.assertNotNull(mappedSummary);
+  }
 }

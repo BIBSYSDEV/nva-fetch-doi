@@ -7,6 +7,4 @@ import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
 @JsonTypeInfo(use = Id.NAME, property = "type")
-public record Organization(URI id) implements PublishingHouse {
-
-}
+public record Organization(URI id) implements PublishingHouse {}

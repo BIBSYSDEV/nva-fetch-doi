@@ -6,24 +6,25 @@ import nva.commons.core.JacocoGenerated;
 @JacocoGenerated
 public class CrossrefAssertionGroup {
 
-    @JsonProperty("name")
-    private String name;
-    @JsonProperty("label")
-    private String label;
+  @JsonProperty("name")
+  private String name;
 
-    public String getName() {
-        return name;
-    }
+  @JsonProperty("label")
+  private String label;
 
-    public void setName(String name) {
-        this.name = name;
-    }
+  public String getName() {
+    return name;
+  }
 
-    public String getLabel() {
-        return label;
-    }
+  public void setName(String name) {
+    this.name = name;
+  }
 
-    public void setLabel(String label) {
-        this.label = label;
-    }
+  public String getLabel() {
+    return label;
+  }
+
+  public void setLabel(String label) {
+    this.label = label;
+  }
 }

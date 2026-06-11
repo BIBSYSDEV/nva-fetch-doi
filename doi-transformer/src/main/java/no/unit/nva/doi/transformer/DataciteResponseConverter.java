@@ -4,6 +4,7 @@ import static java.util.Objects.nonNull;
 import static java.util.function.Predicate.not;
 import static no.unit.nva.doi.transformer.utils.PublicationType.JOURNAL_CONTENT;
 import static nva.commons.core.attempt.Try.attempt;
+
 import java.net.URI;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Collections;
@@ -42,217 +43,224 @@ import nva.commons.doi.DoiConverter;
 
 public class DataciteResponseConverter extends AbstractConverter {
 
-    public static final String CREATOR_HAS_NO_NAME_ERROR = "Creator has no name:";
+  public static final String CREATOR_HAS_NO_NAME_ERROR = "Creator has no name:";
 
-    public DataciteResponseConverter() {
-        this(new DoiConverter());
+  public DataciteResponseConverter() {
+    this(new DoiConverter());
+  }
+
+  public DataciteResponseConverter(DoiConverter doiConverter) {
+    super(new SimpleLanguageDetector(), doiConverter);
+  }
+
+  public CreatePublicationRequest toPublication(DataciteResponse dataciteResponse)
+      throws InvalidIssnException {
+
+    /*
+       private EntityDescription entityDescription;
+       private AssociatedArtifactList associatedArtifacts;
+       @JsonProperty("@context")
+       private JsonNode context;
+       private List<ResearchProject> projects;
+       private List<URI> subjects;
+       private Set<AdditionalIdentifierBase> additionalIdentifiers;
+       private List<Funding> fundings;
+       @Size(min = 1, max = 256)
+       @Pattern(regexp = "^[\\p{L}\\d][\\p{L}\\d\\s]*\\S$")
+       private String rightsHolder;
+       private PublicationStatus status;
+       private List<ImportDetail> importDetails;
+
+       private List<PublicationNoteBase> publicationNotes;
+       private URI duplicateOf;
+
+    */
+    return new CreatePublicationRequest.Builder()
+        // .withCreatedDate(now)
+        // .withModifiedDate(now)
+        // .withPublishedDate(extractPublishedDate())
+        // .withResourceOwner(new ResourceOwner(new Username(owner), UNDEFINED_AFFILIATION))
+        // .withPublisher(toPublisher(publisherId))
+        // .withIdentifier(new SortableIdentifier(identifier.toString()))
+        // .withStatus(DEFAULT_NEW_PUBLICATION_STATUS)
+        // .withHandle(extractHandle())
+        // .withLink(extractLink(dataciteResponse))
+        // .withIndexedDate(extractIndexedDate())
+        // .withProjects(extractProjects())
+        .withEntityDescription(
+            new EntityDescription.Builder()
+                .withContributors(toContributors(dataciteResponse.getCreators()))
+                .withPublicationDate(toDate(dataciteResponse.getPublicationYear()))
+                .withMainTitle(extractMainTitle(dataciteResponse))
+                .withMainAbstract(extractAbstract())
+                .withAlternativeTitles(extractAlternativeTitles(dataciteResponse))
+                .withLanguage(createLanguage())
+                .withReference(createReference(dataciteResponse))
+                .withTags(createTags())
+                .withDescription(createDescription())
+                .build())
+        .build();
+  }
+
+  private Map<String, String> extractAlternativeTitles(DataciteResponse dataciteResponse) {
+    String mainTitle = extractMainTitle(dataciteResponse);
+    return dataciteResponse.getTitles().stream()
+        .filter(not(t -> t.getTitle().equals(mainTitle)))
+        .map(t -> detectLanguage(t.getTitle()))
+        .map(e -> new SimpleEntry<>(e.getText(), e.getLanguage().toString()))
+        .collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue));
+  }
+
+  private String createDescription() {
+    return null;
+  }
+
+  private List<String> createTags() {
+    return Collections.emptyList();
+  }
+
+  private Reference createReference(DataciteResponse dataciteResponse) {
+    return new Reference.Builder()
+        .withDoi(doiConverter.toUri(dataciteResponse.getDoi()))
+        .withPublicationContext(extractPublicationContext(dataciteResponse).orElse(null))
+        .withPublicationInstance(extractPublicationInstance(dataciteResponse).orElse(null))
+        .build();
+  }
+
+  private Optional<PublicationInstance> extractPublicationInstance(
+      DataciteResponse dataciteResponse) {
+    return Optional.of(dataciteResponse)
+        .filter(DataciteResponseConverter::isJournalContent)
+        .map(DataciteResponse::getContainer)
+        .map(this::createAcademicArticle);
+  }
+
+  private static boolean isJournalContent(DataciteResponse dataciteResponse) {
+    return DataciteTypesUtil.mapToType(dataciteResponse).map(JOURNAL_CONTENT::equals).orElse(false);
+  }
+
+  private AcademicArticle createAcademicArticle(DataciteContainer dataciteContainer) {
+    return new AcademicArticle(
+        extractPages(dataciteContainer),
+        dataciteContainer.getVolume(),
+        dataciteContainer.getIssue());
+  }
+
+  private Range extractPages(DataciteContainer container) {
+    return new Range(container.getFirstPage(), container.getLastPage());
+  }
+
+  private Optional<UnconfirmedJournal> extractPublicationContext(
+      DataciteResponse dataciteResponse) {
+    return Optional.of(dataciteResponse)
+        .filter(DataciteResponseConverter::isJournalContent)
+        .map(this::createUnconfirmedJournal);
+  }
+
+  private UnconfirmedJournal createUnconfirmedJournal(DataciteResponse dataciteResponse) {
+    return new UnconfirmedJournal(
+        dataciteResponse.getContainer().getTitle(),
+        extractPrintIssn(dataciteResponse),
+        extractOnlineIssn(dataciteResponse));
+  }
+
+  private String extractOnlineIssn(DataciteResponse dataciteResponse) {
+    DataciteRelatedIdentifier result =
+        extractIsPartOfRelations(dataciteResponse).stream()
+            .filter(this::isOnlineIssn)
+            .findAny()
+            .orElse(null);
+    return nonNull(result) ? IssnCleaner.clean(result.getRelatedIdentifier()) : null;
+  }
+
+  private boolean isOnlineIssn(DataciteRelatedIdentifier identifier) {
+    return DataciteRelatedIdentifierType.getByCode(identifier.getRelatedIdentifierType())
+        == DataciteRelatedIdentifierType.EISSN;
+  }
+
+  private String extractPrintIssn(DataciteResponse dataciteResponse) {
+    DataciteRelatedIdentifier result =
+        extractIsPartOfRelations(dataciteResponse).stream()
+            .filter(this::isPrintIssn)
+            .findAny()
+            .orElse(null);
+    return nonNull(result) ? IssnCleaner.clean(result.getRelatedIdentifier()) : null;
+  }
+
+  private List<DataciteRelatedIdentifier> extractIsPartOfRelations(
+      DataciteResponse dataciteResponse) {
+    return dataciteResponse.getRelatedIdentifiers().stream()
+        .filter(this::isPartOf)
+        .collect(Collectors.toList());
+  }
+
+  private boolean isPrintIssn(DataciteRelatedIdentifier identifier) {
+    return DataciteRelatedIdentifierType.getByCode(identifier.getRelatedIdentifierType())
+        == DataciteRelatedIdentifierType.ISSN;
+  }
+
+  private boolean isPartOf(DataciteRelatedIdentifier identifier) {
+    return DataciteRelationType.getByRelation(identifier.getRelationType())
+        == DataciteRelationType.IS_PART_OF;
+  }
+
+  protected boolean hasOpenAccessRights(DataciteRights dataciteRights) {
+    return Optional.ofNullable(dataciteRights.getRightsUri())
+        .map(LicensingIndicator::isOpen)
+        .orElse(false);
+  }
+
+  private String extractAbstract() {
+    return null;
+  }
+
+  private URI createLanguage() {
+    return null;
+  }
+
+  protected String extractMainTitle(DataciteResponse response) {
+    Stream<String> titleStrings = response.getTitles().stream().map(DataciteTitle::getTitle);
+    return getMainTitle(titleStrings);
+  }
+
+  protected List<Contributor> toContributors(List<DataciteCreator> creators) {
+    return IntStream.range(0, creators.size())
+        .boxed()
+        .map(i -> toCreator(creators.get(i), i + 1))
+        .flatMap(Optional::stream)
+        .collect(Collectors.toList());
+  }
+
+  protected Optional<Contributor> toCreator(DataciteCreator dataciteCreator, Integer sequence) {
+    try {
+      Contributor nvaContributor =
+          new Contributor.Builder()
+              .withIdentity(createCreatorIdentity(dataciteCreator))
+              .withAffiliations(Collections.emptyList())
+              .withSequence(sequence)
+              .build();
+      return Optional.of(nvaContributor);
+    } catch (MalformedContributorException e) {
+      return Optional.empty();
+    }
+  }
+
+  private Identity createCreatorIdentity(DataciteCreator dataciteCreator)
+      throws MalformedContributorException {
+    if (creatorHasNoName(dataciteCreator)) {
+      String jsonString = attempt(() -> Json.writeValueAsString(dataciteCreator)).orElseThrow();
+      throw new MalformedContributorException(CREATOR_HAS_NO_NAME_ERROR + jsonString);
     }
 
-    public DataciteResponseConverter(DoiConverter doiConverter) {
-        super(new SimpleLanguageDetector(), doiConverter);
-    }
+    return new Identity(
+        null,
+        toName(dataciteCreator.getGivenName(), dataciteCreator.getFamilyName()),
+        "Personal",
+        null);
+  }
 
-    public CreatePublicationRequest toPublication(DataciteResponse dataciteResponse) throws InvalidIssnException {
-
-/*
-    private EntityDescription entityDescription;
-    private AssociatedArtifactList associatedArtifacts;
-    @JsonProperty("@context")
-    private JsonNode context;
-    private List<ResearchProject> projects;
-    private List<URI> subjects;
-    private Set<AdditionalIdentifierBase> additionalIdentifiers;
-    private List<Funding> fundings;
-    @Size(min = 1, max = 256)
-    @Pattern(regexp = "^[\\p{L}\\d][\\p{L}\\d\\s]*\\S$")
-    private String rightsHolder;
-    private PublicationStatus status;
-    private List<ImportDetail> importDetails;
-
-    private List<PublicationNoteBase> publicationNotes;
-    private URI duplicateOf;
-
- */
-        return new CreatePublicationRequest.Builder()
-                   //.withCreatedDate(now)
-                   //.withModifiedDate(now)
-                   //.withPublishedDate(extractPublishedDate())
-                   //.withResourceOwner(new ResourceOwner(new Username(owner), UNDEFINED_AFFILIATION))
-                   //.withPublisher(toPublisher(publisherId))
-                   //.withIdentifier(new SortableIdentifier(identifier.toString()))
-                   //.withStatus(DEFAULT_NEW_PUBLICATION_STATUS)
-                   //.withHandle(extractHandle())
-                   //.withLink(extractLink(dataciteResponse))
-                   //.withIndexedDate(extractIndexedDate())
-                   //.withProjects(extractProjects())
-                   .withEntityDescription(
-                       new EntityDescription.Builder()
-                           .withContributors(toContributors(dataciteResponse.getCreators()))
-                           .withPublicationDate(toDate(dataciteResponse.getPublicationYear()))
-                           .withMainTitle(extractMainTitle(dataciteResponse))
-                           .withMainAbstract(extractAbstract())
-                           .withAlternativeTitles(extractAlternativeTitles(dataciteResponse))
-                           .withLanguage(createLanguage())
-                           .withReference(createReference(dataciteResponse))
-                           .withTags(createTags())
-                           .withDescription(createDescription())
-                           .build())
-                   .build();
-    }
-
-    private Map<String, String> extractAlternativeTitles(DataciteResponse dataciteResponse) {
-        String mainTitle = extractMainTitle(dataciteResponse);
-        return dataciteResponse.getTitles().stream()
-                   .filter(not(t -> t.getTitle().equals(mainTitle)))
-                   .map(t -> detectLanguage(t.getTitle()))
-                   .map(e -> new SimpleEntry<>(e.getText(), e.getLanguage().toString()))
-                   .collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue));
-    }
-
-    private String createDescription() {
-        return null;
-    }
-
-    private List<String> createTags() {
-        return Collections.emptyList();
-    }
-
-    private Reference createReference(DataciteResponse dataciteResponse) {
-        return new Reference.Builder()
-                   .withDoi(doiConverter.toUri(dataciteResponse.getDoi()))
-                   .withPublicationContext(extractPublicationContext(dataciteResponse).orElse(null))
-                   .withPublicationInstance(extractPublicationInstance(dataciteResponse).orElse(null))
-                   .build();
-    }
-
-    private Optional<PublicationInstance> extractPublicationInstance(DataciteResponse dataciteResponse) {
-        return Optional.of(dataciteResponse)
-                   .filter(DataciteResponseConverter::isJournalContent)
-                   .map(DataciteResponse::getContainer)
-                   .map(this::createAcademicArticle);
-    }
-
-    private static boolean isJournalContent(DataciteResponse dataciteResponse) {
-        return DataciteTypesUtil.mapToType(dataciteResponse).map(JOURNAL_CONTENT::equals).orElse(false);
-    }
-
-    private AcademicArticle createAcademicArticle(DataciteContainer dataciteContainer) {
-        return new AcademicArticle(extractPages(dataciteContainer),
-                                   dataciteContainer.getVolume(), dataciteContainer.getIssue());
-    }
-
-    private Range extractPages(DataciteContainer container) {
-        return new Range(container.getFirstPage(), container.getLastPage());
-    }
-
-    private Optional<UnconfirmedJournal> extractPublicationContext(DataciteResponse dataciteResponse) {
-        return Optional.of(dataciteResponse)
-                   .filter(DataciteResponseConverter::isJournalContent)
-                   .map(this::createUnconfirmedJournal);
-    }
-
-    private UnconfirmedJournal createUnconfirmedJournal(DataciteResponse dataciteResponse) {
-        return new UnconfirmedJournal(
-            dataciteResponse.getContainer().getTitle(),
-            extractPrintIssn(dataciteResponse),
-            extractOnlineIssn(dataciteResponse)
-        );
-    }
-
-    private String extractOnlineIssn(DataciteResponse dataciteResponse) {
-        DataciteRelatedIdentifier result = extractIsPartOfRelations(dataciteResponse)
-                                               .stream()
-                                               .filter(this::isOnlineIssn)
-                                               .findAny()
-                                               .orElse(null);
-        return nonNull(result) ? IssnCleaner.clean(result.getRelatedIdentifier()) : null;
-    }
-
-    private boolean isOnlineIssn(DataciteRelatedIdentifier identifier) {
-        return DataciteRelatedIdentifierType.getByCode(identifier.getRelatedIdentifierType())
-                   == DataciteRelatedIdentifierType.EISSN;
-    }
-
-    private String extractPrintIssn(DataciteResponse dataciteResponse) {
-        DataciteRelatedIdentifier result = extractIsPartOfRelations(dataciteResponse)
-                                               .stream()
-                                               .filter(this::isPrintIssn)
-                                               .findAny()
-                                               .orElse(null);
-        return nonNull(result) ? IssnCleaner.clean(result.getRelatedIdentifier()) : null;
-    }
-
-    private List<DataciteRelatedIdentifier> extractIsPartOfRelations(DataciteResponse dataciteResponse) {
-        return dataciteResponse.getRelatedIdentifiers()
-                   .stream()
-                   .filter(this::isPartOf)
-                   .collect(Collectors.toList());
-    }
-
-    private boolean isPrintIssn(DataciteRelatedIdentifier identifier) {
-        return DataciteRelatedIdentifierType.getByCode(identifier.getRelatedIdentifierType())
-                   == DataciteRelatedIdentifierType.ISSN;
-    }
-
-    private boolean isPartOf(DataciteRelatedIdentifier identifier) {
-        return DataciteRelationType.getByRelation(identifier.getRelationType())
-                   == DataciteRelationType.IS_PART_OF;
-    }
-
-    protected boolean hasOpenAccessRights(DataciteRights dataciteRights) {
-        return Optional.ofNullable(dataciteRights.getRightsUri())
-                   .map(LicensingIndicator::isOpen).orElse(false);
-    }
-
-    private String extractAbstract() {
-        return null;
-    }
-
-    private URI createLanguage() {
-        return null;
-    }
-
-    protected String extractMainTitle(DataciteResponse response) {
-        Stream<String> titleStrings = response.getTitles().stream().map(DataciteTitle::getTitle);
-        return getMainTitle(titleStrings);
-    }
-
-    protected List<Contributor> toContributors(List<DataciteCreator> creators) {
-        return IntStream.range(0, creators.size())
-                   .boxed()
-                   .map(i -> toCreator(creators.get(i), i + 1))
-                   .flatMap(Optional::stream)
-                   .collect(Collectors.toList());
-    }
-
-    protected Optional<Contributor> toCreator(DataciteCreator dataciteCreator, Integer sequence) {
-        try {
-            Contributor nvaContributor = new Contributor.Builder()
-                                             .withIdentity(createCreatorIdentity(dataciteCreator))
-                                             .withAffiliations(Collections.emptyList())
-                                             .withSequence(sequence)
-                                             .build();
-            return Optional.of(nvaContributor);
-        } catch (MalformedContributorException e) {
-            return Optional.empty();
-        }
-    }
-
-    private Identity createCreatorIdentity(DataciteCreator dataciteCreator) throws MalformedContributorException {
-        if (creatorHasNoName(dataciteCreator)) {
-            String jsonString = attempt(() -> Json.writeValueAsString(dataciteCreator))
-                                    .orElseThrow();
-            throw new MalformedContributorException(CREATOR_HAS_NO_NAME_ERROR + jsonString);
-        }
-
-        return new Identity(null,
-                            toName(dataciteCreator.getGivenName(), dataciteCreator.getFamilyName()),
-                            "Personal",
-                            null);
-    }
-
-    private boolean creatorHasNoName(DataciteCreator dataciteCreator) {
-        return StringUtils.isBlank(dataciteCreator.getFamilyName())
-               && StringUtils.isBlank(dataciteCreator.getGivenName());
-    }
+  private boolean creatorHasNoName(DataciteCreator dataciteCreator) {
+    return StringUtils.isBlank(dataciteCreator.getFamilyName())
+        && StringUtils.isBlank(dataciteCreator.getGivenName());
+  }
 }

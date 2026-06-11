@@ -6,237 +6,256 @@ import nva.commons.core.JacocoGenerated;
 @SuppressWarnings("PMD.TooManyFields")
 public class CrossRefReference {
 
-    @JsonProperty("key")
-    private String key;
-    @JsonProperty("DOI")
-    private String doi;
-    @JsonProperty("doi-asserted-by")
-    private String doiAssertedBy;
-    @JsonProperty("issue")
-    private String issue;
-    @JsonProperty("first-page")
-    private String firstPage;
-    @JsonProperty("volume")
-    private String volume;
-    @JsonProperty("edition")
-    private String edition;
-    @JsonProperty("component")
-    private String component;
-    @JsonProperty("standard-designator")
-    private String standardDesignator;
-    @JsonProperty("standard-body")
-    private String standardBody;
-    @JsonProperty("author")
-    private String author;
-    @JsonProperty("year")
-    private String year;
-    @JsonProperty("unstructured")
-    private String unstructuredReference;
-    @JsonProperty("journal-title")
-    private String journalTitle;
-    @JsonProperty("article-title")
-    private String articleTitle;
-    @JsonProperty("series-title")
-    private String seriesTitle;
-    @JsonProperty("volume-title")
-    private String volumeTitle;
-    @JsonProperty("ISSN")
-    private String issn;
-    @JsonProperty("issn-type")
-    private String issnType;
-    @JsonProperty("ISBN")
-    private String isbn;
-    @JsonProperty("isbn-type")
-    private String isbnType;
+  @JsonProperty("key")
+  private String key;
 
+  @JsonProperty("DOI")
+  private String doi;
 
-    @JacocoGenerated
-    public String getKey() {
-        return key;
-    }
+  @JsonProperty("doi-asserted-by")
+  private String doiAssertedBy;
 
-    public void setKey(String key) {
-        this.key = key;
-    }
+  @JsonProperty("issue")
+  private String issue;
 
-    @JacocoGenerated
-    public String getDoiAssertedBy() {
-        return doiAssertedBy;
-    }
+  @JsonProperty("first-page")
+  private String firstPage;
 
-    public void setDoiAssertedBy(String doiAssertedBy) {
-        this.doiAssertedBy = doiAssertedBy;
-    }
+  @JsonProperty("volume")
+  private String volume;
 
-    @JacocoGenerated
-    public String getFirstPage() {
-        return firstPage;
-    }
+  @JsonProperty("edition")
+  private String edition;
 
-    public void setFirstPage(String firstPage) {
-        this.firstPage = firstPage;
-    }
+  @JsonProperty("component")
+  private String component;
 
-    @JacocoGenerated
-    public String getDoi() {
-        return doi;
-    }
+  @JsonProperty("standard-designator")
+  private String standardDesignator;
 
-    public void setDoi(String doi) {
-        this.doi = doi;
-    }
+  @JsonProperty("standard-body")
+  private String standardBody;
 
-    @JacocoGenerated
-    public String getVolume() {
-        return volume;
-    }
+  @JsonProperty("author")
+  private String author;
 
-    public void setVolume(String volume) {
-        this.volume = volume;
-    }
+  @JsonProperty("year")
+  private String year;
 
-    @JacocoGenerated
-    public String getAuthor() {
-        return author;
-    }
+  @JsonProperty("unstructured")
+  private String unstructuredReference;
 
-    public void setAuthor(String author) {
-        this.author = author;
-    }
+  @JsonProperty("journal-title")
+  private String journalTitle;
 
-    @JacocoGenerated
-    public String getYear() {
-        return year;
-    }
+  @JsonProperty("article-title")
+  private String articleTitle;
 
-    public void setYear(String year) {
-        this.year = year;
-    }
+  @JsonProperty("series-title")
+  private String seriesTitle;
 
-    @JacocoGenerated
-    public String getUnstructuredReference() {
-        return unstructuredReference;
-    }
+  @JsonProperty("volume-title")
+  private String volumeTitle;
 
-    @JacocoGenerated
-    public void setUnstructuredReference(String unstructuredReference) {
-        this.unstructuredReference = unstructuredReference;
-    }
+  @JsonProperty("ISSN")
+  private String issn;
 
-    @JacocoGenerated
-    public String getJournalTitle() {
-        return journalTitle;
-    }
+  @JsonProperty("issn-type")
+  private String issnType;
 
-    public void setJournalTitle(String journalTitle) {
-        this.journalTitle = journalTitle;
-    }
+  @JsonProperty("ISBN")
+  private String isbn;
 
-    public String getIssue() {
-        return issue;
-    }
+  @JsonProperty("isbn-type")
+  private String isbnType;
 
-    @JacocoGenerated
-    public void setIssue(String issue) {
-        this.issue = issue;
-    }
+  @JacocoGenerated
+  public String getKey() {
+    return key;
+  }
 
-    public String getEdition() {
-        return edition;
-    }
+  public void setKey(String key) {
+    this.key = key;
+  }
 
-    @JacocoGenerated
-    public void setEdition(String edition) {
-        this.edition = edition;
-    }
+  @JacocoGenerated
+  public String getDoiAssertedBy() {
+    return doiAssertedBy;
+  }
 
-    public String getComponent() {
-        return component;
-    }
+  public void setDoiAssertedBy(String doiAssertedBy) {
+    this.doiAssertedBy = doiAssertedBy;
+  }
 
-    @JacocoGenerated
-    public void setComponent(String component) {
-        this.component = component;
-    }
+  @JacocoGenerated
+  public String getFirstPage() {
+    return firstPage;
+  }
 
-    public String getStandardDesignator() {
-        return standardDesignator;
-    }
+  public void setFirstPage(String firstPage) {
+    this.firstPage = firstPage;
+  }
 
-    @JacocoGenerated
-    public void setStandardDesignator(String standardDesignator) {
-        this.standardDesignator = standardDesignator;
-    }
+  @JacocoGenerated
+  public String getDoi() {
+    return doi;
+  }
 
-    public String getStandardBody() {
-        return standardBody;
-    }
+  public void setDoi(String doi) {
+    this.doi = doi;
+  }
 
-    @JacocoGenerated
-    public void setStandardBody(String standardBody) {
-        this.standardBody = standardBody;
-    }
+  @JacocoGenerated
+  public String getVolume() {
+    return volume;
+  }
 
-    public String getArticleTitle() {
-        return articleTitle;
-    }
+  public void setVolume(String volume) {
+    this.volume = volume;
+  }
 
-    @JacocoGenerated
-    public void setArticleTitle(String articleTitle) {
-        this.articleTitle = articleTitle;
-    }
+  @JacocoGenerated
+  public String getAuthor() {
+    return author;
+  }
 
-    public String getSeriesTitle() {
-        return seriesTitle;
-    }
+  public void setAuthor(String author) {
+    this.author = author;
+  }
 
-    @JacocoGenerated
-    public void setSeriesTitle(String seriesTitle) {
-        this.seriesTitle = seriesTitle;
-    }
+  @JacocoGenerated
+  public String getYear() {
+    return year;
+  }
 
-    public String getVolumeTitle() {
-        return volumeTitle;
-    }
+  public void setYear(String year) {
+    this.year = year;
+  }
 
-    @JacocoGenerated
-    public void setVolumeTitle(String volumeTitle) {
-        this.volumeTitle = volumeTitle;
-    }
+  @JacocoGenerated
+  public String getUnstructuredReference() {
+    return unstructuredReference;
+  }
 
-    public String getIssn() {
-        return issn;
-    }
+  @JacocoGenerated
+  public void setUnstructuredReference(String unstructuredReference) {
+    this.unstructuredReference = unstructuredReference;
+  }
 
-    @JacocoGenerated
-    public void setIssn(String issn) {
-        this.issn = issn;
-    }
+  @JacocoGenerated
+  public String getJournalTitle() {
+    return journalTitle;
+  }
 
-    public String getIssnType() {
-        return issnType;
-    }
+  public void setJournalTitle(String journalTitle) {
+    this.journalTitle = journalTitle;
+  }
 
-    @JacocoGenerated
-    public void setIssnType(String issnType) {
-        this.issnType = issnType;
-    }
+  public String getIssue() {
+    return issue;
+  }
 
-    public String getIsbn() {
-        return isbn;
-    }
+  @JacocoGenerated
+  public void setIssue(String issue) {
+    this.issue = issue;
+  }
 
-    @JacocoGenerated
-    public void setIsbn(String isbn) {
-        this.isbn = isbn;
-    }
+  public String getEdition() {
+    return edition;
+  }
 
-    public String getIsbnType() {
-        return isbnType;
-    }
+  @JacocoGenerated
+  public void setEdition(String edition) {
+    this.edition = edition;
+  }
 
-    @JacocoGenerated
-    public void setIsbnType(String isbnType) {
-        this.isbnType = isbnType;
-    }
+  public String getComponent() {
+    return component;
+  }
+
+  @JacocoGenerated
+  public void setComponent(String component) {
+    this.component = component;
+  }
+
+  public String getStandardDesignator() {
+    return standardDesignator;
+  }
+
+  @JacocoGenerated
+  public void setStandardDesignator(String standardDesignator) {
+    this.standardDesignator = standardDesignator;
+  }
+
+  public String getStandardBody() {
+    return standardBody;
+  }
+
+  @JacocoGenerated
+  public void setStandardBody(String standardBody) {
+    this.standardBody = standardBody;
+  }
+
+  public String getArticleTitle() {
+    return articleTitle;
+  }
+
+  @JacocoGenerated
+  public void setArticleTitle(String articleTitle) {
+    this.articleTitle = articleTitle;
+  }
+
+  public String getSeriesTitle() {
+    return seriesTitle;
+  }
+
+  @JacocoGenerated
+  public void setSeriesTitle(String seriesTitle) {
+    this.seriesTitle = seriesTitle;
+  }
+
+  public String getVolumeTitle() {
+    return volumeTitle;
+  }
+
+  @JacocoGenerated
+  public void setVolumeTitle(String volumeTitle) {
+    this.volumeTitle = volumeTitle;
+  }
+
+  public String getIssn() {
+    return issn;
+  }
+
+  @JacocoGenerated
+  public void setIssn(String issn) {
+    this.issn = issn;
+  }
+
+  public String getIssnType() {
+    return issnType;
+  }
+
+  @JacocoGenerated
+  public void setIssnType(String issnType) {
+    this.issnType = issnType;
+  }
+
+  public String getIsbn() {
+    return isbn;
+  }
+
+  @JacocoGenerated
+  public void setIsbn(String isbn) {
+    this.isbn = isbn;
+  }
+
+  public String getIsbnType() {
+    return isbnType;
+  }
+
+  @JacocoGenerated
+  public void setIsbnType(String isbnType) {
+    this.isbnType = isbnType;
+  }
 }

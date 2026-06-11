@@ -5,10 +5,7 @@ import no.unit.nva.commons.json.JsonUtils;
 
 public final class RestApiConfig {
 
-    public static final ObjectMapper REST_SERVICE_OBJECT_MAPPER = JsonUtils.dtoObjectMapper;
+  public static final ObjectMapper REST_SERVICE_OBJECT_MAPPER = JsonUtils.dtoObjectMapper;
 
-    private RestApiConfig(){
-
-    }
-
+  private RestApiConfig() {}
 }

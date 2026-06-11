@@ -4,29 +4,29 @@ import java.util.Arrays;
 import java.util.Optional;
 
 public enum RawMetaTag implements MetaTagSet {
-    DOI("doi", Bibo.DOI);
+  DOI("doi", Bibo.DOI);
 
-    private final String tagName;
-    private final OntologyProperty mapping;
+  private final String tagName;
+  private final OntologyProperty mapping;
 
-    RawMetaTag(String tagName, OntologyProperty mapping) {
-        this.tagName = tagName;
-        this.mapping = mapping;
-    }
+  RawMetaTag(String tagName, OntologyProperty mapping) {
+    this.tagName = tagName;
+    this.mapping = mapping;
+  }
 
-    @Override
-    public String getMetaTagName() {
-        return tagName;
-    }
+  @Override
+  public String getMetaTagName() {
+    return tagName;
+  }
 
-    @Override
-    public OntologyProperty getMapping() {
-        return mapping;
-    }
+  @Override
+  public OntologyProperty getMapping() {
+    return mapping;
+  }
 
-    public static Optional<RawMetaTag> getTagByString(String candidate) {
-        return Arrays.stream(values())
-                .filter(property -> property.getMetaTagName().equalsIgnoreCase(candidate))
-                .findAny();
-    }
+  public static Optional<RawMetaTag> getTagByString(String candidate) {
+    return Arrays.stream(values())
+        .filter(property -> property.getMetaTagName().equalsIgnoreCase(candidate))
+        .findAny();
+  }
 }

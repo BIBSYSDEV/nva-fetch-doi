@@ -6,6 +6,4 @@ import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
 @JsonTypeInfo(use = Id.NAME, property = "type")
-public record UnconfirmedOrganization(String name) implements Agent {
-
-}
+public record UnconfirmedOrganization(String name) implements Agent {}

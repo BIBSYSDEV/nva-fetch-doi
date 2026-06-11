@@ -6,6 +6,4 @@ import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
 @JsonTypeInfo(use = Id.NAME, property = "type")
-public record Range(String start, String end) implements Pages {
-
-}
+public record Range(String start, String end) implements Pages {}

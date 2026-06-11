@@ -4,24 +4,24 @@ import nva.commons.core.JacocoGenerated;
 
 public class DataciteIdentifier {
 
-    private String identifier;
-    private String identifierType;
+  private String identifier;
+  private String identifierType;
 
-    @JacocoGenerated
-    public String getIdentifier() {
-        return identifier;
-    }
+  @JacocoGenerated
+  public String getIdentifier() {
+    return identifier;
+  }
 
-    public void setIdentifier(String identifier) {
-        this.identifier = identifier;
-    }
+  public void setIdentifier(String identifier) {
+    this.identifier = identifier;
+  }
 
-    @JacocoGenerated
-    public String getIdentifierType() {
-        return identifierType;
-    }
+  @JacocoGenerated
+  public String getIdentifierType() {
+    return identifierType;
+  }
 
-    public void setIdentifierType(String identifierType) {
-        this.identifierType = identifierType;
-    }
+  public void setIdentifierType(String identifierType) {
+    this.identifierType = identifierType;
+  }
 }

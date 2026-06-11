@@ -9,10 +9,8 @@ import no.unit.nva.doi.fetch.commons.publication.model.contexttypes.UnconfirmedJ
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonSubTypes({
-    @JsonSubTypes.Type(name = "UnconfirmedJournal", value = UnconfirmedJournal.class),
-    @JsonSubTypes.Type(name = "Book", value = Book.class),
-    @JsonSubTypes.Type(name = "Anthology", value = Anthology.class)
+  @JsonSubTypes.Type(name = "UnconfirmedJournal", value = UnconfirmedJournal.class),
+  @JsonSubTypes.Type(name = "Book", value = Book.class),
+  @JsonSubTypes.Type(name = "Anthology", value = Anthology.class)
 })
-public interface PublicationContext {
-
-}
+public interface PublicationContext {}

@@ -11,46 +11,46 @@ import nva.commons.core.JacocoGenerated;
 
 public class DoiTransformService {
 
-    private final DataciteResponseConverter dataciteConverter;
-    private final CrossRefConverter crossRefConverter;
+  private final DataciteResponseConverter dataciteConverter;
+  private final CrossRefConverter crossRefConverter;
 
-    @JacocoGenerated
-    public DoiTransformService() {
-        this(new DataciteResponseConverter(), new CrossRefConverter());
+  @JacocoGenerated
+  public DoiTransformService() {
+    this(new DataciteResponseConverter(), new CrossRefConverter());
+  }
+
+  public DoiTransformService(
+      DataciteResponseConverter dataciteConverter, CrossRefConverter crossRefConverter) {
+
+    this.dataciteConverter = dataciteConverter;
+    this.crossRefConverter = crossRefConverter;
+  }
+
+  public CreatePublicationRequest transformPublication(String body, String contentLocation)
+      throws JsonProcessingException, InvalidIssnException {
+    return convertInputToPublication(body, contentLocation);
+  }
+
+  protected CreatePublicationRequest convertInputToPublication(String body, String contentLocation)
+      throws JsonProcessingException, InvalidIssnException {
+
+    MetadataLocation metadataLocation = MetadataLocation.lookup(contentLocation);
+    if (metadataLocation == MetadataLocation.CROSSREF) {
+      return convertFromCrossRef(body);
+    } else {
+      return convertFromDatacite(body);
     }
+  }
 
-    public DoiTransformService(DataciteResponseConverter dataciteConverter, CrossRefConverter crossRefConverter) {
+  private CreatePublicationRequest convertFromDatacite(String body)
+      throws JsonProcessingException, InvalidIssnException {
+    DataciteResponse dataciteResponse = Json.readValue(body, DataciteResponse.class);
+    return dataciteConverter.toPublication(dataciteResponse);
+  }
 
-        this.dataciteConverter = dataciteConverter;
-        this.crossRefConverter = crossRefConverter;
-    }
+  private CreatePublicationRequest convertFromCrossRef(String body) throws JsonProcessingException {
 
-    public CreatePublicationRequest transformPublication(String body, String contentLocation)
-        throws JsonProcessingException, InvalidIssnException {
-        return convertInputToPublication(body, contentLocation);
-    }
-
-    protected CreatePublicationRequest convertInputToPublication(String body, String contentLocation)
-        throws JsonProcessingException, InvalidIssnException {
-
-        MetadataLocation metadataLocation = MetadataLocation.lookup(contentLocation);
-        if (metadataLocation == MetadataLocation.CROSSREF) {
-            return convertFromCrossRef(body);
-        } else {
-            return convertFromDatacite(body);
-        }
-    }
-
-    private CreatePublicationRequest convertFromDatacite(String body)
-        throws JsonProcessingException, InvalidIssnException {
-        DataciteResponse dataciteResponse = Json.readValue(body, DataciteResponse.class);
-        return dataciteConverter.toPublication(dataciteResponse);
-    }
-
-    private CreatePublicationRequest convertFromCrossRef(String body)
-        throws JsonProcessingException {
-
-        CrossRefDocument document = Json.readValue(body, CrossrefApiResponse.class).getMessage();
-        return crossRefConverter.toPublication(document);
-    }
+    CrossRefDocument document = Json.readValue(body, CrossrefApiResponse.class).getMessage();
+    return crossRefConverter.toPublication(document);
+  }
 }

@@ -6,9 +6,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonSubTypes({
-    @JsonSubTypes.Type(name = "Range", value = Range.class),
-    @JsonSubTypes.Type(names = "MonographPages", value = MonographPages.class)
+  @JsonSubTypes.Type(name = "Range", value = Range.class),
+  @JsonSubTypes.Type(names = "MonographPages", value = MonographPages.class)
 })
-public interface Pages {
-
-}
+public interface Pages {}

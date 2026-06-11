@@ -5,15 +5,15 @@ import nva.commons.core.JacocoGenerated;
 
 public class CrossrefAffiliation {
 
-    @JsonProperty("name")
-    public String name;
+  @JsonProperty("name")
+  public String name;
 
-    @JacocoGenerated
-    public String getName() {
-        return name;
-    }
+  @JacocoGenerated
+  public String getName() {
+    return name;
+  }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+  public void setName(String name) {
+    this.name = name;
+  }
 }

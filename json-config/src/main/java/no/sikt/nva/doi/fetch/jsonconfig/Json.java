@@ -7,29 +7,27 @@ import no.unit.nva.commons.json.JsonUtils;
 
 public final class Json {
 
-    private static final ObjectMapper OBJECT_MAPPER = JsonUtils.dtoObjectMapper;
+  private static final ObjectMapper OBJECT_MAPPER = JsonUtils.dtoObjectMapper;
 
-    private Json() {
+  private Json() {}
 
-    }
+  public static <T> T readValue(String input, Class<T> valueType) throws JsonProcessingException {
+    return OBJECT_MAPPER.readValue(input, valueType);
+  }
 
-    public static <T> T readValue(String input, Class<T> valueType) throws JsonProcessingException {
-        return OBJECT_MAPPER.readValue(input, valueType);
-    }
+  public static String writeValueAsString(Object value) throws JsonProcessingException {
+    return OBJECT_MAPPER.writeValueAsString(value);
+  }
 
-    public static String writeValueAsString(Object value) throws JsonProcessingException {
-        return OBJECT_MAPPER.writeValueAsString(value);
-    }
+  public static JsonNode readTree(String input) throws JsonProcessingException {
+    return OBJECT_MAPPER.readTree(input);
+  }
 
-    public static JsonNode readTree(String input) throws JsonProcessingException {
-        return OBJECT_MAPPER.readTree(input);
-    }
+  public static JsonNode convertValue(Object fromValue, Class<JsonNode> jsonNodeClass) {
+    return OBJECT_MAPPER.convertValue(fromValue, jsonNodeClass);
+  }
 
-    public static JsonNode convertValue(Object fromValue, Class<JsonNode> jsonNodeClass) {
-        return OBJECT_MAPPER.convertValue(fromValue, jsonNodeClass);
-    }
-
-    public static JsonNode createObjectNode() {
-        return OBJECT_MAPPER.createObjectNode();
-    }
+  public static JsonNode createObjectNode() {
+    return OBJECT_MAPPER.createObjectNode();
+  }
 }
