@@ -50,6 +50,8 @@ Parameters:
 
 Globals:
   Function:
+    Architectures:
+      - arm64
     Timeout: 900
     MemorySize: 1798
     Runtime: java21
