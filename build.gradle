@@ -11,10 +11,6 @@ tasks.withType(JavaCompile) {
     options.release = 21
 }
 
-wrapper{
-    distributionType = Wrapper.DistributionType.ALL
-    gradleVersion = '8.12'
-}
 
 configurations {
     xsd2java
