@@ -48,7 +48,7 @@ public class DataciteTypes {
                 builder.bibtex,
                 builder.citeproc,
                 builder.schemaOrg,
-                builder.schemaOrg,
+                builder.resourceType,
                 builder.resourceTypeGeneral
         );
     }
