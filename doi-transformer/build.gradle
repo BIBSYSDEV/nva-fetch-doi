@@ -3,20 +3,21 @@ plugins {
 }
 
 dependencies {
-    implementation project(":fetch-doi-commons")
-
-    implementation project(":json-config")
-    implementation libs.nva.core
-    implementation libs.nva.json
-    implementation libs.nva.identifiers
-    implementation libs.nva.apigateway
-    implementation libs.nva.doi
-    implementation libs.bundles.logging
-    implementation libs.bundles.jackson
-    implementation libs.jakarta
-    implementation libs.ordinals.to.numbers
-    implementation libs.commons.validator
-
-    runtimeOnly libs.jersey.common
-    testImplementation libs.bundles.testing
+    api(nvaCatalog.jackson.annotations)
+    api(nvaCatalog.jackson.core)
+    api(nvaLibs.apigateway)
+    api(nvaLibs.doi)
+    api(project(":fetch-doi-commons"))
+    implementation(nvaCatalog.commons.validator)
+    implementation(nvaCatalog.log4j.core)
+    implementation(nvaCatalog.slf4j.api)
+    implementation(nvaLibs.core)
+    implementation(project(":json-config"))
+    testImplementation(nvaCatalog.hamcrest)
+    testImplementation(nvaCatalog.jackson.databind)
+    testImplementation(nvaCatalog.junit.jupiter.api)
+    testImplementation(nvaCatalog.junit.jupiter.params)
+    testImplementation(nvaLibs.json)
+    testImplementation(nvaLibs.logutils)
+    testImplementation(nvaLibs.testutils)
 }

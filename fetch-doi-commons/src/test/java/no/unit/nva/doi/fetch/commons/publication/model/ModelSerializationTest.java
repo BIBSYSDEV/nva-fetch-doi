@@ -9,10 +9,8 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.fetch.commons.publication.model.contexttypes.Book;
 import no.unit.nva.doi.fetch.commons.publication.model.contexttypes.UnconfirmedSeries;
 import no.unit.nva.doi.fetch.commons.publication.model.instancetypes.AcademicMonograph;
@@ -21,7 +19,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.junit.jupiter.params.shadow.com.univocity.parsers.annotations.BooleanString;
 
 public class ModelSerializationTest {
 

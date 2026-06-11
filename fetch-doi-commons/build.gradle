@@ -3,18 +3,15 @@ plugins {
 }
 
 dependencies {
-
-    implementation project(":json-config")
-    implementation libs.nva.core
-    implementation libs.nva.json
-    implementation libs.nva.apigateway
-    implementation libs.nva.identifiers
-    implementation libs.httpclient
-    implementation libs.bundles.jackson
-
-
-    implementation libs.bundles.problem
-
-    testImplementation libs.bundles.testing
-    runtimeOnly libs.aws.lambda.java.core
+    api(nvaCatalog.jackson.annotations)
+    api(nvaLibs.apigateway)
+    api(nvaLibs.identifiers)
+    implementation(nvaLibs.core)
+    testImplementation(nvaCatalog.hamcrest)
+    testImplementation(nvaCatalog.jackson.core)
+    testImplementation(nvaCatalog.jackson.databind)
+    testImplementation(nvaCatalog.junit.jupiter.api)
+    testImplementation(nvaCatalog.junit.jupiter.params)
+    testImplementation(nvaLibs.json)
+    testImplementation(project(":json-config"))
 }

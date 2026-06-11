@@ -80,8 +80,7 @@ import no.unit.nva.metadata.service.testdata.ValidDoiStringArgumentsProvider;
 import no.unit.nva.metadata.type.Citation;
 import no.unit.nva.metadata.type.DcTerms;
 import nva.commons.core.paths.UriWrapper;
-import nva.commons.logutils.LogUtils;
-import nva.commons.logutils.TestAppender;
+import nva.commons.logutils.LogRecorder;
 import org.hamcrest.collection.IsEmptyCollection;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -123,7 +122,6 @@ public class MetadataServiceTest {
     public static final String SECOND_ISBN_ISBN13_VARIANT = "9781627050128";
     public static final String ONLINE_ISSN = "2052-2916";
     public static final String PRINT_ISSN = "0969-0700";
-    private static final TestAppender logger = LogUtils.getTestingAppenderForRootLogger();
     private WireMockServer wireMockServer;
 
     private URI serverUriJournal;
@@ -505,10 +503,11 @@ public class MetadataServiceTest {
     @Test
     void getCreatePublicationRequestReturnsOptionalEmptyWhenExpectedInputIsInvalidIsxn()
         throws IOException, InterruptedException, MetadataFetchException {
+        var logRecorder = LogRecorder.forRoot(MetadataService.class);
         Optional<CreatePublicationRequest> createPublicationRequest =
             getCreatePublicationRequestResponse("citation_issn", INVALID_ISXN);
         assertTrue(createPublicationRequest.isEmpty());
-        assertThat(logger.getMessages(), containsString("Could not extract type metadata from statement "));
+        assertThat(logRecorder.messages(), hasItem(containsString("Could not extract type metadata from statement ")));
     }
 
     private static Stream<Arguments> provideMetadataWithLowercasePrefixes() {

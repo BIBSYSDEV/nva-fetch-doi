@@ -1,6 +1,6 @@
 package no.unit.nva.doi.fetch;
 
-import static com.google.common.net.HttpHeaders.AUTHORIZATION;
+import static org.apache.hc.core5.http.HttpHeaders.AUTHORIZATION;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static no.unit.nva.doi.fetch.RestApiConfig.REST_SERVICE_OBJECT_MAPPER;

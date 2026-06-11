@@ -3,6 +3,7 @@ plugins {
 }
 
 dependencies{
-    implementation libs.nva.json
-    implementation libs.bundles.jackson
+    api(nvaCatalog.jackson.core)
+    api(nvaCatalog.jackson.databind)
+    implementation(nvaLibs.json)
 }

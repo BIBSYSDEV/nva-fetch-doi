@@ -64,8 +64,7 @@ import no.unit.nva.doi.transformer.model.crossrefmodel.Link;
 import no.unit.nva.doi.transformer.utils.CrossrefType;
 import no.unit.nva.doi.transformer.utils.IssnCleaner;
 import nva.commons.doi.DoiConverter;
-import nva.commons.logutils.LogUtils;
-import nva.commons.logutils.TestAppender;
+import nva.commons.logutils.LogRecorder;
 import org.apache.commons.validator.routines.ISBNValidator;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
@@ -79,7 +78,6 @@ public class CrossRefConverterTest extends ConversionTest {
     public static final String AUTHOR_FAMILY_NAME = "familyName";
     public static final String FIRST_AUTHOR = "first";
     public static final Integer EXPECTED_YEAR = 2019;
-    //    public static final String SURNAME_COMMA_FIRSTNAME = "%s,.*%s";
     public static final String FIRSTNAME_SURNAME = "%s %s";
     public static final String SECOND_AUTHOR = "second";
     public static final String CROSSREF_WITH_ABSTRACT_JSON = "crossrefWithAbstract.json";
@@ -146,11 +144,11 @@ public class CrossRefConverterTest extends ConversionTest {
     @Test
     @Disabled
     public void toPublicationLogsWarningWhenCrossrefDocumentLinkContainsInvalidUri() {
-        TestAppender logAppender = LogUtils.getTestingAppenderForRootLogger();
-        String invalidUri = "not a uri";
-        CrossRefDocument crossRefDocument = crossRefDocumentWithInvalidUrl(invalidUri);
+        var logRecorder = LogRecorder.forRoot(CrossRefConverterTest.class);
+        var invalidUri = "not a uri";
+        var crossRefDocument = crossRefDocumentWithInvalidUrl(invalidUri);
         toPublication(crossRefDocument);
-        assertThat(logAppender.getMessages(), containsString(invalidUri));
+        assertThat(logRecorder.messages(), hasItem(containsString(invalidUri)));
     }
 
     @ParameterizedTest(name = "toPublicationDoesNotThrowExceptionWhenPublicationTypeIsMissingButLogsWarning")
