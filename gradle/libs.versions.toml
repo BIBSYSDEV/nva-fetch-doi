@@ -1,7 +1,7 @@
 [versions]
-rdf4jVersion = { strictly = "4.3.9" }
+rdf4jVersion = { strictly = "5.3.1" }
 any23core = { strictly = "2.7" }
-j2html = { strictly = "1.4.0" }
+j2html = { strictly = "1.6.0" }
 
 [libraries]
 rdf4j-sail-api = { group = "org.eclipse.rdf4j", name = "rdf4j-sail-api", version.ref = "rdf4jVersion" }

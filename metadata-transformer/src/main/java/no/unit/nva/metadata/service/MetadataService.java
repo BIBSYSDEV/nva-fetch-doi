@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.hc.core5.http.HttpHeaders;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -45,7 +44,6 @@ import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.RepositoryResult;
 import org.eclipse.rdf4j.repository.sail.SailRepository;
-import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.sail.memory.MemoryStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +52,6 @@ public class MetadataService {
     
     public static final ValueFactory VALUE_FACTORY = SimpleValueFactory.getInstance();
     public static final String API_HOST = new Environment().readEnv("API_HOST");
-    private static final String EMPTY_BASE_URI = "";
     private static final Logger LOGGER = LoggerFactory.getLogger(MetadataService.class);
     private static final String DOI_DISPLAY_REGEX = "(doi:|doc:|http(s)?://(dx\\.)?doi\\.org/)?10\\.\\d{4,9}+/.*";
     private static final String SHORT_DOI_REGEX = "^http(s)?://doi.org/[^/]+(/)?$";
@@ -140,15 +137,11 @@ public class MetadataService {
                    .build();
     }
     
-    private ByteArrayInputStream loadExtractedData() {
-        return new ByteArrayInputStream(translatorService.getOutputStream().toByteArray());
-    }
-    
     private Model getMetadata(URI uri) throws ExtractionException, IOException, URISyntaxException,
                                               InterruptedException {
-        translatorService.loadMetadataFromUri(uri);
+        var extractedMetadata = translatorService.loadMetadataFromUri(uri);
         try (RepositoryConnection repositoryConnection = db.getConnection()) {
-            repositoryConnection.add(loadExtractedData(), EMPTY_BASE_URI, RDFFormat.JSONLD);
+            repositoryConnection.add(extractedMetadata);
             try (RepositoryResult<Statement> statements = repositoryConnection.getStatements(null, null, null)) {
                 return normalizeStatements(statements);
             }
