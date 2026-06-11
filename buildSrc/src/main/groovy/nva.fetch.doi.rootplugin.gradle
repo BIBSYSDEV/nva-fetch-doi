@@ -17,20 +17,8 @@ dependencies {
     }
 }
 
-reporting {
-    reports {
-        testCodeCoverageReport(JacocoCoverageReport) {
-            testType = TestSuiteType.UNIT_TEST
-        }
-        integrationTestCodeCoverageReport(JacocoCoverageReport) {
-            testType = TestSuiteType.INTEGRATION_TEST
-        }
-    }
-}
 
 tasks.named('check') {
-    dependsOn tasks.named('testCodeCoverageReport', JacocoReport)
-    dependsOn tasks.named('integrationTestCodeCoverageReport', JacocoReport)
     dependsOn tasks.named('spectral')
 }
 
