@@ -10,7 +10,7 @@ public final class DateExtractor {
     public static final String DATE_SEPARATOR = "-";
     public static final int FULL_DATE = 3;
     public static final int YEAR_ONLY = 1;
-    public static final Function<ExtractionPair, EntityDescription> apply = DateExtractor::extract;
+    public static final Function<ExtractionPair, EntityDescription> APPLY = DateExtractor::extract;
     public static final int YEAR_PART = 0;
     public static final int MONTH_PART = 1;
     public static final int DAY_PART = 2;

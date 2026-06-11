@@ -16,7 +16,7 @@ public final class IsbnCleaner {
     public static final String INVALID_CHARS = "[^[0-9]Xx]+";
     public static final String EMPTY_STRING = "";
 
-    private static final Logger logger = LoggerFactory.getLogger(IsbnCleaner.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(IsbnCleaner.class);
     public static final String ERROR_WHEN_TRYING_TO_CLEAN_ISSN = "Error when trying to clean ISBN: {}";
 
     private IsbnCleaner() {
@@ -35,7 +35,7 @@ public final class IsbnCleaner {
         try {
             return checkIsbn(isbnCandidate);
         } catch (InvalidIsbnException e) {
-            logger.warn(ERROR_WHEN_TRYING_TO_CLEAN_ISSN, e.getMessage());
+            LOGGER.warn(ERROR_WHEN_TRYING_TO_CLEAN_ISSN, e.getMessage());
             return null;
         }
     }

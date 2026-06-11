@@ -52,10 +52,10 @@ import org.slf4j.LoggerFactory;
 
 public class MetadataService {
     
-    public static final ValueFactory valueFactory = SimpleValueFactory.getInstance();
+    public static final ValueFactory VALUE_FACTORY = SimpleValueFactory.getInstance();
     public static final String API_HOST = new Environment().readEnv("API_HOST");
     private static final String EMPTY_BASE_URI = "";
-    private static final Logger logger = LoggerFactory.getLogger(MetadataService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MetadataService.class);
     private static final String DOI_DISPLAY_REGEX = "(doi:|doc:|http(s)?://(dx\\.)?doi\\.org/)?10\\.\\d{4,9}+/.*";
     private static final String SHORT_DOI_REGEX = "^http(s)?://doi.org/[^/]+(/)?$";
     private static final String DOI_PREFIX = "https://doi.org/";
@@ -110,7 +110,7 @@ public class MetadataService {
             var converter = new MetadataConverter(metadata);
             return converter.generateCreatePublicationRequest();
         } catch (Exception exception) {
-            logger.error("Error fetching metadata from URI: {}", uri, exception);
+            LOGGER.error("Error fetching metadata from URI: {}", uri, exception);
             throw new MetadataFetchException("Failed to fetch metadata from: %s".formatted(uri), exception);
         }
     }
@@ -211,7 +211,7 @@ public class MetadataService {
     private IRI extractDoi(String value) throws IOException, InterruptedException {
         Optional<String> doiString = isShortDoi(value) ? fetchDoiUriFromShortDoi(value)
                                          : Optional.of(DOI_PREFIX + value.substring(value.indexOf(DOI_FIRST_PART)));
-        return doiString.map(valueFactory::createIRI).orElse(null);
+        return doiString.map(VALUE_FACTORY::createIRI).orElse(null);
     }
     
     private Optional<String> fetchDoiUriFromShortDoi(String value) throws IOException, InterruptedException {

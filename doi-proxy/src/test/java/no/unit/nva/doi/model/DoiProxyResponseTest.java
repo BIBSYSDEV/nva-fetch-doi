@@ -14,7 +14,7 @@ class DoiProxyResponseTest {
     void canMapDoiProxyResponse() throws JsonProcessingException {
         var response = new DoiProxyResponse(
             Json.createObjectNode(),
-            MetadataSource.DataCite.name()
+            MetadataSource.DATACITE.name()
         );
         var mappedResponse = Json.readValue(Json.writeValueAsString(response), DoiProxyResponse.class);
 

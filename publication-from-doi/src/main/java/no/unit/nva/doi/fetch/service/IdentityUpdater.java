@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 public final class IdentityUpdater {
 
     public static final String PROBLEM_UPDATING_IDENTITY_MESSAGE = "Problem updating Identity, ignoring and moving on";
-    private static final Logger logger = LoggerFactory.getLogger(IdentityUpdater.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(IdentityUpdater.class);
     public static final int MAX_CONTRIBUTORS_TO_LOOKUP = 100;
 
     private IdentityUpdater() {
@@ -56,7 +56,7 @@ public final class IdentityUpdater {
         try {
             updateContributors(cristinClient, publication, contributors);
         } catch (Exception e) {
-            logger.info(PROBLEM_UPDATING_IDENTITY_MESSAGE, e);
+            LOGGER.info(PROBLEM_UPDATING_IDENTITY_MESSAGE, e);
         }
     }
 
@@ -65,7 +65,7 @@ public final class IdentityUpdater {
         var contributorsWithOnlyOrcid = contributors.stream()
                                             .filter(IdentityUpdater::hasOrcidButNotIdentifier).toList();
         if (contributorsWithOnlyOrcid.size() > MAX_CONTRIBUTORS_TO_LOOKUP) {
-            logger.warn("Skipping updateContributors as too many without known cristin-identifier: {}",
+            LOGGER.warn("Skipping updateContributors as too many without known cristin-identifier: {}",
                         publication.getEntityDescription().getMetadataSource());
             return;
         }

@@ -63,15 +63,15 @@ public class MetadataConverter {
 
     private MetadataExtractor configureExtractor() {
         return new MetadataExtractor(entityDescription, hasAbstractPropertyInDocumentModel())
-                .withExtractor(AbstractExtractor.apply)
-                .withExtractor(ContributorExtractor.apply)
-                .withExtractor(DateExtractor.apply)
-                .withExtractor(DescriptionExtractor.apply)
-                .withExtractor(DocumentTypeExtractor.apply)
-                .withExtractor(DoiExtractor.apply)
-                .withExtractor(LanguageExtractor.apply)
-                .withExtractor(TagExtractor.apply)
-                .withExtractor(TitleExtractor.apply);
+                .withExtractor(AbstractExtractor.APPLY)
+                .withExtractor(ContributorExtractor.APPLY)
+                .withExtractor(DateExtractor.APPLY)
+                .withExtractor(DescriptionExtractor.APPLY)
+                .withExtractor(DocumentTypeExtractor.APPLY)
+                .withExtractor(DoiExtractor.APPLY)
+                .withExtractor(LanguageExtractor.APPLY)
+                .withExtractor(TagExtractor.APPLY)
+                .withExtractor(TitleExtractor.APPLY);
     }
 
     private boolean hasAbstractPropertyInDocumentModel() {

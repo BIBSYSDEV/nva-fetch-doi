@@ -7,7 +7,7 @@ import java.util.function.Function;
 import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
 
 public final class TagExtractor {
-    public static final Function<ExtractionPair, EntityDescription> apply = TagExtractor::extract;
+    public static final Function<ExtractionPair, EntityDescription> APPLY = TagExtractor::extract;
 
     private TagExtractor() {
 

@@ -15,7 +15,7 @@ public final class IssnCleaner {
     public static final int END_FIRST_PART = 4;
     public static final int BEGIN_SECOND_PART = 4;
 
-    private static final Logger logger = LoggerFactory.getLogger(IssnCleaner.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(IssnCleaner.class);
     public static final String ERROR_WHEN_TRYING_TO_CLEAN_ISSN = "Error when trying to clean ISSN: ";
 
     private IssnCleaner() {
@@ -37,7 +37,7 @@ public final class IssnCleaner {
         try {
             return IssnUtil.checkIssn(issnCandidate);
         } catch (InvalidIssnException e) {
-            logger.warn(ERROR_WHEN_TRYING_TO_CLEAN_ISSN + e.getMessage());
+            LOGGER.warn(ERROR_WHEN_TRYING_TO_CLEAN_ISSN + e.getMessage());
             return null;
         }
     }

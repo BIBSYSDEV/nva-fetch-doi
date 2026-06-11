@@ -25,7 +25,7 @@ public class PreviewDoiHandler extends ApiGatewayHandler<RequestBody, CreatePubl
 
     private static final String NULL_DOI_URL_ERROR = "doiUrl can not be null";
     private static final String FAILED_TO_FETCH_METADATA = "Failed to fetch metadata from URL: %s";
-    private static final Logger logger = LoggerFactory.getLogger(PreviewDoiHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PreviewDoiHandler.class);
     private final FetchDoiService fetchDoiService;
 
     @SuppressWarnings("unused")
@@ -83,7 +83,7 @@ public class PreviewDoiHandler extends ApiGatewayHandler<RequestBody, CreatePubl
     }
 
     private ApiGatewayException handleError(Exception exception, String url) {
-        logger.error(FAILED_TO_FETCH_METADATA.formatted(url), exception);
+        LOGGER.error(FAILED_TO_FETCH_METADATA.formatted(url), exception);
         if (exception instanceof ApiGatewayException apiGatewayException) {
             return apiGatewayException;
         }

@@ -23,7 +23,7 @@ public class DoiProxyService {
     private final CrossRefClient crossRefClient;
     private final DataciteClient dataciteClient;
 
-    private static final Logger logger = LoggerFactory.getLogger(DoiProxyService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DoiProxyService.class);
 
     /**
      * Constructor for DoiProxyService.
@@ -56,17 +56,17 @@ public class DoiProxyService {
      */
     public MetadataAndContentLocation lookupDoiMetadata(String doiUrl, DataciteContentType dataciteContentType)
         throws MetadataNotFoundException, IOException, URISyntaxException {
-        logger.info(GETING_DOI_METADATA_INFO_MESSAGE + doiUrl);
+        LOGGER.info(GETING_DOI_METADATA_INFO_MESSAGE + doiUrl);
         MetadataAndContentLocation metadataAndContentLocation;
         long crossRefStartTime = System.nanoTime();
         Optional<MetadataAndContentLocation> crossRefResult = crossRefClient.fetchDataForDoi(doiUrl);
         long crossRefEndTime = System.nanoTime();
-        logger.info("Received response from Crossref after {} ms", (crossRefEndTime - crossRefStartTime) / 1000);
+        LOGGER.info("Received response from Crossref after {} ms", (crossRefEndTime - crossRefStartTime) / 1000);
         if (crossRefResult.isEmpty()) {
             long dataciteStartTime = System.nanoTime();
             metadataAndContentLocation = dataciteClient.fetchMetadata(doiUrl, dataciteContentType);
             long dataciteEndTime = System.nanoTime();
-            logger.info("Received response from Datacite after {} ms", (dataciteEndTime - dataciteStartTime) / 1000);
+            LOGGER.info("Received response from Datacite after {} ms", (dataciteEndTime - dataciteStartTime) / 1000);
         } else {
             metadataAndContentLocation = crossRefResult.get();
         }
@@ -74,7 +74,7 @@ public class DoiProxyService {
         if (isNull(metadataAndContentLocation)) {
             throw new MetadataNotFoundException(ERROR_READING_METADATA + SPACE + doiUrl);
         }
-        logger.info("metadataAndContentLocation.getJson()={}", metadataAndContentLocation.getJson());
+        LOGGER.info("metadataAndContentLocation.getJson()={}", metadataAndContentLocation.getJson());
         return metadataAndContentLocation;
     }
 }

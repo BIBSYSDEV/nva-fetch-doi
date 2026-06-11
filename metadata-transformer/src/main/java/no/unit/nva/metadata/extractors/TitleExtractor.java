@@ -5,7 +5,7 @@ import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
 
 public final class TitleExtractor {
 
-    public static final Function<ExtractionPair, EntityDescription> apply = TitleExtractor::extract;
+    public static final Function<ExtractionPair, EntityDescription> APPLY = TitleExtractor::extract;
 
     private TitleExtractor() {
 

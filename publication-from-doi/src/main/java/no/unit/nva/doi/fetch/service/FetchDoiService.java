@@ -1,6 +1,6 @@
 package no.unit.nva.doi.fetch.service;
 
-import static no.unit.nva.doi.fetch.RestApiConfig.restServiceObjectMapper;
+import static no.unit.nva.doi.fetch.RestApiConfig.REST_SERVICE_OBJECT_MAPPER;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 public class FetchDoiService {
 
     public static final String NO_METADATA_FOUND = "No metadata found for imported uri";
-    private static final Logger logger = LoggerFactory.getLogger(FetchDoiService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FetchDoiService.class);
     private final transient DoiTransformService doiTransformService;
     private final transient DoiProxyService doiProxyService;
     private final transient CristinClient cristinClient;
@@ -48,10 +48,10 @@ public class FetchDoiService {
         CreatePublicationRequest request;
 
         if (urlIsValidDoi(url)) {
-            logger.info("URL is a DOI");
+            LOGGER.info("URL is a DOI");
             request = getPublicationFromDoi(url);
         } else {
-            logger.info("URL is NOT a DOI, falling back to web metadata scraping");
+            LOGGER.info("URL is NOT a DOI, falling back to web metadata scraping");
             request = getPublicationFromOtherUrl(url);
         }
 
@@ -87,7 +87,7 @@ public class FetchDoiService {
         var publicationMetadata = getPublicationMetadataFromDoi(doi);
         var publication =
             IdentityUpdater.enrichPublicationCreators(cristinClient, publicationMetadata);
-        return restServiceObjectMapper.convertValue(publication, CreatePublicationRequest.class);
+        return REST_SERVICE_OBJECT_MAPPER.convertValue(publication, CreatePublicationRequest.class);
     }
 
     private CreatePublicationRequest getPublicationMetadataFromDoi(URL doiUrl)

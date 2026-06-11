@@ -9,13 +9,13 @@ public enum MetadataLocation {
 
     public static final String CROSSREF_STRING = "crossref";
     public static final String DATACITE_STRING = "datacite";
-    private static final Map<String, MetadataLocation> valuesMap;
+    private static final Map<String, MetadataLocation> VALUES_MAP;
     private final String value;
 
     static {
-        valuesMap = new HashMap<>();
-        valuesMap.put(CROSSREF.getValue(), CROSSREF);
-        valuesMap.put(DATACITE.getValue(), DATACITE);
+        VALUES_MAP = new HashMap<>();
+        VALUES_MAP.put(CROSSREF.getValue(), CROSSREF);
+        VALUES_MAP.put(DATACITE.getValue(), DATACITE);
     }
 
     MetadataLocation(String value) {
@@ -34,9 +34,9 @@ public enum MetadataLocation {
      */
     public static MetadataLocation lookup(String location) {
         if (locationContainsCrossref(location)) {
-            return valuesMap.get(CROSSREF.getValue());
+            return VALUES_MAP.get(CROSSREF.getValue());
         } else {
-            return valuesMap.get(DATACITE.getValue());
+            return VALUES_MAP.get(DATACITE.getValue());
         }
     }
 

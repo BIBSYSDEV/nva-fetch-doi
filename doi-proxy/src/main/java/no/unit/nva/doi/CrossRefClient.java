@@ -44,7 +44,7 @@ public class CrossRefClient {
     private static final String CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE = "Bearer %s";
     private static final String DOI_EXAMPLES = "10.1000/182, https://doi.org/10.1000/182";
     public static final String ILLEGAL_DOI_MESSAGE = "Illegal DOI:%s. Valid examples:" + DOI_EXAMPLES;
-    private static final Logger logger = LoggerFactory.getLogger(CrossRefClient.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CrossRefClient.class);
     private final transient HttpClient httpClient;
     private final String secretName;
     private final String secretKey;
@@ -95,8 +95,8 @@ public class CrossRefClient {
                      | NotFoundException
                      | BadRequestException e) {
             String details = FETCH_ERROR + doiUri;
-            logger.warn(details);
-            logger.warn(e.getMessage());
+            LOGGER.warn(details);
+            LOGGER.warn(e.getMessage());
             return Optional.empty();
         }
     }
@@ -108,7 +108,7 @@ public class CrossRefClient {
             .timeout(Duration.ofSeconds(TIMEOUT_DURATION))
             .GET();
 
-        logger.info(ADDING_TOKEN_IN_HEADER);
+        LOGGER.info(ADDING_TOKEN_IN_HEADER);
         builder.setHeader(CROSSREF_PLUSAPI_HEADER,
                           String.format(CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE, getCrossRefApiPlusToken()));
 
@@ -151,7 +151,7 @@ public class CrossRefClient {
         try {
             return secretsReader.fetchSecret(secretName, secretKey);
         } catch (ErrorReadingSecretException e) {
-            logger.error(CROSSREF_API_KEY_SECRET_NOT_FOUND_TEMPLATE, secretName, secretKey);
+            LOGGER.error(CROSSREF_API_KEY_SECRET_NOT_FOUND_TEMPLATE, secretName, secretKey);
             throw new RuntimeException(e);
         }
     }

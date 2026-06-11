@@ -22,11 +22,11 @@ import org.slf4j.LoggerFactory;
 
 public final class DocumentTypeExtractor {
 
-    private static final Logger logger = LoggerFactory.getLogger(DocumentTypeExtractor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DocumentTypeExtractor.class);
     private static final String SPACES_AND_HYPHENS_REGEX = "[ -]";
     private static final ISBNValidator ISBN_VALIDATOR = new ISBNValidator();
 
-    public static final Function<ExtractionPair, EntityDescription> apply = extractOrConsumeError();
+    public static final Function<ExtractionPair, EntityDescription> APPLY = extractOrConsumeError();
 
     private DocumentTypeExtractor() {
 
@@ -38,7 +38,7 @@ public final class DocumentTypeExtractor {
     }
 
     private static EntityDescription defaultValue(ExtractionPair extractionPair) {
-        logger.warn("Could not extract type metadata from statement {}", extractionPair.getStatement());
+        LOGGER.warn("Could not extract type metadata from statement {}", extractionPair.getStatement());
         extractionPair.getEntityDescription().setReference(null);
         return extractionPair.getEntityDescription();
     }

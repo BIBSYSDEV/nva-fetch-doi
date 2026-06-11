@@ -33,7 +33,7 @@ public class Isxn {
         ELECTRONIC("electronic");
 
         private final String name;
-        private static String ERROR_MESSAGE = "Invalid Type:%s.  Allowed types are: print, electronic";
+        private static final String ERROR_MESSAGE = "Invalid Type:%s.  Allowed types are: print, electronic";
 
         IsxnType(String name) {
             this.name = name;

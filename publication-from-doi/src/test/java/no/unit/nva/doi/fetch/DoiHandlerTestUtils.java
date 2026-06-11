@@ -3,7 +3,7 @@ package no.unit.nva.doi.fetch;
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
-import static no.unit.nva.doi.fetch.RestApiConfig.restServiceObjectMapper;
+import static no.unit.nva.doi.fetch.RestApiConfig.REST_SERVICE_OBJECT_MAPPER;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.mockito.ArgumentMatchers.any;
@@ -130,7 +130,7 @@ public class DoiHandlerTestUtils {
 
     private MetadataAndContentLocation metadataAndContentLocation() throws JsonProcessingException {
         return new MetadataAndContentLocation("datacite",
-                                              restServiceObjectMapper.writeValueAsString(getPublication()));
+                                              REST_SERVICE_OBJECT_MAPPER.writeValueAsString(getPublication()));
     }
 
     Context getMockContext() {
@@ -149,7 +149,7 @@ public class DoiHandlerTestUtils {
         requestHeaders.put(AUTHORIZATION, "some api key");
         requestHeaders.putAll(TestHeaders.getRequestHeaders());
 
-        return new HandlerRequestBuilder<RequestBody>(restServiceObjectMapper)
+        return new HandlerRequestBuilder<RequestBody>(REST_SERVICE_OBJECT_MAPPER)
                    .withBody(requestBody)
                    .withHeaders(requestHeaders)
                    .withUserName(randomString())
@@ -171,7 +171,7 @@ public class DoiHandlerTestUtils {
         requestHeaders.put(AUTHORIZATION, "some api key");
         requestHeaders.putAll(TestHeaders.getRequestHeaders());
 
-        return new HandlerRequestBuilder<RequestBody>(restServiceObjectMapper)
+        return new HandlerRequestBuilder<RequestBody>(REST_SERVICE_OBJECT_MAPPER)
                    .withHeaders(requestHeaders)
                    .withUserName(randomString())
                    .withCurrentCustomer(randomUri())
@@ -188,9 +188,9 @@ public class DoiHandlerTestUtils {
 
     <T> GatewayResponse<T> parseGatewayResponse(String output, Class<T> responseObjectClass)
         throws JsonProcessingException {
-        JavaType typeRef = restServiceObjectMapper.getTypeFactory()
+        JavaType typeRef = REST_SERVICE_OBJECT_MAPPER.getTypeFactory()
                                .constructParametricType(GatewayResponse.class, responseObjectClass);
-        return restServiceObjectMapper.readValue(output, typeRef);
+        return REST_SERVICE_OBJECT_MAPPER.readValue(output, typeRef);
     }
 
     private RequestBody createSampleRequestBody(URL url) {
