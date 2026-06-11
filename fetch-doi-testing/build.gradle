@@ -3,8 +3,6 @@ plugins {
 }
 
 dependencies {
-    implementation libs.nva.core
-    implementation (libs.bundles.testing){
-        exclude group: 'org.yaml', module: 'snakeyaml'
-    }
+    implementation(nvaLibs.core)
+    implementation(nvaCatalog.junit.jupiter.api)
 }

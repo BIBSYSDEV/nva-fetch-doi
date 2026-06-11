@@ -15,5 +15,6 @@ nva {
 }
 
 dependencies {
-    testImplementation libs.bundles.testing
+    testRuntimeOnly(nvaCatalog.junit.jupiter.engine)
+    testRuntimeOnly(nvaCatalog.junit.platform.launcher)
 }

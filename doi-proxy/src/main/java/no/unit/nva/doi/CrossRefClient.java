@@ -9,10 +9,9 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
+
+import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
@@ -21,6 +20,10 @@ import nva.commons.secrets.ErrorReadingSecretException;
 import nva.commons.secrets.SecretsReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.apache.hc.core5.http.ContentType.APPLICATION_JSON;
+import static org.apache.hc.core5.http.HttpHeaders.CONTENT_TYPE;
+import static org.apache.hc.core5.http.HttpHeaders.USER_AGENT;
 
 public class CrossRefClient {
 
@@ -90,10 +93,7 @@ public class CrossRefClient {
         try {
             return Optional.ofNullable(getFromWeb(request))
                 .map(json -> new MetadataAndContentLocation(CROSSREF_LINK, json));
-        } catch (InterruptedException
-                     | ExecutionException
-                     | NotFoundException
-                     | BadRequestException e) {
+        } catch (InterruptedException | ExecutionException | BadRequestException | NotFoundException e) {
             String details = FETCH_ERROR + doiUri;
             LOGGER.warn(details);
             LOGGER.warn(e.getMessage());
@@ -103,8 +103,8 @@ public class CrossRefClient {
 
     private HttpRequest createRequest(URI doiUri) {
         HttpRequest.Builder builder = HttpRequest.newBuilder(doiUri)
-            .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
-            .header(HttpHeaders.USER_AGENT, CROSSREF_USER_AGENT)
+            .header(CONTENT_TYPE, APPLICATION_JSON.toString())
+            .header(USER_AGENT, CROSSREF_USER_AGENT)
             .timeout(Duration.ofSeconds(TIMEOUT_DURATION))
             .GET();
 
@@ -127,7 +127,7 @@ public class CrossRefClient {
     }
 
     private String getFromWeb(HttpRequest request)
-        throws InterruptedException, ExecutionException {
+      throws InterruptedException, ExecutionException, BadRequestException, NotFoundException {
         HttpResponse<String> response = httpClient.sendAsync(request, BodyHandlers.ofString()).get();
         if (responseIsSuccessful(response)) {
             return response.body();
@@ -136,7 +136,7 @@ public class CrossRefClient {
         }
     }
 
-    private String handleError(HttpRequest request, HttpResponse<String> response) {
+    private String handleError(HttpRequest request, HttpResponse<String> response) throws BadRequestException, NotFoundException {
         if (response.statusCode() == HttpURLConnection.HTTP_NOT_FOUND) {
             throw new NotFoundException(COULD_NOT_FIND_ENTRY_WITH_DOI + request.uri().toString());
         }

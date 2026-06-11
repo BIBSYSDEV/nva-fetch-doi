@@ -1,8 +1,5 @@
 package no.unit.nva.doi.fetch.service;
 
-import static com.google.common.net.HttpHeaders.AUTHORIZATION;
-import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
-import com.google.common.net.MediaType;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -14,8 +11,12 @@ import no.sikt.nva.doi.fetch.jsonconfig.Json;
 import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
 import no.unit.nva.doi.fetch.commons.publication.model.PublicationResponse;
 import no.unit.nva.doi.fetch.exceptions.CreatePublicationException;
+import nva.commons.apigateway.MediaType;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
+
+import static org.apache.hc.core5.http.HttpHeaders.AUTHORIZATION;
+import static org.apache.hc.core5.http.HttpHeaders.CONTENT_TYPE;
 
 public class PublicationPersistenceService extends RestClient {
 

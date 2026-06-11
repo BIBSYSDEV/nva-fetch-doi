@@ -1,11 +1,12 @@
 package no.unit.nva.doi.fetch;
 
-import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static org.apache.hc.core5.http.HttpHeaders.CONTENT_TYPE;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -20,7 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.net.HttpHeaders;
+import org.apache.hc.core5.http.HttpHeaders;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -46,7 +47,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.metadata.service.MetadataService;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.core.Environment;
-import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.LogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -128,14 +129,14 @@ class ImportDoiHandlerTest extends DoiHandlerTestUtils {
         throws IOException, InvalidIssnException, URISyntaxException,
                MetadataNotFoundException, MetadataFetchException {
 
-        var logger = LogUtils.getTestingAppenderForRootLogger();
+        var logRecorder = LogRecorder.forRoot(ImportDoiHandler.class);
         var environmentWithInvalidHost = createEnvironmentWithInvalidHost();
         var importDoiHandler = this.createImportHandler(environmentWithInvalidHost);
 
         importDoiHandler.handleRequest(createSampleRequest(), output, context);
         var response = GatewayResponse.fromOutputStream(output, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_INTERNAL_ERROR)));
-        assertThat(logger.getMessages(), containsString("Missing host for creating URI"));
+        assertThat(logRecorder.messages(), hasItem(containsString("Missing host for creating URI")));
     }
 
     @Test

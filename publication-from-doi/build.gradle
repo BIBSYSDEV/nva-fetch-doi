@@ -3,21 +3,28 @@ plugins {
 }
 
 dependencies {
-    implementation project(":fetch-doi-commons")
-    implementation project(":doi-transformer")
-    implementation project(":doi-proxy")
-    implementation project(":metadata-transformer")
-    implementation project(":json-config")
-    implementation libs.nva.json
-    implementation libs.nva.identifiers
-    implementation libs.bundles.jackson
-    implementation libs.nva.apigateway
-    implementation libs.nva.core
-    implementation libs.nva.client
-    implementation libs.bundles.logging
-    implementation libs.guava
-    implementation(libs.bundles.problem)
-    testImplementation libs.bundles.testing
+    api(nvaCatalog.aws.lambda.core)
+    api(nvaCatalog.jackson.databind)
+    api(nvaLibs.apigateway)
+    api(nvaLibs.clients)
+    api(nvaLibs.core)
+    api(project(":doi-proxy"))
+    api(project(":doi-transformer"))
+    api(project(":fetch-doi-commons"))
+    api(project(":metadata-transformer"))
+    implementation(nvaCatalog.httpcore5)
+    implementation(nvaCatalog.log4j.core)
+    implementation(nvaCatalog.slf4j.api)
+    implementation(nvaLibs.identifiers)
+    implementation(nvaLibs.json)
+    implementation(project(":json-config"))
+    testImplementation(nvaCatalog.hamcrest)
+    testImplementation(nvaCatalog.jackson.core)
+    testImplementation(nvaCatalog.junit.jupiter.api)
+    testImplementation(nvaCatalog.mockito.core)
+    testImplementation(nvaCatalog.zalando)
+    testImplementation(nvaLibs.logutils)
+    testImplementation(nvaLibs.testutils)
 }
 
 test{

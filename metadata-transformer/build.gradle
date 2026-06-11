@@ -3,33 +3,41 @@ plugins {
 }
 
 dependencies {
-
-    implementation project(":json-config")
-    implementation project(":fetch-doi-commons")
-
-    implementation(libs.bundles.any23) {
+    api(libs.apache.any23.api) {
         exclude group: 'org.yaml', module: 'snakeyaml'
         exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j-impl'
     }
-
-    implementation(libs.bundles.rdf4j)
-    implementation libs.nva.core
-    implementation libs.nva.json
-
-    implementation libs.bundles.jackson
-
-    implementation libs.nva.apigateway
-    implementation libs.bundles.logging
-
-    implementation libs.commons.validator
-
-    testImplementation project(":fetch-doi-testing")
-    testImplementation libs.nva.logutils
-    testCompileClasspath libs.jackson.databind
-
-    testImplementation libs.bundles.testing
-    testImplementation libs.wiremock
-    testImplementation libs.j2html
+    api(libs.rdf4j.model.api)
+    api(project(":fetch-doi-commons"))
+    implementation(libs.apache.any23.core) {
+        exclude group: 'org.yaml', module: 'snakeyaml'
+        exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j-impl'
+    }
+    implementation(libs.rdf4j.model)
+    implementation(libs.rdf4j.repository.api)
+    implementation(libs.rdf4j.repository.sail)
+    implementation(libs.rdf4j.rio.api)
+    implementation(libs.rdf4j.sail.api)
+    implementation(libs.rdf4j.sail.memory)
+    implementation(nvaCatalog.commons.validator)
+    implementation(nvaCatalog.httpcore5)
+    implementation(nvaCatalog.jackson.databind)
+    implementation(nvaCatalog.log4j.core)
+    implementation(nvaCatalog.slf4j.api)
+    implementation(nvaLibs.apigateway)
+    implementation(nvaLibs.core)
+    implementation(project(":json-config"))
+    testImplementation(libs.j2html)
+    testImplementation(libs.rdf4j.model.vocabulary)
+    testImplementation(nvaCatalog.hamcrest)
+    testImplementation(nvaCatalog.junit.jupiter.api)
+    testImplementation(nvaCatalog.junit.jupiter.params)
+    testImplementation(nvaCatalog.mockito.core)
+    testImplementation(nvaCatalog.wiremock.core)
+    testImplementation(nvaLibs.json)
+    testImplementation(nvaLibs.logutils)
+    testImplementation(nvaLibs.testutils)
+    testImplementation(project(":fetch-doi-testing"))
 }
 
 test {
