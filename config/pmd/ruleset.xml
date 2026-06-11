@@ -18,16 +18,7 @@
 
 
   <rule ref="category/java/bestpractices.xml">
-    <exclude name="SystemPrintln"/>
     <exclude name="GuardLogStatement"/>
-    <exclude name="AvoidPrintStackTrace"/>
-
-    <!-- FIXME: Disabled because of many existing violations-->
-    <exclude name="UnusedPrivateField"/>
-
-    <!-- In TableManager we map ResourceNotFoundException to TableNotFoundException -->
-    <exclude name="PreserveStackTrace"/>
-
   </rule>
 
   <rule ref="category/java/codestyle.xml">
@@ -42,18 +33,7 @@
     <exclude name="ClassNamingConventions"/>
     <exclude name="UnnecessaryConstructor"/>
     <exclude name="UseExplicitTypes"/>
-    <!-- Conflicts with the rule category/java/codestyle.xml/AvoidProtectedMethodInFinalClassNotExtending -->
     <exclude name="CommentDefaultAccessModifier"/>
-    <!-- Conflicts with the rule category/java/codestyle.xml/AvoidProtectedMethodInFinalClassNotExtending -->
-
-    <!-- This rule does not allow us the following:
-            private static final Logger logger=...
-         It requires:
-            private static final Logger LOGGER=... -->
-    <exclude name="FieldNamingConventions"/>
-
-    <!-- Sometimes it is useful in debugging to assign the return value to a local variable  -->
-    <exclude name="UnnecessaryLocalBeforeReturn"/>
   </rule>
 
   <rule ref="category/java/design.xml">

@@ -10,10 +10,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class LanguageExtractor {
-    private static final Logger logger = LoggerFactory.getLogger(LanguageExtractor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LanguageExtractor.class);
     public static final String LEXVO_ORG = "http://lexvo.org/id/iso639-3/";
     public static final String ISO3_LANGUAGE_CODE_UNDEFINED = "und";
-    public static final Function<ExtractionPair, EntityDescription> apply = LanguageExtractor::extract;
+    public static final Function<ExtractionPair, EntityDescription> APPLY = LanguageExtractor::extract;
 
     private LanguageExtractor() {
 
@@ -36,7 +36,7 @@ public final class LanguageExtractor {
             try {
                 iso3LanguageCode = Locale.of(language).getISO3Language();
             } catch (MissingResourceException e) {
-                logger.warn("Could not map two-letter BCP-47 language code to three-letter ISO639-3 language code.", e);
+                LOGGER.warn("Could not map two-letter BCP-47 language code to three-letter ISO639-3 language code.", e);
             }
         }
 

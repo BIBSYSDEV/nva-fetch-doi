@@ -12,7 +12,7 @@ import no.unit.nva.doi.fetch.commons.publication.model.Role;
 
 public final class ContributorExtractor {
 
-    public static final Function<ExtractionPair, EntityDescription> apply = ContributorExtractor::extract;
+    public static final Function<ExtractionPair, EntityDescription> APPLY = ContributorExtractor::extract;
 
     private ContributorExtractor() {
 

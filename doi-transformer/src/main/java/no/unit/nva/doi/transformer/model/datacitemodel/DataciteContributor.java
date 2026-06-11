@@ -23,6 +23,30 @@ public class DataciteContributor {
         affiliation = builder.affiliation;
     }
 
+    @JacocoGenerated
+    public String getNameType() {
+        return nameType;
+    }
+
+    @JacocoGenerated
+    public String getName() {
+        return name;
+    }
+
+    @JacocoGenerated
+    public String getGivenName() {
+        return givenName;
+    }
+
+    @JacocoGenerated
+    public String getFamilyName() {
+        return familyName;
+    }
+
+    @JacocoGenerated
+    public List<DataciteAffiliation> getAffiliation() {
+        return affiliation;
+    }
 
     public static final class Builder {
         private String nameType;

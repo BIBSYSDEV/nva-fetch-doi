@@ -8,7 +8,7 @@ import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
  */
 public final class AbstractExtractor {
 
-    public static final Function<ExtractionPair, EntityDescription> apply = AbstractExtractor::extract;
+    public static final Function<ExtractionPair, EntityDescription> APPLY = AbstractExtractor::extract;
 
     private AbstractExtractor() {
 

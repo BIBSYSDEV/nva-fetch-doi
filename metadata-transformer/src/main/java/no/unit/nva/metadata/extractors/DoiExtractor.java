@@ -5,7 +5,7 @@ import java.util.function.Function;
 import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
 
 public final class DoiExtractor {
-    public static final Function<ExtractionPair, EntityDescription> apply = DoiExtractor::extract;
+    public static final Function<ExtractionPair, EntityDescription> APPLY = DoiExtractor::extract;
 
     private DoiExtractor() {
 

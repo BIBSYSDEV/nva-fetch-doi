@@ -45,7 +45,7 @@ public class TranslatorService {
             DocumentSource source = new HTTPDocumentSource(translator.getHTTPClient(), uri.toString());
             translator.extract(source, handler);
         } catch (TripleHandlerException e) {
-            throw new RuntimeException(FAILED_TO_EXTRACT_TRIPLES_FROM_DOCUMENT);
+            throw new RuntimeException(FAILED_TO_EXTRACT_TRIPLES_FROM_DOCUMENT, e);
         }
     }
 

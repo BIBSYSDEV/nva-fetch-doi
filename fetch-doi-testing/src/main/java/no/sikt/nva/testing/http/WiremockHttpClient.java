@@ -32,9 +32,7 @@ public final class WiremockHttpClient {
                                     new java.security.SecureRandom());
             return insecureSslContext;
         } catch (KeyManagementException | NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            Assertions.fail(TEST_CONFIGURATION_TRUST_MANAGER_FAILURE);
-            return null;
+            return Assertions.fail(TEST_CONFIGURATION_TRUST_MANAGER_FAILURE, e);
         }
     }
 

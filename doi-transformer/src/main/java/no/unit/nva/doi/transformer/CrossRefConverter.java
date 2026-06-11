@@ -77,7 +77,7 @@ public class CrossRefConverter extends AbstractConverter {
     public static final int FIRST_DAY_IN_MONTH = 1;
     public static final String CANNOT_CREATE_REFERENCE_FOR_PUBLICATION = ", cannot create reference for publication";
     public static final String NULL_SERIES_NUMBER = null;
-    private static final Logger logger = LoggerFactory.getLogger(CrossRefConverter.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CrossRefConverter.class);
 
     public CrossRefConverter() {
         this(new DoiConverter());
@@ -191,7 +191,7 @@ public class CrossRefConverter extends AbstractConverter {
                        .withPublicationInstance(extractPublicationInstance(document).orElse(null))
                        .build();
         } catch (UnsupportedDocumentTypeException e) {
-            logger.error(String.format(UNRECOGNIZED_TYPE_MESSAGE + CANNOT_CREATE_REFERENCE_FOR_PUBLICATION,
+            LOGGER.error(String.format(UNRECOGNIZED_TYPE_MESSAGE + CANNOT_CREATE_REFERENCE_FOR_PUBLICATION,
                                        document.getType()));
             return null;
         }
@@ -400,7 +400,7 @@ public class CrossRefConverter extends AbstractConverter {
         if (hasValue(issued)) {
             return partialDateToPublicationDate(issued.getDateParts()[FROM_DATE_INDEX_IN_DATE_ARRAY]);
         } else {
-            logger.warn(MISSING_DATE_FIELD_ISSUED);
+            LOGGER.warn(MISSING_DATE_FIELD_ISSUED);
             return null;
         }
     }

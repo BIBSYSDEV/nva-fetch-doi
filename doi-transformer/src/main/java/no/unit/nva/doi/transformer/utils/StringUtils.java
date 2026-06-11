@@ -15,12 +15,16 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import no.unit.nva.doi.fetch.commons.publication.model.Range;
 import nva.commons.core.JacocoGenerated;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 public final class StringUtils {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(StringUtils.class);
 
     public static final String SPACE = " ";
     public static final String NOT_DIGIT = "\\D";
@@ -45,7 +49,7 @@ public final class StringUtils {
             NodeList nodeList = getDocumentNodes(document);
             output = textWithoutXmlTags(nodeList);
         } catch (XPathExpressionException | ParserConfigurationException | IOException | SAXException e) {
-            System.out.println(e.getMessage());
+            LOGGER.warn("Failed to remove XML tags from input", e);
         } finally {
             if (isNull(output)) {
                 output = input;
