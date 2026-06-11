@@ -6,6 +6,4 @@ import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
 @JsonTypeInfo(use = Id.NAME, property = "type")
-public record PublicationDate(String year, String month, String day) {
-
-}
+public record PublicationDate(String year, String month, String day) {}

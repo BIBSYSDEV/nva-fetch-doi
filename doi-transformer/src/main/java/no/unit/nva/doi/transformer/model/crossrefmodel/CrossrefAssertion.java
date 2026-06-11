@@ -6,74 +6,80 @@ import nva.commons.core.JacocoGenerated;
 @JacocoGenerated
 public class CrossrefAssertion {
 
-    @JsonProperty("name")
-    private String name;
-    @JsonProperty("value")
-    private String value;
-    @JsonProperty("URL")
-    private String url;
-    @JsonProperty("explanation")
-    private String explanation;
-    @JsonProperty("label")
-    private String label;
-    @JsonProperty("order")
-    private int order;
-    @JsonProperty("group")
-    private CrossrefAssertionGroup group;
+  @JsonProperty("name")
+  private String name;
 
-    public String getName() {
-        return name;
-    }
+  @JsonProperty("value")
+  private String value;
 
-    public void setName(String name) {
-        this.name = name;
-    }
+  @JsonProperty("URL")
+  private String url;
 
-    public String getValue() {
-        return value;
-    }
+  @JsonProperty("explanation")
+  private String explanation;
 
-    public void setValue(String value) {
-        this.value = value;
-    }
+  @JsonProperty("label")
+  private String label;
 
-    public String getUrl() {
-        return url;
-    }
+  @JsonProperty("order")
+  private int order;
 
-    public void setUrl(String url) {
-        this.url = url;
-    }
+  @JsonProperty("group")
+  private CrossrefAssertionGroup group;
 
-    public String getExplanation() {
-        return explanation;
-    }
+  public String getName() {
+    return name;
+  }
 
-    public void setExplanation(String explanation) {
-        this.explanation = explanation;
-    }
+  public void setName(String name) {
+    this.name = name;
+  }
 
-    public String getLabel() {
-        return label;
-    }
+  public String getValue() {
+    return value;
+  }
 
-    public void setLabel(String label) {
-        this.label = label;
-    }
+  public void setValue(String value) {
+    this.value = value;
+  }
 
-    public int getOrder() {
-        return order;
-    }
+  public String getUrl() {
+    return url;
+  }
 
-    public void setOrder(int order) {
-        this.order = order;
-    }
+  public void setUrl(String url) {
+    this.url = url;
+  }
 
-    public CrossrefAssertionGroup getGroup() {
-        return group;
-    }
+  public String getExplanation() {
+    return explanation;
+  }
 
-    public void setGroup(CrossrefAssertionGroup group) {
-        this.group = group;
-    }
+  public void setExplanation(String explanation) {
+    this.explanation = explanation;
+  }
+
+  public String getLabel() {
+    return label;
+  }
+
+  public void setLabel(String label) {
+    this.label = label;
+  }
+
+  public int getOrder() {
+    return order;
+  }
+
+  public void setOrder(int order) {
+    this.order = order;
+  }
+
+  public CrossrefAssertionGroup getGroup() {
+    return group;
+  }
+
+  public void setGroup(CrossrefAssertionGroup group) {
+    this.group = group;
+  }
 }

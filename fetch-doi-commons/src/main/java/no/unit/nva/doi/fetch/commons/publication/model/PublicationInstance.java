@@ -12,12 +12,10 @@ import no.unit.nva.doi.fetch.commons.publication.model.instancetypes.BookMonogra
 @SuppressWarnings("PMD.ImplicitFunctionalInterface")
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonSubTypes({
-    @JsonSubTypes.Type(name = "AcademicArticle", value = AcademicArticle.class),
-    @JsonSubTypes.Type(name = "AcademicMonograph", value = AcademicMonograph.class),
-    @JsonSubTypes.Type(name = "BookMonograph", value = BookMonograph.class),
-    @JsonSubTypes.Type(name = "AcademicChapter", value = AcademicChapter.class),
-    @JsonSubTypes.Type(name = "BookAnthology", value = BookAnthology.class)
+  @JsonSubTypes.Type(name = "AcademicArticle", value = AcademicArticle.class),
+  @JsonSubTypes.Type(name = "AcademicMonograph", value = AcademicMonograph.class),
+  @JsonSubTypes.Type(name = "BookMonograph", value = BookMonograph.class),
+  @JsonSubTypes.Type(name = "AcademicChapter", value = AcademicChapter.class),
+  @JsonSubTypes.Type(name = "BookAnthology", value = BookAnthology.class)
 })
-public interface PublicationInstance extends WithPages {
-
-}
+public interface PublicationInstance extends WithPages {}

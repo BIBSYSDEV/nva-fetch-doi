@@ -1,15 +1,16 @@
 package no.unit.nva.doi.fetch;
 
-import static org.apache.hc.core5.http.HttpHeaders.AUTHORIZATION;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static no.unit.nva.doi.fetch.RestApiConfig.REST_SERVICE_OBJECT_MAPPER;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static org.apache.hc.core5.http.HttpHeaders.AUTHORIZATION;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import com.amazonaws.services.lambda.runtime.CognitoIdentity;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -47,163 +48,167 @@ import org.zalando.problem.Problem;
 
 public class DoiHandlerTestUtils {
 
-    static final String MAIN_TITLE = "Main title";
-    public static final String VALID_DOI = "https://doi.org/10.1109/5.771073";
-    public static final String VALID_NON_DOI = "http://example.org/metadata";
-    public static final String ALL_ORIGINS = "*";
-    public static final String INVALID_HOST_STRING = "https://\\.)_";
-    static final String SOME_ERROR_MESSAGE = "SomeErrorMessage";
+  static final String MAIN_TITLE = "Main title";
+  public static final String VALID_DOI = "https://doi.org/10.1109/5.771073";
+  public static final String VALID_NON_DOI = "http://example.org/metadata";
+  public static final String ALL_ORIGINS = "*";
+  public static final String INVALID_HOST_STRING = "https://\\.)_";
+  static final String SOME_ERROR_MESSAGE = "SomeErrorMessage";
 
+  CreatePublicationRequest expectedCreatePublicationRequest(boolean isDoi, URI metadataSource) {
+    var expectedCreateRequest = new CreatePublicationRequest();
+    expectedCreateRequest.setEntityDescription(expectedEntityDescription(isDoi, metadataSource));
+    //        if (isDoi) { // deserialization causes all collections to be empty:
+    //            expectedCreateRequest.setAdditionalIdentifiers(emptySet());
+    //            expectedCreateRequest.setFundings(emptyList());
+    //            expectedCreateRequest.setProjects(emptyList());
+    //            expectedCreateRequest.setSubjects(emptyList());
+    //            expectedCreateRequest.setImportDetails(emptyList());
+    //        }
+    expectedCreateRequest.setAssociatedArtifacts(
+        isDoi ? Collections.emptyList() : artifactsWithLink(metadataSource));
 
-    CreatePublicationRequest expectedCreatePublicationRequest(boolean isDoi, URI metadataSource) {
-        var expectedCreateRequest = new CreatePublicationRequest();
-        expectedCreateRequest.setEntityDescription(expectedEntityDescription(isDoi, metadataSource));
-//        if (isDoi) { // deserialization causes all collections to be empty:
-//            expectedCreateRequest.setAdditionalIdentifiers(emptySet());
-//            expectedCreateRequest.setFundings(emptyList());
-//            expectedCreateRequest.setProjects(emptyList());
-//            expectedCreateRequest.setSubjects(emptyList());
-//            expectedCreateRequest.setImportDetails(emptyList());
-//        }
-        expectedCreateRequest.setAssociatedArtifacts(
-            isDoi ? Collections.emptyList() : artifactsWithLink(metadataSource));
+    return expectedCreateRequest;
+  }
 
-        return expectedCreateRequest;
+  private List<AssociatedArtifact> artifactsWithLink(URI metadataSource) {
+    return List.of(new AssociatedLink(metadataSource));
+  }
+
+  private EntityDescription expectedEntityDescription(boolean isDoi, URI metadataSource) {
+    var builder =
+        new EntityDescription.Builder()
+            .withMainTitle(MAIN_TITLE)
+            .withMetadataSource(metadataSource);
+
+    if (isDoi) { // deserialization causes all collections to be empty:
+      builder
+          .withTags(emptyList())
+          .withContributors(emptyList())
+          .withAlternativeTitles(emptyMap())
+          .withAlternativeAbstracts(emptyMap());
     }
+    return builder.build();
+  }
 
-    private List<AssociatedArtifact> artifactsWithLink(URI metadataSource) {
-        return List.of(new AssociatedLink(metadataSource));
-    }
+  DoiTransformService mockDoiTransformServiceReturningSuccessfulResult()
+      throws IOException, InvalidIssnException {
+    DoiTransformService service = mock(DoiTransformService.class);
+    when(service.transformPublication(anyString(), anyString())).thenReturn(getPublication());
+    return service;
+  }
 
-    private EntityDescription expectedEntityDescription(boolean isDoi, URI metadataSource) {
-        var builder = new EntityDescription.Builder()
-                          .withMainTitle(MAIN_TITLE)
-                          .withMetadataSource(metadataSource);
+  MetadataService mockMetadataServiceReturningSuccessfulResult() throws MetadataFetchException {
 
-        if (isDoi) { // deserialization causes all collections to be empty:
-            builder.withTags(emptyList())
-                .withContributors(emptyList())
-                .withAlternativeTitles(emptyMap())
-                .withAlternativeAbstracts(emptyMap());
-        }
-        return builder.build();
-    }
+    EntityDescription entityDescription = new EntityDescription();
+    entityDescription.setMainTitle(MAIN_TITLE);
+    entityDescription.setAlternativeAbstracts(emptyMap());
+    entityDescription.setAlternativeTitles(emptyMap());
+    entityDescription.setContributors(emptyList());
+    entityDescription.setTags(emptyList());
 
-    DoiTransformService mockDoiTransformServiceReturningSuccessfulResult()
-        throws IOException, InvalidIssnException {
-        DoiTransformService service = mock(DoiTransformService.class);
-        when(service.transformPublication(anyString(), anyString()))
-            .thenReturn(getPublication());
-        return service;
-    }
+    CreatePublicationRequest request = new CreatePublicationRequest();
+    request.setEntityDescription(entityDescription);
 
-    MetadataService mockMetadataServiceReturningSuccessfulResult() throws MetadataFetchException {
+    MetadataService service = mock(MetadataService.class);
+    when(service.generateCreatePublicationRequest(any())).thenReturn(Optional.of(request));
+    return service;
+  }
 
-        EntityDescription entityDescription = new EntityDescription();
-        entityDescription.setMainTitle(MAIN_TITLE);
-        entityDescription.setAlternativeAbstracts(emptyMap());
-        entityDescription.setAlternativeTitles(emptyMap());
-        entityDescription.setContributors(emptyList());
-        entityDescription.setTags(emptyList());
+  private CreatePublicationRequest getPublication() {
+    return new CreatePublicationRequest.Builder()
+        .withEntityDescription(new EntityDescription.Builder().withMainTitle(MAIN_TITLE).build())
+        .build();
+  }
 
-        CreatePublicationRequest request = new CreatePublicationRequest();
-        request.setEntityDescription(entityDescription);
+  DoiProxyService mockDoiProxyServiceReceivingSuccessfulResult()
+      throws MetadataNotFoundException, IOException, URISyntaxException {
+    DoiProxyService doiProxyService = mock(DoiProxyService.class);
+    when(doiProxyService.lookupDoiMetadata(anyString(), any()))
+        .thenReturn(metadataAndContentLocation());
+    return doiProxyService;
+  }
 
-        MetadataService service = mock(MetadataService.class);
-        when(service.generateCreatePublicationRequest(any()))
-            .thenReturn(Optional.of(request));
-        return service;
-    }
+  private MetadataAndContentLocation metadataAndContentLocation() throws JsonProcessingException {
+    return new MetadataAndContentLocation(
+        "datacite", REST_SERVICE_OBJECT_MAPPER.writeValueAsString(getPublication()));
+  }
 
-    private CreatePublicationRequest getPublication() {
-        return new CreatePublicationRequest.Builder()
-                   .withEntityDescription(new EntityDescription.Builder().withMainTitle(MAIN_TITLE).build())
-                   .build();
-    }
+  Context getMockContext() {
+    Context context = mock(Context.class);
+    CognitoIdentity cognitoIdentity = mock(CognitoIdentity.class);
+    when(context.getIdentity()).thenReturn(cognitoIdentity);
+    when(cognitoIdentity.getIdentityPoolId()).thenReturn("junit");
+    return context;
+  }
 
-    DoiProxyService mockDoiProxyServiceReceivingSuccessfulResult()
-        throws MetadataNotFoundException, IOException, URISyntaxException {
-        DoiProxyService doiProxyService = mock(DoiProxyService.class);
-        when(doiProxyService.lookupDoiMetadata(anyString(), any())).thenReturn(metadataAndContentLocation());
-        return doiProxyService;
-    }
+  private InputStream createSampleRequest(URL url) throws JsonProcessingException {
 
-    private MetadataAndContentLocation metadataAndContentLocation() throws JsonProcessingException {
-        return new MetadataAndContentLocation("datacite",
-                                              REST_SERVICE_OBJECT_MAPPER.writeValueAsString(getPublication()));
-    }
+    RequestBody requestBody = createSampleRequestBody(url);
 
-    Context getMockContext() {
-        Context context = mock(Context.class);
-        CognitoIdentity cognitoIdentity = mock(CognitoIdentity.class);
-        when(context.getIdentity()).thenReturn(cognitoIdentity);
-        when(cognitoIdentity.getIdentityPoolId()).thenReturn("junit");
-        return context;
-    }
+    Map<String, String> requestHeaders = new HashMap<>();
+    requestHeaders.put(AUTHORIZATION, "some api key");
+    requestHeaders.putAll(TestHeaders.getRequestHeaders());
 
-    private InputStream createSampleRequest(URL url) throws JsonProcessingException {
+    return new HandlerRequestBuilder<RequestBody>(REST_SERVICE_OBJECT_MAPPER)
+        .withBody(requestBody)
+        .withHeaders(requestHeaders)
+        .withUserName(randomString())
+        .withCurrentCustomer(randomUri())
+        .build();
+  }
 
-        RequestBody requestBody = createSampleRequestBody(url);
+  InputStream createSampleRequest() throws MalformedURLException, JsonProcessingException {
+    return createSampleRequest(new URL(VALID_DOI));
+  }
 
-        Map<String, String> requestHeaders = new HashMap<>();
-        requestHeaders.put(AUTHORIZATION, "some api key");
-        requestHeaders.putAll(TestHeaders.getRequestHeaders());
+  InputStream nonDoiUrlInputStream() throws MalformedURLException, JsonProcessingException {
+    return createSampleRequest(new URL(VALID_NON_DOI));
+  }
 
-        return new HandlerRequestBuilder<RequestBody>(REST_SERVICE_OBJECT_MAPPER)
-                   .withBody(requestBody)
-                   .withHeaders(requestHeaders)
-                   .withUserName(randomString())
-                   .withCurrentCustomer(randomUri())
-                   .build();
-    }
+  InputStream malformedInputStream() throws JsonProcessingException {
 
-    InputStream createSampleRequest() throws MalformedURLException, JsonProcessingException {
-        return createSampleRequest(new URL(VALID_DOI));
-    }
+    Map<String, String> requestHeaders = new HashMap<>();
+    requestHeaders.put(AUTHORIZATION, "some api key");
+    requestHeaders.putAll(TestHeaders.getRequestHeaders());
 
-    InputStream nonDoiUrlInputStream() throws MalformedURLException, JsonProcessingException {
-        return createSampleRequest(new URL(VALID_NON_DOI));
-    }
+    return new HandlerRequestBuilder<RequestBody>(REST_SERVICE_OBJECT_MAPPER)
+        .withHeaders(requestHeaders)
+        .withUserName(randomString())
+        .withCurrentCustomer(randomUri())
+        .build();
+  }
 
-    InputStream malformedInputStream() throws JsonProcessingException {
+  GatewayResponse<Problem> parseFailureResponse(OutputStream output)
+      throws JsonProcessingException {
+    return parseGatewayResponse(output.toString(), Problem.class);
+  }
 
-        Map<String, String> requestHeaders = new HashMap<>();
-        requestHeaders.put(AUTHORIZATION, "some api key");
-        requestHeaders.putAll(TestHeaders.getRequestHeaders());
+  String getProblemDetail(GatewayResponse<Problem> gatewayResponse) throws JsonProcessingException {
+    return gatewayResponse.getBodyObject(Problem.class).getDetail();
+  }
 
-        return new HandlerRequestBuilder<RequestBody>(REST_SERVICE_OBJECT_MAPPER)
-                   .withHeaders(requestHeaders)
-                   .withUserName(randomString())
-                   .withCurrentCustomer(randomUri())
-                   .build();
-    }
+  <T> GatewayResponse<T> parseGatewayResponse(String output, Class<T> responseObjectClass)
+      throws JsonProcessingException {
+    JavaType typeRef =
+        REST_SERVICE_OBJECT_MAPPER
+            .getTypeFactory()
+            .constructParametricType(GatewayResponse.class, responseObjectClass);
+    return REST_SERVICE_OBJECT_MAPPER.readValue(output, typeRef);
+  }
 
-    GatewayResponse<Problem> parseFailureResponse(OutputStream output) throws JsonProcessingException {
-        return parseGatewayResponse(output.toString(), Problem.class);
-    }
+  private RequestBody createSampleRequestBody(URL url) {
+    RequestBody requestBody = new RequestBody();
+    requestBody.setDoiUrl(url);
+    return requestBody;
+  }
 
-    String getProblemDetail(GatewayResponse<Problem> gatewayResponse) throws JsonProcessingException {
-        return gatewayResponse.getBodyObject(Problem.class).getDetail();
-    }
-
-    <T> GatewayResponse<T> parseGatewayResponse(String output, Class<T> responseObjectClass)
-        throws JsonProcessingException {
-        JavaType typeRef = REST_SERVICE_OBJECT_MAPPER.getTypeFactory()
-                               .constructParametricType(GatewayResponse.class, responseObjectClass);
-        return REST_SERVICE_OBJECT_MAPPER.readValue(output, typeRef);
-    }
-
-    private RequestBody createSampleRequestBody(URL url) {
-        RequestBody requestBody = new RequestBody();
-        requestBody.setDoiUrl(url);
-        return requestBody;
-    }
-
-    Environment createEnvironmentWithInvalidHost() {
-        Environment environment = mock(Environment.class);
-        when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALL_ORIGINS);
-        when(environment.readEnv("COGNITO_AUTHORIZER_URLS")).thenReturn("http://localhost:3000");
-        when(environment.readEnv(ImportDoiHandler.PUBLICATION_API_HOST_ENV)).thenReturn(INVALID_HOST_STRING);
-        return environment;
-    }
+  Environment createEnvironmentWithInvalidHost() {
+    Environment environment = mock(Environment.class);
+    when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALL_ORIGINS);
+    when(environment.readEnv("COGNITO_AUTHORIZER_URLS")).thenReturn("http://localhost:3000");
+    when(environment.readEnv(ImportDoiHandler.PUBLICATION_API_HOST_ENV))
+        .thenReturn(INVALID_HOST_STRING);
+    return environment;
+  }
 }

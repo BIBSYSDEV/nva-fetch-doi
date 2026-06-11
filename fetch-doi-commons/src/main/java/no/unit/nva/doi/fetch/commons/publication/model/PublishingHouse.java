@@ -6,8 +6,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonSubTypes({
-    @JsonSubTypes.Type(name = "UnconfirmedPublisher", value = UnconfirmedPublisher.class)
+  @JsonSubTypes.Type(name = "UnconfirmedPublisher", value = UnconfirmedPublisher.class)
 })
-public interface PublishingHouse {
-
-}
+public interface PublishingHouse {}

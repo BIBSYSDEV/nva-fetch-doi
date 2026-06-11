@@ -5,6 +5,4 @@ import no.unit.nva.doi.fetch.commons.publication.model.PublicationInstance;
 import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
-public record BookAnthology(MonographPages pages) implements PublicationInstance {
-
-}
+public record BookAnthology(MonographPages pages) implements PublicationInstance {}

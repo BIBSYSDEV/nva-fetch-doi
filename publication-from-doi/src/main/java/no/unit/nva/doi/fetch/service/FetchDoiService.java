@@ -1,6 +1,7 @@
 package no.unit.nva.doi.fetch.service;
 
 import static no.unit.nva.doi.fetch.RestApiConfig.REST_SERVICE_OBJECT_MAPPER;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -24,81 +25,83 @@ import org.slf4j.LoggerFactory;
 
 public class FetchDoiService {
 
-    public static final String NO_METADATA_FOUND = "No metadata found for imported uri";
-    private static final Logger LOGGER = LoggerFactory.getLogger(FetchDoiService.class);
-    private final transient DoiTransformService doiTransformService;
-    private final transient DoiProxyService doiProxyService;
-    private final transient CristinClient cristinClient;
-    private final transient MetadataService metadataService;
+  public static final String NO_METADATA_FOUND = "No metadata found for imported uri";
+  private static final Logger LOGGER = LoggerFactory.getLogger(FetchDoiService.class);
+  private final transient DoiTransformService doiTransformService;
+  private final transient DoiProxyService doiProxyService;
+  private final transient CristinClient cristinClient;
+  private final transient MetadataService metadataService;
 
-    public FetchDoiService(DoiTransformService doiTransformService,
-                            DoiProxyService doiProxyService,
-                            CristinClient cristinClient,
-                            MetadataService metadataService) {
-        this.doiTransformService = doiTransformService;
-        this.doiProxyService = doiProxyService;
-        this.cristinClient = cristinClient;
-        this.metadataService = metadataService;
+  public FetchDoiService(
+      DoiTransformService doiTransformService,
+      DoiProxyService doiProxyService,
+      CristinClient cristinClient,
+      MetadataService metadataService) {
+    this.doiTransformService = doiTransformService;
+    this.doiProxyService = doiProxyService;
+    this.cristinClient = cristinClient;
+    this.metadataService = metadataService;
+  }
+
+  public CreatePublicationRequest newCreatePublicationRequest(URL url)
+      throws URISyntaxException,
+          IOException,
+          MetadataFetchException,
+          MetadataNotFoundException,
+          InvalidIssnException {
+
+    CreatePublicationRequest request;
+
+    if (urlIsValidDoi(url)) {
+      LOGGER.info("URL is a DOI");
+      request = getPublicationFromDoi(url);
+    } else {
+      LOGGER.info("URL is NOT a DOI, falling back to web metadata scraping");
+      request = getPublicationFromOtherUrl(url);
     }
 
-    public CreatePublicationRequest newCreatePublicationRequest(URL url)
-        throws URISyntaxException, IOException, MetadataFetchException, MetadataNotFoundException,
-               InvalidIssnException {
+    request.getEntityDescription().setMetadataSource(URI.create(url.toString()));
 
-        CreatePublicationRequest request;
+    return request;
+  }
 
-        if (urlIsValidDoi(url)) {
-            LOGGER.info("URL is a DOI");
-            request = getPublicationFromDoi(url);
-        } else {
-            LOGGER.info("URL is NOT a DOI, falling back to web metadata scraping");
-            request = getPublicationFromOtherUrl(url);
-        }
+  private boolean urlIsValidDoi(URL url) {
+    return DoiValidator.validate(url);
+  }
 
-        request.getEntityDescription().setMetadataSource(URI.create(url.toString()));
+  private CreatePublicationRequest getPublicationFromOtherUrl(URL url)
+      throws URISyntaxException, MetadataFetchException, MetadataNotFoundException {
+    var createPublicationRequest = metadataService.generateCreatePublicationRequest(url.toURI());
+    return createPublicationRequest
+        .map(request -> saveSourceAsLinkInAssociatedArtifacts(request, url))
+        .orElseThrow(() -> new MetadataNotFoundException(NO_METADATA_FOUND));
+  }
 
-        return request;
-    }
+  private CreatePublicationRequest saveSourceAsLinkInAssociatedArtifacts(
+      CreatePublicationRequest request, URL url) {
+    request.setAssociatedArtifacts(associatedArtifactsWithLinkToMetadataSource(url));
+    return request;
+  }
 
-    private boolean urlIsValidDoi(URL url) {
-        return DoiValidator.validate(url);
-    }
+  private List<AssociatedArtifact> associatedArtifactsWithLinkToMetadataSource(URL url) {
+    return List.of(new AssociatedLink(URI.create(url.toString())));
+  }
 
-    private CreatePublicationRequest getPublicationFromOtherUrl(URL url)
-        throws URISyntaxException, MetadataFetchException, MetadataNotFoundException {
-        var createPublicationRequest = metadataService.generateCreatePublicationRequest(url.toURI());
-        return createPublicationRequest
-                   .map(request -> saveSourceAsLinkInAssociatedArtifacts(request, url))
-                   .orElseThrow(() -> new MetadataNotFoundException(NO_METADATA_FOUND));
-    }
+  private CreatePublicationRequest getPublicationFromDoi(URL doi)
+      throws URISyntaxException, IOException, MetadataNotFoundException, InvalidIssnException {
 
-    private CreatePublicationRequest saveSourceAsLinkInAssociatedArtifacts(CreatePublicationRequest request, URL url) {
-        request.setAssociatedArtifacts(associatedArtifactsWithLinkToMetadataSource(url));
-        return request;
-    }
+    var publicationMetadata = getPublicationMetadataFromDoi(doi);
+    var publication = IdentityUpdater.enrichPublicationCreators(cristinClient, publicationMetadata);
+    return REST_SERVICE_OBJECT_MAPPER.convertValue(publication, CreatePublicationRequest.class);
+  }
 
-    private List<AssociatedArtifact> associatedArtifactsWithLinkToMetadataSource(URL url) {
-        return List.of(new AssociatedLink(URI.create(url.toString())));
-    }
+  private CreatePublicationRequest getPublicationMetadataFromDoi(URL doiUrl)
+      throws URISyntaxException, IOException, MetadataNotFoundException, InvalidIssnException {
 
-    private CreatePublicationRequest getPublicationFromDoi(URL doi)
-        throws URISyntaxException, IOException, MetadataNotFoundException, InvalidIssnException {
+    MetadataAndContentLocation metadataAndContentLocation =
+        doiProxyService.lookupDoiMetadata(doiUrl.toString(), DataciteContentType.DATACITE_JSON);
 
-        var publicationMetadata = getPublicationMetadataFromDoi(doi);
-        var publication =
-            IdentityUpdater.enrichPublicationCreators(cristinClient, publicationMetadata);
-        return REST_SERVICE_OBJECT_MAPPER.convertValue(publication, CreatePublicationRequest.class);
-    }
-
-    private CreatePublicationRequest getPublicationMetadataFromDoi(URL doiUrl)
-        throws URISyntaxException, IOException, MetadataNotFoundException, InvalidIssnException {
-
-        MetadataAndContentLocation metadataAndContentLocation = doiProxyService.lookupDoiMetadata(
-            doiUrl.toString(), DataciteContentType.DATACITE_JSON);
-
-        return doiTransformService.transformPublication(
-            metadataAndContentLocation.getJson(),
-            metadataAndContentLocation.getContentHeader());
-    }
-
+    return doiTransformService.transformPublication(
+        metadataAndContentLocation.getJson(), metadataAndContentLocation.getContentHeader());
+  }
 }

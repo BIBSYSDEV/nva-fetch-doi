@@ -10,39 +10,39 @@ import javax.net.ssl.SSLSession;
 
 public abstract class AbstractHttpResponse<S> implements HttpResponse<S> {
 
-    protected final S responseBody;
+  protected final S responseBody;
 
-    public AbstractHttpResponse(S responseBody) {
-        this.responseBody = responseBody;
-    }
+  public AbstractHttpResponse(S responseBody) {
+    this.responseBody = responseBody;
+  }
 
-    @Override
-    public HttpRequest request() {
-        return null;
-    }
+  @Override
+  public HttpRequest request() {
+    return null;
+  }
 
-    @Override
-    public Optional<HttpResponse<S>> previousResponse() {
-        return Optional.empty();
-    }
+  @Override
+  public Optional<HttpResponse<S>> previousResponse() {
+    return Optional.empty();
+  }
 
-    @Override
-    public HttpHeaders headers() {
-        return null;
-    }
+  @Override
+  public HttpHeaders headers() {
+    return null;
+  }
 
-    @Override
-    public Optional<SSLSession> sslSession() {
-        return Optional.empty();
-    }
+  @Override
+  public Optional<SSLSession> sslSession() {
+    return Optional.empty();
+  }
 
-    @Override
-    public URI uri() {
-        return null;
-    }
+  @Override
+  public URI uri() {
+    return null;
+  }
 
-    @Override
-    public Version version() {
-        return null;
-    }
+  @Override
+  public Version version() {
+    return null;
+  }
 }

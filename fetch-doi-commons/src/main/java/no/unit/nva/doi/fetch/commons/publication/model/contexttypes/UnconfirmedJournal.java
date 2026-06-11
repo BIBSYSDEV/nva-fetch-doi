@@ -7,6 +7,5 @@ import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
 @JsonTypeInfo(use = Id.NAME, property = "type")
-public record UnconfirmedJournal(String title, String printIssn, String onlineIssn) implements PublicationContext {
-
-}
+public record UnconfirmedJournal(String title, String printIssn, String onlineIssn)
+    implements PublicationContext {}

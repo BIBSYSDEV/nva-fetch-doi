@@ -9,6 +9,4 @@ import nva.commons.core.JacocoGenerated;
 @JacocoGenerated
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public record AcademicArticle(Pages pages, String volume, String issue)
-    implements PublicationInstance {
-
-}
+    implements PublicationInstance {}

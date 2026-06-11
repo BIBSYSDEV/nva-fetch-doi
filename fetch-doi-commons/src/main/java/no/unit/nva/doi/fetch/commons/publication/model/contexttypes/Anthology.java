@@ -8,6 +8,4 @@ import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
 @JsonTypeInfo(use = Id.NAME, property = "type")
-public record Anthology(URI id) implements PublicationContext {
-
-}
+public record Anthology(URI id) implements PublicationContext {}

@@ -12,16 +12,17 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public class PublishedFile extends File {
 
-    public PublishedFile(@JsonProperty("identifier") UUID identifier,
-                         @JsonProperty("mimeType") String mimeType,
-                         @JsonProperty("embargoDate") Instant embargoDate,
-                         @JsonProperty("administrativeAgreement") boolean administrativeAgreement) {
-        super(identifier, mimeType, embargoDate, administrativeAgreement);
-    }
+  public PublishedFile(
+      @JsonProperty("identifier") UUID identifier,
+      @JsonProperty("mimeType") String mimeType,
+      @JsonProperty("embargoDate") Instant embargoDate,
+      @JsonProperty("administrativeAgreement") boolean administrativeAgreement) {
+    super(identifier, mimeType, embargoDate, administrativeAgreement);
+  }
 
-    @Override
-    @JsonIgnore
-    public boolean isVisibleForNonOwner() {
-        return !isAdministrativeAgreement() && !hasActiveEmbargo();
-    }
+  @Override
+  @JsonIgnore
+  public boolean isVisibleForNonOwner() {
+    return !isAdministrativeAgreement() && !hasActiveEmbargo();
+  }
 }

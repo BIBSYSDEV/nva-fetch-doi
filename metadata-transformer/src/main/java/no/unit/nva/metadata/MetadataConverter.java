@@ -21,60 +21,60 @@ import org.eclipse.rdf4j.model.Statement;
 
 public class MetadataConverter {
 
-    private final Model metadata;
-    private final EntityDescription entityDescription;
-    private final int emptyDescriptionHash;
+  private final Model metadata;
+  private final EntityDescription entityDescription;
+  private final int emptyDescriptionHash;
 
-    public MetadataConverter(Model metadata) {
-        this.metadata = metadata;
-        this.entityDescription = new EntityDescription();
-        this.emptyDescriptionHash = entityDescription.hashCode();
+  public MetadataConverter(Model metadata) {
+    this.metadata = metadata;
+    this.entityDescription = new EntityDescription();
+    this.emptyDescriptionHash = entityDescription.hashCode();
+  }
+
+  public Optional<CreatePublicationRequest> generateCreatePublicationRequest() {
+    if (metadata.isEmpty()) {
+      return Optional.empty();
+    }
+    prepareDataForTransformation();
+    MetadataExtractor extractor = configureExtractor();
+    for (Statement statement : metadata) {
+      extractor.extract(statement);
     }
 
-    public Optional<CreatePublicationRequest> generateCreatePublicationRequest() {
-        if (metadata.isEmpty()) {
-            return Optional.empty();
-        }
-        prepareDataForTransformation();
-        MetadataExtractor extractor = configureExtractor();
-        for (Statement statement : metadata) {
-            extractor.extract(statement);
-        }
+    return entityDescriptionIsPopulated()
+        ? Optional.of(wrapEntityDescriptionWithCreatePublicationRequest())
+        : Optional.empty();
+  }
 
-        return entityDescriptionIsPopulated()
-                ? Optional.of(wrapEntityDescriptionWithCreatePublicationRequest())
-                : Optional.empty();
-    }
+  private boolean entityDescriptionIsPopulated() {
+    return emptyDescriptionHash != entityDescription.hashCode();
+  }
 
-    private boolean entityDescriptionIsPopulated() {
-        return emptyDescriptionHash != entityDescription.hashCode();
-    }
+  private CreatePublicationRequest wrapEntityDescriptionWithCreatePublicationRequest() {
+    CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
+    createPublicationRequest.setEntityDescription(entityDescription);
+    return createPublicationRequest;
+  }
 
-    private CreatePublicationRequest wrapEntityDescriptionWithCreatePublicationRequest() {
-        CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
-        createPublicationRequest.setEntityDescription(entityDescription);
-        return createPublicationRequest;
-    }
+  private void prepareDataForTransformation() {
+    metadata.removeIf(statement -> FilterShorterTitles.apply(metadata, statement));
+    metadata.removeIf(statement -> FilterDuplicateContributors.apply(metadata, statement));
+  }
 
-    private void prepareDataForTransformation() {
-        metadata.removeIf(statement -> FilterShorterTitles.apply(metadata, statement));
-        metadata.removeIf(statement -> FilterDuplicateContributors.apply(metadata, statement));
-    }
+  private MetadataExtractor configureExtractor() {
+    return new MetadataExtractor(entityDescription, hasAbstractPropertyInDocumentModel())
+        .withExtractor(AbstractExtractor.APPLY)
+        .withExtractor(ContributorExtractor.APPLY)
+        .withExtractor(DateExtractor.APPLY)
+        .withExtractor(DescriptionExtractor.APPLY)
+        .withExtractor(DocumentTypeExtractor.APPLY)
+        .withExtractor(DoiExtractor.APPLY)
+        .withExtractor(LanguageExtractor.APPLY)
+        .withExtractor(TagExtractor.APPLY)
+        .withExtractor(TitleExtractor.APPLY);
+  }
 
-    private MetadataExtractor configureExtractor() {
-        return new MetadataExtractor(entityDescription, hasAbstractPropertyInDocumentModel())
-                .withExtractor(AbstractExtractor.APPLY)
-                .withExtractor(ContributorExtractor.APPLY)
-                .withExtractor(DateExtractor.APPLY)
-                .withExtractor(DescriptionExtractor.APPLY)
-                .withExtractor(DocumentTypeExtractor.APPLY)
-                .withExtractor(DoiExtractor.APPLY)
-                .withExtractor(LanguageExtractor.APPLY)
-                .withExtractor(TagExtractor.APPLY)
-                .withExtractor(TitleExtractor.APPLY);
-    }
-
-    private boolean hasAbstractPropertyInDocumentModel() {
-        return metadata.contains(null, DcTerms.ABSTRACT.getIri(), null);
-    }
+  private boolean hasAbstractPropertyInDocumentModel() {
+    return metadata.contains(null, DcTerms.ABSTRACT.getIri(), null);
+  }
 }

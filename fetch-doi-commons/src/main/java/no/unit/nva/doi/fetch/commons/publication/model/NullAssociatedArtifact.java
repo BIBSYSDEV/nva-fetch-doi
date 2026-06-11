@@ -6,6 +6,4 @@ import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
 @JsonTypeInfo(use = Id.NAME, property = "type")
-public record NullAssociatedArtifact() implements AssociatedArtifact {
-
-}
+public record NullAssociatedArtifact() implements AssociatedArtifact {}

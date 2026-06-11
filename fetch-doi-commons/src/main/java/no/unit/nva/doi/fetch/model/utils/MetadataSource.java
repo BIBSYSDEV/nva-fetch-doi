@@ -4,5 +4,6 @@ import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
 public enum MetadataSource {
-    DATACITE, CROSSREF
+  DATACITE,
+  CROSSREF
 }

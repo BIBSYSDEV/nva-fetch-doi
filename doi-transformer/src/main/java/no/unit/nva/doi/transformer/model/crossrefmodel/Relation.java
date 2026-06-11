@@ -7,15 +7,15 @@ import nva.commons.core.JacocoGenerated;
 @JacocoGenerated
 public class Relation {
 
-    @JsonProperty("cites")
-    private List<String> cites;
+  @JsonProperty("cites")
+  private List<String> cites;
 
-    @JacocoGenerated
-    public List<String> getCites() {
-        return cites;
-    }
+  @JacocoGenerated
+  public List<String> getCites() {
+    return cites;
+  }
 
-    public void setCites(List<String> cites) {
-        this.cites = cites;
-    }
+  public void setCites(List<String> cites) {
+    this.cites = cites;
+  }
 }

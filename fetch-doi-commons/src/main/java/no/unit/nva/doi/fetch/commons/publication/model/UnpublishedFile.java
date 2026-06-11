@@ -11,18 +11,19 @@ import nva.commons.core.JacocoGenerated;
 @JacocoGenerated
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public class UnpublishedFile extends File {
-    public static final String TYPE = "UnpublishedFile";
+  public static final String TYPE = "UnpublishedFile";
 
-    public UnpublishedFile(@JsonProperty("identifier") UUID identifier,
-                           @JsonProperty("mimeType") String mimeType,
-                           @JsonProperty("embargoDate") Instant embargoDate,
-                           @JsonProperty("administrativeAgreement") boolean administrativeAgreement) {
-        super(identifier, mimeType, embargoDate, administrativeAgreement);
-    }
+  public UnpublishedFile(
+      @JsonProperty("identifier") UUID identifier,
+      @JsonProperty("mimeType") String mimeType,
+      @JsonProperty("embargoDate") Instant embargoDate,
+      @JsonProperty("administrativeAgreement") boolean administrativeAgreement) {
+    super(identifier, mimeType, embargoDate, administrativeAgreement);
+  }
 
-    @Override
-    @JsonIgnore
-    public boolean isVisibleForNonOwner() {
-        return false;
-    }
+  @Override
+  @JsonIgnore
+  public boolean isVisibleForNonOwner() {
+    return false;
+  }
 }

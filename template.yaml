@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >
   AWS
@@ -7,7 +7,7 @@ Description: >
 
 Parameters:
   CognitoAuthorizerArn:
-    Type: 'AWS::SSM::Parameter::Value<String>'
+    Type: "AWS::SSM::Parameter::Value<String>"
     Description: Reference to Cognito UserPool for the stage
     Default: CognitoAuthorizerArn
   CognitoAuthorizerUrls:
@@ -18,11 +18,11 @@ Parameters:
     Description: URI to the OAUTH endpoint of the Cognito client
     Default: /NVA/CognitoUri
   ApiDomain:
-    Type: 'AWS::SSM::Parameter::Value<String>'
+    Type: "AWS::SSM::Parameter::Value<String>"
     Description: The Api domain
     Default: /NVA/ApiDomain
   CustomDomain:
-    Type: 'AWS::SSM::Parameter::Value<String>'
+    Type: "AWS::SSM::Parameter::Value<String>"
     Description: Custom API to connect this lambda to
     Default: CustomDomain
   CustomDomainBasePath:
@@ -36,17 +36,17 @@ Parameters:
     Type: String
     Default: token
   NvaEventsBucketName:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: '/NVA/Events/EventsBucketName'
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: "/NVA/Events/EventsBucketName"
   NvaEventsBucketArn:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: '/NVA/Events/EventsBucketArn'
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: "/NVA/Events/EventsBucketArn"
   NvaEventsBusArn:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: '/NVA/Events/EventsBusArn'
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: "/NVA/Events/EventsBusArn"
   NvaEventsBusName:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: '/NVA/Events/EventsBusName'
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: "/NVA/Events/EventsBusName"
 
 Globals:
   Function:
@@ -58,7 +58,7 @@ Globals:
     Environment:
       Variables:
         COGNITO_HOST: !Ref CognitoUri
-        COGNITO_AUTHORIZER_URLS: !Join [ ",", !Ref CognitoAuthorizerUrls ]
+        COGNITO_AUTHORIZER_URLS: !Join [",", !Ref CognitoAuthorizerUrls]
   Api:
     Cors:
       AllowMethods: "'POST,OPTIONS'"
@@ -77,11 +77,10 @@ Resources:
       StageName: Prod
       EndpointConfiguration: REGIONAL
       DefinitionBody:
-        'Fn::Transform':
+        "Fn::Transform":
           Name: AWS::Include
           Parameters:
             Location: ./docs/openapi.yaml
-
 
   NvaFetchDoiFunctionRole:
     Type: AWS::IAM::Role
@@ -92,7 +91,7 @@ Resources:
           - Effect: Allow
             Principal:
               Service: [lambda.amazonaws.com]
-            Action: ['sts:AssumeRole']
+            Action: ["sts:AssumeRole"]
       Policies:
         - PolicyName: writeLog
           PolicyDocument:
@@ -103,7 +102,7 @@ Resources:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
-                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*'
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*"
         - PolicyName: readSecret
           PolicyDocument:
             Version: 2012-10-17
@@ -111,7 +110,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - secretsmanager:GetSecretValue
-                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:CrossRefPlusApiToken*'
+                Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:CrossRefPlusApiToken*"
 
   ImportDoiFunction:
     Type: AWS::Serverless::Function
@@ -126,12 +125,12 @@ Resources:
       Role: !GetAtt NvaFetchDoiFunctionRole.Arn
       Environment:
         Variables:
-          ALLOWED_ORIGIN: '*'
+          ALLOWED_ORIGIN: "*"
           PUBLICATION_API_HOST: !Ref ApiDomain
           CROSSREFPLUSAPITOKEN_NAME: !Ref CrossrefPlusApiTokenName
-          CROSSREFPLUSAPITOKEN_KEY:  !Ref CrossrefPlusApiTokenKey
+          CROSSREFPLUSAPITOKEN_KEY: !Ref CrossrefPlusApiTokenKey
           API_HOST: !Ref ApiDomain
-          ID_NAMESPACE: !Sub 'https://api.${CustomDomain}/${CustomDomainBasePath}'
+          ID_NAMESPACE: !Sub "https://api.${CustomDomain}/${CustomDomainBasePath}"
       Events:
         NvaDoi:
           Type: Api
@@ -153,12 +152,12 @@ Resources:
       Role: !GetAtt NvaFetchDoiFunctionRole.Arn
       Environment:
         Variables:
-          ALLOWED_ORIGIN: '*'
+          ALLOWED_ORIGIN: "*"
           PUBLICATION_API_HOST: !Ref ApiDomain
           CROSSREFPLUSAPITOKEN_NAME: !Ref CrossrefPlusApiTokenName
-          CROSSREFPLUSAPITOKEN_KEY:  !Ref CrossrefPlusApiTokenKey
+          CROSSREFPLUSAPITOKEN_KEY: !Ref CrossrefPlusApiTokenKey
           API_HOST: !Ref ApiDomain
-          ID_NAMESPACE: !Sub 'https://api.${CustomDomain}/${CustomDomainBasePath}'
+          ID_NAMESPACE: !Sub "https://api.${CustomDomain}/${CustomDomainBasePath}"
       Events:
         NvaDoi:
           Type: Api
@@ -166,7 +165,6 @@ Resources:
             Path: /preview
             Method: post
             RestApiId: !Ref NvaFetchDoiFunctionApi
-
 
   NvaFetchDoiFunctionScalableTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
@@ -190,15 +188,13 @@ Resources:
         PredefinedMetricSpecification:
           PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
 
-
   NvaFetchDoiFunctionBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
     Properties:
       BasePath: !Ref CustomDomainBasePath
-      DomainName: !Join [ '.', [ 'api', !Ref CustomDomain ] ]
+      DomainName: !Join [".", ["api", !Ref CustomDomain]]
       RestApiId: !Ref NvaFetchDoiFunctionApi
       Stage: !Ref NvaFetchDoiFunctionApi.Stage
-
 
   #============================ Deploy API ============================================================================#
   # This solves the problem described here:
@@ -209,7 +205,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -217,16 +213,16 @@ Resources:
             Action: sts:AssumeRole
       Path: /
       ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
       Policies:
         - PolicyName: ApiGatewayAdmin
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
                   - apigateway:POST
-                Resource: !Sub 'arn:aws:apigateway:${AWS::Region}::/restapis/${NvaFetchDoiFunctionApi}/deployments'
+                Resource: !Sub "arn:aws:apigateway:${AWS::Region}::/restapis/${NvaFetchDoiFunctionApi}/deployments"
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-lambda-function-code-cfnresponsemodule.html
   ApiGatewayCreateDeploymentLambda:
@@ -262,5 +258,5 @@ Resources:
       ServiceToken: !GetAtt ApiGatewayCreateDeploymentLambda.Arn
       RestApiId: !Ref NvaFetchDoiFunctionApi
       StageName: !Ref NvaFetchDoiFunctionApi.Stage
-      Timestamp: '${BUILD_TIMESTAMP}'
+      Timestamp: "${BUILD_TIMESTAMP}"
       AuthorizerArn: !Ref CognitoAuthorizerArn

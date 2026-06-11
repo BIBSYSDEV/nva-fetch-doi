@@ -6,6 +6,5 @@ import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
 @JsonTypeInfo(use = Id.NAME, property = "type")
-public record UnconfirmedSeries(String title, String issn, String onlineIssn) implements BookSeries {
-
-}
+public record UnconfirmedSeries(String title, String issn, String onlineIssn)
+    implements BookSeries {}

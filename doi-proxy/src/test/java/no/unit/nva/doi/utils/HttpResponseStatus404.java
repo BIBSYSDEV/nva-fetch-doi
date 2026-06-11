@@ -4,17 +4,17 @@ import java.net.HttpURLConnection;
 
 public class HttpResponseStatus404<S> extends AbstractHttpResponse<S> {
 
-    public HttpResponseStatus404(S responseBody) {
-        super(responseBody);
-    }
+  public HttpResponseStatus404(S responseBody) {
+    super(responseBody);
+  }
 
-    @Override
-    public int statusCode() {
-        return HttpURLConnection.HTTP_NOT_FOUND;
-    }
+  @Override
+  public int statusCode() {
+    return HttpURLConnection.HTTP_NOT_FOUND;
+  }
 
-    @Override
-    public S body() {
-        return responseBody;
-    }
+  @Override
+  public S body() {
+    return responseBody;
+  }
 }

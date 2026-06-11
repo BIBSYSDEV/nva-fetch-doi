@@ -7,6 +7,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.util.List;
@@ -22,74 +23,79 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 public class ModelSerializationTest {
 
-    public static final String VERIFICATION_STATUS_FIELD = "verificationStatus";
+  public static final String VERIFICATION_STATUS_FIELD = "verificationStatus";
 
-    @Test
-    void shouldSerializeDeserializeWithoutLossOfInformation() throws JsonProcessingException {
-        var randomUri = URI.create("https://random.uri");
-        var languageMap = Map.of("en", "English text");
-        var contributor = new Contributor.Builder()
-                              .withIdentity(new Identity(randomUri, "Random name", "Personal",
-                                                         "myOrcid"))
-                              .withRole(new Role("Creator"))
-                              .withSequence(10)
-                              .withAffiliations(List.of(new UnconfirmedOrganization("Test")))
-                              .build();
+  @Test
+  void shouldSerializeDeserializeWithoutLossOfInformation() throws JsonProcessingException {
+    var randomUri = URI.create("https://random.uri");
+    var languageMap = Map.of("en", "English text");
+    var contributor =
+        new Contributor.Builder()
+            .withIdentity(new Identity(randomUri, "Random name", "Personal", "myOrcid"))
+            .withRole(new Role("Creator"))
+            .withSequence(10)
+            .withAffiliations(List.of(new UnconfirmedOrganization("Test")))
+            .build();
 
-        var bookContext = new Book(new UnconfirmedSeries("title", "issn", "onlineIssn"),
-                                   "123", new UnconfirmedPublisher("name"),
-                                   List.of("isbn"));
+    var bookContext =
+        new Book(
+            new UnconfirmedSeries("title", "issn", "onlineIssn"),
+            "123",
+            new UnconfirmedPublisher("name"),
+            List.of("isbn"));
 
-        var academicMonograph = new AcademicMonograph(new Range("1", "10"));
+    var academicMonograph = new AcademicMonograph(new Range("1", "10"));
 
-        var reference = new Reference.Builder()
-                            .withDoi(randomUri)
-                            .withPublicationContext(bookContext)
-                            .withPublicationInstance(academicMonograph)
-                            .build();
+    var reference =
+        new Reference.Builder()
+            .withDoi(randomUri)
+            .withPublicationContext(bookContext)
+            .withPublicationInstance(academicMonograph)
+            .build();
 
-        var entityDescription = new EntityDescription.Builder()
-                                    .withMainTitle("Main title")
-                                    .withDescription("Description")
-                                    .withLanguage(randomUri)
-                                    .withContributors(List.of(contributor))
-                                    .withAlternativeTitles(languageMap)
-                                    .withAlternativeAbstracts(languageMap)
-                                    .withMetadataSource(randomUri)
-                                    .withTags(List.of("tag"))
-                                    .withPublicationDate(new PublicationDate("2024", "07", "17"))
-                                    .withReference(reference)
-                                    .build();
-        var createPublicationRequest = new CreatePublicationRequest.Builder()
-                                           .withEntityDescription(entityDescription)
-                                           .build();
+    var entityDescription =
+        new EntityDescription.Builder()
+            .withMainTitle("Main title")
+            .withDescription("Description")
+            .withLanguage(randomUri)
+            .withContributors(List.of(contributor))
+            .withAlternativeTitles(languageMap)
+            .withAlternativeAbstracts(languageMap)
+            .withMetadataSource(randomUri)
+            .withTags(List.of("tag"))
+            .withPublicationDate(new PublicationDate("2024", "07", "17"))
+            .withReference(reference)
+            .build();
+    var createPublicationRequest =
+        new CreatePublicationRequest.Builder().withEntityDescription(entityDescription).build();
 
-        var json = dtoObjectMapper.writeValueAsString(createPublicationRequest);
+    var json = dtoObjectMapper.writeValueAsString(createPublicationRequest);
 
-        var deserialized = dtoObjectMapper.readValue(json, CreatePublicationRequest.class);
+    var deserialized = dtoObjectMapper.readValue(json, CreatePublicationRequest.class);
 
-        assertThat(deserialized, is(equalTo(createPublicationRequest)));
-    }
+    assertThat(deserialized, is(equalTo(createPublicationRequest)));
+  }
 
-    @ParameterizedTest
-    @EnumSource(value = VerificationStatus.class, mode = Mode.INCLUDE)
-    void shouldSerializeVerificationStatusCorrectly(VerificationStatus verificationStatus)
-        throws JsonProcessingException {
-        var identity = new Identity();
-        identity.setVerificationStatus(verificationStatus);
+  @ParameterizedTest
+  @EnumSource(value = VerificationStatus.class, mode = Mode.INCLUDE)
+  void shouldSerializeVerificationStatusCorrectly(VerificationStatus verificationStatus)
+      throws JsonProcessingException {
+    var identity = new Identity();
+    identity.setVerificationStatus(verificationStatus);
 
-        var json = dtoObjectMapper.writeValueAsString(identity);
+    var json = dtoObjectMapper.writeValueAsString(identity);
 
-        assertEquals(verificationStatus.getValue(),
-            dtoObjectMapper.readTree(json).get(VERIFICATION_STATUS_FIELD).textValue());
-    }
+    assertEquals(
+        verificationStatus.getValue(),
+        dtoObjectMapper.readTree(json).get(VERIFICATION_STATUS_FIELD).textValue());
+  }
 
-    @ParameterizedTest()
-    @ValueSource(booleans = {true, false})
-    void shouldCreateVerificationStatusFromBoolean(boolean input) {
-        var result = VerificationStatus.fromBoolean(input);
-        var expected = input ? VERIFIED : NOT_VERIFIED;
+  @ParameterizedTest()
+  @ValueSource(booleans = {true, false})
+  void shouldCreateVerificationStatusFromBoolean(boolean input) {
+    var result = VerificationStatus.fromBoolean(input);
+    var expected = input ? VERIFIED : NOT_VERIFIED;
 
-        assertEquals(expected, result);
-    }
+    assertEquals(expected, result);
+  }
 }

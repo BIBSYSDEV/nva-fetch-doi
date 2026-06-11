@@ -6,26 +6,27 @@ import nva.commons.core.JacocoGenerated;
 @JacocoGenerated
 public class JournalIssue {
 
-    @JsonProperty("published-print")
-    private CrossrefDate publishedPrint;
-    @JsonProperty("issue")
-    private String issue;
+  @JsonProperty("published-print")
+  private CrossrefDate publishedPrint;
 
-    @JacocoGenerated
-    public CrossrefDate getPublishedPrint() {
-        return publishedPrint;
-    }
+  @JsonProperty("issue")
+  private String issue;
 
-    public void setPublishedPrint(CrossrefDate publishedPrint) {
-        this.publishedPrint = publishedPrint;
-    }
+  @JacocoGenerated
+  public CrossrefDate getPublishedPrint() {
+    return publishedPrint;
+  }
 
-    @JacocoGenerated
-    public String getIssue() {
-        return issue;
-    }
+  public void setPublishedPrint(CrossrefDate publishedPrint) {
+    this.publishedPrint = publishedPrint;
+  }
 
-    public void setIssue(String issue) {
-        this.issue = issue;
-    }
+  @JacocoGenerated
+  public String getIssue() {
+    return issue;
+  }
+
+  public void setIssue(String issue) {
+    this.issue = issue;
+  }
 }

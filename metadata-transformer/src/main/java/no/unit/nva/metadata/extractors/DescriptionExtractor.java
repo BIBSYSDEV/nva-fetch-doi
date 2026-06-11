@@ -5,17 +5,16 @@ import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
 
 public final class DescriptionExtractor {
 
-    public static final Function<ExtractionPair, EntityDescription> APPLY = DescriptionExtractor::extract;
+  public static final Function<ExtractionPair, EntityDescription> APPLY =
+      DescriptionExtractor::extract;
 
-    private DescriptionExtractor() {
+  private DescriptionExtractor() {}
 
+  private static EntityDescription extract(ExtractionPair extractionPair) {
+    EntityDescription entityDescription = extractionPair.getEntityDescription();
+    if (extractionPair.isDescription()) {
+      entityDescription.setDescription(extractionPair.getStatementLiteral());
     }
-
-    private static EntityDescription extract(ExtractionPair extractionPair) {
-        EntityDescription entityDescription = extractionPair.getEntityDescription();
-        if (extractionPair.isDescription()) {
-            entityDescription.setDescription(extractionPair.getStatementLiteral());
-        }
-        return entityDescription;
-    }
+    return entityDescription;
+  }
 }

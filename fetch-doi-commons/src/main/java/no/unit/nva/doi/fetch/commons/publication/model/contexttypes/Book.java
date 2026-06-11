@@ -9,7 +9,6 @@ import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
 @JsonTypeInfo(use = Id.NAME, property = "type")
-public record Book(BookSeries series, String seriesNumber, PublishingHouse publisher, List<String> isbnList)
-    implements PublicationContext {
-
-}
+public record Book(
+    BookSeries series, String seriesNumber, PublishingHouse publisher, List<String> isbnList)
+    implements PublicationContext {}

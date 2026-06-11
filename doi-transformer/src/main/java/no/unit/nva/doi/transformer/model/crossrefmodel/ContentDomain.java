@@ -6,26 +6,27 @@ import nva.commons.core.JacocoGenerated;
 
 public class ContentDomain {
 
-    @JsonProperty("domain")
-    private List<String> domain;
-    @JsonProperty("crossmark-restriction")
-    private boolean crossmarkRestriction;
+  @JsonProperty("domain")
+  private List<String> domain;
 
-    @JacocoGenerated
-    public List<String> getDomain() {
-        return domain;
-    }
+  @JsonProperty("crossmark-restriction")
+  private boolean crossmarkRestriction;
 
-    public void setDomain(List<String> domain) {
-        this.domain = domain;
-    }
+  @JacocoGenerated
+  public List<String> getDomain() {
+    return domain;
+  }
 
-    @JacocoGenerated
-    public boolean isCrossmarkRestriction() {
-        return crossmarkRestriction;
-    }
+  public void setDomain(List<String> domain) {
+    this.domain = domain;
+  }
 
-    public void setCrossmarkRestriction(boolean crossmarkRestriction) {
-        this.crossmarkRestriction = crossmarkRestriction;
-    }
+  @JacocoGenerated
+  public boolean isCrossmarkRestriction() {
+    return crossmarkRestriction;
+  }
+
+  public void setCrossmarkRestriction(boolean crossmarkRestriction) {
+    this.crossmarkRestriction = crossmarkRestriction;
+  }
 }

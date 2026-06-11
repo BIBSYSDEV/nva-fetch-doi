@@ -1,20 +1,25 @@
 openapi: 3.0.0
 info:
   title: NVA Fetch DOI
-  version: '1.0'
+  version: "1.0"
 paths:
   /:
     post:
       summary: Import data from DOI, create publication and return summary
       operationId: importDoi
       security:
-        - CognitoUserPool:  ["https://api.nva.unit.no/scopes/backend","https://api.nva.unit.no/scopes/frontend", "aws.cognito.signin.user.admin"]
+        - CognitoUserPool:
+            [
+              "https://api.nva.unit.no/scopes/backend",
+              "https://api.nva.unit.no/scopes/frontend",
+              "aws.cognito.signin.user.admin",
+            ]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DoiLookup'
+              $ref: "#/components/schemas/DoiLookup"
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ImportDoiFunction.Arn}:live/invocations
@@ -23,24 +28,29 @@ paths:
         type: AWS_PROXY
         passthroughBehavior: WHEN_NO_MATCH
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Summary'
+                $ref: "#/components/schemas/Summary"
   /preview/:
     post:
       summary: Previews data from DOI, create publication and return a request which can be sent to publication-api
       operationId: previewDoi
       security:
-        - CognitoUserPool:  ["https://api.nva.unit.no/scopes/backend","https://api.nva.unit.no/scopes/frontend", "aws.cognito.signin.user.admin"]
+        - CognitoUserPool:
+            [
+              "https://api.nva.unit.no/scopes/backend",
+              "https://api.nva.unit.no/scopes/frontend",
+              "aws.cognito.signin.user.admin",
+            ]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DoiLookup'
+              $ref: "#/components/schemas/DoiLookup"
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PreviewDoiFunction.Arn}:live/invocations
@@ -49,12 +59,12 @@ paths:
         type: AWS_PROXY
         passthroughBehavior: WHEN_NO_MATCH
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreatePublicationRequest'
+                $ref: "#/components/schemas/CreatePublicationRequest"
 
 components:
   securitySchemes:

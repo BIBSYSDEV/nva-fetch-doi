@@ -5,48 +5,50 @@ import nva.commons.core.JacocoGenerated;
 
 public class CrossrefApiResponse {
 
-    @JsonProperty("status")
-    private String status;
-    @JsonProperty("message-type")
-    private String messageType;
-    @JsonProperty("message-version")
-    private String messageVersion;
-    @JsonProperty("message")
-    private CrossRefDocument message;
+  @JsonProperty("status")
+  private String status;
 
-    @JacocoGenerated
-    public String getStatus() {
-        return status;
-    }
+  @JsonProperty("message-type")
+  private String messageType;
 
-    public void setStatus(String input) {
-        this.status = input;
-    }
+  @JsonProperty("message-version")
+  private String messageVersion;
 
-    @JacocoGenerated
-    public String getMessageType() {
-        return messageType;
-    }
+  @JsonProperty("message")
+  private CrossRefDocument message;
 
-    public void setMessageType(String input) {
-        this.messageType = input;
-    }
+  @JacocoGenerated
+  public String getStatus() {
+    return status;
+  }
 
-    @JacocoGenerated
-    public String getMessageVersion() {
-        return messageVersion;
-    }
+  public void setStatus(String input) {
+    this.status = input;
+  }
 
-    public void setMessageVersion(String input) {
-        this.messageVersion = input;
-    }
+  @JacocoGenerated
+  public String getMessageType() {
+    return messageType;
+  }
 
-    public CrossRefDocument getMessage() {
-        return message;
-    }
+  public void setMessageType(String input) {
+    this.messageType = input;
+  }
 
-    public void setMessage(CrossRefDocument input) {
-        this.message = input;
-    }
+  @JacocoGenerated
+  public String getMessageVersion() {
+    return messageVersion;
+  }
+
+  public void setMessageVersion(String input) {
+    this.messageVersion = input;
+  }
+
+  public CrossRefDocument getMessage() {
+    return message;
+  }
+
+  public void setMessage(CrossRefDocument input) {
+    this.message = input;
+  }
 }
-
