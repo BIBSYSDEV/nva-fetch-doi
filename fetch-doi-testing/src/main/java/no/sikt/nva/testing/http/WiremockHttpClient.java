@@ -10,6 +10,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedTrustManager;
 import org.junit.jupiter.api.Assertions;
+import nva.commons.core.JacocoGenerated;
 
 public final class WiremockHttpClient {
 
@@ -39,40 +40,48 @@ public final class WiremockHttpClient {
     private static X509ExtendedTrustManager createTrustEverythingManager() {
 
         return new X509ExtendedTrustManager() {
+
+            @JacocoGenerated
             @Override
             public void checkClientTrusted(X509Certificate[] chain, String authType, Socket socket)
                 throws CertificateException {
 
             }
 
+            @JacocoGenerated
             @Override
             public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine engine)
                 throws CertificateException {
 
             }
 
+            @JacocoGenerated
             @Override
             public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
 
             }
 
+            @JacocoGenerated
             @Override
             public void checkServerTrusted(X509Certificate[] chain, String authType, Socket socket)
                 throws CertificateException {
 
             }
 
+            @JacocoGenerated
             @Override
             public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine engine)
                 throws CertificateException {
 
             }
 
+            @JacocoGenerated
             @Override
             public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
 
             }
 
+            @JacocoGenerated
             @Override
             public X509Certificate[] getAcceptedIssuers() {
                 return new X509Certificate[0];

@@ -2,16 +2,6 @@ plugins {
     id 'nva.fetch.doi.rootplugin'
 }
 
-//workaround for jacoco-merge to work
-allprojects{
-    apply plugin: 'nva.fetch.doi.java-conventions'
-}
-
-tasks.withType(JavaCompile) {
-    options.release = 21
-}
-
-
 configurations {
     xsd2java
 }
