@@ -7,6 +7,7 @@ import java.util.Optional;
 import no.unit.nva.doi.transformer.language.exceptions.LanguageUriNotFoundException;
 import nva.commons.core.JacocoGenerated;
 
+@FunctionalInterface
 public interface LanguageDetector {
 
     String UNEXPECTED_LANGUAGE_ERROR = "Could not find mapping for English";

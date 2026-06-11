@@ -49,6 +49,7 @@ public final class IdentityUpdater {
                    .map(EntityDescription::getContributors);
     }
 
+    @SuppressWarnings("PMD.AvoidCatchingGenericException")
     private static void tryUpdatingContributorsOrLogError(CristinClient cristinClient,
                                                           CreatePublicationRequest publication,
                                                           List<Contributor> contributors) {
