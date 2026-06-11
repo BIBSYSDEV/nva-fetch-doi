@@ -1,7 +1,5 @@
 package no.unit.nva.doi.transformer;
 
-import static no.unit.nva.doi.transformer.MetadataLocation.CROSSREF_STRING;
-import static no.unit.nva.doi.transformer.MetadataLocation.DATACITE_STRING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -15,12 +13,14 @@ import org.junit.jupiter.api.Test;
 
 class DoiTransformServiceTest {
 
-    public static final Path CROSSREF_JSON_PATH = Path.of("crossref.json");
-    public static final Path CROSSREF_BOOK_JSON_PATH = Path.of("crossref_sample_book.json");
-    public static final Path CROSSREF_SEQUENCE_SAMPLE_JSON_PATH = Path.of("crossref_sample_creator_sequence.json");
-    public static final Path DATACITE_JSON_PATH = Path.of("datacite_response.json");
+    private static final Path CROSSREF_JSON_PATH = Path.of("crossref.json");
+    private static final Path CROSSREF_BOOK_JSON_PATH = Path.of("crossref_sample_book.json");
+    private static final Path CROSSREF_SEQUENCE_SAMPLE_JSON_PATH = Path.of("crossref_sample_creator_sequence.json");
+    private static final Path DATACITE_JSON_PATH = Path.of("datacite_response.json");
     private static final Path CROSSREF_WITH_XML_ASTRACT_JSON_PATH = Path.of("crossrefWithAbstract.json");
-    public static final Path CROSSREF_EDIT_BOOK_JSON_PATH = Path.of("crossref_sample_edited_book.json");
+    private static final Path CROSSREF_EDIT_BOOK_JSON_PATH = Path.of("crossref_sample_edited_book.json");
+    private static final String CROSSREF_STRING = "crossref";
+    private static final String DATACITE_STRING = "datacite";
 
     @Test
     void transFormPublicationReturnsPublicationOnValidCrossrefBody()
