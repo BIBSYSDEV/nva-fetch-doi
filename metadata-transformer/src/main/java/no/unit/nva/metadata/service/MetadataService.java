@@ -79,20 +79,6 @@ public class MetadataService {
         defaultPublicationChannelsHostUriPublisher());
   }
 
-  /**
-   * Deprecated constructor.
-   *
-   * @param httpClient the HttpClient.
-   * @deprecated For testing, we should also inject the URI so that we can use WireMock.
-   */
-  @Deprecated
-  public MetadataService(HttpClient httpClient) {
-    this(
-        httpClient,
-        defaultPublicationChannelsHostUri(),
-        defaultPublicationChannelsHostUriPublisher());
-  }
-
   public MetadataService(
       HttpClient httpClient,
       URI publicationChannelsHostUri,

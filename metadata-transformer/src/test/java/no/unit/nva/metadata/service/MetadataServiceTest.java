@@ -16,6 +16,8 @@ import static j2html.TagCreator.title;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
+import static no.unit.nva.metadata.service.MetadataService.defaultPublicationChannelsHostUri;
+import static no.unit.nva.metadata.service.MetadataService.defaultPublicationChannelsHostUriPublisher;
 import static no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider.CITATION_AUTHOR;
 import static no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider.DC_CONTRIBUTOR;
 import static no.unit.nva.metadata.service.testdata.ContributorArgumentsProvider.DC_CREATOR;
@@ -130,7 +132,7 @@ public class MetadataServiceTest {
   private HttpClient httpClient;
 
   @BeforeEach
-  public void initialize() {
+  void initialize() {
     wireMockServer = new WireMockServer(options().dynamicPort());
     wireMockServer.start();
     this.serverUriJournal = URI.create(wireMockServer.baseUrl() + "/journal");
@@ -139,12 +141,12 @@ public class MetadataServiceTest {
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     wireMockServer.stop();
   }
 
   @Test
-  public void shouldReturnJournalIdFromPublicationChannelsByGivenJournalName() {
+  void shouldReturnJournalIdFromPublicationChannelsByGivenJournalName() {
     var expectedJournalName = randomString();
     var expectedYear = randomInteger();
     var queryUri =
@@ -159,7 +161,7 @@ public class MetadataServiceTest {
   }
 
   @Test
-  public void shouldReturnPublisherIdFromPublicationChannelsByGivenPublisherName() {
+  void shouldReturnPublisherIdFromPublicationChannelsByGivenPublisherName() {
     var expectedPublisherName = randomString();
     var queryUri = createExpectedQueryUriForPublisherWithName(expectedPublisherName);
     var expectedPublisherUri = mockedPublicationChannelsReturnsUri(queryUri);
@@ -692,8 +694,8 @@ public class MetadataServiceTest {
 
   private void verifyMetaTagContentInPublicationContext(
       String metaTagContent, PublicationContext context) {
-    if (context instanceof UnconfirmedJournal) {
-      assertThat(((UnconfirmedJournal) context).onlineIssn(), equalTo(metaTagContent));
+    if (context instanceof UnconfirmedJournal unconfirmedJournal) {
+      assertThat(unconfirmedJournal.onlineIssn(), equalTo(metaTagContent));
     } else {
       assertThat(((Book) context).isbnList(), contains(metaTagContent));
     }
@@ -742,11 +744,9 @@ public class MetadataServiceTest {
   private Optional<CreatePublicationRequest> getCreatePublicationRequestResponse(
       String attribute, String value, String expected)
       throws IOException, InterruptedException, MetadataFetchException {
-    URI uri = prepareWebServerAndReturnUriToMetadata(createHtml(new MetaTagPair(attribute, value)));
-    MetadataService metadataService =
-        nonNull(expected)
-            ? new MetadataService(setUpMockingForShortDoi(expected))
-            : new MetadataService();
+    var uri = prepareWebServerAndReturnUriToMetadata(createHtml(new MetaTagPair(attribute, value)));
+    var metadataService =
+        nonNull(expected) ? setUpMockingForShortDoi(expected) : new MetadataService();
     return metadataService.generateCreatePublicationRequest(uri);
   }
 
@@ -763,18 +763,20 @@ public class MetadataServiceTest {
     return metadataService.generateCreatePublicationRequest(uri);
   }
 
-  @SuppressWarnings("unchecked")
-  private HttpClient setUpMockingForShortDoi(String expected)
+  private MetadataService setUpMockingForShortDoi(String expected)
       throws IOException, InterruptedException {
-    HttpClient mockHttpClient = mock(HttpClient.class);
-    HttpResponse<Void> response = mock(HttpResponse.class);
+    var mockHttpClient = mock(HttpClient.class);
+    var response = mock(HttpResponse.class);
     when(response.statusCode()).thenReturn(MOVED_PERMANENTLY);
-    HttpHeaders headers =
-        HttpHeaders.of(Map.of(LOCATION, List.of(expected)), new TestBipredicate());
+    var headers = HttpHeaders.of(Map.of(LOCATION, List.of(expected)), new TestBipredicate());
     when(response.headers()).thenReturn(headers);
     when(mockHttpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
         .thenReturn(response);
-    return mockHttpClient;
+
+    return new MetadataService(
+        mockHttpClient,
+        defaultPublicationChannelsHostUri(),
+        defaultPublicationChannelsHostUriPublisher());
   }
 
   private CreatePublicationRequest createPublicationRequestWithLanguageOnly(URI uri) {
@@ -793,7 +795,7 @@ public class MetadataServiceTest {
   }
 
   private PublicationDate createPublicationDate(String date) {
-    String[] dateParts = date.split(DATE_SEPARATOR);
+    String[] dateParts = date.split(DATE_SEPARATOR, -1);
     String year = dateParts[0];
     String month = dateParts.length > 1 ? dateParts[1] : null;
     String day = dateParts.length > 2 ? dateParts[2] : null;

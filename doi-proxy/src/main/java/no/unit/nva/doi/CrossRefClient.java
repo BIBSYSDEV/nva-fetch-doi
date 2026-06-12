@@ -42,7 +42,6 @@ public class CrossRefClient {
       "Crossref API token could not be found with name: {}";
 
   private static final String CROSSREF_PLUSAPI_HEADER = "Crossref-Plus-API-Token";
-  private static final String CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE = "Bearer %s";
   private static final String DOI_EXAMPLES = "10.1000/182, https://doi.org/10.1000/182";
   public static final String ILLEGAL_DOI_MESSAGE = "Illegal DOI:%s. Valid examples:" + DOI_EXAMPLES;
   private static final Logger LOGGER = LoggerFactory.getLogger(CrossRefClient.class);
@@ -113,8 +112,7 @@ public class CrossRefClient {
 
     LOGGER.info(ADDING_TOKEN_IN_HEADER);
     builder.setHeader(
-        CROSSREF_PLUSAPI_HEADER,
-        String.format(CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE, getCrossRefApiPlusToken()));
+        CROSSREF_PLUSAPI_HEADER, String.format("Bearer %s", getCrossRefApiPlusToken()));
 
     return builder.build();
   }

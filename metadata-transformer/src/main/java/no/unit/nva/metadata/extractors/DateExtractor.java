@@ -1,7 +1,6 @@
 package no.unit.nva.metadata.extractors;
 
-import java.util.function.Function;
-import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
+import java.util.function.Consumer;
 import no.unit.nva.doi.fetch.commons.publication.model.PublicationDate;
 import no.unit.nva.metadata.type.DcTerms;
 import org.eclipse.rdf4j.model.Statement;
@@ -10,18 +9,17 @@ public final class DateExtractor {
   public static final String DATE_SEPARATOR = "-";
   public static final int FULL_DATE = 3;
   public static final int YEAR_ONLY = 1;
-  public static final Function<ExtractionPair, EntityDescription> APPLY = DateExtractor::extract;
+  public static final Consumer<ExtractionPair> APPLY = DateExtractor::extract;
   public static final int YEAR_PART = 0;
   public static final int MONTH_PART = 1;
   public static final int DAY_PART = 2;
 
   private DateExtractor() {}
 
-  private static EntityDescription extract(ExtractionPair extractionPair) {
+  private static void extract(ExtractionPair extractionPair) {
     if (extractionPair.isDate()) {
       addDate(extractionPair);
     }
-    return extractionPair.getEntityDescription();
   }
 
   private static void addDate(ExtractionPair extractionPair) {
@@ -35,8 +33,8 @@ public final class DateExtractor {
   }
 
   private static PublicationDate extractPublicationDate(String date) {
-    String[] dateParts = date.split(DATE_SEPARATOR);
-    int dateKind = dateParts.length;
+    var dateParts = date.split(DATE_SEPARATOR, -1);
+    var dateKind = dateParts.length;
 
     var year = dateParts[YEAR_PART];
     var month = (dateKind > YEAR_ONLY) ? dateParts[MONTH_PART] : null;

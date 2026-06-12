@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import no.unit.nva.clients.cristin.CristinClient;
 import no.unit.nva.doi.DoiProxyService;
 import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
@@ -49,7 +50,7 @@ class PreviewDoiHandlerTest extends DoiHandlerTestUtils {
 
     importDoiHandler.handleRequest(createSampleRequest(), output, context);
 
-    var gatewayResponse = parseSuccessResponse(output.toString());
+    var gatewayResponse = parseSuccessResponse(output.toString(StandardCharsets.UTF_8));
     assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
     assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
     assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
@@ -90,7 +91,7 @@ class PreviewDoiHandlerTest extends DoiHandlerTestUtils {
     var importDoiHandler = createHandler(environment);
     var output = new ByteArrayOutputStream();
     importDoiHandler.handleRequest(malformedInputStream(), output, context);
-    var gatewayResponse = parseSuccessResponse(output.toString());
+    var gatewayResponse = parseSuccessResponse(output.toString(StandardCharsets.UTF_8));
     assertEquals(HTTP_BAD_REQUEST, gatewayResponse.getStatusCode());
   }
 

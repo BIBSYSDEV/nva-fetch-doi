@@ -4,19 +4,18 @@ import static java.util.Objects.nonNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.Consumer;
 import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
 
 public final class TagExtractor {
-  public static final Function<ExtractionPair, EntityDescription> APPLY = TagExtractor::extract;
+  public static final Consumer<ExtractionPair> APPLY = TagExtractor::extract;
 
   private TagExtractor() {}
 
-  private static EntityDescription extract(ExtractionPair extractionPair) {
+  private static void extract(ExtractionPair extractionPair) {
     if (extractionPair.isTag()) {
       addTag(extractionPair);
     }
-    return extractionPair.getEntityDescription();
   }
 
   private static void addTag(ExtractionPair extractionPair) {

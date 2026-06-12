@@ -109,11 +109,11 @@ public class ImportDoiHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
   @JacocoGenerated
   private ApiGatewayException handleError(Exception exception) {
-    if (exception instanceof ApiGatewayException) {
-      return (ApiGatewayException) exception;
+    if (exception instanceof ApiGatewayException apiGatewayException) {
+      return apiGatewayException;
     }
-    if (exception instanceof RuntimeException) {
-      throw (RuntimeException) exception;
+    if (exception instanceof RuntimeException runtimeException) {
+      throw runtimeException;
     }
     throw new RuntimeException(exception);
   }

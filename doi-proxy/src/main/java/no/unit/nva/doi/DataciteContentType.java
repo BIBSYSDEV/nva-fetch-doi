@@ -12,8 +12,11 @@ public enum DataciteContentType {
   @JsonProperty("application/vnd.datacite.datacite+xml")
   DATACITE_XML("application/vnd.datacite.datacite+xml");
 
-  private static final String DATACITE_CONTENT_TYPE_NOT_FOUND =
-      "Datacite Content Type not found for '%s', expected one of '%s'.";
+  private static final String VALID_CONTENT_TYPES =
+      Arrays.stream(values())
+          .map(DataciteContentType::getContentType)
+          .collect(Collectors.joining(","));
+
   private final String contentType;
 
   DataciteContentType(String contentType) {
@@ -34,13 +37,8 @@ public enum DataciteContentType {
             () ->
                 new IllegalArgumentException(
                     String.format(
-                        DATACITE_CONTENT_TYPE_NOT_FOUND,
-                        contentType,
-                        String.join(
-                            ",",
-                            Arrays.stream(values())
-                                .map(DataciteContentType::getContentType)
-                                .collect(Collectors.joining(","))))));
+                        "Datacite Content Type not found for '%s', expected one of '%s'.",
+                        contentType, VALID_CONTENT_TYPES)));
   }
 
   public String getContentType() {

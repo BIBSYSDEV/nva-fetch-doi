@@ -1,20 +1,16 @@
 package no.unit.nva.metadata.extractors;
 
-import java.util.function.Function;
-import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
+import java.util.function.Consumer;
 
 public final class DescriptionExtractor {
 
-  public static final Function<ExtractionPair, EntityDescription> APPLY =
-      DescriptionExtractor::extract;
+  public static final Consumer<ExtractionPair> APPLY = DescriptionExtractor::extract;
 
   private DescriptionExtractor() {}
 
-  private static EntityDescription extract(ExtractionPair extractionPair) {
-    EntityDescription entityDescription = extractionPair.getEntityDescription();
+  private static void extract(ExtractionPair extractionPair) {
     if (extractionPair.isDescription()) {
-      entityDescription.setDescription(extractionPair.getStatementLiteral());
+      extractionPair.getEntityDescription().setDescription(extractionPair.getStatementLiteral());
     }
-    return entityDescription;
   }
 }
