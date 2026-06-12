@@ -211,7 +211,7 @@ public class CrossRefClientTest {
                 .fetchDataForDoi(DOI_STRING);
     assertThrows(RuntimeException.class, executable);
     var expected =
-        String.format(CROSSREF_API_KEY_SECRET_NOT_FOUND_TEMPLATE.replace("{}", "%s"), NAME, KEY);
+        String.format(CROSSREF_API_KEY_SECRET_NOT_FOUND_TEMPLATE.replace("{}", "%s"), NAME);
     assertThat(log.messages(), hasItem(containsString(expected)));
   }
 

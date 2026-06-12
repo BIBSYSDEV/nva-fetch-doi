@@ -39,8 +39,7 @@ public class CrossRefClient {
   public static final String CROSSREFPLUSAPITOKEN_NAME_ENV = "CROSSREFPLUSAPITOKEN_NAME";
   public static final String CROSSREFPLUSAPITOKEN_KEY_ENV = "CROSSREFPLUSAPITOKEN_KEY";
   public static final String CROSSREF_API_KEY_SECRET_NOT_FOUND_TEMPLATE =
-      "Crossref API token could not be found with name: {} and key: {}";
-  public static final String CROSSREF_SECRETS_NOT_FOUND = "Crossref secrets not found";
+      "Crossref API token could not be found with name: {}";
 
   private static final String CROSSREF_PLUSAPI_HEADER = "Crossref-Plus-API-Token";
   private static final String CROSSREF_PLUSAPI_AUTHORZATION_HEADER_BASE = "Bearer %s";
@@ -158,9 +157,9 @@ public class CrossRefClient {
   private String getCrossRefApiPlusToken() {
     try {
       return secretsReader.fetchSecret(secretName, secretKey);
-    } catch (ErrorReadingSecretException e) {
-      LOGGER.error(CROSSREF_API_KEY_SECRET_NOT_FOUND_TEMPLATE, secretName, secretKey);
-      throw new RuntimeException(e);
+    } catch (ErrorReadingSecretException exception) {
+      LOGGER.error(CROSSREF_API_KEY_SECRET_NOT_FOUND_TEMPLATE, secretName, exception);
+      throw new RuntimeException(exception);
     }
   }
 }
