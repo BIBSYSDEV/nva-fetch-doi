@@ -57,7 +57,6 @@ import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import no.sikt.nva.testing.http.WiremockHttpClient;
 import no.unit.nva.doi.fetch.commons.publication.model.Contributor;
 import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
 import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
