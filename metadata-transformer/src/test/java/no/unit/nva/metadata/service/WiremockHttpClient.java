@@ -1,4 +1,4 @@
-package no.sikt.nva.testing.http;
+package no.unit.nva.metadata.service;
 
 import java.net.Socket;
 import java.net.http.HttpClient;

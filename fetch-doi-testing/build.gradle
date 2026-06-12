@@ -1,8 +1,0 @@
-plugins {
-    id 'nva.fetch.doi.java-conventions'
-}
-
-dependencies {
-    implementation(nvaLibs.core)
-    implementation(nvaCatalog.junit.jupiter.api)
-}

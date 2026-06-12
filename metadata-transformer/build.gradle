@@ -36,7 +36,6 @@ dependencies {
     testImplementation(nvaLibs.json)
     testImplementation(nvaLibs.logutils)
     testImplementation(nvaLibs.testutils)
-    testImplementation(project(":fetch-doi-testing"))
 }
 
 test {
