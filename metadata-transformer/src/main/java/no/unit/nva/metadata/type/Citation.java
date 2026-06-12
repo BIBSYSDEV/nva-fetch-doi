@@ -16,6 +16,8 @@ public enum Citation implements MetaTagSet {
 
   private static final String CITATION = "citation_";
   private final String tagName;
+
+  @SuppressWarnings("ImmutableEnumChecker") // values are always immutable enum constants
   private final OntologyProperty mapping;
 
   Citation(String tagName, OntologyProperty mapping) {

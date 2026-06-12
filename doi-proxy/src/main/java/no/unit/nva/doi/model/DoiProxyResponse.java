@@ -30,14 +30,8 @@ public class DoiProxyResponse {
   @JacocoGenerated
   @Override
   public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    DoiProxyResponse that = (DoiProxyResponse) o;
-    return Objects.equals(getJsonNode(), that.getJsonNode())
+    return o instanceof DoiProxyResponse that
+        && Objects.equals(getJsonNode(), that.getJsonNode())
         && Objects.equals(getMetadataSource(), that.getMetadataSource());
   }
 

@@ -1,19 +1,17 @@
 package no.unit.nva.metadata.extractors;
 
 import java.net.URI;
-import java.util.function.Function;
-import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
+import java.util.function.Consumer;
 
 public final class DoiExtractor {
-  public static final Function<ExtractionPair, EntityDescription> APPLY = DoiExtractor::extract;
+  public static final Consumer<ExtractionPair> APPLY = DoiExtractor::extract;
 
   private DoiExtractor() {}
 
-  private static EntityDescription extract(ExtractionPair extractionPair) {
+  private static void extract(ExtractionPair extractionPair) {
     if (extractionPair.isDoi()) {
       addDoi(extractionPair);
     }
-    return extractionPair.getEntityDescription();
   }
 
   private static void addDoi(ExtractionPair extractionPair) {

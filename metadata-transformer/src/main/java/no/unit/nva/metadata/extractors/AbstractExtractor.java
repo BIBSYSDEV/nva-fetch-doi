@@ -1,26 +1,21 @@
 package no.unit.nva.metadata.extractors;
 
-import java.util.function.Function;
-import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
+import java.util.function.Consumer;
 
 /** Extractor for journal abstracts. */
 public final class AbstractExtractor {
 
-  public static final Function<ExtractionPair, EntityDescription> APPLY =
-      AbstractExtractor::extract;
+  public static final Consumer<ExtractionPair> APPLY = AbstractExtractor::extract;
 
   private AbstractExtractor() {}
 
-  private static EntityDescription extract(ExtractionPair extractionPair) {
+  private static void extract(ExtractionPair extractionPair) {
     if (extractionPair.isAbstract()) {
-      return addAbstract(extractionPair);
+      addAbstract(extractionPair);
     }
-    return extractionPair.getEntityDescription();
   }
 
-  private static EntityDescription addAbstract(ExtractionPair extractionPair) {
-    EntityDescription entityDescription = extractionPair.getEntityDescription();
-    entityDescription.setMainAbstract(extractionPair.getStatementLiteral());
-    return entityDescription;
+  private static void addAbstract(ExtractionPair extractionPair) {
+    extractionPair.getEntityDescription().setMainAbstract(extractionPair.getStatementLiteral());
   }
 }

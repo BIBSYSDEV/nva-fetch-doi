@@ -7,6 +7,8 @@ public enum RawMetaTag implements MetaTagSet {
   DOI("doi", Bibo.DOI);
 
   private final String tagName;
+
+  @SuppressWarnings("ImmutableEnumChecker") // values are always immutable enum constants
   private final OntologyProperty mapping;
 
   RawMetaTag(String tagName, OntologyProperty mapping) {

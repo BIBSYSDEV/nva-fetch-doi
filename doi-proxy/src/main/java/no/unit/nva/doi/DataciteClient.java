@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Scanner;
 import nva.commons.core.JacocoGenerated;
 
 public class DataciteClient {
@@ -29,9 +28,8 @@ public class DataciteClient {
   }
 
   protected String readStringFromUrl(URL url) throws IOException {
-    try (Scanner scanner = new Scanner(url.openStream(), StandardCharsets.UTF_8.toString())) {
-      scanner.useDelimiter("\\A");
-      return scanner.hasNext() ? scanner.next() : "";
+    try (var inputStream = url.openStream()) {
+      return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
     }
   }
 }

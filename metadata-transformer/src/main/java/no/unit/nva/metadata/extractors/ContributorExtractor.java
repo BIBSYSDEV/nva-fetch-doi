@@ -5,7 +5,7 @@ import static java.util.Objects.isNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.Consumer;
 import no.unit.nva.doi.fetch.commons.publication.model.Contributor;
 import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
 import no.unit.nva.doi.fetch.commons.publication.model.Identity;
@@ -13,16 +13,14 @@ import no.unit.nva.doi.fetch.commons.publication.model.Role;
 
 public final class ContributorExtractor {
 
-  public static final Function<ExtractionPair, EntityDescription> APPLY =
-      ContributorExtractor::extract;
+  public static final Consumer<ExtractionPair> APPLY = ContributorExtractor::extract;
 
   private ContributorExtractor() {}
 
-  private static EntityDescription extract(ExtractionPair extractionPair) {
+  private static void extract(ExtractionPair extractionPair) {
     if (extractionPair.isContributor()) {
       addContributor(extractionPair);
     }
-    return extractionPair.getEntityDescription();
   }
 
   private static void addContributor(ExtractionPair extractionPair) {

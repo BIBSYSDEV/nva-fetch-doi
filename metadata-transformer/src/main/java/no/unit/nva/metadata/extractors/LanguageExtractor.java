@@ -3,8 +3,7 @@ package no.unit.nva.metadata.extractors;
 import java.net.URI;
 import java.util.Locale;
 import java.util.MissingResourceException;
-import java.util.function.Function;
-import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
+import java.util.function.Consumer;
 import nva.commons.core.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,16 +12,14 @@ public final class LanguageExtractor {
   private static final Logger LOGGER = LoggerFactory.getLogger(LanguageExtractor.class);
   public static final String LEXVO_ORG = "http://lexvo.org/id/iso639-3/";
   public static final String ISO3_LANGUAGE_CODE_UNDEFINED = "und";
-  public static final Function<ExtractionPair, EntityDescription> APPLY =
-      LanguageExtractor::extract;
+  public static final Consumer<ExtractionPair> APPLY = LanguageExtractor::extract;
 
   private LanguageExtractor() {}
 
-  private static EntityDescription extract(ExtractionPair extractionPair) {
+  private static void extract(ExtractionPair extractionPair) {
     if (extractionPair.isLanguage()) {
       addLanguage(extractionPair);
     }
-    return extractionPair.getEntityDescription();
   }
 
   private static void addLanguage(ExtractionPair extractionPair) {

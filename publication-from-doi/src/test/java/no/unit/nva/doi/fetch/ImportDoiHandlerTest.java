@@ -30,6 +30,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import no.unit.nva.clients.cristin.CristinClient;
 import no.unit.nva.doi.CrossRefClient;
@@ -76,7 +77,7 @@ class ImportDoiHandlerTest extends DoiHandlerTestUtils {
     var importDoiHandler = this.createImportHandler(environment);
     var output = new ByteArrayOutputStream();
     importDoiHandler.handleRequest(createSampleRequest(), output, context);
-    var gatewayResponse = parseSuccessResponse(output.toString());
+    var gatewayResponse = parseSuccessResponse(output.toString(StandardCharsets.UTF_8));
     assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
     assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
     assertThat(gatewayResponse.getHeaders(), hasKey(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
@@ -95,7 +96,7 @@ class ImportDoiHandlerTest extends DoiHandlerTestUtils {
     ImportDoiHandler importDoiHandler = this.createImportHandler(environment);
     var output = new ByteArrayOutputStream();
     importDoiHandler.handleRequest(nonDoiUrlInputStream(), output, context);
-    var gatewayResponse = parseSuccessResponse(output.toString());
+    var gatewayResponse = parseSuccessResponse(output.toString(StandardCharsets.UTF_8));
     assertEquals(HTTP_OK, gatewayResponse.getStatusCode());
     assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
     assertThat(gatewayResponse.getHeaders(), hasKey(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));

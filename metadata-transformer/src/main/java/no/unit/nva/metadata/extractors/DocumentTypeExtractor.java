@@ -7,7 +7,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.function.Consumer;
 import no.unit.nva.doi.fetch.commons.publication.model.EntityDescription;
 import no.unit.nva.doi.fetch.commons.publication.model.PublicationContext;
 import no.unit.nva.doi.fetch.commons.publication.model.PublicationInstance;
@@ -27,13 +27,12 @@ public final class DocumentTypeExtractor {
   private static final String SPACES_AND_HYPHENS_REGEX = "[ -]";
   private static final ISBNValidator ISBN_VALIDATOR = new ISBNValidator();
 
-  public static final Function<ExtractionPair, EntityDescription> APPLY = extractOrConsumeError();
+  public static final Consumer<ExtractionPair> APPLY = DocumentTypeExtractor::extractOrConsumeError;
 
   private DocumentTypeExtractor() {}
 
-  private static Function<ExtractionPair, EntityDescription> extractOrConsumeError() {
-    return (extractionPair) ->
-        attempt(() -> extract(extractionPair)).orElse(fail -> defaultValue(extractionPair));
+  private static void extractOrConsumeError(ExtractionPair extractionPair) {
+    attempt(() -> extract(extractionPair)).orElse(fail -> defaultValue(extractionPair));
   }
 
   private static EntityDescription defaultValue(ExtractionPair extractionPair) {

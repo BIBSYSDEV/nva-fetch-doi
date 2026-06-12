@@ -28,7 +28,6 @@ dependencies {
     implementation(project(":json-config"))
     runtimeOnly(libs.rdf4j.rio.api)
     testImplementation(libs.j2html)
-    testImplementation(libs.rdf4j.model.vocabulary)
     testImplementation(nvaCatalog.hamcrest)
     testImplementation(nvaCatalog.junit.jupiter.api)
     testImplementation(nvaCatalog.junit.jupiter.params)
