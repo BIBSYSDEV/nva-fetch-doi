@@ -6,12 +6,18 @@ dependencies {
     api(libs.apache.any23.api) {
         exclude group: 'org.yaml', module: 'snakeyaml'
         exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j-impl'
+        // Fat jar bundling all Tika parsers, incl. the PDF parser with an XXE flaw
+        // (CVE-2025-54988). Any23 only needs tika-core and tika-parser-text-module
+        // (added below).
+        // FIXME: Remove together with Any23 in NP-51331.
+        exclude group: 'org.apache.tika', module: 'tika-parsers-standard-package'
     }
     api(libs.rdf4j.model.api)
     api(project(":fetch-doi-commons"))
     implementation(libs.apache.any23.core) {
         exclude group: 'org.yaml', module: 'snakeyaml'
         exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j-impl'
+        exclude group: 'org.apache.tika', module: 'tika-parsers-standard-package'
     }
     implementation(libs.rdf4j.model)
     implementation(libs.rdf4j.repository.api)
@@ -27,6 +33,7 @@ dependencies {
     implementation(nvaLibs.core)
     implementation(project(":json-config"))
     runtimeOnly(libs.rdf4j.rio.api)
+    runtimeOnly(libs.tika.parser.text.module)
     testImplementation(libs.j2html)
     testImplementation(nvaCatalog.hamcrest)
     testImplementation(nvaCatalog.junit.jupiter.api)
