@@ -2,8 +2,10 @@
 rdf4jVersion = { strictly = "5.3.2" }
 any23core = { strictly = "2.7" }
 j2html = { strictly = "1.6.0" }
-# Must match Any23's Tika version; remove with NP-51331
-tika = { strictly = "2.3.0" }
+# Any23 2.7 declares tika-core 2.3.0 but only uses stable APIs (TikaConfig, Tika.detect, MimeTypes,
+# TextStatistics, CharsetDetector), which are unchanged in Tika 3.x. Must be >= 3.2.2 for
+# CVE-2025-66516 (XXE in tika-core). Remove together with Any23 in NP-51331.
+tika = { strictly = "3.3.2" }
 
 [libraries]
 rdf4j-sail-api = { group = "org.eclipse.rdf4j", name = "rdf4j-sail-api", version.ref = "rdf4jVersion" }
@@ -21,6 +23,8 @@ apache-any23-api = { group = "org.apache.any23", name = "apache-any23-api", vers
 
 j2html = { group = "com.j2html", name = "j2html", version.ref = "j2html" }
 
+# Declared explicitly so the strict version overrides the tika-core 2.3.0 Any23 pulls in transitively
+tika-core = { group = "org.apache.tika", name = "tika-core", version.ref = "tika" }
 # Minimal replacement for the excluded tika-parsers-standard-package fat jar (CVE-2025-54988)
 tika-parser-text-module = { group = "org.apache.tika", name = "tika-parser-text-module", version.ref = "tika" }
 
