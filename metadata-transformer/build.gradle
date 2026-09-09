@@ -33,6 +33,8 @@ dependencies {
     implementation(nvaLibs.core)
     implementation(project(":json-config"))
     runtimeOnly(libs.rdf4j.rio.api)
+    // Forces tika-core past the 2.3.0 Any23 requests (CVE-2025-66516, fixed in 3.2.2)
+    runtimeOnly(libs.tika.core)
     runtimeOnly(libs.tika.parser.text.module)
     testImplementation(libs.j2html)
     testImplementation(nvaCatalog.hamcrest)
