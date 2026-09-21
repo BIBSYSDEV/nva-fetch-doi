@@ -6,11 +6,11 @@ import static no.unit.nva.doi.transformer.utils.PublicationType.JOURNAL_CONTENT;
 import static nva.commons.core.attempt.Try.attempt;
 
 import java.net.URI;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -105,10 +105,13 @@ public class DataciteResponseConverter extends AbstractConverter {
   private Map<String, String> extractAlternativeTitles(DataciteResponse dataciteResponse) {
     String mainTitle = extractMainTitle(dataciteResponse);
     return dataciteResponse.getTitles().stream()
-        .filter(not(t -> t.getTitle().equals(mainTitle)))
-        .map(t -> detectLanguage(t.getTitle()))
-        .map(e -> new SimpleEntry<>(e.getText(), e.getLanguage().toString()))
-        .collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue));
+        .map(DataciteTitle::getTitle)
+        .filter(not(title -> title.equals(mainTitle)))
+        .collect(
+            Collectors.toMap(
+                this::detectLanguage,
+                Function.identity(),
+                (firstTitle, duplicateTitle) -> firstTitle));
   }
 
   private String createDescription() {

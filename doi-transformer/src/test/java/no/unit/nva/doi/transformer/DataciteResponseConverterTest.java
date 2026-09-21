@@ -1,30 +1,31 @@
 package no.unit.nva.doi.transformer;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import no.sikt.nva.doi.fetch.jsonconfig.Json;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
-import no.unit.nva.doi.transformer.language.LanguageMapper;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteAffiliation;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteCreator;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteResponse;
 import no.unit.nva.doi.transformer.model.datacitemodel.DataciteRights;
+import no.unit.nva.doi.transformer.model.datacitemodel.DataciteTitle;
 import no.unit.nva.doi.transformer.utils.InvalidIssnException;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.doi.DoiConverter;
@@ -36,6 +37,8 @@ public class DataciteResponseConverterTest {
 
   public static final String ENTRY_WITH_ALTERNATIVE_TITLE = "datacite_many_titles.json";
   public static final Path SAMPLE_DATACITE_RESPOSNE = Path.of("datacite_response.json");
+  private static final String UNDETERMINED_LANGUAGE = "und";
+  private static final String LEXVO_URI_PREFIX = "http://lexvo.org";
 
   @Test
   void defaultConstructorExists() {
@@ -65,7 +68,7 @@ public class DataciteResponseConverterTest {
 
   @Test
   @DisplayName(
-      "Publication contains alternativeTitles with non null langauge tags when datacite document"
+      "Publication contains alternativeTitles with non null titles when datacite document"
           + " has many titles")
   public void
       publicationContainsAlternativeTitlesWithNonNullLanguageTagsWhenDatataciteDocumentHasManyTitles()
@@ -74,8 +77,8 @@ public class DataciteResponseConverterTest {
     CreatePublicationRequest publication = readPublicationWithMultipleTitles();
     Map<String, String> alternativeTitles =
         publication.getEntityDescription().getAlternativeTitles();
-    Collection<String> languageTags = alternativeTitles.values();
-    languageTags.forEach(Assertions::assertNotNull);
+    Collection<String> titles = alternativeTitles.values();
+    titles.forEach(Assertions::assertNotNull);
   }
 
   @Test
@@ -86,26 +89,52 @@ public class DataciteResponseConverterTest {
       throws IOException, URISyntaxException, InvalidIssnException {
     CreatePublicationRequest publication = readPublicationWithMultipleTitles();
     String mainTitle = publication.getEntityDescription().getMainTitle();
-    Set<String> altTitles = publication.getEntityDescription().getAlternativeTitles().keySet();
+    Collection<String> altTitles =
+        publication.getEntityDescription().getAlternativeTitles().values();
     assertFalse(altTitles.contains(mainTitle));
   }
 
   @Test
   @DisplayName(
-      "Publication contains alternative titles with valid language URIs when the datacite document"
-          + " has  many titles")
-  public void
-      publicationContainsAlternativeTitlesWithValidLanguageURisWhenDataciteDocHasManyTitles()
-          throws IOException, URISyntaxException, InvalidIssnException {
+      "Publication keys alternative titles by undetermined language when the datacite document"
+          + " does not state a language per title")
+  public void publicationKeysAlternativeTitlesByUndeterminedLanguageWhenDataciteHasNoLang()
+      throws IOException, URISyntaxException, InvalidIssnException {
     CreatePublicationRequest publication = readPublicationWithMultipleTitles();
     Map<String, String> alternativeTitles =
         publication.getEntityDescription().getAlternativeTitles();
-    Collection<String> languageTags = alternativeTitles.values();
-    languageTags.forEach(Assertions::assertNotNull);
-    List<URI> languageUris = languageTags.stream().map(URI::create).toList();
-    List<URI> validUris = new ArrayList<>(LanguageMapper.languageUris());
-    // for some reason hamcrest containsInAnyOrder does not want to work
-    assertTrue(validUris.containsAll(languageUris));
+    assertThat(alternativeTitles.keySet(), contains(UNDETERMINED_LANGUAGE));
+  }
+
+  @Test
+  public void publicationDoesNotPutLanguageUriInAlternativeTitleValue()
+      throws IOException, URISyntaxException, InvalidIssnException {
+    CreatePublicationRequest publication = readPublicationWithMultipleTitles();
+    Collection<String> titles = publication.getEntityDescription().getAlternativeTitles().values();
+    titles.forEach(title -> assertThat(title, not(containsString(LEXVO_URI_PREFIX))));
+  }
+
+  @Test
+  public void publicationKeepsFirstAlternativeTitleWhenSeveralShareTheSameLanguage()
+      throws IOException, InvalidIssnException {
+    String input = IoUtils.stringFromResources(Path.of(ENTRY_WITH_ALTERNATIVE_TITLE));
+    DataciteResponse response = Json.readValue(input, DataciteResponse.class);
+    List<DataciteTitle> titles = new ArrayList<>(response.getTitles());
+    String firstAlternativeTitle = titles.get(1).getTitle();
+    titles.add(extraTitle());
+    response.setTitles(titles);
+
+    Map<String, String> alternativeTitles =
+        toPublication(response).getEntityDescription().getAlternativeTitles();
+
+    assertThat(alternativeTitles.size(), is(equalTo(1)));
+    assertThat(alternativeTitles.get(UNDETERMINED_LANGUAGE), is(equalTo(firstAlternativeTitle)));
+  }
+
+  private DataciteTitle extraTitle() {
+    DataciteTitle title = new DataciteTitle();
+    title.setTitle("A third title in the same undetermined language");
+    return title;
   }
 
   @Test

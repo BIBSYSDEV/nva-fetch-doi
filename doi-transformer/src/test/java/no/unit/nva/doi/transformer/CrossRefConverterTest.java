@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -117,6 +118,9 @@ public class CrossRefConverterTest extends ConversionTest {
   private static final String PROCESSED_ABSTRACT = "processedAbstract.txt";
   private static final String SAMPLE_ORCID = "http://orcid.org/0000-1111-2222-3333";
   private static final String ALTERNATIVE_TITLE = "Some alternative title";
+  private static final String SECOND_ALTERNATIVE_TITLE = "Yet another alternative title";
+  private static final String UNDETERMINED_LANGUAGE = "und";
+  private static final String LEXVO_URI_PREFIX = "http://lexvo.org";
   private static final int SECOND_LIST_ELEMENT = 1;
   private final CrossRefConverter converter = setUpConverter();
 
@@ -175,9 +179,37 @@ public class CrossRefConverterTest extends ConversionTest {
     String expectedAlternativeTitle = crossrefDoc.getTitle().get(SECOND_LIST_ELEMENT);
     var publication = toPublication(crossrefDoc);
     List<String> actualAlternativeTitles =
-        new ArrayList<>(publication.getEntityDescription().getAlternativeTitles().keySet());
+        new ArrayList<>(publication.getEntityDescription().getAlternativeTitles().values());
     assertThat(actualAlternativeTitles, hasSize(1));
     assertThat(actualAlternativeTitles.getFirst(), is(equalTo(expectedAlternativeTitle)));
+  }
+
+  @Test
+  public void toPublicationKeysAlternativeTitlesByUndeterminedLanguageWhenCrossrefHasNoLanguage() {
+    CrossRefDocument crossrefDoc = sampleBook();
+    var publication = toPublication(crossrefDoc);
+    Set<String> languageKeys = publication.getEntityDescription().getAlternativeTitles().keySet();
+    assertThat(languageKeys, contains(UNDETERMINED_LANGUAGE));
+  }
+
+  @Test
+  public void toPublicationDoesNotPutLanguageUriInAlternativeTitleValue() {
+    CrossRefDocument crossrefDoc = sampleBook();
+    var publication = toPublication(crossrefDoc);
+    Collection<String> titles = publication.getEntityDescription().getAlternativeTitles().values();
+    titles.forEach(title -> assertThat(title, not(containsString(LEXVO_URI_PREFIX))));
+  }
+
+  @Test
+  public void toPublicationKeepsFirstAlternativeTitleWhenSeveralShareTheSameLanguage() {
+    CrossRefDocument crossrefDoc = sampleBook();
+    crossrefDoc.setTitle(
+        List.of(SAMPLE_DOCUMENT_TITLE, ALTERNATIVE_TITLE, SECOND_ALTERNATIVE_TITLE));
+    var publication = toPublication(crossrefDoc);
+    Map<String, String> alternativeTitles =
+        publication.getEntityDescription().getAlternativeTitles();
+    assertThat(alternativeTitles.size(), is(equalTo(1)));
+    assertThat(alternativeTitles.get(UNDETERMINED_LANGUAGE), is(equalTo(ALTERNATIVE_TITLE)));
   }
 
   @Test

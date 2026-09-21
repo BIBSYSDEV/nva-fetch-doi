@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import no.unit.nva.doi.fetch.commons.publication.model.Agent;
 import no.unit.nva.doi.fetch.commons.publication.model.Contributor;
@@ -59,7 +60,6 @@ import no.unit.nva.doi.transformer.utils.IsbnCleaner;
 import no.unit.nva.doi.transformer.utils.IssnCleaner;
 import no.unit.nva.doi.transformer.utils.PublicationType;
 import no.unit.nva.doi.transformer.utils.StringUtils;
-import no.unit.nva.doi.transformer.utils.TextLang;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.doi.DoiConverter;
 import org.slf4j.Logger;
@@ -377,8 +377,11 @@ public class CrossRefConverter extends AbstractConverter {
     String mainTitle = extractTitle(document);
     return document.getTitle().stream()
         .filter(not(title -> title.equals(mainTitle)))
-        .map(this::detectLanguage)
-        .collect(Collectors.toConcurrentMap(TextLang::getText, e -> e.getLanguage().toString()));
+        .collect(
+            Collectors.toMap(
+                this::detectLanguage,
+                Function.identity(),
+                (firstTitle, duplicateTitle) -> firstTitle));
   }
 
   private boolean hasTitle(CrossRefDocument document) {

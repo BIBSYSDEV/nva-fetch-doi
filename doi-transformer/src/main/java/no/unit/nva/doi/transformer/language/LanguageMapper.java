@@ -3,9 +3,7 @@ package no.unit.nva.doi.transformer.language;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -52,10 +50,6 @@ public final class LanguageMapper {
       throw new LanguageUriNotFoundException(URI_NOT_FOUND_ERROR + iso);
     }
     return ISO2URI.get(iso);
-  }
-
-  public static Collection<URI> languageUris() {
-    return new HashSet<>(ISO2URI.values());
   }
 
   private static Map<String, URI> isoToUri(Path path) {
