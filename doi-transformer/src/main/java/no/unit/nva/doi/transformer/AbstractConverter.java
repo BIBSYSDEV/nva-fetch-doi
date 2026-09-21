@@ -3,13 +3,11 @@ package no.unit.nva.doi.transformer;
 import java.util.stream.Stream;
 import no.unit.nva.doi.fetch.commons.publication.model.PublicationDate;
 import no.unit.nva.doi.transformer.language.LanguageDetector;
-import nva.commons.core.StringUtils;
 import nva.commons.doi.DoiConverter;
 
 public class AbstractConverter {
 
   public static final String PLAIN_NAME_SEPARATOR = " ";
-  public static final String UNDETERMINED_LANGUAGE = "und";
 
   protected DoiConverter doiConverter;
   protected LanguageDetector languageDetector;
@@ -32,10 +30,6 @@ public class AbstractConverter {
   }
 
   protected String detectLanguage(String title) {
-    return toBcp47LanguageTag(languageDetector.detectLocale(title).getLanguage());
-  }
-
-  private String toBcp47LanguageTag(String languageCode) {
-    return StringUtils.isNotBlank(languageCode) ? languageCode : UNDETERMINED_LANGUAGE;
+    return languageDetector.detectLocale(title).toLanguageTag();
   }
 }
