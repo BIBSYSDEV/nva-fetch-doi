@@ -36,7 +36,8 @@ public class AbstractConverterTest {
 
   @ParameterizedTest
   @NullAndEmptySource
-  @ValueSource(strings = {" ", "not a language tag"})
+  @ValueSource(
+      strings = {" ", "not a language tag", "garbage", "xyz", "zzz", "not", "123", "en_US"})
   public void toLanguageKeyReturnsUndeterminedForUnusableTags(String languageTag) {
     assertThat(
         converterWith(Locale.ROOT).toLanguageKey(languageTag), is(equalTo(UNDETERMINED_LANGUAGE)));
