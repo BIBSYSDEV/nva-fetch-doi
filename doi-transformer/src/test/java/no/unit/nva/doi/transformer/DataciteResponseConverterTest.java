@@ -39,6 +39,10 @@ public class DataciteResponseConverterTest {
   public static final Path SAMPLE_DATACITE_RESPOSNE = Path.of("datacite_response.json");
   private static final String UNDETERMINED_LANGUAGE = "und";
   private static final String LEXVO_URI_PREFIX = "http://lexvo.org";
+  private static final String AMERICAN_ENGLISH_TAG = "en-US";
+  private static final String ENGLISH = "en";
+  private static final String GERMAN = "de";
+  private static final String GERMAN_TITLE = "Ein alternativer Titel";
 
   @Test
   void defaultConstructorExists() {
@@ -100,41 +104,72 @@ public class DataciteResponseConverterTest {
           + " does not state a language per title")
   public void publicationKeysAlternativeTitlesByUndeterminedLanguageWhenDataciteHasNoLang()
       throws IOException, URISyntaxException, InvalidIssnException {
-    CreatePublicationRequest publication = readPublicationWithMultipleTitles();
-    Map<String, String> alternativeTitles =
-        publication.getEntityDescription().getAlternativeTitles();
+    var publication = readPublicationWithMultipleTitles();
+    var alternativeTitles = publication.getEntityDescription().getAlternativeTitles();
     assertThat(alternativeTitles.keySet(), contains(UNDETERMINED_LANGUAGE));
   }
 
   @Test
   public void publicationDoesNotPutLanguageUriInAlternativeTitleValue()
       throws IOException, URISyntaxException, InvalidIssnException {
-    CreatePublicationRequest publication = readPublicationWithMultipleTitles();
-    Collection<String> titles = publication.getEntityDescription().getAlternativeTitles().values();
+    var publication = readPublicationWithMultipleTitles();
+    var titles = publication.getEntityDescription().getAlternativeTitles().values();
     titles.forEach(title -> assertThat(title, not(containsString(LEXVO_URI_PREFIX))));
+  }
+
+  @Test
+  public void publicationKeepsEveryAlternativeTitleThatStatesItsOwnLanguage()
+      throws IOException, InvalidIssnException {
+    var response = responseWithMultipleTitles();
+    var titles = new ArrayList<>(response.getTitles());
+    var firstAlternativeTitle = titles.get(1).getTitle();
+    titles.get(1).setLang(AMERICAN_ENGLISH_TAG);
+    titles.add(titleWithLanguage(GERMAN_TITLE, GERMAN));
+    response.setTitles(titles);
+
+    var alternativeTitles = toPublication(response).getEntityDescription().getAlternativeTitles();
+
+    assertThat(alternativeTitles.size(), is(equalTo(2)));
+    assertThat(alternativeTitles.get(ENGLISH), is(equalTo(firstAlternativeTitle)));
+    assertThat(alternativeTitles.get(GERMAN), is(equalTo(GERMAN_TITLE)));
+  }
+
+  @Test
+  public void publicationReducesRegionalLanguageTagToPrimarySubtag()
+      throws IOException, InvalidIssnException {
+    var response = responseWithMultipleTitles();
+    response.getTitles().get(1).setLang(AMERICAN_ENGLISH_TAG);
+
+    var alternativeTitles = toPublication(response).getEntityDescription().getAlternativeTitles();
+
+    assertThat(alternativeTitles.keySet(), contains(ENGLISH));
   }
 
   @Test
   public void publicationKeepsFirstAlternativeTitleWhenSeveralShareTheSameLanguage()
       throws IOException, InvalidIssnException {
-    String input = IoUtils.stringFromResources(Path.of(ENTRY_WITH_ALTERNATIVE_TITLE));
-    DataciteResponse response = Json.readValue(input, DataciteResponse.class);
-    List<DataciteTitle> titles = new ArrayList<>(response.getTitles());
-    String firstAlternativeTitle = titles.get(1).getTitle();
-    titles.add(extraTitle());
+    var response = responseWithMultipleTitles();
+    var titles = new ArrayList<>(response.getTitles());
+    var firstAlternativeTitle = titles.get(1).getTitle();
+    titles.add(titleWithLanguage(GERMAN_TITLE, null));
     response.setTitles(titles);
 
-    Map<String, String> alternativeTitles =
-        toPublication(response).getEntityDescription().getAlternativeTitles();
+    var alternativeTitles = toPublication(response).getEntityDescription().getAlternativeTitles();
 
     assertThat(alternativeTitles.size(), is(equalTo(1)));
     assertThat(alternativeTitles.get(UNDETERMINED_LANGUAGE), is(equalTo(firstAlternativeTitle)));
   }
 
-  private DataciteTitle extraTitle() {
-    DataciteTitle title = new DataciteTitle();
-    title.setTitle("A third title in the same undetermined language");
-    return title;
+  private DataciteResponse responseWithMultipleTitles() throws IOException {
+    var input = IoUtils.stringFromResources(Path.of(ENTRY_WITH_ALTERNATIVE_TITLE));
+    return Json.readValue(input, DataciteResponse.class);
+  }
+
+  private DataciteTitle titleWithLanguage(String title, String lang) {
+    var dataciteTitle = new DataciteTitle();
+    dataciteTitle.setTitle(title);
+    dataciteTitle.setLang(lang);
+    return dataciteTitle;
   }
 
   @Test

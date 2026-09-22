@@ -1,13 +1,16 @@
 package no.unit.nva.doi.transformer;
 
+import java.util.Locale;
 import java.util.stream.Stream;
 import no.unit.nva.doi.fetch.commons.publication.model.PublicationDate;
 import no.unit.nva.doi.transformer.language.LanguageDetector;
+import nva.commons.core.StringUtils;
 import nva.commons.doi.DoiConverter;
 
 public class AbstractConverter {
 
   public static final String PLAIN_NAME_SEPARATOR = " ";
+  public static final String UNDETERMINED_LANGUAGE = "und";
 
   protected DoiConverter doiConverter;
   protected LanguageDetector languageDetector;
@@ -30,6 +33,17 @@ public class AbstractConverter {
   }
 
   protected String detectLanguage(String title) {
-    return languageDetector.detectLocale(title).toLanguageTag();
+    return toLanguageKey(languageDetector.detectLocale(title).getLanguage());
+  }
+
+  protected String toLanguageKey(String languageTag) {
+    return StringUtils.isNotBlank(languageTag)
+        ? toPrimarySubtag(languageTag)
+        : UNDETERMINED_LANGUAGE;
+  }
+
+  private String toPrimarySubtag(String languageTag) {
+    String primarySubtag = Locale.forLanguageTag(languageTag).getLanguage();
+    return StringUtils.isNotBlank(primarySubtag) ? primarySubtag : UNDETERMINED_LANGUAGE;
   }
 }

@@ -10,7 +10,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -105,13 +104,18 @@ public class DataciteResponseConverter extends AbstractConverter {
   private Map<String, String> extractAlternativeTitles(DataciteResponse dataciteResponse) {
     String mainTitle = extractMainTitle(dataciteResponse);
     return dataciteResponse.getTitles().stream()
-        .map(DataciteTitle::getTitle)
-        .filter(not(title -> title.equals(mainTitle)))
+        .filter(not(title -> title.getTitle().equals(mainTitle)))
         .collect(
             Collectors.toMap(
-                this::detectLanguage,
-                Function.identity(),
+                this::languageKeyOf,
+                DataciteTitle::getTitle,
                 (firstTitle, duplicateTitle) -> firstTitle));
+  }
+
+  private String languageKeyOf(DataciteTitle title) {
+    return StringUtils.isNotBlank(title.getLang())
+        ? toLanguageKey(title.getLang())
+        : detectLanguage(title.getTitle());
   }
 
   private String createDescription() {
