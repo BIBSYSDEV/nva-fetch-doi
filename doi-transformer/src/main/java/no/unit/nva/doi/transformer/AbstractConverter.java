@@ -45,7 +45,7 @@ public class AbstractConverter {
   }
 
   private String toPrimarySubtag(String languageTag) {
-    String primarySubtag = Locale.forLanguageTag(languageTag).getLanguage();
+    var primarySubtag = Locale.forLanguageTag(languageTag).getLanguage();
     return ISO_LANGUAGE_CODES.contains(primarySubtag) ? primarySubtag : UNDETERMINED_LANGUAGE;
   }
 }

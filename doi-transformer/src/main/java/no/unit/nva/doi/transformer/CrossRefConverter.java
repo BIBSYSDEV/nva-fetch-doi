@@ -374,7 +374,7 @@ public class CrossRefConverter extends AbstractConverter {
   }
 
   private Map<String, String> extractAlternativeTitles(CrossRefDocument document) {
-    String mainTitle = extractTitle(document);
+    var mainTitle = extractTitle(document);
     return document.getTitle().stream()
         .filter(not(title -> title.equals(mainTitle)))
         .collect(

@@ -102,7 +102,7 @@ public class DataciteResponseConverter extends AbstractConverter {
   }
 
   private Map<String, String> extractAlternativeTitles(DataciteResponse dataciteResponse) {
-    String mainTitle = extractMainTitle(dataciteResponse);
+    var mainTitle = extractMainTitle(dataciteResponse);
     return dataciteResponse.getTitles().stream()
         .filter(not(title -> title.getTitle().equals(mainTitle)))
         .collect(

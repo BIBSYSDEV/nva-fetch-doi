@@ -173,7 +173,7 @@ public class CrossRefConverterTest extends ConversionTest {
 
   @Test
   public void toPublicationReturnsObjectWithAlternativeTitlesWhenMoreThanOneTitlesExist() {
-    CrossRefDocument crossrefDoc = sampleBook();
+    var crossrefDoc = sampleBook();
     assertThat(crossrefDoc.getTitle(), hasSize(2));
     String expectedAlternativeTitle = crossrefDoc.getTitle().get(SECOND_LIST_ELEMENT);
     var publication = toPublication(crossrefDoc);
@@ -185,7 +185,7 @@ public class CrossRefConverterTest extends ConversionTest {
 
   @Test
   public void toPublicationKeysAlternativeTitlesByUndeterminedLanguageWhenCrossrefHasNoLanguage() {
-    CrossRefDocument crossrefDoc = sampleBook();
+    var crossrefDoc = sampleBook();
     var publication = toPublication(crossrefDoc);
     var languageKeys = publication.getEntityDescription().getAlternativeTitles().keySet();
     assertThat(languageKeys, contains(UNDETERMINED_LANGUAGE));
@@ -193,7 +193,7 @@ public class CrossRefConverterTest extends ConversionTest {
 
   @Test
   public void toPublicationDoesNotPutLanguageUriInAlternativeTitleValue() {
-    CrossRefDocument crossrefDoc = sampleBook();
+    var crossrefDoc = sampleBook();
     var publication = toPublication(crossrefDoc);
     var titles = publication.getEntityDescription().getAlternativeTitles().values();
     titles.forEach(title -> assertThat(title, not(containsString(LEXVO_URI_PREFIX))));
@@ -201,7 +201,7 @@ public class CrossRefConverterTest extends ConversionTest {
 
   @Test
   public void toPublicationKeepsFirstAlternativeTitleWhenSeveralShareTheSameLanguage() {
-    CrossRefDocument crossrefDoc = sampleBook();
+    var crossrefDoc = sampleBook();
     crossrefDoc.setTitle(
         List.of(SAMPLE_DOCUMENT_TITLE, ALTERNATIVE_TITLE, SECOND_ALTERNATIVE_TITLE));
     var publication = toPublication(crossrefDoc);

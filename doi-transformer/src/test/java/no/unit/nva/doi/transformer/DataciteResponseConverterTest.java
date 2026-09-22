@@ -15,9 +15,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import no.sikt.nva.doi.fetch.jsonconfig.Json;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.doi.fetch.commons.publication.model.CreatePublicationRequest;
@@ -78,10 +76,8 @@ public class DataciteResponseConverterTest {
       publicationContainsAlternativeTitlesWithNonNullLanguageTagsWhenDatataciteDocumentHasManyTitles()
           throws IOException, URISyntaxException, InvalidIssnException {
 
-    CreatePublicationRequest publication = readPublicationWithMultipleTitles();
-    Map<String, String> alternativeTitles =
-        publication.getEntityDescription().getAlternativeTitles();
-    Collection<String> titles = alternativeTitles.values();
+    var publication = readPublicationWithMultipleTitles();
+    var titles = publication.getEntityDescription().getAlternativeTitles().values();
     titles.forEach(Assertions::assertNotNull);
   }
 
@@ -91,10 +87,9 @@ public class DataciteResponseConverterTest {
           + " document has many titles")
   public void publicationDoesNotContainMainTitleInAlternativeTItleWhenDataciteDocHasManyTitles()
       throws IOException, URISyntaxException, InvalidIssnException {
-    CreatePublicationRequest publication = readPublicationWithMultipleTitles();
-    String mainTitle = publication.getEntityDescription().getMainTitle();
-    Collection<String> altTitles =
-        publication.getEntityDescription().getAlternativeTitles().values();
+    var publication = readPublicationWithMultipleTitles();
+    var mainTitle = publication.getEntityDescription().getMainTitle();
+    var altTitles = publication.getEntityDescription().getAlternativeTitles().values();
     assertFalse(altTitles.contains(mainTitle));
   }
 
