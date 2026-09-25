@@ -6,6 +6,6 @@ public class SimpleLanguageDetector implements LanguageDetector {
 
   @Override
   public Locale detectLocale(String input) {
-    return Locale.ENGLISH;
+    return Locale.ROOT;
   }
 }
