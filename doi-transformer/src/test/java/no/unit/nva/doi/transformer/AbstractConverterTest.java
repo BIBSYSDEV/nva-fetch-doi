@@ -42,6 +42,17 @@ public class AbstractConverterTest {
   }
 
   @ParameterizedTest
+  @CsvSource({
+    "ger,de", "fre,fr", "dut,nl", "cze,cs", "chi,zh", "gre,el", "ice,is", "alb,sq", "arm,hy",
+    "baq,eu", "bur,my", "geo,ka", "mac,mk", "mao,mi", "may,ms", "per,fa", "rum,ro", "slo,sk",
+    "tib,bo", "wel,cy"
+  })
+  public void toLanguageKeyMapsBibliographicCodeToTwoLetterCode(
+      String languageTag, String expectedKey) {
+    assertThat(converterWith(Locale.ROOT).toLanguageKey(languageTag), is(equalTo(expectedKey)));
+  }
+
+  @ParameterizedTest
   @NullAndEmptySource
   @ValueSource(
       strings = {" ", "not a language tag", "garbage", "xyz", "zzz", "not", "123", "en_US"})

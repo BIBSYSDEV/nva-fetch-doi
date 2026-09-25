@@ -3,8 +3,8 @@ package no.unit.nva.doi.transformer;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.doi.fetch.commons.publication.model.PublicationDate;
@@ -17,6 +17,28 @@ public class AbstractConverter {
   public static final String PLAIN_NAME_SEPARATOR = " ";
   public static final String UNDETERMINED_LANGUAGE = "und";
   private static final Set<String> ISO_LANGUAGE_CODES = Set.of(Locale.getISOLanguages());
+  private static final Map<String, String> BIBLIOGRAPHIC_TO_TWO_LETTER_CODES =
+      Map.ofEntries(
+          Map.entry("alb", "sq"),
+          Map.entry("arm", "hy"),
+          Map.entry("baq", "eu"),
+          Map.entry("bur", "my"),
+          Map.entry("chi", "zh"),
+          Map.entry("cze", "cs"),
+          Map.entry("dut", "nl"),
+          Map.entry("fre", "fr"),
+          Map.entry("geo", "ka"),
+          Map.entry("ger", "de"),
+          Map.entry("gre", "el"),
+          Map.entry("ice", "is"),
+          Map.entry("mac", "mk"),
+          Map.entry("mao", "mi"),
+          Map.entry("may", "ms"),
+          Map.entry("per", "fa"),
+          Map.entry("rum", "ro"),
+          Map.entry("slo", "sk"),
+          Map.entry("tib", "bo"),
+          Map.entry("wel", "cy"));
   private static final Map<String, String> THREE_LETTER_TO_TWO_LETTER_CODES =
       threeLetterToTwoLetterCodes();
 
@@ -58,11 +80,14 @@ public class AbstractConverter {
   }
 
   private static Map<String, String> threeLetterToTwoLetterCodes() {
-    return Arrays.stream(Locale.getISOLanguages())
+    return Stream.concat(terminologyCodes(), BIBLIOGRAPHIC_TO_TWO_LETTER_CODES.entrySet().stream())
         .collect(
             Collectors.toUnmodifiableMap(
-                twoLetterCode -> Locale.of(twoLetterCode).getISO3Language(),
-                Function.identity(),
-                (firstCode, duplicateCode) -> firstCode));
+                Entry::getKey, Entry::getValue, (firstCode, duplicateCode) -> firstCode));
+  }
+
+  private static Stream<Entry<String, String>> terminologyCodes() {
+    return Arrays.stream(Locale.getISOLanguages())
+        .map(twoLetterCode -> Map.entry(Locale.of(twoLetterCode).getISO3Language(), twoLetterCode));
   }
 }
