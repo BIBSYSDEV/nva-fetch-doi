@@ -16,7 +16,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 public class AbstractConverterTest {
 
   private static final String SOME_TITLE = "Some title";
-  private static final String UNDETERMINED_LANGUAGE = "und";
+  private static final String UNDETERMINED_LANGUAGE = AbstractConverter.UNDETERMINED_LANGUAGE;
 
   @Test
   public void detectLanguageReturnsUndeterminedWhenDetectorHasNoLanguage() {
@@ -31,6 +31,13 @@ public class AbstractConverterTest {
   @ParameterizedTest
   @CsvSource({"nb-NO,nb", "zh-Hant-TW,zh", "en-US,en", "nb,nb", "en,en"})
   public void toLanguageKeyReducesTagToPrimarySubtag(String languageTag, String expectedKey) {
+    assertThat(converterWith(Locale.ROOT).toLanguageKey(languageTag), is(equalTo(expectedKey)));
+  }
+
+  @ParameterizedTest
+  @CsvSource({"eng,en", "nob,nb", "nno,nn", "deu,de", "dan,da", "swe,sv"})
+  public void toLanguageKeyMapsThreeLetterCodeToTwoLetterCode(
+      String languageTag, String expectedKey) {
     assertThat(converterWith(Locale.ROOT).toLanguageKey(languageTag), is(equalTo(expectedKey)));
   }
 

@@ -5,6 +5,7 @@ import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -27,7 +28,6 @@ import no.unit.nva.doi.transformer.model.datacitemodel.DataciteTitle;
 import no.unit.nva.doi.transformer.utils.InvalidIssnException;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.doi.DoiConverter;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -35,10 +35,13 @@ public class DataciteResponseConverterTest {
 
   public static final String ENTRY_WITH_ALTERNATIVE_TITLE = "datacite_many_titles.json";
   public static final Path SAMPLE_DATACITE_RESPOSNE = Path.of("datacite_response.json");
-  private static final String UNDETERMINED_LANGUAGE = "und";
+  private static final String UNDETERMINED_LANGUAGE = AbstractConverter.UNDETERMINED_LANGUAGE;
   private static final String LEXVO_URI_PREFIX = "http://lexvo.org";
   private static final String AMERICAN_ENGLISH_TAG = "en-US";
   private static final String ENGLISH = "en";
+  private static final String ENGLISH_ISO_639_3 = "eng";
+  private static final String NORWEGIAN_BOKMAL = "nb";
+  private static final String NORWEGIAN_BOKMAL_ISO_639_3 = "nob";
   private static final String GERMAN = "de";
   private static final String GERMAN_TITLE = "Ein alternativer Titel";
 
@@ -70,15 +73,32 @@ public class DataciteResponseConverterTest {
 
   @Test
   @DisplayName(
-      "Publication contains alternativeTitles with non null titles when datacite document"
-          + " has many titles")
-  public void
-      publicationContainsAlternativeTitlesWithNonNullLanguageTagsWhenDatataciteDocumentHasManyTitles()
-          throws IOException, URISyntaxException, InvalidIssnException {
+      "Publication maps the datacite title text to the alternative title value when the datacite"
+          + " document has many titles")
+  public void publicationMapsDataciteTitleTextToAlternativeTitleValue()
+      throws IOException, InvalidIssnException {
+    var response = responseWithMultipleTitles();
+    var expectedAlternativeTitle = response.getTitles().get(1).getTitle();
 
-    var publication = readPublicationWithMultipleTitles();
-    var titles = publication.getEntityDescription().getAlternativeTitles().values();
-    titles.forEach(Assertions::assertNotNull);
+    var alternativeTitles = toPublication(response).getEntityDescription().getAlternativeTitles();
+
+    assertThat(alternativeTitles.values(), contains(expectedAlternativeTitle));
+  }
+
+  @Test
+  public void publicationMapsThreeLetterLanguageCodesToTwoLetterKeys()
+      throws IOException, InvalidIssnException {
+    var response = responseWithMultipleTitles();
+    var titles = new ArrayList<>(response.getTitles());
+    titles.get(1).setLang(ENGLISH_ISO_639_3);
+    titles.add(titleWithLanguage(GERMAN_TITLE, NORWEGIAN_BOKMAL_ISO_639_3));
+    response.setTitles(titles);
+
+    var alternativeTitles = toPublication(response).getEntityDescription().getAlternativeTitles();
+
+    assertThat(alternativeTitles.size(), is(equalTo(2)));
+    assertThat(alternativeTitles.get(ENGLISH), is(notNullValue()));
+    assertThat(alternativeTitles.get(NORWEGIAN_BOKMAL), is(equalTo(GERMAN_TITLE)));
   }
 
   @Test

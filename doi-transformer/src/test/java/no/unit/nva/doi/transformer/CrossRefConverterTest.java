@@ -118,7 +118,7 @@ public class CrossRefConverterTest extends ConversionTest {
   private static final String SAMPLE_ORCID = "http://orcid.org/0000-1111-2222-3333";
   private static final String ALTERNATIVE_TITLE = "Some alternative title";
   private static final String SECOND_ALTERNATIVE_TITLE = "Yet another alternative title";
-  private static final String UNDETERMINED_LANGUAGE = "und";
+  private static final String UNDETERMINED_LANGUAGE = AbstractConverter.UNDETERMINED_LANGUAGE;
   private static final String LEXVO_URI_PREFIX = "http://lexvo.org";
   private static final int SECOND_LIST_ELEMENT = 1;
   private final CrossRefConverter converter = setUpConverter();
