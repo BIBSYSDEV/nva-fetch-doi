@@ -6,6 +6,9 @@ nva {
     errorprone {
         allErrorsAsWarnings = false
     }
+    java {
+        languageVersion = 25
+    }
     pmd {
         rulesetFile = rootProject.file('config/pmd/ruleset.xml')
     }
