@@ -178,7 +178,6 @@ public class CrossRefConverter extends AbstractConverter {
         .isPresent();
   }
 
-  @SuppressWarnings("PMD.AvoidCatchingGenericException")
   private Optional<URI> tryCreatingUri(String source) {
     try {
       return Optional.of(URI.create(source));
