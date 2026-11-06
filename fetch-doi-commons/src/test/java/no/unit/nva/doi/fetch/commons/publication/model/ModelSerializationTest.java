@@ -90,7 +90,7 @@ public class ModelSerializationTest {
         dtoObjectMapper.readTree(json).get(VERIFICATION_STATUS_FIELD).textValue());
   }
 
-  @ParameterizedTest()
+  @ParameterizedTest
   @ValueSource(booleans = {true, false})
   void shouldCreateVerificationStatusFromBoolean(boolean input) {
     var result = VerificationStatus.fromBoolean(input);

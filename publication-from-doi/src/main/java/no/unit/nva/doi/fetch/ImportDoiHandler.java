@@ -89,9 +89,8 @@ public class ImportDoiHandler extends ApiGatewayHandler<RequestBody, Summary> {
 
     var inputUri = input.getDoiUrl();
     return attempt(() -> this.fetchDoiService.newCreatePublicationRequest(inputUri))
-        .map(
-            createPublicationRequest ->
-                tryCreatePublication(authHeader, apiUrl, createPublicationRequest))
+        .map(createPublicationRequest ->
+            tryCreatePublication(authHeader, apiUrl, createPublicationRequest))
         .map(response -> Json.convertValue(response, JsonNode.class))
         .map(publicationConverter::toSummary)
         .orElseThrow(fail -> handleError(fail.getException()));

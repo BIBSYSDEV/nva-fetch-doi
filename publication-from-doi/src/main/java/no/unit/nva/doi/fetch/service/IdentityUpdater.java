@@ -38,9 +38,8 @@ public final class IdentityUpdater {
       CristinClient cristinClient, CreatePublicationRequest publication) {
 
     var possibleContributors = extractPossibleContributors(publication);
-    possibleContributors.ifPresent(
-        contributors ->
-            tryUpdatingContributorsOrLogError(cristinClient, publication, contributors));
+    possibleContributors.ifPresent(contributors ->
+        tryUpdatingContributorsOrLogError(cristinClient, publication, contributors));
     return publication;
   }
 
@@ -51,7 +50,6 @@ public final class IdentityUpdater {
         .map(EntityDescription::getContributors);
   }
 
-  @SuppressWarnings("PMD.AvoidCatchingGenericException")
   private static void tryUpdatingContributorsOrLogError(
       CristinClient cristinClient,
       CreatePublicationRequest publication,

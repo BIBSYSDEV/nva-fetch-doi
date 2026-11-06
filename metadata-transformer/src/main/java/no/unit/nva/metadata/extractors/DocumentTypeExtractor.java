@@ -96,10 +96,9 @@ public final class DocumentTypeExtractor {
       List<String> isbnList =
           nonNull(existingIsbnList) ? new ArrayList<>(existingIsbnList) : new ArrayList<>();
 
-      validatedIsbn.ifPresent(
-          presentIsbn ->
-              reference.setPublicationContext(
-                  addNonPreexistingIsbn(presentIsbn, (Book) context, isbnList)));
+      validatedIsbn.ifPresent(presentIsbn ->
+          reference.setPublicationContext(
+              addNonPreexistingIsbn(presentIsbn, (Book) context, isbnList)));
     } else {
       var academicMonograph = new AcademicMonograph(null);
       var isbnList = validatedIsbn.stream().toList();

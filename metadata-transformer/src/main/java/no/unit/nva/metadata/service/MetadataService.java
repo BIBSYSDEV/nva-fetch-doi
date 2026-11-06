@@ -95,7 +95,6 @@ public class MetadataService {
    * @param uri URI to dereference.
    * @return CreatePublicationRequest for selected set of metadata.
    */
-  @SuppressWarnings("PMD.AvoidCatchingGenericException")
   public Optional<CreatePublicationRequest> generateCreatePublicationRequest(URI uri)
       throws MetadataFetchException {
     try {

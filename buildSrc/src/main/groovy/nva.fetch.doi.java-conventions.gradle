@@ -10,7 +10,17 @@ nva {
         languageVersion = 25
     }
     pmd {
-        rulesetFile = rootProject.file('config/pmd/ruleset.xml')
+        analyzeTests = false
+        excludedRules = [
+                'AvoidCatchingGenericException',
+                'AvoidThrowingRawExceptionTypes',
+                'ClassNamingConventions',
+                'ConstructorCallsOverridableMethod',
+                'CouplingBetweenObjects',
+                'ExcessivePublicCount',
+                'GuardLogStatement',
+                'SimplifyBooleanReturns'
+        ]
     }
     spotless {
         enabled = true

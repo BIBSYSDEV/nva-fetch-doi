@@ -179,12 +179,11 @@ class IdentityUpdaterTest {
   private CreatePublicationRequest createPublicationWithIdentities(List<Identity> identities) {
     var contributors =
         identities.stream()
-            .map(
-                identity ->
-                    new Contributor.Builder()
-                        .withRole(new Role("Creator"))
-                        .withIdentity(identity)
-                        .build())
+            .map(identity ->
+                new Contributor.Builder()
+                    .withRole(new Role("Creator"))
+                    .withIdentity(identity)
+                    .build())
             .toList();
 
     return new CreatePublicationRequest.Builder()
