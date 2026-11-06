@@ -41,7 +41,5 @@ class LanguageMapperTest {
 
     Assertions.assertEquals(
         LanguageMapper.URI_NOT_FOUND_ERROR + GARBAGE_INPUT, exception.getMessage());
-
-    ;
   }
 }

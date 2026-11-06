@@ -450,13 +450,12 @@ public class CrossRefConverter extends AbstractConverter {
     if (nonNull(contributor.getAffiliation())) {
       contributorBuilder.withAffiliations(getAffiliations(contributor.getAffiliation()));
     }
-    return attempt(
-            () ->
-                contributorBuilder
-                    .withIdentity(identity)
-                    .withRole(role)
-                    .withSequence(registrationSequence)
-                    .build())
+    return attempt(() ->
+            contributorBuilder
+                .withIdentity(identity)
+                .withRole(role)
+                .withSequence(registrationSequence)
+                .build())
         .orElseThrow();
   }
 

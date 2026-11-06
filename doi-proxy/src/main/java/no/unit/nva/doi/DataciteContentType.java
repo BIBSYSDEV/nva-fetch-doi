@@ -33,12 +33,11 @@ public enum DataciteContentType {
     return Arrays.stream(values())
         .filter(dataciteContentType -> dataciteContentType.getContentType().equals(contentType))
         .findAny()
-        .orElseThrow(
-            () ->
-                new IllegalArgumentException(
-                    String.format(
-                        "Datacite Content Type not found for '%s', expected one of '%s'.",
-                        contentType, VALID_CONTENT_TYPES)));
+        .orElseThrow(() ->
+            new IllegalArgumentException(
+                String.format(
+                    "Datacite Content Type not found for '%s', expected one of '%s'.",
+                    contentType, VALID_CONTENT_TYPES)));
   }
 
   public String getContentType() {
